@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Project Overview Dashboard - Purandar Airport Project</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#1269e2",
+                        "background-light": "#f6f7f8",
+                        "background-dark": "#101822",
+                    },
+                    fontFamily: {
+                        "display": ["Public Sans", "sans-serif"]
+                    },
+                    borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" },
+                },
+            },
+        }
+    </script>
+</head>
+
+<body class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100 antialiased">
+    <div class="relative flex min-h-screen w-full flex-col overflow-x-hidden">
+        <header
+            class="flex items-center justify-between whitespace-nowrap border-b border-solid border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-6 py-3 sticky top-0 z-50">
+            <div class="flex items-center gap-8">
+                <div class="flex items-center gap-4 text-primary">
+                    <div class="size-8 flex items-center justify-center bg-primary/10 rounded-lg">
+                        <span class="material-symbols-outlined">flight_takeoff</span>
+                    </div>
+                    <h2 class="text-slate-900 dark:text-white text-lg font-bold leading-tight tracking-tight">Purandar
+                        Airport CMS</h2>
+                </div>
+                <label class="flex flex-col min-w-40 !h-10 max-w-64 hidden lg:flex">
+                    <div class="flex w-full flex-1 items-stretch rounded-lg h-full">
+                        <div class="text-slate-500 flex border-none bg-slate-100 dark:bg-slate-800 items-center justify-center pl-4 rounded-l-lg"
+                            data-icon="search">
+                            <span class="material-symbols-outlined text-xl">search</span>
+                        </div>
+                        <input
+                            class="form-input flex w-full min-w-0 flex-1 border-none bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-0 h-full placeholder:text-slate-500 px-4 rounded-r-lg pl-2 text-sm font-normal"
+                            placeholder="Search villages, farmers, or guts..." value="" />
+                    </div>
+                </label>
+                <div class="hidden xl:flex items-center gap-2">
+                    <select id="districtSelect"
+                        class="form-select text-xs font-medium border-none bg-slate-100 dark:bg-slate-800 rounded-lg focus:ring-primary h-10 px-3 pr-8">
+                        <option value="">Select District</option>
+                        <option value="district">Pune</option>
+                    </select>
+                    <select id="talukaSelect"
+                        class="form-select text-xs font-medium border-none bg-slate-100 dark:bg-slate-800 rounded-lg focus:ring-primary h-10 px-3 pr-8" disabled>
+                        <option value="">Select Taluka</option>
+                        <option value="taluka">Purandar</option>
+                    </select>
+                    <select id="villageSelect"
+                        class="form-select text-xs font-medium border-none bg-slate-100 dark:bg-slate-800 rounded-lg focus:ring-primary h-10 px-3 pr-8" disabled>
+                        <option value="">Select Villages</option>
+                        <option value="villages_boundary">Villages Boundary</option>
+                        <option value="villages_gut">Villages with Gut</option>
+                    </select>
+                </div>
+            </div>
+            <div class="flex flex-1 justify-end gap-6 items-center">
+                <nav class="hidden md:flex items-center gap-6">
+                    <a class="text-primary text-sm font-semibold leading-normal" href="#">Dashboard</a>
+                    <a class="text-slate-600 dark:text-slate-400 text-sm font-medium leading-normal hover:text-primary"
+                        href="#">Village GIS</a>
+                    <a class="text-slate-600 dark:text-slate-400 text-sm font-medium leading-normal hover:text-primary"
+                        href="#">Reports</a>
+                </nav>
+                <div class="flex gap-3">
+                    <button
+                        class="flex size-10 cursor-pointer items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                        <span class="material-symbols-outlined">notifications</span>
+                    </button>
+                    <button
+                        class="flex size-10 cursor-pointer items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                        <span class="material-symbols-outlined">settings</span>
+                    </button>
+                    <div class="h-10 w-10 rounded-full border-2 border-primary/20 bg-cover bg-center overflow-hidden"
+                        data-alt="Administrator user profile picture"
+                        style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuC-fkJKy1wvMLUGGJZZ-qxjZwQ2F3EXWFar1DUryC920FkKZnQCxZIFpSTwuAgNnWm_XZydIAf1jyJnM1zsQzL6GF92H0m-4tWVZdZSJmTOvbd5IloDskdPapDJPVI2McU7pPK45_B9pZ14yzVyTWOowamZV1X0zAguTcbxfwGaS9kbdbbt3SRL2PVszh-v_kgKm65Qgqpu2e-4VOGEXDkdcCx7za3ZZZC8iEOhkOn2F1QDW21WL54PodPMmceiB7_EHyDPlHvaerYD");'>
+                    </div>
+                </div>
+            </div>
+        </header>
+        <main class="flex flex-1 overflow-hidden p-4 gap-4">
+            <aside class="w-80 flex flex-col gap-4 overflow-y-auto pr-2 custom-scrollbar">
+                <div class="flex flex-col gap-4">
+                    <div class="flex flex-col px-1">
+                        <h1 class="text-slate-900 dark:text-white text-lg font-bold">Project Summary</h1>
+                        <p class="text-slate-500 text-xs font-normal">Real-time land acquisition metrics</p>
+                    </div>
+                    <div class="grid grid-cols-1 gap-3">
+                        <div
+                            class="flex flex-col gap-1 rounded-xl p-4 bg-white dark:bg-slate-900 shadow-sm border border-slate-200 dark:border-slate-800">
+                            <div class="flex justify-between items-start">
+                                <span class="text-slate-500 text-xs font-semibold uppercase tracking-wider">Total
+                                    Compensation</span>
+                                <span class="material-symbols-outlined text-primary text-lg">payments</span>
+                            </div>
+                            <p class="text-slate-900 dark:text-white text-2xl font-bold leading-tight">₹1,250 Cr</p>
+                            <div class="mt-2 h-1 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                                <div class="bg-primary h-full w-[65%]"></div>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div
+                                class="flex flex-col gap-1 rounded-xl p-4 bg-white dark:bg-slate-900 shadow-sm border border-slate-200 dark:border-slate-800">
+                                <span class="text-slate-500 text-[10px] font-semibold uppercase">Affected
+                                    Villages</span>
+                                <p class="text-slate-900 dark:text-white text-xl font-bold">07</p>
+                            </div>
+                            <div
+                                class="flex flex-col gap-1 rounded-xl p-4 bg-white dark:bg-slate-900 shadow-sm border border-slate-200 dark:border-slate-800">
+                                <span class="text-slate-500 text-[10px] font-semibold uppercase">Affected Farmers</span>
+                                <p class="text-slate-900 dark:text-white text-xl font-bold">4,520</p>
+                            </div>
+                            <div
+                                class="flex flex-col gap-1 rounded-xl p-4 bg-white dark:bg-slate-900 shadow-sm border border-slate-200 dark:border-slate-800">
+                                <span class="text-slate-500 text-[10px] font-semibold uppercase">Area Acquired</span>
+                                <p class="text-slate-900 dark:text-white text-xl font-bold">1,650 Ha</p>
+                            </div>
+                            <div
+                                class="flex flex-col gap-1 rounded-xl p-4 bg-white dark:bg-slate-900 shadow-sm border border-slate-200 dark:border-slate-800">
+                                <span class="text-slate-500 text-[10px] font-semibold uppercase">Total Assets</span>
+                                <p class="text-slate-900 dark:text-white text-xl font-bold">13,557</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex flex-col gap-3">
+                        <details
+                            class="group rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 overflow-hidden"
+                            open="">
+                            <summary class="flex cursor-pointer items-center justify-between p-4 list-none">
+                                <div class="flex items-center gap-3">
+                                    <span class="material-symbols-outlined text-primary">landscape</span>
+                                    <p class="text-slate-900 dark:text-white text-sm font-semibold">Land Classification
+                                    </p>
+                                </div>
+                                <span
+                                    class="material-symbols-outlined group-open:rotate-180 transition-transform text-slate-400">expand_more</span>
+                            </summary>
+                            <div class="px-4 pb-4 flex flex-col gap-3">
+                                <div class="flex justify-between items-center text-sm">
+                                    <span class="text-slate-500">Government Land</span>
+                                    <span class="font-semibold text-slate-700 dark:text-slate-300">450 Ha</span>
+                                </div>
+                                <div class="flex justify-between items-center text-sm">
+                                    <span class="text-slate-500">Private Land</span>
+                                    <span class="font-semibold text-slate-700 dark:text-slate-300">1,200 Ha</span>
+                                </div>
+                                <div class="pt-2 border-t border-slate-100 dark:border-slate-800 flex flex-col gap-2">
+                                    <div class="flex justify-between items-center text-xs">
+                                        <span class="flex items-center gap-1"><span
+                                                class="w-2 h-2 rounded-full bg-emerald-500"></span> Bagayati</span>
+                                        <span>300 Ha</span>
+                                    </div>
+                                    <div class="flex justify-between items-center text-xs">
+                                        <span class="flex items-center gap-1"><span
+                                                class="w-2 h-2 rounded-full bg-amber-500"></span> Jirayati</span>
+                                        <span>900 Ha</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </details>
+                        <details
+                            class="group rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 overflow-hidden">
+                            <summary class="flex cursor-pointer items-center justify-between p-4 list-none">
+                                <div class="flex items-center gap-3">
+                                    <span class="material-symbols-outlined text-primary">account_tree</span>
+                                    <p class="text-slate-900 dark:text-white text-sm font-semibold">Asset Details</p>
+                                </div>
+                                <span
+                                    class="material-symbols-outlined group-open:rotate-180 transition-transform text-slate-400">expand_more</span>
+                            </summary>
+                            <div class="px-4 pb-4 flex flex-col gap-2">
+                                <div class="flex justify-between items-center text-xs py-1">
+                                    <span class="text-slate-600 dark:text-slate-400 flex items-center gap-2"><span
+                                            class="material-symbols-outlined text-sm">park</span> Tree</span>
+                                    <span class="font-medium">12,400</span>
+                                </div>
+                                <div class="flex justify-between items-center text-xs py-1">
+                                    <span class="text-slate-600 dark:text-slate-400 flex items-center gap-2"><span
+                                            class="material-symbols-outlined text-sm">shopping_bag</span> Bag</span>
+                                    <span class="font-medium">520</span>
+                                </div>
+                                <div class="flex justify-between items-center text-xs py-1">
+                                    <span class="text-slate-600 dark:text-slate-400 flex items-center gap-2"><span
+                                            class="material-symbols-outlined text-sm">water_drop</span> Borewell</span>
+                                    <span class="font-medium">142</span>
+                                </div>
+                                <div class="flex justify-between items-center text-xs py-1">
+                                    <span class="text-slate-600 dark:text-slate-400 flex items-center gap-2"><span
+                                            class="material-symbols-outlined text-sm">waves</span> Well</span>
+                                    <span class="font-medium">173</span>
+                                </div>
+                                <div class="flex justify-between items-center text-xs py-1">
+                                    <span class="text-slate-600 dark:text-slate-400 flex items-center gap-2"><span
+                                            class="material-symbols-outlined text-sm">apartment</span> Structure</span>
+                                    <span class="font-medium">842</span>
+                                </div>
+                                <div class="flex justify-between items-center text-xs py-1">
+                                    <span class="text-slate-600 dark:text-slate-400 flex items-center gap-2"><span
+                                            class="material-symbols-outlined text-sm">category</span> Other
+                                        Assets</span>
+                                    <span class="font-medium">480</span>
+                                </div>
+                            </div>
+                        </details>
+                    </div>
+                </div>
+            </aside>
+            <section class="flex-1 flex flex-col gap-4 min-w-[500px]">
+                <div
+                    class="relative flex-1 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-inner bg-slate-200">
+                    <div id="map" class="absolute inset-0 z-0"></div>
+                    <div class="absolute top-4 right-4 flex flex-row-reverse items-start gap-2 z-[1000]">
+                        <button id="layersBtn"
+                            class="flex size-10 items-center justify-center rounded-lg bg-white dark:bg-slate-900 shadow-xl text-slate-700 dark:text-slate-300 hover:bg-slate-50">
+                            <span class="material-symbols-outlined">layers</span>
+                        </button>
+                        <div id="layerMenu" class="hidden bg-white/90 dark:bg-slate-900/90 backdrop-blur-md p-1 rounded-lg flex-col shadow-lg border border-white/20">
+                            <button data-layer="osm"
+                                class="layer-btn px-4 py-1.5 rounded-md bg-primary text-white text-xs font-bold">OSM</button>
+                            <button data-layer="satellite"
+                                class="layer-btn px-4 py-1.5 rounded-md text-slate-600 dark:text-slate-300 text-xs font-bold hover:bg-slate-100 dark:hover:bg-slate-800">Satellite</button>
+                            <button data-layer="terrain"
+                                class="layer-btn px-4 py-1.5 rounded-md text-slate-600 dark:text-slate-300 text-xs font-bold hover:bg-slate-100 dark:hover:bg-slate-800">Terrain</button>
+                        </div>
+                    </div>
+                    <div
+                        class="absolute bottom-6 left-6 max-w-xs bg-white/90 dark:bg-slate-900/90 backdrop-blur-md p-4 rounded-xl shadow-2xl border border-white/20">
+                        <h4 class="text-xs font-bold text-slate-400 uppercase mb-2">Map Legend</h4>
+                        <div class="flex flex-col gap-2">
+                            <div class="flex items-center gap-2 text-xs">
+                                <div class="w-3 h-3 rounded-sm bg-primary border border-white shadow-sm"></div>
+                                <span class="text-slate-700 dark:text-slate-200">Airport Core Area</span>
+                            </div>
+                            <div class="flex items-center gap-2 text-xs">
+                                <div class="w-3 h-3 rounded-sm bg-amber-400 border border-white shadow-sm"></div>
+                                <span class="text-slate-700 dark:text-slate-200">Buffer Zone</span>
+                            </div>
+                            <div class="flex items-center gap-2 text-xs">
+                                <div class="w-3 h-3 rounded-sm bg-slate-300 border border-white shadow-sm"></div>
+                                <span class="text-slate-700 dark:text-slate-200">Existing Structures</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="absolute bottom-6 right-6 flex flex-col gap-2 z-[1000]">
+                        <button id="zoomIn" aria-label="Zoom In"
+                            class="flex size-10 items-center justify-center rounded-lg bg-white dark:bg-slate-900 shadow-xl text-slate-700 dark:text-slate-300 hover:bg-slate-50">
+                            <span class="material-symbols-outlined">add</span>
+                        </button>
+                        <button id="zoomOut" aria-label="Zoom Out"
+                            class="flex size-10 items-center justify-center rounded-lg bg-white dark:bg-slate-900 shadow-xl text-slate-700 dark:text-slate-300 hover:bg-slate-50">
+                            <span class="material-symbols-outlined">remove</span>
+                        </button>
+                        <button id="myLocation"
+                            class="flex size-10 items-center justify-center rounded-lg bg-white dark:bg-slate-900 shadow-xl text-slate-700 dark:text-slate-300 hover:bg-slate-50">
+                            <span class="material-symbols-outlined">my_location</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="relative group">
+                    <details
+                        class="absolute bottom-0 left-0 right-0 z-20 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 rounded-t-xl shadow-[0_-4px_10px_rgba(0,0,0,0.05)] transition-all duration-300">
+                        <summary
+                            class="flex h-12 items-center px-6 justify-between cursor-pointer list-none hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                            <div class="flex items-center gap-2">
+                                <span class="material-symbols-outlined text-primary">info</span>
+                                <span class="text-sm font-semibold text-slate-700 dark:text-slate-200">Feature
+                                    Attributes</span>
+                            </div>
+                            <div class="flex items-center gap-6">
+                                <div class="flex items-center gap-2">
+                                    <span class="size-2 rounded-full bg-emerald-500"></span>
+                                    <span class="text-[10px] font-medium text-slate-500 uppercase tracking-wider">Map
+                                        Service Online</span>
+                                </div>
+                                <span
+                                    class="material-symbols-outlined text-slate-400 group-open:rotate-180 transition-transform">keyboard_arrow_up</span>
+                            </div>
+                        </summary>
+                        <div
+                            class="p-8 flex flex-col items-center justify-center text-center bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800">
+                            <div
+                                class="size-12 rounded-full bg-slate-50 dark:bg-slate-800 flex items-center justify-center mb-3">
+                                <span class="material-symbols-outlined text-slate-400">selection_pan</span>
+                            </div>
+                            <p class="text-sm font-medium text-slate-900 dark:text-white">No data available</p>
+                            <p class="text-xs text-slate-500 mt-1">No feature selected. Please click on a map feature to
+                                view attributes.</p>
+                        </div>
+                    </details>
+                    <!-- This spacer maintains the height of the bottom bar when the details is absolute/positioned -->
+                    <div class="h-12 w-full"></div>
+                </div>
+            </section>
+            <aside class="w-80 flex flex-col gap-4 overflow-y-auto pl-2 custom-scrollbar">
+                <div class="flex flex-col gap-4">
+                    <div class="flex flex-col px-1">
+                        <h3 class="text-slate-900 dark:text-white text-base font-bold">Analytics</h3>
+                        <p class="text-slate-500 text-xs">Village-level distributions</p>
+                    </div>
+                    <div
+                        class="flex flex-col gap-3 rounded-xl p-4 bg-white dark:bg-slate-900 shadow-sm border border-slate-200 dark:border-slate-800">
+                        <h4 class="text-slate-700 dark:text-slate-300 text-xs font-bold uppercase mb-4">Village
+                            Compensation (₹ Cr)</h4>
+                        <div class="flex flex-col gap-3">
+                            <div class="space-y-1">
+                                <div class="flex justify-between text-[10px] text-slate-500 uppercase">
+                                    <span>Pargaon</span>
+                                    <span>₹420 Cr</span>
+                                </div>
+                                <div class="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                                    <div class="bg-primary h-full w-[85%]"></div>
+                                </div>
+                            </div>
+                            <div class="space-y-1">
+                                <div class="flex justify-between text-[10px] text-slate-500 uppercase">
+                                    <span>Munjwadi</span>
+                                    <span>₹210 Cr</span>
+                                </div>
+                                <div class="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                                    <div class="bg-primary h-full w-[45%]"></div>
+                                </div>
+                            </div>
+                            <div class="space-y-1">
+                                <div class="flex justify-between text-[10px] text-slate-500 uppercase">
+                                    <span>Khanawadi</span>
+                                    <span>₹185 Cr</span>
+                                </div>
+                                <div class="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                                    <div class="bg-primary h-full w-[40%]"></div>
+                                </div>
+                            </div>
+                            <div class="space-y-1">
+                                <div class="flex justify-between text-[10px] text-slate-500 uppercase">
+                                    <span>Udachiwadi</span>
+                                    <span>₹120 Cr</span>
+                                </div>
+                                <div class="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                                    <div class="bg-primary h-full w-[25%]"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div
+                        class="flex flex-col gap-3 rounded-xl p-4 bg-white dark:bg-slate-900 shadow-sm border border-slate-200 dark:border-slate-800">
+                        <h4 class="text-slate-700 dark:text-slate-300 text-xs font-bold uppercase mb-2">Farmers
+                            Distribution</h4>
+                        <div class="flex items-center justify-center py-4">
+                            <div
+                                class="relative size-32 rounded-full border-[14px] border-slate-100 dark:border-slate-800 flex items-center justify-center">
+                                <div
+                                    class="absolute inset-[-14px] rounded-full border-[14px] border-primary border-r-transparent border-b-transparent rotate-45">
+                                </div>
+                                <div class="flex flex-col items-center">
+                                    <span class="text-xl font-bold leading-none">4.5k</span>
+                                    <span class="text-[10px] text-slate-500">Total</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2 mt-2">
+                            <div class="flex items-center gap-2">
+                                <span class="size-2 rounded-full bg-primary"></span>
+                                <span class="text-[10px] text-slate-500">Paid: 65%</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="size-2 rounded-full bg-slate-200 dark:bg-slate-700"></span>
+                                <span class="text-[10px] text-slate-500">Pending: 35%</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div
+                        class="flex flex-col gap-3 rounded-xl p-4 bg-white dark:bg-slate-900 shadow-sm border border-slate-200 dark:border-slate-800">
+                        <h4 class="text-slate-700 dark:text-slate-300 text-xs font-bold uppercase mb-2">Land Type Mix
+                        </h4>
+                        <div class="flex flex-col gap-2 pt-2">
+                            <div class="flex h-6 w-full rounded-md overflow-hidden">
+                                <div class="bg-emerald-500 w-[20%]" title="Bagayati"></div>
+                                <div class="bg-amber-500 w-[60%]" title="Jirayati"></div>
+                                <div class="bg-blue-400 w-[20%]" title="Govt"></div>
+                            </div>
+                            <div class="flex flex-wrap gap-4 mt-1">
+                                <div class="flex items-center gap-1">
+                                    <span class="size-2 rounded-full bg-emerald-500"></span>
+                                    <span class="text-[10px] font-medium">Bagayati</span>
+                                </div>
+                                <div class="flex items-center gap-1">
+                                    <span class="size-2 rounded-full bg-amber-500"></span>
+                                    <span class="text-[10px] font-medium">Jirayati</span>
+                                </div>
+                                <div class="flex items-center gap-1">
+                                    <span class="size-2 rounded-full bg-blue-400"></span>
+                                    <span class="text-[10px] font-medium">Govt Land</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+        </main>
+    </div>
+    <style>
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(18, 105, 226, 0.2);
+            border-radius: 10px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: rgba(18, 105, 226, 0.4);
+        }
+        #map { height: 100%; width: 100%; }
+        .leaflet-control { display: none !important; }
+    </style>
+    <script>
+        let map, currentLayer, osmLayer, satelliteLayer, terrainLayer;
+        let districtLayer, talukaLayer, villagesBoundaryLayer, villagesGutLayer;
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize map centered on Purandar, Pune
+            map = L.map('map', {
+                center: [18.2811, 74.0194],
+                zoom: 13,
+                zoomControl: false
+            });
+
+            // Define base layers
+            osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: 'OpenStreetMap'
+            });
+
+            satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+                attribution: 'Esri'
+            });
+
+            terrainLayer = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
+                attribution: 'OpenTopoMap'
+            });
+
+            // Set default layer to OSM
+            currentLayer = osmLayer;
+            currentLayer.addTo(map);
+
+            // Zoom controls
+            document.getElementById('zoomIn').addEventListener('click', () => map.zoomIn());
+            document.getElementById('zoomOut').addEventListener('click', () => map.zoomOut());
+            document.getElementById('myLocation').addEventListener('click', () => {
+                map.setView([18.2811, 74.0194], 13);
+            });
+
+            // Layer menu toggle
+            const layersBtn = document.getElementById('layersBtn');
+            const layerMenu = document.getElementById('layerMenu');
+            
+            layersBtn.addEventListener('click', () => {
+                layerMenu.classList.toggle('hidden');
+                layerMenu.classList.toggle('flex');
+            });
+
+            // Layer switching
+            document.querySelectorAll('.layer-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const layerType = this.getAttribute('data-layer');
+                    
+                    // Remove current layer
+                    map.removeLayer(currentLayer);
+                    
+                    // Add new layer
+                    if (layerType === 'osm') {
+                        currentLayer = osmLayer;
+                    } else if (layerType === 'satellite') {
+                        currentLayer = satelliteLayer;
+                    } else if (layerType === 'terrain') {
+                        currentLayer = terrainLayer;
+                    }
+                    currentLayer.addTo(map);
+                    
+                    // Update button styles
+                    document.querySelectorAll('.layer-btn').forEach(b => {
+                        b.classList.remove('bg-primary', 'text-white');
+                        b.classList.add('text-slate-600', 'dark:text-slate-300');
+                    });
+                    this.classList.add('bg-primary', 'text-white');
+                    this.classList.remove('text-slate-600', 'dark:text-slate-300');
+                });
+            });
+
+            // Close layer menu when clicking outside
+            document.addEventListener('click', (e) => {
+                if (!layersBtn.contains(e.target) && !layerMenu.contains(e.target)) {
+                    layerMenu.classList.add('hidden');
+                    layerMenu.classList.remove('flex');
+                }
+            });
+
+            // Hierarchical dropdown functionality
+            const districtSelect = document.getElementById('districtSelect');
+            const talukaSelect = document.getElementById('talukaSelect');
+            const villageSelect = document.getElementById('villageSelect');
+
+            // District selection
+            districtSelect.addEventListener('change', function() {
+                clearAllLayers();
+                
+                if (this.value === 'district') {
+                    loadDistrictBoundary();
+                    talukaSelect.disabled = false;
+                    villageSelect.disabled = true;
+                    villageSelect.value = '';
+                } else {
+                    talukaSelect.disabled = true;
+                    villageSelect.disabled = true;
+                    talukaSelect.value = '';
+                    villageSelect.value = '';
+                }
+            });
+
+            // Taluka selection
+            talukaSelect.addEventListener('change', function() {
+                // Remove taluka and village layers
+                if (talukaLayer) map.removeLayer(talukaLayer);
+                if (villagesBoundaryLayer) map.removeLayer(villagesBoundaryLayer);
+                if (villagesGutLayer) map.removeLayer(villagesGutLayer);
+                
+                if (this.value === 'taluka') {
+                    loadTalukaBoundary();
+                    villageSelect.disabled = false;
+                } else {
+                    villageSelect.disabled = true;
+                    villageSelect.value = '';
+                }
+            });
+
+            // Village selection
+            villageSelect.addEventListener('change', function() {
+                // Remove existing village layers
+                if (villagesBoundaryLayer) map.removeLayer(villagesBoundaryLayer);
+                if (villagesGutLayer) map.removeLayer(villagesGutLayer);
+                
+                if (this.value === 'villages_boundary') {
+                    loadVillagesBoundary();
+                } else if (this.value === 'villages_gut') {
+                    loadVillagesWithGut();
+                }
+            });
+
+            // Function to clear all GeoServer layers
+            function clearAllLayers() {
+                if (districtLayer) map.removeLayer(districtLayer);
+                if (talukaLayer) map.removeLayer(talukaLayer);
+                if (villagesBoundaryLayer) map.removeLayer(villagesBoundaryLayer);
+                if (villagesGutLayer) map.removeLayer(villagesGutLayer);
+            }
+
+            // Load District Boundary
+            function loadDistrictBoundary() {
+                fetch('/api/district-boundary/')
+                    .then(response => response.json())
+                    .then(data => {
+                        if (districtLayer) map.removeLayer(districtLayer);
+                        
+                        districtLayer = L.geoJSON(data, {
+                            style: {
+                                color: '#1269e2',
+                                weight: 3,
+                                fillOpacity: 0.1,
+                                fillColor: '#1269e2'
+                            },
+                            onEachFeature: function(feature, layer) {
+                                if (feature.properties && feature.properties.name) {
+                                    layer.bindPopup('<b>District:</b> ' + feature.properties.name);
+                                }
+                            }
+                        }).addTo(map);
+                        
+                        // Fit map to district bounds
+                        map.fitBounds(districtLayer.getBounds());
+                    })
+                    .catch(error => console.error('Error loading district boundary:', error));
+            }
+
+            // Load Taluka Boundary
+            function loadTalukaBoundary() {
+                fetch('/api/taluka-boundary/')
+                    .then(response => response.json())
+                    .then(data => {
+                        if (talukaLayer) map.removeLayer(talukaLayer);
+                        
+                        talukaLayer = L.geoJSON(data, {
+                            style: {
+                                color: '#f59e0b',
+                                weight: 2.5,
+                                fillOpacity: 0.15,
+                                fillColor: '#f59e0b'
+                            },
+                            onEachFeature: function(feature, layer) {
+                                if (feature.properties && feature.properties.name) {
+                                    layer.bindPopup('<b>Taluka:</b> ' + feature.properties.name);
+                                }
+                            }
+                        }).addTo(map);
+                        
+                        // Fit map to taluka bounds
+                        map.fitBounds(talukaLayer.getBounds());
+                    })
+                    .catch(error => console.error('Error loading taluka boundary:', error));
+            }
+
+            // Load Villages Boundary
+            function loadVillagesBoundary() {
+                fetch('/api/villages-boundary/')
+                    .then(response => response.json())
+                    .then(data => {
+                        if (villagesBoundaryLayer) map.removeLayer(villagesBoundaryLayer);
+                        
+                        villagesBoundaryLayer = L.geoJSON(data, {
+                            style: {
+                                color: '#10b981',
+                                weight: 2,
+                                fillOpacity: 0.2,
+                                fillColor: '#10b981'
+                            },
+                            onEachFeature: function(feature, layer) {
+                                if (feature.properties && feature.properties.name) {
+                                    layer.bindPopup('<b>Village:</b> ' + feature.properties.name);
+                                }
+                            }
+                        }).addTo(map);
+                        
+                        // Fit map to villages bounds
+                        map.fitBounds(villagesBoundaryLayer.getBounds());
+                    })
+                    .catch(error => console.error('Error loading villages boundary:', error));
+            }
+
+            // Load Villages with Gut Numbers
+            function loadVillagesWithGut() {
+                fetch('/api/villages-gut/')
+                    .then(response => response.json())
+                    .then(data => {
+                        if (villagesGutLayer) map.removeLayer(villagesGutLayer);
+                        
+                        villagesGutLayer = L.geoJSON(data, {
+                            style: {
+                                color: '#8b5cf6',
+                                weight: 1.5,
+                                fillOpacity: 0.25,
+                                fillColor: '#8b5cf6'
+                            },
+                            onEachFeature: function(feature, layer) {
+                                let popupContent = '<div style="font-size: 12px;">';
+                                if (feature.properties.village) {
+                                    popupContent += '<b>Village:</b> ' + feature.properties.village + '<br>';
+                                }
+                                if (feature.properties.gut_no) {
+                                    popupContent += '<b>Gut No:</b> ' + feature.properties.gut_no + '<br>';
+                                }
+                                if (feature.properties.new_gut_no) {
+                                    popupContent += '<b>New Gut No:</b> ' + feature.properties.new_gut_no + '<br>';
+                                }
+                                if (feature.properties.area_ha) {
+                                    popupContent += '<b>Area (Ha):</b> ' + feature.properties.area_ha.toFixed(2);
+                                }
+                                popupContent += '</div>';
+                                layer.bindPopup(popupContent);
+                            }
+                        }).addTo(map);
+                        
+                        // Fit map to villages bounds
+                        map.fitBounds(villagesGutLayer.getBounds());
+                    })
+                    .catch(error => console.error('Error loading villages with gut:', error));
+            }
+        });
+    </script>
+</body>
+
+</html>
