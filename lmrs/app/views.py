@@ -39,12 +39,12 @@ def get_taluka_boundary(request):
                         'type', 'Feature',
                         'geometry', ST_AsGeoJSON(ST_Transform(geometry, 4326))::json,
                         'properties', json_build_object(
-                            'name', "TALUKA"
+                            'name', 'Purandar'
                         )
                     )
                 )
             )
-            FROM public.puranadar_taluka_bnd;
+            FROM public.purandar_tehsil;
         """)
         result = cursor.fetchone()
         return JsonResponse(result[0] if result[0] else {'type': 'FeatureCollection', 'features': []}, safe=False)
