@@ -179,9 +179,9 @@
                     </div>
                 </div>
             </aside>
-            <section class="flex-1 flex flex-col gap-4 min-w-[500px]">
+            <section class="flex-1 flex flex-col min-w-[500px]">
                 <div
-                    class="relative flex-1 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-inner bg-slate-200">
+                    class="relative h-full rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-inner bg-slate-200">
                     <div id="map" class="absolute inset-0 z-0"></div>
                     <div class="absolute top-4 right-4 flex flex-row-reverse items-start gap-2 z-[1000]">
                         <button id="layersBtn"
@@ -203,15 +203,15 @@
                         <div class="flex flex-col gap-2">
                             <div class="flex items-center gap-2 text-xs">
                                 <div class="w-3 h-3 rounded-sm bg-primary border border-white shadow-sm"></div>
-                                <span class="text-slate-700 dark:text-slate-200">Airport Core Area</span>
+                                <span class="text-slate-700 dark:text-slate-200">Airport AOI</span>
                             </div>
                             <div class="flex items-center gap-2 text-xs">
                                 <div class="w-3 h-3 rounded-sm bg-amber-400 border border-white shadow-sm"></div>
-                                <span class="text-slate-700 dark:text-slate-200">Buffer Zone</span>
+                                <span class="text-slate-700 dark:text-slate-200">Purandar Tehsil</span>
                             </div>
                             <div class="flex items-center gap-2 text-xs">
-                                <div class="w-3 h-3 rounded-sm bg-slate-300 border border-white shadow-sm"></div>
-                                <span class="text-slate-700 dark:text-slate-200">Existing Structures</span>
+                                <div class="w-3 h-3 rounded-sm bg-emerald-500 border border-white shadow-sm"></div>
+                                <span class="text-slate-700 dark:text-slate-200">Villages</span>
                             </div>
                         </div>
                     </div>
@@ -230,40 +230,6 @@
                         </button>
                     </div>
                 </div>
-                <div class="relative group">
-                    <details
-                        class="absolute bottom-0 left-0 right-0 z-20 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 rounded-t-xl shadow-[0_-4px_10px_rgba(0,0,0,0.05)] transition-all duration-300">
-                        <summary
-                            class="flex h-12 items-center px-6 justify-between cursor-pointer list-none hover:bg-slate-50 dark:hover:bg-slate-800/50">
-                            <div class="flex items-center gap-2">
-                                <span class="material-symbols-outlined text-primary">info</span>
-                                <span class="text-sm font-semibold text-slate-700 dark:text-slate-200">Feature
-                                    Attributes</span>
-                            </div>
-                            <div class="flex items-center gap-6">
-                                <div class="flex items-center gap-2">
-                                    <span class="size-2 rounded-full bg-emerald-500"></span>
-                                    <span class="text-[10px] font-medium text-slate-500 uppercase tracking-wider">Map
-                                        Service Online</span>
-                                </div>
-                                <span
-                                    class="material-symbols-outlined text-slate-400 group-open:rotate-180 transition-transform">keyboard_arrow_up</span>
-                            </div>
-                        </summary>
-                        <div
-                            class="p-8 flex flex-col items-center justify-center text-center bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800">
-                            <div
-                                class="size-12 rounded-full bg-slate-50 dark:bg-slate-800 flex items-center justify-center mb-3">
-                                <span class="material-symbols-outlined text-slate-400">selection_pan</span>
-                            </div>
-                            <p class="text-sm font-medium text-slate-900 dark:text-white">No data available</p>
-                            <p class="text-xs text-slate-500 mt-1">No feature selected. Please click on a map feature to
-                                view attributes.</p>
-                        </div>
-                    </details>
-                    <!-- This spacer maintains the height of the bottom bar when the details is absolute/positioned -->
-                    <div class="h-12 w-full"></div>
-                </div>
             </section>
             <aside class="w-80 flex flex-col gap-4 overflow-y-auto pl-2 custom-scrollbar">
                 <div class="flex flex-col gap-4">
@@ -275,95 +241,54 @@
                         class="flex flex-col gap-3 rounded-xl p-4 bg-white dark:bg-slate-900 shadow-sm border border-slate-200 dark:border-slate-800">
                         <h4 class="text-slate-700 dark:text-slate-300 text-xs font-bold uppercase mb-4">Village
                             Compensation (₹ Cr)</h4>
-                        <div class="flex flex-col gap-3">
-                            <div class="space-y-1">
-                                <div class="flex justify-between text-[10px] text-slate-500 uppercase">
-                                    <span>Pargaon</span>
-                                    <span>₹420 Cr</span>
-                                </div>
-                                <div class="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                                    <div class="bg-primary h-full w-[85%]"></div>
-                                </div>
-                            </div>
-                            <div class="space-y-1">
-                                <div class="flex justify-between text-[10px] text-slate-500 uppercase">
-                                    <span>Munjwadi</span>
-                                    <span>₹210 Cr</span>
-                                </div>
-                                <div class="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                                    <div class="bg-primary h-full w-[45%]"></div>
-                                </div>
-                            </div>
-                            <div class="space-y-1">
-                                <div class="flex justify-between text-[10px] text-slate-500 uppercase">
-                                    <span>Khanawadi</span>
-                                    <span>₹185 Cr</span>
-                                </div>
-                                <div class="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                                    <div class="bg-primary h-full w-[40%]"></div>
-                                </div>
-                            </div>
-                            <div class="space-y-1">
-                                <div class="flex justify-between text-[10px] text-slate-500 uppercase">
-                                    <span>Udachiwadi</span>
-                                    <span>₹120 Cr</span>
-                                </div>
-                                <div class="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                                    <div class="bg-primary h-full w-[25%]"></div>
-                                </div>
-                            </div>
+                        <div id="villageCompensationBars" class="flex flex-col gap-3">
+                            <!-- Village compensation bars will be loaded dynamically -->
                         </div>
                     </div>
                     <div
                         class="flex flex-col gap-3 rounded-xl p-4 bg-white dark:bg-slate-900 shadow-sm border border-slate-200 dark:border-slate-800">
-                        <h4 class="text-slate-700 dark:text-slate-300 text-xs font-bold uppercase mb-2">Farmers
+                        <h4 class="text-slate-700 dark:text-slate-300 text-xs font-bold uppercase mb-2">Assets
                             Distribution</h4>
                         <div class="flex items-center justify-center py-4">
-                            <div
-                                class="relative size-32 rounded-full border-[14px] border-slate-100 dark:border-slate-800 flex items-center justify-center">
-                                <div
-                                    class="absolute inset-[-14px] rounded-full border-[14px] border-primary border-r-transparent border-b-transparent rotate-45">
-                                </div>
-                                <div class="flex flex-col items-center">
-                                    <span class="text-xl font-bold leading-none">4.5k</span>
+                            <div class="relative size-40">
+                                <svg viewBox="0 0 100 100" class="transform -rotate-90">
+                                    <!-- Trees segment -->
+                                    <circle cx="50" cy="50" r="40" fill="none" stroke="#10b981" stroke-width="20"
+                                        stroke-dasharray="0 251.2" id="treesSegment" class="transition-all duration-500"/>
+                                    <!-- Structures segment -->
+                                    <circle cx="50" cy="50" r="40" fill="none" stroke="#8b5cf6" stroke-width="20"
+                                        stroke-dasharray="0 251.2" id="structuresSegment" class="transition-all duration-500"/>
+                                    <!-- Water segment -->
+                                    <circle cx="50" cy="50" r="40" fill="none" stroke="#06b6d4" stroke-width="20"
+                                        stroke-dasharray="0 251.2" id="waterSegment" class="transition-all duration-500"/>
+                                </svg>
+                                <div class="absolute inset-0 flex flex-col items-center justify-center">
+                                    <span id="totalAssetsDisplay" class="text-xl font-bold leading-none">--</span>
                                     <span class="text-[10px] text-slate-500">Total</span>
                                 </div>
                             </div>
                         </div>
-                        <div class="grid grid-cols-2 gap-2 mt-2">
-                            <div class="flex items-center gap-2">
-                                <span class="size-2 rounded-full bg-primary"></span>
-                                <span class="text-[10px] text-slate-500">Paid: 65%</span>
-                            </div>
-                            <div class="flex items-center gap-2">
-                                <span class="size-2 rounded-full bg-slate-200 dark:bg-slate-700"></span>
-                                <span class="text-[10px] text-slate-500">Pending: 35%</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div
-                        class="flex flex-col gap-3 rounded-xl p-4 bg-white dark:bg-slate-900 shadow-sm border border-slate-200 dark:border-slate-800">
-                        <h4 class="text-slate-700 dark:text-slate-300 text-xs font-bold uppercase mb-2">Land Type Mix
-                        </h4>
-                        <div class="flex flex-col gap-2 pt-2">
-                            <div class="flex h-6 w-full rounded-md overflow-hidden">
-                                <div class="bg-emerald-500 w-[20%]" title="Bagayati"></div>
-                                <div class="bg-amber-500 w-[60%]" title="Jirayati"></div>
-                                <div class="bg-blue-400 w-[20%]" title="Govt"></div>
-                            </div>
-                            <div class="flex flex-wrap gap-4 mt-1">
-                                <div class="flex items-center gap-1">
+                        <div class="flex flex-col gap-2 mt-2">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-2">
                                     <span class="size-2 rounded-full bg-emerald-500"></span>
-                                    <span class="text-[10px] font-medium">Bagayati</span>
+                                    <span class="text-[10px] text-slate-500">Trees</span>
                                 </div>
-                                <div class="flex items-center gap-1">
-                                    <span class="size-2 rounded-full bg-amber-500"></span>
-                                    <span class="text-[10px] font-medium">Jirayati</span>
+                                <span id="treesPercent" class="text-[10px] font-medium text-slate-700 dark:text-slate-300">--%</span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-2">
+                                    <span class="size-2 rounded-full bg-purple-500"></span>
+                                    <span class="text-[10px] text-slate-500">Structures</span>
                                 </div>
-                                <div class="flex items-center gap-1">
-                                    <span class="size-2 rounded-full bg-blue-400"></span>
-                                    <span class="text-[10px] font-medium">Govt Land</span>
+                                <span id="structuresPercent" class="text-[10px] font-medium text-slate-700 dark:text-slate-300">--%</span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-2">
+                                    <span class="size-2 rounded-full bg-cyan-500"></span>
+                                    <span class="text-[10px] text-slate-500">Water</span>
                                 </div>
+                                <span id="waterPercent" class="text-[10px] font-medium text-slate-700 dark:text-slate-300">--%</span>
                             </div>
                         </div>
                     </div>
@@ -747,6 +672,45 @@
                     .catch(error => console.error('Error loading village compensation:', error));
             }
 
+            // Fetch and display all villages compensation
+            function fetchVillageCompensation() {
+                fetch('/api/all-villages-compensation/')
+                    .then(response => response.json())
+                    .then(data => {
+                        const container = document.getElementById('villageCompensationBars');
+                        if (!container) return;
+                        
+                        container.innerHTML = '';
+                        
+                        if (!data.villages || data.villages.length === 0) {
+                            container.innerHTML = '<p class="text-slate-500 text-xs">No data available</p>';
+                            return;
+                        }
+                        
+                        // Find max compensation for percentage calculation
+                        const maxCompensation = Math.max(...data.villages.map(v => v.compensation));
+                        
+                        data.villages.forEach(village => {
+                            const percentage = maxCompensation > 0 ? (village.compensation / maxCompensation * 100) : 0;
+                            const compensationCr = village.compensation / 10000000; // Convert to Crores
+                            
+                            const villageBar = document.createElement('div');
+                            villageBar.className = 'space-y-1';
+                            villageBar.innerHTML = `
+                                <div class="flex justify-between text-[10px] text-slate-500 uppercase">
+                                    <span>${village.village_name}</span>
+                                    <span>₹${compensationCr.toFixed(2)} Cr</span>
+                                </div>
+                                <div class="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                                    <div class="bg-primary h-full transition-all duration-500" style="width: ${percentage}%"></div>
+                                </div>
+                            `;
+                            container.appendChild(villageBar);
+                        });
+                    })
+                    .catch(error => console.error('Error loading village compensation:', error));
+            }
+
             // Fetch Project Statistics
             function fetchProjectStats() {
                 fetch('/api/project-stats/')
@@ -789,9 +753,13 @@
                         // Populate land classification
                         if (data.land_classification) {
                             populateLandClassification(data.land_classification);
+                            populateAssetsDistribution(data.land_classification);
                         }
                     })
                     .catch(error => console.error('Error loading project stats:', error));
+                
+                // Fetch village compensation data
+                fetchVillageCompensation();
             }
 
             // Format currency in Lakh or Cr
@@ -899,6 +867,44 @@
                         </div>
                     </div>
                 `;
+            }
+
+            // Populate assets distribution pie chart
+            function populateAssetsDistribution(landData) {
+                const total = landData.trees_total + landData.structures_total + landData.water_total;
+                
+                if (total === 0) return;
+                
+                const treesPercent = (landData.trees_total / total * 100).toFixed(1);
+                const structuresPercent = (landData.structures_total / total * 100).toFixed(1);
+                const waterPercent = (landData.water_total / total * 100).toFixed(1);
+                
+                // Update percentages
+                document.getElementById('treesPercent').textContent = treesPercent + '%';
+                document.getElementById('structuresPercent').textContent = structuresPercent + '%';
+                document.getElementById('waterPercent').textContent = waterPercent + '%';
+                document.getElementById('totalAssetsDisplay').textContent = total.toLocaleString();
+                
+                // Calculate stroke-dasharray for pie chart (circumference = 2 * PI * r = 251.2)
+                const circumference = 251.2;
+                
+                const treesLength = (landData.trees_total / total) * circumference;
+                const structuresLength = (landData.structures_total / total) * circumference;
+                const waterLength = (landData.water_total / total) * circumference;
+                
+                // Update SVG segments
+                const treesSegment = document.getElementById('treesSegment');
+                const structuresSegment = document.getElementById('structuresSegment');
+                const waterSegment = document.getElementById('waterSegment');
+                
+                treesSegment.setAttribute('stroke-dasharray', `${treesLength} ${circumference - treesLength}`);
+                treesSegment.setAttribute('stroke-dashoffset', '0');
+                
+                structuresSegment.setAttribute('stroke-dasharray', `${structuresLength} ${circumference - structuresLength}`);
+                structuresSegment.setAttribute('stroke-dashoffset', `-${treesLength}`);
+                
+                waterSegment.setAttribute('stroke-dasharray', `${waterLength} ${circumference - waterLength}`);
+                waterSegment.setAttribute('stroke-dashoffset', `-${treesLength + structuresLength}`);
             }
 
             // Populate asset layers list

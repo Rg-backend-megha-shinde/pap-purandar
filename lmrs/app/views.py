@@ -188,6 +188,59 @@ def get_village_compensation(request, village_name):
             'total_compensation': total_compensation
         })
 
+def get_all_villages_compensation(request):
+    """Fetch compensation for all villages"""
+    with connection.cursor() as cursor:
+        # Get list of all villages
+        cursor.execute("""
+            SELECT DISTINCT "Village_Na" 
+            FROM public.purandhar_airport_village_bo 
+            ORDER BY "Village_Na";
+        """)
+        villages = [row[0] for row in cursor.fetchall()]
+        
+        villages_data = []
+        asset_tables = ['bag', 'tree', 'shed', 'structures', 'well', 'borewell']
+        
+        for village in villages:
+            total_compensation = 0
+            
+            for table in asset_tables:
+                try:
+                    # Check if VILLAGE column exists
+                    cursor.execute(f"""
+                        SELECT column_name 
+                        FROM information_schema.columns 
+                        WHERE table_schema = 'public' 
+                        AND table_name = '{table}'
+                        AND column_name ILIKE '%village%';
+                    """)
+                    village_col = cursor.fetchone()
+                    
+                    if village_col:
+                        col_name = village_col[0]
+                        cursor.execute(f"""
+                            SELECT COALESCE(SUM(valuation), 0)
+                            FROM public.{table}
+                            WHERE "{col_name}" = %s;
+                        """, [village])
+                        result = cursor.fetchone()
+                        if result and result[0]:
+                            total_compensation += float(result[0])
+                except Exception as e:
+                    print(f"Error fetching compensation from {table} for {village}: {e}")
+                    continue
+            
+            villages_data.append({
+                'village_name': village,
+                'compensation': total_compensation
+            })
+        
+        # Sort by compensation descending
+        villages_data.sort(key=lambda x: x['compensation'], reverse=True)
+        
+        return JsonResponse({'villages': villages_data})
+
 def get_project_stats(request):
     """Fetch project statistics"""
     with connection.cursor() as cursor:
