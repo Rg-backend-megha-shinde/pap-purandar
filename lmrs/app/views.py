@@ -184,6 +184,74 @@ def get_project_stats(request):
                 print(f"Error fetching count from {asset}: {e}")
                 assets[asset] = 0
         
+        # Calculate categorized counts for Land Classification
+        land_classification = {}
+        
+        # Trees: sum of cnt_trees from bag table + count of tree table
+        try:
+            cursor.execute("""
+                SELECT COALESCE(SUM(cnt_trees), 0)
+                FROM public.bag;
+            """)
+            bag_trees = cursor.fetchone()[0] or 0
+            
+            cursor.execute("""
+                SELECT COUNT(*)
+                FROM public.tree;
+            """)
+            tree_count = cursor.fetchone()[0] or 0
+            
+            land_classification['trees_total'] = int(bag_trees) + int(tree_count)
+        except Exception as e:
+            print(f"Error calculating trees: {e}")
+            land_classification['trees_total'] = 0
+        
+        # Structures: permanent (structures table) + temporary (shed table)
+        try:
+            cursor.execute("""
+                SELECT COUNT(*)
+                FROM public.structures;
+            """)
+            permanent_count = cursor.fetchone()[0] or 0
+            
+            cursor.execute("""
+                SELECT COUNT(*)
+                FROM public.shed;
+            """)
+            temporary_count = cursor.fetchone()[0] or 0
+            
+            land_classification['structures_permanent'] = int(permanent_count)
+            land_classification['structures_temporary'] = int(temporary_count)
+            land_classification['structures_total'] = int(permanent_count) + int(temporary_count)
+        except Exception as e:
+            print(f"Error calculating structures: {e}")
+            land_classification['structures_permanent'] = 0
+            land_classification['structures_temporary'] = 0
+            land_classification['structures_total'] = 0
+        
+        # Water: well + borewell
+        try:
+            cursor.execute("""
+                SELECT COUNT(*)
+                FROM public.well;
+            """)
+            well_count = cursor.fetchone()[0] or 0
+            
+            cursor.execute("""
+                SELECT COUNT(*)
+                FROM public.borewell;
+            """)
+            borewell_count = cursor.fetchone()[0] or 0
+            
+            land_classification['water_well'] = int(well_count)
+            land_classification['water_borewell'] = int(borewell_count)
+            land_classification['water_total'] = int(well_count) + int(borewell_count)
+        except Exception as e:
+            print(f"Error calculating water: {e}")
+            land_classification['water_well'] = 0
+            land_classification['water_borewell'] = 0
+            land_classification['water_total'] = 0
+        
         # Get asset areas in hectares
         asset_areas = {}
         # Exclude purandar_farmers from land classification as it's point data
@@ -221,7 +289,8 @@ def get_project_stats(request):
             'affected_farmers': affected_farmers,
             'total_compensation': total_compensation,
             'assets': assets,
-            'asset_areas': asset_areas
+            'asset_areas': asset_areas,
+            'land_classification': land_classification
         })
 
 def get_asset_layer(request, asset_name):

@@ -153,7 +153,7 @@
                             <summary class="flex cursor-pointer items-center justify-between p-4 list-none">
                                 <div class="flex items-center gap-3">
                                     <span class="material-symbols-outlined text-primary">landscape</span>
-                                    <p class="text-slate-900 dark:text-white text-sm font-semibold">Land Classification</p>
+                                    <p class="text-slate-900 dark:text-white text-sm font-semibold">Asset Classification</p>
                                 </div>
                                 <span
                                     class="material-symbols-outlined group-open:rotate-180 transition-transform text-slate-400">expand_more</span>
@@ -736,8 +736,8 @@
                         }
                         
                         // Populate land classification
-                        if (data.asset_areas) {
-                            populateLandClassification(data.asset_areas);
+                        if (data.land_classification) {
+                            populateLandClassification(data.land_classification);
                         }
                     })
                     .catch(error => console.error('Error loading project stats:', error));
@@ -757,45 +757,76 @@
             }
 
             // Populate land classification list
-            function populateLandClassification(assetAreas) {
+            function populateLandClassification(landData) {
                 const landClassificationList = document.getElementById('landClassificationList');
                 if (!landClassificationList) return;
                 
-                const assetNames = {
-                    'bag': 'Bag',
-                    'shed': 'Shed',
-                    'structures': 'Structures',
-                    'well': 'Well'
-                };
-                
-                const assetColors = {
-                    'bag': '#f59e0b',
-                    'shed': '#ec4899',
-                    'structures': '#8b5cf6',
-                    'well': '#06b6d4'
-                };
-                
-                landClassificationList.innerHTML = '';
-                
-                // Only show assets that are in the assetNames list
-                Object.keys(assetAreas).forEach(assetKey => {
-                    if (!assetNames[assetKey]) return; // Skip if not in our list
+                landClassificationList.innerHTML = `
+                    <!-- Trees Category -->
+                    <div class="mb-3">
+                        <div class="flex justify-between items-center text-sm font-semibold text-slate-700 dark:text-slate-300">
+                            <span class="flex items-center gap-2">
+                                <span class="material-symbols-outlined text-sm text-emerald-600">park</span>
+                                Trees
+                            </span>
+                            <span id="treesTotal">${landData.trees_total.toLocaleString()}</span>
+                        </div>
+                    </div>
                     
-                    const area = assetAreas[assetKey];
-                    const name = assetNames[assetKey];
-                    const color = assetColors[assetKey] || '#6b7280';
+                    <!-- Structures Category -->
+                    <div class="mb-3 pt-2 border-t border-slate-100 dark:border-slate-800">
+                        <div class="flex justify-between items-center text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                            <span class="flex items-center gap-2">
+                                <span class="material-symbols-outlined text-sm text-purple-600">apartment</span>
+                                Structures
+                            </span>
+                            <span id="structuresTotal">${landData.structures_total.toLocaleString()}</span>
+                        </div>
+                        <div class="pl-6 flex flex-col gap-1">
+                            <div class="flex justify-between items-center text-xs py-1">
+                                <span class="flex items-center gap-1">
+                                    <span class="w-2 h-2 rounded-full bg-purple-500"></span>
+                                    <span class="text-slate-600 dark:text-slate-400">Permanent</span>
+                                </span>
+                                <span id="permanentCount" class="font-medium text-slate-700 dark:text-slate-300">${landData.structures_permanent.toLocaleString()}</span>
+                            </div>
+                            <div class="flex justify-between items-center text-xs py-1">
+                                <span class="flex items-center gap-1">
+                                    <span class="w-2 h-2 rounded-full bg-purple-400"></span>
+                                    <span class="text-slate-600 dark:text-slate-400">Temporary</span>
+                                </span>
+                                <span id="temporaryCount" class="font-medium text-slate-700 dark:text-slate-300">${landData.structures_temporary.toLocaleString()}</span>
+                            </div>
+                        </div>
+                    </div>
                     
-                    const landItem = document.createElement('div');
-                    landItem.className = 'flex justify-between items-center text-xs py-1';
-                    landItem.innerHTML = `
-                        <span class="flex items-center gap-1">
-                            <span class="w-2 h-2 rounded-full" style="background-color: ${color};"></span>
-                            <span class="text-slate-600 dark:text-slate-400">${name}</span>
-                        </span>
-                        <span class="font-medium text-slate-700 dark:text-slate-300">${area.toLocaleString('en-IN', { maximumFractionDigits: 2 })} Ha</span>
-                    `;
-                    landClassificationList.appendChild(landItem);
-                });
+                    <!-- Water Category -->
+                    <div class="pt-2 border-t border-slate-100 dark:border-slate-800">
+                        <div class="flex justify-between items-center text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                            <span class="flex items-center gap-2">
+                                <span class="material-symbols-outlined text-sm text-cyan-600">water_drop</span>
+                                Water
+                            </span>
+                            <span id="waterTotal">${landData.water_total.toLocaleString()}</span>
+                        </div>
+                        <div class="pl-6 flex flex-col gap-1">
+                            <div class="flex justify-between items-center text-xs py-1">
+                                <span class="flex items-center gap-1">
+                                    <span class="w-2 h-2 rounded-full bg-cyan-500"></span>
+                                    <span class="text-slate-600 dark:text-slate-400">Well</span>
+                                </span>
+                                <span id="wellCount" class="font-medium text-slate-700 dark:text-slate-300">${landData.water_well.toLocaleString()}</span>
+                            </div>
+                            <div class="flex justify-between items-center text-xs py-1">
+                                <span class="flex items-center gap-1">
+                                    <span class="w-2 h-2 rounded-full bg-blue-500"></span>
+                                    <span class="text-slate-600 dark:text-slate-400">Borewell</span>
+                                </span>
+                                <span id="borewellCount" class="font-medium text-slate-700 dark:text-slate-300">${landData.water_borewell.toLocaleString()}</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
             }
 
             // Populate asset layers list
