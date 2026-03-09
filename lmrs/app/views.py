@@ -49,6 +49,27 @@ def get_taluka_boundary(request):
         result = cursor.fetchone()
         return JsonResponse(result[0] if result[0] else {'type': 'FeatureCollection', 'features': []}, safe=False)
 
+def get_aoi_boundary(request):
+    """Fetch AOI boundary GeoJSON"""
+    with connection.cursor() as cursor:
+        cursor.execute("""
+            SELECT json_build_object(
+                'type', 'FeatureCollection',
+                'features', json_agg(
+                    json_build_object(
+                        'type', 'Feature',
+                        'geometry', ST_AsGeoJSON(ST_Transform(geometry, 4326))::json,
+                        'properties', json_build_object(
+                            'name', 'Airport AOI'
+                        )
+                    )
+                )
+            )
+            FROM public.purandar_aoi;
+        """)
+        result = cursor.fetchone()
+        return JsonResponse(result[0] if result[0] else {'type': 'FeatureCollection', 'features': []}, safe=False)
+
 def get_villages_boundary(request):
     """Fetch villages outer boundary GeoJSON"""
     with connection.cursor() as cursor:
@@ -130,6 +151,43 @@ def get_single_village_boundary(request, village_name):
         result = cursor.fetchone()
         return JsonResponse(result[0] if result[0] else {'type': 'FeatureCollection', 'features': []}, safe=False)
 
+def get_village_compensation(request, village_name):
+    """Fetch village-wise compensation from all asset tables"""
+    with connection.cursor() as cursor:
+        total_compensation = 0
+        asset_tables = ['bag', 'tree', 'shed', 'structures', 'well', 'borewell']
+        
+        for table in asset_tables:
+            try:
+                # Check if VILLAGE column exists
+                cursor.execute(f"""
+                    SELECT column_name 
+                    FROM information_schema.columns 
+                    WHERE table_schema = 'public' 
+                    AND table_name = '{table}'
+                    AND column_name ILIKE '%village%';
+                """)
+                village_col = cursor.fetchone()
+                
+                if village_col:
+                    col_name = village_col[0]
+                    cursor.execute(f"""
+                        SELECT COALESCE(SUM(valuation), 0)
+                        FROM public.{table}
+                        WHERE "{col_name}" = %s;
+                    """, [village_name])
+                    result = cursor.fetchone()
+                    if result and result[0]:
+                        total_compensation += float(result[0])
+            except Exception as e:
+                print(f"Error fetching compensation from {table}: {e}")
+                continue
+        
+        return JsonResponse({
+            'village_name': village_name,
+            'total_compensation': total_compensation
+        })
+
 def get_project_stats(request):
     """Fetch project statistics"""
     with connection.cursor() as cursor:
@@ -148,6 +206,20 @@ def get_project_stats(request):
             WHERE affected_farmer = true;
         """)
         affected_farmers = cursor.fetchone()[0] or 0
+        
+        # Calculate area acquired from bund table (in hectares)
+        # The bund table contains land parcels within the project area
+        # Area is already in square meters, convert to hectares
+        try:
+            cursor.execute("""
+                SELECT COALESCE(SUM(area), 0) / 10000
+                FROM public.bund;
+            """)
+            area_acquired = cursor.fetchone()[0] or 0
+            area_acquired = round(float(area_acquired), 2)
+        except Exception as e:
+            print(f"Error calculating area acquired: {e}")
+            area_acquired = 0
         
         # Calculate total compensation from all assets
         total_compensation = 0
@@ -201,56 +273,91 @@ def get_project_stats(request):
             """)
             tree_count = cursor.fetchone()[0] or 0
             
+            # Get valuations
+            cursor.execute("""
+                SELECT COALESCE(SUM(valuation), 0)
+                FROM public.bag;
+            """)
+            bag_valuation = cursor.fetchone()[0] or 0
+            
+            cursor.execute("""
+                SELECT COALESCE(SUM(valuation), 0)
+                FROM public.tree;
+            """)
+            tree_valuation = cursor.fetchone()[0] or 0
+            
             land_classification['trees_total'] = int(bag_trees) + int(tree_count)
+            land_classification['trees_valuation'] = float(bag_valuation) + float(tree_valuation)
         except Exception as e:
             print(f"Error calculating trees: {e}")
             land_classification['trees_total'] = 0
+            land_classification['trees_valuation'] = 0
         
         # Structures: permanent (structures table) + temporary (shed table)
         try:
             cursor.execute("""
-                SELECT COUNT(*)
+                SELECT COUNT(*), COALESCE(SUM(valuation), 0)
                 FROM public.structures;
             """)
-            permanent_count = cursor.fetchone()[0] or 0
+            result = cursor.fetchone()
+            permanent_count = result[0] or 0
+            permanent_valuation = result[1] or 0
             
             cursor.execute("""
-                SELECT COUNT(*)
+                SELECT COUNT(*), COALESCE(SUM(valuation), 0)
                 FROM public.shed;
             """)
-            temporary_count = cursor.fetchone()[0] or 0
+            result = cursor.fetchone()
+            temporary_count = result[0] or 0
+            temporary_valuation = result[1] or 0
             
             land_classification['structures_permanent'] = int(permanent_count)
+            land_classification['structures_permanent_valuation'] = float(permanent_valuation)
             land_classification['structures_temporary'] = int(temporary_count)
+            land_classification['structures_temporary_valuation'] = float(temporary_valuation)
             land_classification['structures_total'] = int(permanent_count) + int(temporary_count)
+            land_classification['structures_valuation'] = float(permanent_valuation) + float(temporary_valuation)
         except Exception as e:
             print(f"Error calculating structures: {e}")
             land_classification['structures_permanent'] = 0
+            land_classification['structures_permanent_valuation'] = 0
             land_classification['structures_temporary'] = 0
+            land_classification['structures_temporary_valuation'] = 0
             land_classification['structures_total'] = 0
+            land_classification['structures_valuation'] = 0
         
         # Water: well + borewell
         try:
             cursor.execute("""
-                SELECT COUNT(*)
+                SELECT COUNT(*), COALESCE(SUM(valuation), 0)
                 FROM public.well;
             """)
-            well_count = cursor.fetchone()[0] or 0
+            result = cursor.fetchone()
+            well_count = result[0] or 0
+            well_valuation = result[1] or 0
             
             cursor.execute("""
-                SELECT COUNT(*)
+                SELECT COUNT(*), COALESCE(SUM(valuation), 0)
                 FROM public.borewell;
             """)
-            borewell_count = cursor.fetchone()[0] or 0
+            result = cursor.fetchone()
+            borewell_count = result[0] or 0
+            borewell_valuation = result[1] or 0
             
             land_classification['water_well'] = int(well_count)
+            land_classification['water_well_valuation'] = float(well_valuation)
             land_classification['water_borewell'] = int(borewell_count)
+            land_classification['water_borewell_valuation'] = float(borewell_valuation)
             land_classification['water_total'] = int(well_count) + int(borewell_count)
+            land_classification['water_valuation'] = float(well_valuation) + float(borewell_valuation)
         except Exception as e:
             print(f"Error calculating water: {e}")
             land_classification['water_well'] = 0
+            land_classification['water_well_valuation'] = 0
             land_classification['water_borewell'] = 0
+            land_classification['water_borewell_valuation'] = 0
             land_classification['water_total'] = 0
+            land_classification['water_valuation'] = 0
         
         # Get asset areas in hectares
         asset_areas = {}
@@ -287,6 +394,7 @@ def get_project_stats(request):
         return JsonResponse({
             'affected_villages': affected_villages,
             'affected_farmers': affected_farmers,
+            'area_acquired': area_acquired,
             'total_compensation': total_compensation,
             'assets': assets,
             'asset_areas': asset_areas,

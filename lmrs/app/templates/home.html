@@ -137,7 +137,7 @@
                             <div
                                 class="flex flex-col gap-1 rounded-xl p-4 bg-white dark:bg-slate-900 shadow-sm border border-slate-200 dark:border-slate-800">
                                 <span class="text-slate-500 text-[10px] font-semibold uppercase">Area Acquired</span>
-                                <p class="text-slate-900 dark:text-white text-xl font-bold">1,650 Ha</p>
+                                <p id="areaAcquired" class="text-slate-900 dark:text-white text-xl font-bold">-- Ha</p>
                             </div>
                             <div
                                 class="flex flex-col gap-1 rounded-xl p-4 bg-white dark:bg-slate-900 shadow-sm border border-slate-200 dark:border-slate-800">
@@ -190,9 +190,9 @@
                         </button>
                         <div id="layerMenu" class="hidden bg-white/90 dark:bg-slate-900/90 backdrop-blur-md p-1 rounded-lg flex-col shadow-lg border border-white/20">
                             <button data-layer="osm"
-                                class="layer-btn px-4 py-1.5 rounded-md bg-primary text-white text-xs font-bold">OSM</button>
+                                class="layer-btn px-4 py-1.5 rounded-md text-slate-600 dark:text-slate-300 text-xs font-bold hover:bg-slate-100 dark:hover:bg-slate-800">OSM</button>
                             <button data-layer="satellite"
-                                class="layer-btn px-4 py-1.5 rounded-md text-slate-600 dark:text-slate-300 text-xs font-bold hover:bg-slate-100 dark:hover:bg-slate-800">Satellite</button>
+                                class="layer-btn px-4 py-1.5 rounded-md bg-primary text-white text-xs font-bold">Satellite</button>
                             <button data-layer="terrain"
                                 class="layer-btn px-4 py-1.5 rounded-md text-slate-600 dark:text-slate-300 text-xs font-bold hover:bg-slate-100 dark:hover:bg-slate-800">Terrain</button>
                         </div>
@@ -393,7 +393,7 @@
     </style>
     <script>
         let map, currentLayer, osmLayer, satelliteLayer, terrainLayer;
-        let districtLayer, talukaLayer, villagesBoundaryLayer, villagesGutLayer;
+        let districtLayer, talukaLayer, aoiLayer, villagesBoundaryLayer, villagesGutLayer;
         let assetLayers = {}; // Store asset layers
         
         document.addEventListener('DOMContentLoaded', function() {
@@ -420,9 +420,13 @@
                 attribution: 'OpenTopoMap'
             });
 
-            // Set default layer to OSM
-            currentLayer = osmLayer;
+            // Set default layer to Satellite
+            currentLayer = satelliteLayer;
             currentLayer.addTo(map);
+
+            // Load default boundary layers
+            loadTalukaBoundary();
+            loadAOIBoundary();
 
             // Zoom controls
             document.getElementById('zoomIn').addEventListener('click', () => map.zoomIn());
@@ -523,6 +527,10 @@
                 
                 if (this.value) {
                     loadSingleVillage(this.value);
+                    updateVillageCompensation(this.value);
+                } else {
+                    // Reset to total compensation when no village selected
+                    fetchProjectStats();
                 }
             });
 
@@ -586,6 +594,31 @@
                         map.fitBounds(talukaLayer.getBounds());
                     })
                     .catch(error => console.error('Error loading taluka boundary:', error));
+            }
+
+            // Load AOI Boundary
+            function loadAOIBoundary() {
+                fetch('/api/aoi-boundary/')
+                    .then(response => response.json())
+                    .then(data => {
+                        if (aoiLayer) map.removeLayer(aoiLayer);
+                        
+                        aoiLayer = L.geoJSON(data, {
+                            style: {
+                                color: '#1269e2',
+                                weight: 3,
+                                fillOpacity: 0.2,
+                                fillColor: '#1269e2',
+                                dashArray: '5, 5'
+                            },
+                            onEachFeature: function(feature, layer) {
+                                if (feature.properties && feature.properties.name) {
+                                    layer.bindPopup('<b>AOI:</b> ' + feature.properties.name);
+                                }
+                            }
+                        }).addTo(map);
+                    })
+                    .catch(error => console.error('Error loading AOI boundary:', error));
             }
 
             // Load Villages Boundary
@@ -701,6 +734,19 @@
                     .catch(error => console.error('Error loading village:', error));
             }
 
+            // Update compensation for selected village
+            function updateVillageCompensation(villageName) {
+                fetch(`/api/village-compensation/${encodeURIComponent(villageName)}/`)
+                    .then(response => response.json())
+                    .then(data => {
+                        const totalCompensationElement = document.getElementById('totalCompensation');
+                        if (totalCompensationElement) {
+                            totalCompensationElement.textContent = formatCurrency(data.total_compensation);
+                        }
+                    })
+                    .catch(error => console.error('Error loading village compensation:', error));
+            }
+
             // Fetch Project Statistics
             function fetchProjectStats() {
                 fetch('/api/project-stats/')
@@ -714,6 +760,11 @@
                         const affectedFarmersElement = document.getElementById('affectedFarmersCount');
                         if (affectedFarmersElement) {
                             affectedFarmersElement.textContent = data.affected_farmers.toLocaleString();
+                        }
+                        
+                        const areaAcquiredElement = document.getElementById('areaAcquired');
+                        if (areaAcquiredElement) {
+                            areaAcquiredElement.textContent = data.area_acquired.toLocaleString('en-IN', { maximumFractionDigits: 2 }) + ' Ha';
                         }
                         
                         const totalCompensationElement = document.getElementById('totalCompensation');
@@ -769,7 +820,10 @@
                                 <span class="material-symbols-outlined text-sm text-emerald-600">park</span>
                                 Trees
                             </span>
-                            <span id="treesTotal">${landData.trees_total.toLocaleString()}</span>
+                            <div class="text-right">
+                                <div>${landData.trees_total.toLocaleString()}</div>
+                                <div class="text-xs text-slate-500 font-normal">${formatCurrency(landData.trees_valuation)}</div>
+                            </div>
                         </div>
                     </div>
                     
@@ -780,7 +834,10 @@
                                 <span class="material-symbols-outlined text-sm text-purple-600">apartment</span>
                                 Structures
                             </span>
-                            <span id="structuresTotal">${landData.structures_total.toLocaleString()}</span>
+                            <div class="text-right">
+                                <div>${landData.structures_total.toLocaleString()}</div>
+                                <div class="text-xs text-slate-500 font-normal">${formatCurrency(landData.structures_valuation)}</div>
+                            </div>
                         </div>
                         <div class="pl-6 flex flex-col gap-1">
                             <div class="flex justify-between items-center text-xs py-1">
@@ -788,14 +845,20 @@
                                     <span class="w-2 h-2 rounded-full bg-purple-500"></span>
                                     <span class="text-slate-600 dark:text-slate-400">Permanent</span>
                                 </span>
-                                <span id="permanentCount" class="font-medium text-slate-700 dark:text-slate-300">${landData.structures_permanent.toLocaleString()}</span>
+                                <div class="text-right">
+                                    <div class="font-medium text-slate-700 dark:text-slate-300">${landData.structures_permanent.toLocaleString()}</div>
+                                    <div class="text-[10px] text-slate-500">${formatCurrency(landData.structures_permanent_valuation)}</div>
+                                </div>
                             </div>
                             <div class="flex justify-between items-center text-xs py-1">
                                 <span class="flex items-center gap-1">
                                     <span class="w-2 h-2 rounded-full bg-purple-400"></span>
                                     <span class="text-slate-600 dark:text-slate-400">Temporary</span>
                                 </span>
-                                <span id="temporaryCount" class="font-medium text-slate-700 dark:text-slate-300">${landData.structures_temporary.toLocaleString()}</span>
+                                <div class="text-right">
+                                    <div class="font-medium text-slate-700 dark:text-slate-300">${landData.structures_temporary.toLocaleString()}</div>
+                                    <div class="text-[10px] text-slate-500">${formatCurrency(landData.structures_temporary_valuation)}</div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -807,7 +870,10 @@
                                 <span class="material-symbols-outlined text-sm text-cyan-600">water_drop</span>
                                 Water
                             </span>
-                            <span id="waterTotal">${landData.water_total.toLocaleString()}</span>
+                            <div class="text-right">
+                                <div>${landData.water_total.toLocaleString()}</div>
+                                <div class="text-xs text-slate-500 font-normal">${formatCurrency(landData.water_valuation)}</div>
+                            </div>
                         </div>
                         <div class="pl-6 flex flex-col gap-1">
                             <div class="flex justify-between items-center text-xs py-1">
@@ -815,14 +881,20 @@
                                     <span class="w-2 h-2 rounded-full bg-cyan-500"></span>
                                     <span class="text-slate-600 dark:text-slate-400">Well</span>
                                 </span>
-                                <span id="wellCount" class="font-medium text-slate-700 dark:text-slate-300">${landData.water_well.toLocaleString()}</span>
+                                <div class="text-right">
+                                    <div class="font-medium text-slate-700 dark:text-slate-300">${landData.water_well.toLocaleString()}</div>
+                                    <div class="text-[10px] text-slate-500">${formatCurrency(landData.water_well_valuation)}</div>
+                                </div>
                             </div>
                             <div class="flex justify-between items-center text-xs py-1">
                                 <span class="flex items-center gap-1">
                                     <span class="w-2 h-2 rounded-full bg-blue-500"></span>
                                     <span class="text-slate-600 dark:text-slate-400">Borewell</span>
                                 </span>
-                                <span id="borewellCount" class="font-medium text-slate-700 dark:text-slate-300">${landData.water_borewell.toLocaleString()}</span>
+                                <div class="text-right">
+                                    <div class="font-medium text-slate-700 dark:text-slate-300">${landData.water_borewell.toLocaleString()}</div>
+                                    <div class="text-[10px] text-slate-500">${formatCurrency(landData.water_borewell_valuation)}</div>
+                                </div>
                             </div>
                         </div>
                     </div>
