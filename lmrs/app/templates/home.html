@@ -73,9 +73,8 @@
                     </select>
                     <select id="villageSelect"
                         class="form-select text-xs font-medium border-none bg-slate-100 dark:bg-slate-800 rounded-lg focus:ring-primary h-10 px-3 pr-8" disabled>
-                        <option value="">Select Villages</option>
-                        <option value="villages_boundary">Villages Boundary</option>
-                        <option value="villages_gut">Villages with Gut</option>
+                        <option value="">Select Village</option>
+                        <!-- Villages will be loaded dynamically -->
                     </select>
                 </div>
             </div>
@@ -554,10 +553,11 @@
                 
                 if (this.value === 'taluka') {
                     loadTalukaBoundary();
+                    loadVillagesList();
                     villageSelect.disabled = false;
                 } else {
                     villageSelect.disabled = true;
-                    villageSelect.value = '';
+                    villageSelect.innerHTML = '<option value="">Select Village</option>';
                 }
             });
 
@@ -567,10 +567,8 @@
                 if (villagesBoundaryLayer) map.removeLayer(villagesBoundaryLayer);
                 if (villagesGutLayer) map.removeLayer(villagesGutLayer);
                 
-                if (this.value === 'villages_boundary') {
-                    loadVillagesBoundary();
-                } else if (this.value === 'villages_gut') {
-                    loadVillagesWithGut();
+                if (this.value) {
+                    loadSingleVillage(this.value);
                 }
             });
 
@@ -700,6 +698,53 @@
                         map.fitBounds(villagesGutLayer.getBounds());
                     })
                     .catch(error => console.error('Error loading villages with gut:', error));
+            }
+
+            // Load Villages List
+            function loadVillagesList() {
+                fetch('/api/villages-list/')
+                    .then(response => response.json())
+                    .then(data => {
+                        const villageSelect = document.getElementById('villageSelect');
+                        villageSelect.innerHTML = '<option value="">Select Village</option>';
+                        
+                        data.villages.forEach(village => {
+                            const option = document.createElement('option');
+                            option.value = village;
+                            option.textContent = village;
+                            villageSelect.appendChild(option);
+                        });
+                    })
+                    .catch(error => console.error('Error loading villages list:', error));
+            }
+
+            // Load Single Village Boundary
+            function loadSingleVillage(villageName) {
+                fetch(`/api/village/${encodeURIComponent(villageName)}/`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (villagesBoundaryLayer) map.removeLayer(villagesBoundaryLayer);
+                        
+                        villagesBoundaryLayer = L.geoJSON(data, {
+                            style: {
+                                color: '#10b981',
+                                weight: 2.5,
+                                fillOpacity: 0.3,
+                                fillColor: '#10b981'
+                            },
+                            onEachFeature: function(feature, layer) {
+                                if (feature.properties && feature.properties.name) {
+                                    layer.bindPopup('<div style="font-size: 12px;"><b>Village:</b> ' + feature.properties.name + '</div>');
+                                }
+                            }
+                        }).addTo(map);
+                        
+                        // Fit map to village bounds
+                        if (villagesBoundaryLayer.getBounds().isValid()) {
+                            map.fitBounds(villagesBoundaryLayer.getBounds());
+                        }
+                    })
+                    .catch(error => console.error('Error loading village:', error));
             }
         });
     </script>

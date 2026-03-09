@@ -7,4 +7,6 @@ urlpatterns = [
     path('api/taluka-boundary/', views.get_taluka_boundary, name='taluka_boundary'),
     path('api/villages-boundary/', views.get_villages_boundary, name='villages_boundary'),
     path('api/villages-gut/', views.get_villages_with_gut, name='villages_gut'),
+    path('api/villages-list/', views.get_villages_list, name='villages_list'),
+    path('api/village/<str:village_name>/', views.get_single_village_boundary, name='single_village'),
 ]
