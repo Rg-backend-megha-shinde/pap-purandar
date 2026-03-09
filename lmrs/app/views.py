@@ -129,3 +129,154 @@ def get_single_village_boundary(request, village_name):
         """, [village_name])
         result = cursor.fetchone()
         return JsonResponse(result[0] if result[0] else {'type': 'FeatureCollection', 'features': []}, safe=False)
+
+def get_project_stats(request):
+    """Fetch project statistics"""
+    with connection.cursor() as cursor:
+        # Count villages within AOI boundary
+        cursor.execute("""
+            SELECT COUNT(DISTINCT v."Village_Na")
+            FROM public.purandhar_airport_village_bo v, public.purandar_aoi a
+            WHERE ST_Intersects(v.geometry, a.geometry);
+        """)
+        affected_villages = cursor.fetchone()[0] or 0
+        
+        # Count affected farmers
+        cursor.execute("""
+            SELECT COUNT(*)
+            FROM public.purandar_farmers
+            WHERE affected_farmer = true;
+        """)
+        affected_farmers = cursor.fetchone()[0] or 0
+        
+        # Calculate total compensation from all assets
+        total_compensation = 0
+        
+        # Sum valuations from each asset table
+        asset_tables = ['bag', 'tree', 'shed', 'structures', 'well', 'borewell']
+        
+        for table in asset_tables:
+            try:
+                cursor.execute(f"""
+                    SELECT COALESCE(SUM(valuation), 0)
+                    FROM public.{table};
+                """)
+                result = cursor.fetchone()
+                if result and result[0]:
+                    total_compensation += float(result[0])
+            except Exception as e:
+                print(f"Error fetching valuation from {table}: {e}")
+                continue
+        
+        # Get asset counts
+        assets = {}
+        asset_list = ['bag', 'tree', 'shed', 'structures', 'well', 'borewell', 'purandar_farmers']
+        
+        for asset in asset_list:
+            try:
+                cursor.execute(f"""
+                    SELECT COUNT(*)
+                    FROM public.{asset};
+                """)
+                result = cursor.fetchone()
+                assets[asset] = result[0] if result else 0
+            except Exception as e:
+                print(f"Error fetching count from {asset}: {e}")
+                assets[asset] = 0
+        
+        # Get asset areas in hectares
+        asset_areas = {}
+        # Exclude purandar_farmers from land classification as it's point data
+        area_asset_list = ['bag', 'shed', 'structures', 'well']
+        
+        for asset in area_asset_list:
+            try:
+                # Check which geometry column exists
+                cursor.execute(f"""
+                    SELECT column_name 
+                    FROM information_schema.columns 
+                    WHERE table_schema = 'public' 
+                    AND table_name = '{asset}'
+                    AND column_name IN ('geometry', 'geom');
+                """)
+                geom_col = cursor.fetchone()
+                
+                if geom_col:
+                    geom_column = geom_col[0]
+                    # Calculate total area in hectares (convert from square meters)
+                    cursor.execute(f"""
+                        SELECT COALESCE(SUM(ST_Area(ST_Transform({geom_column}, 32643))) / 10000, 0)
+                        FROM public.{asset};
+                    """)
+                    result = cursor.fetchone()
+                    asset_areas[asset] = round(float(result[0]), 2) if result and result[0] else 0
+                else:
+                    asset_areas[asset] = 0
+            except Exception as e:
+                print(f"Error fetching area from {asset}: {e}")
+                asset_areas[asset] = 0
+        
+        return JsonResponse({
+            'affected_villages': affected_villages,
+            'affected_farmers': affected_farmers,
+            'total_compensation': total_compensation,
+            'assets': assets,
+            'asset_areas': asset_areas
+        })
+
+def get_asset_layer(request, asset_name):
+    """Fetch asset layer GeoJSON"""
+    # Validate asset name to prevent SQL injection
+    valid_assets = ['bag', 'tree', 'shed', 'structures', 'well', 'borewell', 'purandar_farmers']
+    if asset_name not in valid_assets:
+        return JsonResponse({'error': 'Invalid asset name'}, status=400)
+    
+    with connection.cursor() as cursor:
+        try:
+            # First, get column names excluding geometry columns
+            cursor.execute(f"""
+                SELECT column_name 
+                FROM information_schema.columns 
+                WHERE table_schema = 'public' 
+                AND table_name = '{asset_name}'
+                AND column_name NOT IN ('geometry', 'geom');
+            """)
+            columns = [row[0] for row in cursor.fetchall()]
+            
+            if not columns:
+                return JsonResponse({'type': 'FeatureCollection', 'features': []}, safe=False)
+            
+            # Build the properties JSON object
+            properties_fields = ', '.join([f"'{col}', \"{col}\"" for col in columns])
+            
+            # Check which geometry column exists
+            cursor.execute(f"""
+                SELECT column_name 
+                FROM information_schema.columns 
+                WHERE table_schema = 'public' 
+                AND table_name = '{asset_name}'
+                AND column_name IN ('geometry', 'geom');
+            """)
+            geom_col = cursor.fetchone()
+            geom_column = geom_col[0] if geom_col else 'geom'
+            
+            cursor.execute(f"""
+                SELECT json_build_object(
+                    'type', 'FeatureCollection',
+                    'features', COALESCE(json_agg(
+                        json_build_object(
+                            'type', 'Feature',
+                            'geometry', ST_AsGeoJSON(ST_Transform({geom_column}, 4326))::json,
+                            'properties', json_build_object({properties_fields})
+                        )
+                    ), '[]'::json)
+                )
+                FROM public.{asset_name};
+            """)
+            result = cursor.fetchone()
+            return JsonResponse(result[0] if result and result[0] else {'type': 'FeatureCollection', 'features': []}, safe=False)
+        except Exception as e:
+            print(f"Error loading {asset_name}: {str(e)}")
+            import traceback
+            traceback.print_exc()
+            return JsonResponse({'error': str(e), 'type': 'FeatureCollection', 'features': []}, status=500)

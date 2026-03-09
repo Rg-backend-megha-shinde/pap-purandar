@@ -117,7 +117,7 @@
                                     Compensation</span>
                                 <span class="material-symbols-outlined text-primary text-lg">payments</span>
                             </div>
-                            <p class="text-slate-900 dark:text-white text-2xl font-bold leading-tight">₹1,250 Cr</p>
+                            <p id="totalCompensation" class="text-slate-900 dark:text-white text-2xl font-bold leading-tight">₹--</p>
                             <div class="mt-2 h-1 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
                                 <div class="bg-primary h-full w-[65%]"></div>
                             </div>
@@ -127,12 +127,12 @@
                                 class="flex flex-col gap-1 rounded-xl p-4 bg-white dark:bg-slate-900 shadow-sm border border-slate-200 dark:border-slate-800">
                                 <span class="text-slate-500 text-[10px] font-semibold uppercase">Affected
                                     Villages</span>
-                                <p class="text-slate-900 dark:text-white text-xl font-bold">07</p>
+                                <p id="affectedVillagesCount" class="text-slate-900 dark:text-white text-xl font-bold">--</p>
                             </div>
                             <div
                                 class="flex flex-col gap-1 rounded-xl p-4 bg-white dark:bg-slate-900 shadow-sm border border-slate-200 dark:border-slate-800">
                                 <span class="text-slate-500 text-[10px] font-semibold uppercase">Affected Farmers</span>
-                                <p class="text-slate-900 dark:text-white text-xl font-bold">4,520</p>
+                                <p id="affectedFarmersCount" class="text-slate-900 dark:text-white text-xl font-bold">--</p>
                             </div>
                             <div
                                 class="flex flex-col gap-1 rounded-xl p-4 bg-white dark:bg-slate-900 shadow-sm border border-slate-200 dark:border-slate-800">
@@ -142,7 +142,7 @@
                             <div
                                 class="flex flex-col gap-1 rounded-xl p-4 bg-white dark:bg-slate-900 shadow-sm border border-slate-200 dark:border-slate-800">
                                 <span class="text-slate-500 text-[10px] font-semibold uppercase">Total Assets</span>
-                                <p class="text-slate-900 dark:text-white text-xl font-bold">13,557</p>
+                                <p id="totalAssetsCount" class="text-slate-900 dark:text-white text-xl font-bold">--</p>
                             </div>
                         </div>
                     </div>
@@ -153,33 +153,13 @@
                             <summary class="flex cursor-pointer items-center justify-between p-4 list-none">
                                 <div class="flex items-center gap-3">
                                     <span class="material-symbols-outlined text-primary">landscape</span>
-                                    <p class="text-slate-900 dark:text-white text-sm font-semibold">Land Classification
-                                    </p>
+                                    <p class="text-slate-900 dark:text-white text-sm font-semibold">Land Classification</p>
                                 </div>
                                 <span
                                     class="material-symbols-outlined group-open:rotate-180 transition-transform text-slate-400">expand_more</span>
                             </summary>
-                            <div class="px-4 pb-4 flex flex-col gap-3">
-                                <div class="flex justify-between items-center text-sm">
-                                    <span class="text-slate-500">Government Land</span>
-                                    <span class="font-semibold text-slate-700 dark:text-slate-300">450 Ha</span>
-                                </div>
-                                <div class="flex justify-between items-center text-sm">
-                                    <span class="text-slate-500">Private Land</span>
-                                    <span class="font-semibold text-slate-700 dark:text-slate-300">1,200 Ha</span>
-                                </div>
-                                <div class="pt-2 border-t border-slate-100 dark:border-slate-800 flex flex-col gap-2">
-                                    <div class="flex justify-between items-center text-xs">
-                                        <span class="flex items-center gap-1"><span
-                                                class="w-2 h-2 rounded-full bg-emerald-500"></span> Bagayati</span>
-                                        <span>300 Ha</span>
-                                    </div>
-                                    <div class="flex justify-between items-center text-xs">
-                                        <span class="flex items-center gap-1"><span
-                                                class="w-2 h-2 rounded-full bg-amber-500"></span> Jirayati</span>
-                                        <span>900 Ha</span>
-                                    </div>
-                                </div>
+                            <div id="landClassificationList" class="px-4 pb-4 flex flex-col gap-2">
+                                <!-- Land classification will be loaded dynamically -->
                             </div>
                         </details>
                         <details
@@ -187,43 +167,13 @@
                             <summary class="flex cursor-pointer items-center justify-between p-4 list-none">
                                 <div class="flex items-center gap-3">
                                     <span class="material-symbols-outlined text-primary">account_tree</span>
-                                    <p class="text-slate-900 dark:text-white text-sm font-semibold">Asset Details</p>
+                                    <p class="text-slate-900 dark:text-white text-sm font-semibold">Asset Layers</p>
                                 </div>
                                 <span
                                     class="material-symbols-outlined group-open:rotate-180 transition-transform text-slate-400">expand_more</span>
                             </summary>
-                            <div class="px-4 pb-4 flex flex-col gap-2">
-                                <div class="flex justify-between items-center text-xs py-1">
-                                    <span class="text-slate-600 dark:text-slate-400 flex items-center gap-2"><span
-                                            class="material-symbols-outlined text-sm">park</span> Tree</span>
-                                    <span class="font-medium">12,400</span>
-                                </div>
-                                <div class="flex justify-between items-center text-xs py-1">
-                                    <span class="text-slate-600 dark:text-slate-400 flex items-center gap-2"><span
-                                            class="material-symbols-outlined text-sm">shopping_bag</span> Bag</span>
-                                    <span class="font-medium">520</span>
-                                </div>
-                                <div class="flex justify-between items-center text-xs py-1">
-                                    <span class="text-slate-600 dark:text-slate-400 flex items-center gap-2"><span
-                                            class="material-symbols-outlined text-sm">water_drop</span> Borewell</span>
-                                    <span class="font-medium">142</span>
-                                </div>
-                                <div class="flex justify-between items-center text-xs py-1">
-                                    <span class="text-slate-600 dark:text-slate-400 flex items-center gap-2"><span
-                                            class="material-symbols-outlined text-sm">waves</span> Well</span>
-                                    <span class="font-medium">173</span>
-                                </div>
-                                <div class="flex justify-between items-center text-xs py-1">
-                                    <span class="text-slate-600 dark:text-slate-400 flex items-center gap-2"><span
-                                            class="material-symbols-outlined text-sm">apartment</span> Structure</span>
-                                    <span class="font-medium">842</span>
-                                </div>
-                                <div class="flex justify-between items-center text-xs py-1">
-                                    <span class="text-slate-600 dark:text-slate-400 flex items-center gap-2"><span
-                                            class="material-symbols-outlined text-sm">category</span> Other
-                                        Assets</span>
-                                    <span class="font-medium">480</span>
-                                </div>
+                            <div id="assetLayersList" class="px-4 pb-4 flex flex-col gap-2">
+                                <!-- Asset layers will be loaded dynamically -->
                             </div>
                         </details>
                     </div>
@@ -444,8 +394,12 @@
     <script>
         let map, currentLayer, osmLayer, satelliteLayer, terrainLayer;
         let districtLayer, talukaLayer, villagesBoundaryLayer, villagesGutLayer;
+        let assetLayers = {}; // Store asset layers
         
         document.addEventListener('DOMContentLoaded', function() {
+            // Fetch project statistics
+            fetchProjectStats();
+            
             // Initialize map centered on Purandar, Pune
             map = L.map('map', {
                 center: [18.2811, 74.0194],
@@ -745,6 +699,254 @@
                         }
                     })
                     .catch(error => console.error('Error loading village:', error));
+            }
+
+            // Fetch Project Statistics
+            function fetchProjectStats() {
+                fetch('/api/project-stats/')
+                    .then(response => response.json())
+                    .then(data => {
+                        const affectedVillagesElement = document.getElementById('affectedVillagesCount');
+                        if (affectedVillagesElement) {
+                            affectedVillagesElement.textContent = String(data.affected_villages).padStart(2, '0');
+                        }
+                        
+                        const affectedFarmersElement = document.getElementById('affectedFarmersCount');
+                        if (affectedFarmersElement) {
+                            affectedFarmersElement.textContent = data.affected_farmers.toLocaleString();
+                        }
+                        
+                        const totalCompensationElement = document.getElementById('totalCompensation');
+                        if (totalCompensationElement) {
+                            totalCompensationElement.textContent = formatCurrency(data.total_compensation);
+                        }
+                        
+                        // Calculate and display total assets
+                        if (data.assets) {
+                            const totalAssets = Object.values(data.assets).reduce((sum, count) => sum + count, 0);
+                            const totalAssetsElement = document.getElementById('totalAssetsCount');
+                            if (totalAssetsElement) {
+                                totalAssetsElement.textContent = totalAssets.toLocaleString();
+                            }
+                        }
+                        
+                        // Populate asset layers
+                        if (data.assets) {
+                            populateAssetLayers(data.assets);
+                        }
+                        
+                        // Populate land classification
+                        if (data.asset_areas) {
+                            populateLandClassification(data.asset_areas);
+                        }
+                    })
+                    .catch(error => console.error('Error loading project stats:', error));
+            }
+
+            // Format currency in Lakh or Cr
+            function formatCurrency(amount) {
+                if (amount >= 10000000) { // 1 Crore = 10,000,000
+                    const crores = amount / 10000000;
+                    return '₹' + crores.toLocaleString('en-IN', { maximumFractionDigits: 2 }) + ' Cr';
+                } else if (amount >= 100000) { // 1 Lakh = 100,000
+                    const lakhs = amount / 100000;
+                    return '₹' + lakhs.toLocaleString('en-IN', { maximumFractionDigits: 2 }) + ' Lakh';
+                } else {
+                    return '₹' + amount.toLocaleString('en-IN', { maximumFractionDigits: 2 });
+                }
+            }
+
+            // Populate land classification list
+            function populateLandClassification(assetAreas) {
+                const landClassificationList = document.getElementById('landClassificationList');
+                if (!landClassificationList) return;
+                
+                const assetNames = {
+                    'bag': 'Bag',
+                    'shed': 'Shed',
+                    'structures': 'Structures',
+                    'well': 'Well'
+                };
+                
+                const assetColors = {
+                    'bag': '#f59e0b',
+                    'shed': '#ec4899',
+                    'structures': '#8b5cf6',
+                    'well': '#06b6d4'
+                };
+                
+                landClassificationList.innerHTML = '';
+                
+                // Only show assets that are in the assetNames list
+                Object.keys(assetAreas).forEach(assetKey => {
+                    if (!assetNames[assetKey]) return; // Skip if not in our list
+                    
+                    const area = assetAreas[assetKey];
+                    const name = assetNames[assetKey];
+                    const color = assetColors[assetKey] || '#6b7280';
+                    
+                    const landItem = document.createElement('div');
+                    landItem.className = 'flex justify-between items-center text-xs py-1';
+                    landItem.innerHTML = `
+                        <span class="flex items-center gap-1">
+                            <span class="w-2 h-2 rounded-full" style="background-color: ${color};"></span>
+                            <span class="text-slate-600 dark:text-slate-400">${name}</span>
+                        </span>
+                        <span class="font-medium text-slate-700 dark:text-slate-300">${area.toLocaleString('en-IN', { maximumFractionDigits: 2 })} Ha</span>
+                    `;
+                    landClassificationList.appendChild(landItem);
+                });
+            }
+
+            // Populate asset layers list
+            function populateAssetLayers(assets) {
+                const assetLayersList = document.getElementById('assetLayersList');
+                if (!assetLayersList) return;
+                
+                const assetIcons = {
+                    'tree': 'park',
+                    'bag': 'shopping_bag',
+                    'borewell': 'water_drop',
+                    'well': 'waves',
+                    'structures': 'apartment',
+                    'shed': 'warehouse',
+                    'purandar_farmers': 'person'
+                };
+                
+                const assetNames = {
+                    'tree': 'Tree',
+                    'bag': 'Bag',
+                    'borewell': 'Borewell',
+                    'well': 'Well',
+                    'structures': 'Structures',
+                    'shed': 'Shed',
+                    'purandar_farmers': 'Farmers'
+                };
+                
+                assetLayersList.innerHTML = '';
+                
+                Object.keys(assets).forEach(assetKey => {
+                    const count = assets[assetKey];
+                    const icon = assetIcons[assetKey] || 'category';
+                    const name = assetNames[assetKey] || assetKey;
+                    
+                    const assetItem = document.createElement('div');
+                    assetItem.className = 'flex justify-between items-center text-xs py-2 border-b border-slate-100 dark:border-slate-800 last:border-0';
+                    assetItem.innerHTML = `
+                        <div class="text-slate-600 dark:text-slate-400 flex items-center gap-2">
+                            <span class="material-symbols-outlined text-sm">${icon}</span>
+                            <span class="font-medium">${name}</span>
+                            <span class="text-slate-400 text-[10px]">(${count.toLocaleString()})</span>
+                        </div>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" class="sr-only peer asset-layer-toggle" data-asset="${assetKey}">
+                            <div class="w-11 h-6 bg-slate-200 dark:bg-slate-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                        </label>
+                    `;
+                    assetLayersList.appendChild(assetItem);
+                });
+                
+                // Add event listeners to toggles
+                document.querySelectorAll('.asset-layer-toggle').forEach(toggle => {
+                    toggle.addEventListener('change', function() {
+                        const assetName = this.getAttribute('data-asset');
+                        
+                        if (this.checked) {
+                            loadAssetLayerFromGeoServer(assetName);
+                        } else {
+                            removeAssetLayer(assetName);
+                        }
+                    });
+                });
+            }
+
+            // Load asset layer from database via Django API
+            function loadAssetLayerFromGeoServer(assetName) {
+                console.log(`Loading layer: ${assetName}`);
+                
+                fetch(`/api/asset-layer/${assetName}/`)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (!data.features || data.features.length === 0) {
+                            console.warn(`No features found for ${assetName}`);
+                            alert(`No data found for ${assetName} layer.`);
+                            const toggle = document.querySelector(`.asset-layer-toggle[data-asset="${assetName}"]`);
+                            if (toggle) toggle.checked = false;
+                            return;
+                        }
+                        
+                        console.log(`Successfully loaded ${assetName} with ${data.features.length} features`);
+                        
+                        if (assetLayers[assetName]) {
+                            map.removeLayer(assetLayers[assetName]);
+                        }
+                        
+                        const colors = {
+                            'tree': '#10b981',
+                            'bag': '#f59e0b',
+                            'borewell': '#3b82f6',
+                            'well': '#06b6d4',
+                            'structures': '#8b5cf6',
+                            'shed': '#ec4899',
+                            'purandar_farmers': '#ef4444'
+                        };
+                        
+                        assetLayers[assetName] = L.geoJSON(data, {
+                            pointToLayer: function(feature, latlng) {
+                                return L.circleMarker(latlng, {
+                                    radius: 6,
+                                    fillColor: colors[assetName] || '#6b7280',
+                                    color: '#fff',
+                                    weight: 1,
+                                    opacity: 1,
+                                    fillOpacity: 0.8
+                                });
+                            },
+                            style: function(feature) {
+                                return {
+                                    color: colors[assetName] || '#6b7280',
+                                    weight: 2,
+                                    fillOpacity: 0.5
+                                };
+                            },
+                            onEachFeature: function(feature, layer) {
+                                if (feature.properties) {
+                                    let popupContent = '<div style="font-size: 12px; max-height: 200px; overflow-y: auto;">';
+                                    popupContent += `<b style="color: ${colors[assetName]};">${assetName.toUpperCase()}</b><br><br>`;
+                                    Object.keys(feature.properties).forEach(key => {
+                                        if (key !== 'geometry' && feature.properties[key] !== null && feature.properties[key] !== '') {
+                                            popupContent += `<b>${key}:</b> ${feature.properties[key]}<br>`;
+                                        }
+                                    });
+                                    popupContent += '</div>';
+                                    layer.bindPopup(popupContent);
+                                }
+                            }
+                        }).addTo(map);
+                        
+                        if (assetLayers[assetName].getBounds().isValid()) {
+                            map.fitBounds(assetLayers[assetName].getBounds(), { padding: [50, 50] });
+                        }
+                    })
+                    .catch(error => {
+                        console.error(`Error loading ${assetName}:`, error);
+                        alert(`Failed to load ${assetName} layer. Error: ${error.message}`);
+                        const toggle = document.querySelector(`.asset-layer-toggle[data-asset="${assetName}"]`);
+                        if (toggle) toggle.checked = false;
+                    });
+            }
+
+            // Remove asset layer from map
+            function removeAssetLayer(assetName) {
+                if (assetLayers[assetName]) {
+                    map.removeLayer(assetLayers[assetName]);
+                    delete assetLayers[assetName];
+                }
             }
         });
     </script>
