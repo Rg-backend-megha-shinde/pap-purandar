@@ -152,7 +152,7 @@
                         </div>
                     </div>
                     <div class="flex flex-col gap-3">
-                        <details
+                        <details id="assetClassificationDetails"
                             class="group rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 overflow-hidden"
                             open="">
                             <summary class="flex cursor-pointer items-center justify-between p-4 list-none">
@@ -168,7 +168,7 @@
                                 <!-- Land classification will be loaded dynamically -->
                             </div>
                         </details>
-                        <details
+                        <details id="assetLayersDetails"
                             class="group rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 overflow-hidden">
                             <summary class="flex cursor-pointer items-center justify-between p-4 list-none">
                                 <div class="flex items-center gap-3">
@@ -187,7 +187,7 @@
             </aside>
             <section class="flex-1 flex flex-col min-w-[500px]">
                 <div
-                    class="relative h-full rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-inner bg-slate-200">
+                    class="relative h-full rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-inner bg-white dark:bg-slate-900">
                     <div id="map" class="absolute inset-0 z-0"></div>
                     <div class="absolute top-4 right-4 flex flex-row-reverse items-start gap-2 z-[1000]">
                         <button id="layersBtn"
@@ -310,6 +310,14 @@
         </main>
     </div>
     <style>
+        /* ensure the page and map container occupy the full viewport so
+           no body background peeks through at the bottom */
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+
         .custom-scrollbar::-webkit-scrollbar {
             width: 4px;
         }
@@ -345,12 +353,31 @@
             // Fetch project statistics
             fetchProjectStats();
 
+            // Accordion behavior for Asset Classification and Asset Layers
+            const assetClassificationDetails = document.getElementById('assetClassificationDetails');
+            const assetLayersDetails = document.getElementById('assetLayersDetails');
+
+            assetClassificationDetails.addEventListener('toggle', function() {
+                if (this.open) {
+                    assetLayersDetails.removeAttribute('open');
+                }
+            });
+
+            assetLayersDetails.addEventListener('toggle', function() {
+                if (this.open) {
+                    assetClassificationDetails.removeAttribute('open');
+                }
+            });
+
             // Initialize map centered on Purandar, Pune
             map = L.map('map', {
                 center: [18.2811, 74.0194],
                 zoom: 13,
                 zoomControl: false
             });
+            // ensure Leaflet recalculates size once the container is fully rendered
+            // fixes blank/grey area at bottom before first interaction
+            setTimeout(() => map.invalidateSize(), 100);
 
             // Define base layers
             osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -372,6 +399,11 @@
             // Load default boundary layers
             loadTalukaBoundary();
             loadAOIBoundary();
+
+            // fix Leaflet when container dimensions change (e.g. window resize)
+            window.addEventListener('resize', () => {
+                map.invalidateSize();
+            });
 
             // Zoom controls
             document.getElementById('zoomIn').addEventListener('click', () => map.zoomIn());
@@ -472,9 +504,10 @@
 
                 if (this.value) {
                     loadSingleVillage(this.value);
-                    updateVillageCompensation(this.value);
+                    // Fetch village-wise statistics
+                    fetchProjectStats(this.value);
                 } else {
-                    // Reset to total compensation when no village selected
+                    // Reset to total statistics when no village selected
                     fetchProjectStats();
                 }
             });
@@ -537,6 +570,8 @@
 
                         // Fit map to taluka bounds
                         map.fitBounds(talukaLayer.getBounds());
+                        // recalc after viewport has changed
+                        setTimeout(() => map.invalidateSize(), 100);
                     })
                     .catch(error => console.error('Error loading taluka boundary:', error));
             }
@@ -731,9 +766,13 @@
                     .catch(error => console.error('Error loading village compensation:', error));
             }
 
-            // Fetch Project Statistics
-            function fetchProjectStats() {
-                fetch('/api/project-stats/')
+            // Fetch Project Statistics - with optional village filter
+            function fetchProjectStats(villageName = null) {
+                const url = villageName 
+                    ? `/api/project-stats/?village=${encodeURIComponent(villageName)}`
+                    : '/api/project-stats/';
+                
+                fetch(url)
                     .then(response => response.json())
                     .then(data => {
                         const affectedVillagesElement = document.getElementById('affectedVillagesCount');

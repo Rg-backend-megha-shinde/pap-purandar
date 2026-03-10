@@ -245,7 +245,9 @@ def get_all_villages_compensation(request):
         return JsonResponse({'villages': villages_data})
 
 def get_project_stats(request):
-    """Fetch project statistics"""
+    """Fetch project statistics - supports optional village filter"""
+    village_name = request.GET.get('village', None)
+    
     with connection.cursor() as cursor:
         # Count villages within AOI boundary
         cursor.execute("""
@@ -255,29 +257,204 @@ def get_project_stats(request):
         """)
         affected_villages = cursor.fetchone()[0] or 0
         
-        # Count affected farmers
-        cursor.execute("""
-            SELECT COUNT(*)
-            FROM public.purandar_farmers
-            WHERE affected_farmer = true;
-        """)
-        affected_farmers = cursor.fetchone()[0] or 0
-        
-        # Calculate area acquired from bund table (in hectares)
-        # The bund table contains land parcels within the project area
-        # Area is already in square meters, convert to hectares
-        try:
+        # Count affected farmers - with optional village filter
+        if village_name:
+            # Check which column name exists for village in purandar_farmers table
             cursor.execute("""
-                SELECT COALESCE(SUM(area), 0) / 10000
-                FROM public.bund;
+                SELECT column_name 
+                FROM information_schema.columns 
+                WHERE table_schema = 'public' 
+                AND table_name = 'purandar_farmers'
+                AND (column_name ILIKE '%village%' OR column_name = 'VILLAGE')
+                LIMIT 1;
             """)
-            area_acquired = cursor.fetchone()[0] or 0
-            area_acquired = round(float(area_acquired), 2)
+            village_col_result = cursor.fetchone()
+            
+            if village_col_result:
+                village_col = village_col_result[0]
+                # Count farmers from selected village where affected_farmer = true
+                cursor.execute(f"""
+                    SELECT COUNT(*)
+                    FROM public.purandar_farmers
+                    WHERE affected_farmer = true 
+                    AND UPPER(TRIM("{village_col}")) = UPPER(TRIM(%s));
+                """, [village_name])
+                affected_farmers = cursor.fetchone()[0] or 0
+                print(f"Village filter: {village_name}, Column: {village_col}, Count: {affected_farmers}")
+            else:
+                # No village column found, return total
+                cursor.execute("""
+                    SELECT COUNT(*)
+                    FROM public.purandar_farmers
+                    WHERE affected_farmer = true;
+                """)
+                affected_farmers = cursor.fetchone()[0] or 0
+        else:
+            # Total affected farmers across all villages
+            cursor.execute("""
+                SELECT COUNT(*)
+                FROM public.purandar_farmers
+                WHERE affected_farmer = true;
+            """)
+            affected_farmers = cursor.fetchone()[0] or 0
+        
+        # Calculate area acquired from gut_bnd table (in hectares) - with optional village filter
+        try:
+            if village_name:
+                # Check if gut_bnd table exists and get column names
+                cursor.execute("""
+                    SELECT column_name 
+                    FROM information_schema.columns 
+                    WHERE table_schema = 'public' 
+                    AND table_name = 'gut_bnd'
+                    AND (column_name ILIKE '%village%' OR column_name = 'VILLAGE')
+                    LIMIT 1;
+                """)
+                village_col_result = cursor.fetchone()
+                
+                if village_col_result:
+                    village_col = village_col_result[0]
+                    # Check if area and affected_gut columns exist (check various naming conventions)
+                    cursor.execute("""
+                        SELECT column_name 
+                        FROM information_schema.columns 
+                        WHERE table_schema = 'public' 
+                        AND table_name = 'gut_bnd'
+                        AND (column_name ILIKE '%area%' OR column_name ILIKE '%affected%');
+                    """)
+                    columns = {row[0].lower(): row[0] for row in cursor.fetchall()}
+                    
+                    # Find area column (could be Area_In_Ha, area_in_ha, area, etc.)
+                    area_col = None
+                    for col_lower, col_actual in columns.items():
+                        if 'area' in col_lower and 'ha' in col_lower:
+                            area_col = col_actual
+                            break
+                    
+                    if not area_col:
+                        for col_lower, col_actual in columns.items():
+                            if 'area' in col_lower:
+                                area_col = col_actual
+                                break
+                    
+                    # Find affected_gut column
+                    affected_col = None
+                    for col_lower, col_actual in columns.items():
+                        if 'affected' in col_lower and 'gut' in col_lower:
+                            affected_col = col_actual
+                            break
+                    
+                    if area_col and affected_col:
+                        cursor.execute(f"""
+                            SELECT COALESCE(SUM("{area_col}"), 0)
+                            FROM public.gut_bnd
+                            WHERE UPPER("{village_col}") = UPPER(%s) AND "{affected_col}" = true;
+                        """, [village_name])
+                        area_acquired = cursor.fetchone()[0] or 0
+                        area_acquired = round(float(area_acquired), 2)
+                    elif area_col:
+                        # If no affected_gut column, just sum all area for the village
+                        cursor.execute(f"""
+                            SELECT COALESCE(SUM("{area_col}"), 0)
+                            FROM public.gut_bnd
+                            WHERE UPPER("{village_col}") = UPPER(%s);
+                        """, [village_name])
+                        area_acquired = cursor.fetchone()[0] or 0
+                        area_acquired = round(float(area_acquired), 2)
+                    else:
+                        # Fallback: try purandhar_airport_villages table
+                        cursor.execute("""
+                            SELECT COALESCE(SUM("Area_In_Ha"), 0)
+                            FROM public.purandhar_airport_villages
+                            WHERE UPPER("Village_Na") = UPPER(%s);
+                        """, [village_name])
+                        area_acquired = cursor.fetchone()[0] or 0
+                        area_acquired = round(float(area_acquired), 2)
+                else:
+                    # Fallback: try purandhar_airport_villages table
+                    cursor.execute("""
+                        SELECT COALESCE(SUM("Area_In_Ha"), 0)
+                        FROM public.purandhar_airport_villages
+                        WHERE UPPER("Village_Na") = UPPER(%s);
+                    """, [village_name])
+                    area_acquired = cursor.fetchone()[0] or 0
+                    area_acquired = round(float(area_acquired), 2)
+            else:
+                # Total area - try gut_bnd first, fallback to purandhar_airport_villages
+                cursor.execute("""
+                    SELECT EXISTS (
+                        SELECT FROM information_schema.tables 
+                        WHERE table_schema = 'public' 
+                        AND table_name = 'gut_bnd'
+                    );
+                """)
+                gut_bnd_exists = cursor.fetchone()[0]
+                
+                if gut_bnd_exists:
+                    cursor.execute("""
+                        SELECT column_name 
+                        FROM information_schema.columns 
+                        WHERE table_schema = 'public' 
+                        AND table_name = 'gut_bnd'
+                        AND (column_name ILIKE '%area%' OR column_name ILIKE '%affected%');
+                    """)
+                    columns = {row[0].lower(): row[0] for row in cursor.fetchall()}
+                    
+                    # Find area column
+                    area_col = None
+                    for col_lower, col_actual in columns.items():
+                        if 'area' in col_lower and 'ha' in col_lower:
+                            area_col = col_actual
+                            break
+                    
+                    if not area_col:
+                        for col_lower, col_actual in columns.items():
+                            if 'area' in col_lower:
+                                area_col = col_actual
+                                break
+                    
+                    # Find affected_gut column
+                    affected_col = None
+                    for col_lower, col_actual in columns.items():
+                        if 'affected' in col_lower and 'gut' in col_lower:
+                            affected_col = col_actual
+                            break
+                    
+                    if area_col and affected_col:
+                        cursor.execute(f"""
+                            SELECT COALESCE(SUM("{area_col}"), 0)
+                            FROM public.gut_bnd
+                            WHERE "{affected_col}" = true;
+                        """)
+                        area_acquired = cursor.fetchone()[0] or 0
+                        area_acquired = round(float(area_acquired), 2)
+                    elif area_col:
+                        cursor.execute(f"""
+                            SELECT COALESCE(SUM("{area_col}"), 0)
+                            FROM public.gut_bnd;
+                        """)
+                        area_acquired = cursor.fetchone()[0] or 0
+                        area_acquired = round(float(area_acquired), 2)
+                    else:
+                        # Fallback to purandhar_airport_villages
+                        cursor.execute("""
+                            SELECT COALESCE(SUM("Area_In_Ha"), 0)
+                            FROM public.purandhar_airport_villages;
+                        """)
+                        area_acquired = cursor.fetchone()[0] or 0
+                        area_acquired = round(float(area_acquired), 2)
+                else:
+                    cursor.execute("""
+                        SELECT COALESCE(SUM(area), 0) / 10000
+                        FROM public.bund;
+                    """)
+                    area_acquired = cursor.fetchone()[0] or 0
+                    area_acquired = round(float(area_acquired), 2)
         except Exception as e:
             print(f"Error calculating area acquired: {e}")
             area_acquired = 0
         
-        # Calculate total compensation from all assets
+        # Calculate total compensation from all assets - with optional village filter
         total_compensation = 0
         
         # Sum valuations from each asset table
@@ -285,37 +462,99 @@ def get_project_stats(request):
         
         for table in asset_tables:
             try:
-                cursor.execute(f"""
-                    SELECT COALESCE(SUM(valuation), 0)
-                    FROM public.{table};
-                """)
-                result = cursor.fetchone()
-                if result and result[0]:
-                    total_compensation += float(result[0])
+                if village_name:
+                    # Check if VILLAGE column exists
+                    cursor.execute(f"""
+                        SELECT column_name 
+                        FROM information_schema.columns 
+                        WHERE table_schema = 'public' 
+                        AND table_name = '{table}'
+                        AND (column_name ILIKE '%village%' OR column_name = 'VILLAGE')
+                        LIMIT 1;
+                    """)
+                    village_col_result = cursor.fetchone()
+                    
+                    if village_col_result:
+                        col_name = village_col_result[0]
+                        cursor.execute(f"""
+                            SELECT COALESCE(SUM(valuation), 0)
+                            FROM public.{table}
+                            WHERE UPPER(TRIM("{col_name}")) = UPPER(TRIM(%s));
+                        """, [village_name])
+                        result = cursor.fetchone()
+                        if result and result[0]:
+                            total_compensation += float(result[0])
+                            print(f"Compensation {table}: Village {village_name}, Amount: {result[0]}")
+                    else:
+                        cursor.execute(f"""
+                            SELECT COALESCE(SUM(valuation), 0)
+                            FROM public.{table};
+                        """)
+                        result = cursor.fetchone()
+                        if result and result[0]:
+                            total_compensation += float(result[0])
+                else:
+                    cursor.execute(f"""
+                        SELECT COALESCE(SUM(valuation), 0)
+                        FROM public.{table};
+                    """)
+                    result = cursor.fetchone()
+                    if result and result[0]:
+                        total_compensation += float(result[0])
             except Exception as e:
                 print(f"Error fetching valuation from {table}: {e}")
                 continue
         
-        # Get asset counts
+        # Get asset counts - with optional village filter
         assets = {}
         asset_list = ['bag', 'tree', 'shed', 'structures', 'well', 'borewell', 'purandar_farmers']
         
         for asset in asset_list:
             try:
-                cursor.execute(f"""
-                    SELECT COUNT(*)
-                    FROM public.{asset};
-                """)
-                result = cursor.fetchone()
-                assets[asset] = result[0] if result else 0
+                if village_name:
+                    # Check if VILLAGE column exists
+                    cursor.execute(f"""
+                        SELECT column_name 
+                        FROM information_schema.columns 
+                        WHERE table_schema = 'public' 
+                        AND table_name = '{asset}'
+                        AND (column_name ILIKE '%village%' OR column_name = 'VILLAGE')
+                        LIMIT 1;
+                    """)
+                    village_col_result = cursor.fetchone()
+                    
+                    if village_col_result:
+                        col_name = village_col_result[0]
+                        cursor.execute(f"""
+                            SELECT COUNT(*)
+                            FROM public.{asset}
+                            WHERE UPPER(TRIM("{col_name}")) = UPPER(TRIM(%s));
+                        """, [village_name])
+                        result = cursor.fetchone()
+                        assets[asset] = result[0] if result else 0
+                        print(f"Asset {asset}: Village {village_name}, Column: {col_name}, Count: {assets[asset]}")
+                    else:
+                        cursor.execute(f"""
+                            SELECT COUNT(*)
+                            FROM public.{asset};
+                        """)
+                        result = cursor.fetchone()
+                        assets[asset] = result[0] if result else 0
+                else:
+                    cursor.execute(f"""
+                        SELECT COUNT(*)
+                        FROM public.{asset};
+                    """)
+                    result = cursor.fetchone()
+                    assets[asset] = result[0] if result else 0
             except Exception as e:
                 print(f"Error fetching count from {asset}: {e}")
                 assets[asset] = 0
         
-        # Calculate categorized counts for Land Classification
+        # Calculate categorized counts for Land Classification - ALWAYS SHOW TOTAL (not village-specific)
         land_classification = {}
         
-        # Trees: sum of cnt_trees from bag table + count of tree table
+        # Trees: sum of cnt_trees from bag table + count of tree table (TOTAL PROJECT DATA)
         try:
             cursor.execute("""
                 SELECT COALESCE(SUM(cnt_trees), 0)
@@ -329,7 +568,6 @@ def get_project_stats(request):
             """)
             tree_count = cursor.fetchone()[0] or 0
             
-            # Get valuations
             cursor.execute("""
                 SELECT COALESCE(SUM(valuation), 0)
                 FROM public.bag;
@@ -349,7 +587,7 @@ def get_project_stats(request):
             land_classification['trees_total'] = 0
             land_classification['trees_valuation'] = 0
         
-        # Structures: permanent (structures table) + temporary (shed table)
+        # Structures: permanent (structures table) + temporary (shed table) - ALWAYS TOTAL
         try:
             cursor.execute("""
                 SELECT COUNT(*), COALESCE(SUM(valuation), 0)
@@ -382,7 +620,7 @@ def get_project_stats(request):
             land_classification['structures_total'] = 0
             land_classification['structures_valuation'] = 0
         
-        # Water: well + borewell
+        # Water: well + borewell - ALWAYS TOTAL
         try:
             cursor.execute("""
                 SELECT COUNT(*), COALESCE(SUM(valuation), 0)
@@ -415,6 +653,7 @@ def get_project_stats(request):
             land_classification['water_total'] = 0
             land_classification['water_valuation'] = 0
         
+        # Get asset areas in hectares
         # Get asset areas in hectares
         asset_areas = {}
         # Exclude purandar_farmers from land classification as it's point data
