@@ -472,9 +472,15 @@
             // Load District Boundary from hosted GeoServer
             function loadDistrictBoundary() {
                 const url = `${GEOSERVER_BASE}/Purandar/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=Purandar:district_boundry&outputFormat=application/json&srsName=EPSG:4326`;
-                fetch(url)
-                    .then(response => response.json())
-                    .then(data => {
+                console.log('Loading district from:', url);
+                fetch(url, { mode: 'cors' })
+                    .then(response => {
+                        console.log('District response status:', response.status);
+                        return response.text();
+                    })
+                    .then(text => {
+                        console.log('District response (first 500 chars):', text.substring(0, 500));
+                        const data = JSON.parse(text);
                         if (districtLayer) map.removeLayer(districtLayer);
                         
                         districtLayer = L.geoJSON(data, {
@@ -491,8 +497,8 @@
                             }
                         }).addTo(map);
                         
-                        // Fit map to district bounds
                         map.fitBounds(districtLayer.getBounds());
+                        console.log('District boundary loaded successfully');
                     })
                     .catch(error => console.error('Error loading district boundary:', error));
             }
@@ -500,9 +506,15 @@
             // Load Taluka Boundary from hosted GeoServer
             function loadTalukaBoundary() {
                 const url = `${GEOSERVER_BASE}/Purandar/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=Purandar:purandar_tehsil&outputFormat=application/json&srsName=EPSG:4326`;
+                console.log('Loading taluka from:', url);
                 fetch(url, { mode: 'cors' })
-                    .then(response => response.json())
-                    .then(data => {
+                    .then(response => {
+                        console.log('Taluka response status:', response.status);
+                        return response.text();
+                    })
+                    .then(text => {
+                        console.log('Taluka response (first 500 chars):', text.substring(0, 500));
+                        const data = JSON.parse(text);
                         if (talukaLayer) map.removeLayer(talukaLayer);
                         
                         talukaLayer = L.geoJSON(data, {
@@ -519,8 +531,7 @@
                             }
                         }).addTo(map);
                         
-                        // Fit map to taluka bounds
-                        map.fitBounds(talukaLayer.getBounds());
+                        console.log('Taluka boundary loaded successfully');
                     })
                     .catch(error => console.error('Error loading taluka boundary:', error));
             }
@@ -528,9 +539,15 @@
             // Load AOI Boundary from hosted GeoServer
             function loadAOIBoundary() {
                 const url = `${GEOSERVER_BASE}/Purandar/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=Purandar:purandar_aoi&outputFormat=application/json&srsName=EPSG:4326`;
+                console.log('Loading AOI from:', url);
                 fetch(url, { mode: 'cors' })
-                    .then(response => response.json())
-                    .then(data => {
+                    .then(response => {
+                        console.log('AOI response status:', response.status);
+                        return response.text();
+                    })
+                    .then(text => {
+                        console.log('AOI response (first 500 chars):', text.substring(0, 500));
+                        const data = JSON.parse(text);
                         if (aoiLayer) map.removeLayer(aoiLayer);
                         
                         aoiLayer = L.geoJSON(data, {
@@ -547,6 +564,8 @@
                                 }
                             }
                         }).addTo(map);
+                        
+                        console.log('AOI boundary loaded successfully');
                     })
                     .catch(error => console.error('Error loading AOI boundary:', error));
             }
