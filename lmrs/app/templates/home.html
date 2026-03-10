@@ -67,12 +67,14 @@
                         <option value="district">Pune</option>
                     </select>
                     <select id="talukaSelect"
-                        class="form-select text-xs font-medium border-none bg-slate-100 dark:bg-slate-800 rounded-lg focus:ring-primary h-10 px-3 pr-8" disabled>
+                        class="form-select text-xs font-medium border-none bg-slate-100 dark:bg-slate-800 rounded-lg focus:ring-primary h-10 px-3 pr-8"
+                        disabled>
                         <option value="">Select Taluka</option>
                         <option value="taluka">Purandar</option>
                     </select>
                     <select id="villageSelect"
-                        class="form-select text-xs font-medium border-none bg-slate-100 dark:bg-slate-800 rounded-lg focus:ring-primary h-10 px-3 pr-8" disabled>
+                        class="form-select text-xs font-medium border-none bg-slate-100 dark:bg-slate-800 rounded-lg focus:ring-primary h-10 px-3 pr-8"
+                        disabled>
                         <option value="">Select Village</option>
                         <!-- Villages will be loaded dynamically -->
                     </select>
@@ -117,7 +119,8 @@
                                     Compensation</span>
                                 <span class="material-symbols-outlined text-primary text-lg">payments</span>
                             </div>
-                            <p id="totalCompensation" class="text-slate-900 dark:text-white text-2xl font-bold leading-tight">₹--</p>
+                            <p id="totalCompensation"
+                                class="text-slate-900 dark:text-white text-2xl font-bold leading-tight">₹--</p>
                             <div class="mt-2 h-1 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
                                 <div class="bg-primary h-full w-[65%]"></div>
                             </div>
@@ -127,12 +130,14 @@
                                 class="flex flex-col gap-1 rounded-xl p-4 bg-white dark:bg-slate-900 shadow-sm border border-slate-200 dark:border-slate-800">
                                 <span class="text-slate-500 text-[10px] font-semibold uppercase">Affected
                                     Villages</span>
-                                <p id="affectedVillagesCount" class="text-slate-900 dark:text-white text-xl font-bold">--</p>
+                                <p id="affectedVillagesCount" class="text-slate-900 dark:text-white text-xl font-bold">
+                                    --</p>
                             </div>
                             <div
                                 class="flex flex-col gap-1 rounded-xl p-4 bg-white dark:bg-slate-900 shadow-sm border border-slate-200 dark:border-slate-800">
                                 <span class="text-slate-500 text-[10px] font-semibold uppercase">Affected Farmers</span>
-                                <p id="affectedFarmersCount" class="text-slate-900 dark:text-white text-xl font-bold">--</p>
+                                <p id="affectedFarmersCount" class="text-slate-900 dark:text-white text-xl font-bold">--
+                                </p>
                             </div>
                             <div
                                 class="flex flex-col gap-1 rounded-xl p-4 bg-white dark:bg-slate-900 shadow-sm border border-slate-200 dark:border-slate-800">
@@ -153,7 +158,8 @@
                             <summary class="flex cursor-pointer items-center justify-between p-4 list-none">
                                 <div class="flex items-center gap-3">
                                     <span class="material-symbols-outlined text-primary">landscape</span>
-                                    <p class="text-slate-900 dark:text-white text-sm font-semibold">Asset Classification</p>
+                                    <p class="text-slate-900 dark:text-white text-sm font-semibold">Asset Classification
+                                    </p>
                                 </div>
                                 <span
                                     class="material-symbols-outlined group-open:rotate-180 transition-transform text-slate-400">expand_more</span>
@@ -188,7 +194,8 @@
                             class="flex size-10 items-center justify-center rounded-lg bg-white dark:bg-slate-900 shadow-xl text-slate-700 dark:text-slate-300 hover:bg-slate-50">
                             <span class="material-symbols-outlined">layers</span>
                         </button>
-                        <div id="layerMenu" class="hidden bg-white/90 dark:bg-slate-900/90 backdrop-blur-md p-1 rounded-lg flex-col shadow-lg border border-white/20">
+                        <div id="layerMenu"
+                            class="hidden bg-white/90 dark:bg-slate-900/90 backdrop-blur-md p-1 rounded-lg flex-col shadow-lg border border-white/20">
                             <button data-layer="osm"
                                 class="layer-btn px-4 py-1.5 rounded-md text-slate-600 dark:text-slate-300 text-xs font-bold hover:bg-slate-100 dark:hover:bg-slate-800">OSM</button>
                             <button data-layer="satellite"
@@ -254,13 +261,16 @@
                                 <svg viewBox="0 0 100 100" class="transform -rotate-90">
                                     <!-- Trees segment -->
                                     <circle cx="50" cy="50" r="40" fill="none" stroke="#10b981" stroke-width="20"
-                                        stroke-dasharray="0 251.2" id="treesSegment" class="transition-all duration-500"/>
+                                        stroke-dasharray="0 251.2" id="treesSegment"
+                                        class="transition-all duration-500" />
                                     <!-- Structures segment -->
                                     <circle cx="50" cy="50" r="40" fill="none" stroke="#8b5cf6" stroke-width="20"
-                                        stroke-dasharray="0 251.2" id="structuresSegment" class="transition-all duration-500"/>
+                                        stroke-dasharray="0 251.2" id="structuresSegment"
+                                        class="transition-all duration-500" />
                                     <!-- Water segment -->
                                     <circle cx="50" cy="50" r="40" fill="none" stroke="#06b6d4" stroke-width="20"
-                                        stroke-dasharray="0 251.2" id="waterSegment" class="transition-all duration-500"/>
+                                        stroke-dasharray="0 251.2" id="waterSegment"
+                                        class="transition-all duration-500" />
                                 </svg>
                                 <div class="absolute inset-0 flex flex-col items-center justify-center">
                                     <span id="totalAssetsDisplay" class="text-xl font-bold leading-none">--</span>
@@ -274,21 +284,24 @@
                                     <span class="size-2 rounded-full bg-emerald-500"></span>
                                     <span class="text-[10px] text-slate-500">Trees</span>
                                 </div>
-                                <span id="treesPercent" class="text-[10px] font-medium text-slate-700 dark:text-slate-300">--%</span>
+                                <span id="treesPercent"
+                                    class="text-[10px] font-medium text-slate-700 dark:text-slate-300">--%</span>
                             </div>
                             <div class="flex items-center justify-between">
                                 <div class="flex items-center gap-2">
                                     <span class="size-2 rounded-full bg-purple-500"></span>
                                     <span class="text-[10px] text-slate-500">Structures</span>
                                 </div>
-                                <span id="structuresPercent" class="text-[10px] font-medium text-slate-700 dark:text-slate-300">--%</span>
+                                <span id="structuresPercent"
+                                    class="text-[10px] font-medium text-slate-700 dark:text-slate-300">--%</span>
                             </div>
                             <div class="flex items-center justify-between">
                                 <div class="flex items-center gap-2">
                                     <span class="size-2 rounded-full bg-cyan-500"></span>
                                     <span class="text-[10px] text-slate-500">Water</span>
                                 </div>
-                                <span id="waterPercent" class="text-[10px] font-medium text-slate-700 dark:text-slate-300">--%</span>
+                                <span id="waterPercent"
+                                    class="text-[10px] font-medium text-slate-700 dark:text-slate-300">--%</span>
                             </div>
                         </div>
                     </div>
@@ -313,20 +326,25 @@
         .custom-scrollbar::-webkit-scrollbar-thumb:hover {
             background: rgba(18, 105, 226, 0.4);
         }
-        #map { height: 100%; width: 100%; }
-        .leaflet-control { display: none !important; }
+
+        #map {
+            height: 100%;
+            width: 100%;
+        }
+
+        .leaflet-control {
+            display: none !important;
+        }
     </style>
     <script>
         let map, currentLayer, osmLayer, satelliteLayer, terrainLayer;
         let districtLayer, talukaLayer, aoiLayer, villagesBoundaryLayer, villagesGutLayer;
         let assetLayers = {}; // Store asset layers
-        // base URL of hosted GeoServer (change if host changes)
-        const GEOSERVER_BASE = 'http://209.182.233.103:9090/geoserver';
-        
-        document.addEventListener('DOMContentLoaded', function() {
+
+        document.addEventListener('DOMContentLoaded', function () {
             // Fetch project statistics
             fetchProjectStats();
-            
+
             // Initialize map centered on Purandar, Pune
             map = L.map('map', {
                 center: [18.2811, 74.0194],
@@ -365,7 +383,7 @@
             // Layer menu toggle
             const layersBtn = document.getElementById('layersBtn');
             const layerMenu = document.getElementById('layerMenu');
-            
+
             layersBtn.addEventListener('click', () => {
                 layerMenu.classList.toggle('hidden');
                 layerMenu.classList.toggle('flex');
@@ -373,12 +391,12 @@
 
             // Layer switching
             document.querySelectorAll('.layer-btn').forEach(btn => {
-                btn.addEventListener('click', function() {
+                btn.addEventListener('click', function () {
                     const layerType = this.getAttribute('data-layer');
-                    
+
                     // Remove current layer
                     map.removeLayer(currentLayer);
-                    
+
                     // Add new layer
                     if (layerType === 'osm') {
                         currentLayer = osmLayer;
@@ -388,7 +406,7 @@
                         currentLayer = terrainLayer;
                     }
                     currentLayer.addTo(map);
-                    
+
                     // Update button styles
                     document.querySelectorAll('.layer-btn').forEach(b => {
                         b.classList.remove('bg-primary', 'text-white');
@@ -413,9 +431,9 @@
             const villageSelect = document.getElementById('villageSelect');
 
             // District selection
-            districtSelect.addEventListener('change', function() {
+            districtSelect.addEventListener('change', function () {
                 clearAllLayers();
-                
+
                 if (this.value === 'district') {
                     loadDistrictBoundary();
                     talukaSelect.disabled = false;
@@ -430,12 +448,12 @@
             });
 
             // Taluka selection
-            talukaSelect.addEventListener('change', function() {
+            talukaSelect.addEventListener('change', function () {
                 // Remove taluka and village layers
                 if (talukaLayer) map.removeLayer(talukaLayer);
                 if (villagesBoundaryLayer) map.removeLayer(villagesBoundaryLayer);
                 if (villagesGutLayer) map.removeLayer(villagesGutLayer);
-                
+
                 if (this.value === 'taluka') {
                     loadTalukaBoundary();
                     loadVillagesList();
@@ -447,11 +465,11 @@
             });
 
             // Village selection
-            villageSelect.addEventListener('change', function() {
+            villageSelect.addEventListener('change', function () {
                 // Remove existing village layers
                 if (villagesBoundaryLayer) map.removeLayer(villagesBoundaryLayer);
                 if (villagesGutLayer) map.removeLayer(villagesGutLayer);
-                
+
                 if (this.value) {
                     loadSingleVillage(this.value);
                     updateVillageCompensation(this.value);
@@ -469,20 +487,13 @@
                 if (villagesGutLayer) map.removeLayer(villagesGutLayer);
             }
 
-            // Load District Boundary from hosted GeoServer
+            // Load District Boundary
             function loadDistrictBoundary() {
-                const url = `${GEOSERVER_BASE}/Purandar/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=Purandar:district_boundry&outputFormat=application/json&srsName=EPSG:4326`;
-                console.log('Loading district from:', url);
-                fetch(url, { mode: 'cors' })
-                    .then(response => {
-                        console.log('District response status:', response.status);
-                        return response.text();
-                    })
-                    .then(text => {
-                        console.log('District response (first 500 chars):', text.substring(0, 500));
-                        const data = JSON.parse(text);
+                fetch('/api/district-boundary/')
+                    .then(response => response.json())
+                    .then(data => {
                         if (districtLayer) map.removeLayer(districtLayer);
-                        
+
                         districtLayer = L.geoJSON(data, {
                             style: {
                                 color: '#1269e2',
@@ -490,33 +501,26 @@
                                 fillOpacity: 0.1,
                                 fillColor: '#1269e2'
                             },
-                            onEachFeature: function(feature, layer) {
+                            onEachFeature: function (feature, layer) {
                                 if (feature.properties && feature.properties.name) {
                                     layer.bindPopup('<b>District:</b> ' + feature.properties.name);
                                 }
                             }
                         }).addTo(map);
-                        
+
+                        // Fit map to district bounds
                         map.fitBounds(districtLayer.getBounds());
-                        console.log('District boundary loaded successfully');
                     })
                     .catch(error => console.error('Error loading district boundary:', error));
             }
 
-            // Load Taluka Boundary from hosted GeoServer
+            // Load Taluka Boundary
             function loadTalukaBoundary() {
-                const url = `${GEOSERVER_BASE}/Purandar/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=Purandar:purandar_tehsil&outputFormat=application/json&srsName=EPSG:4326`;
-                console.log('Loading taluka from:', url);
-                fetch(url, { mode: 'cors' })
-                    .then(response => {
-                        console.log('Taluka response status:', response.status);
-                        return response.text();
-                    })
-                    .then(text => {
-                        console.log('Taluka response (first 500 chars):', text.substring(0, 500));
-                        const data = JSON.parse(text);
+                fetch('/api/taluka-boundary/')
+                    .then(response => response.json())
+                    .then(data => {
                         if (talukaLayer) map.removeLayer(talukaLayer);
-                        
+
                         talukaLayer = L.geoJSON(data, {
                             style: {
                                 color: '#f59e0b',
@@ -524,32 +528,26 @@
                                 fillOpacity: 0.15,
                                 fillColor: '#f59e0b'
                             },
-                            onEachFeature: function(feature, layer) {
+                            onEachFeature: function (feature, layer) {
                                 if (feature.properties && feature.properties.name) {
                                     layer.bindPopup('<b>Taluka:</b> ' + feature.properties.name);
                                 }
                             }
                         }).addTo(map);
-                        
-                        console.log('Taluka boundary loaded successfully');
+
+                        // Fit map to taluka bounds
+                        map.fitBounds(talukaLayer.getBounds());
                     })
                     .catch(error => console.error('Error loading taluka boundary:', error));
             }
 
-            // Load AOI Boundary from hosted GeoServer
+            // Load AOI Boundary
             function loadAOIBoundary() {
-                const url = `${GEOSERVER_BASE}/Purandar/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=Purandar:purandar_aoi&outputFormat=application/json&srsName=EPSG:4326`;
-                console.log('Loading AOI from:', url);
-                fetch(url, { mode: 'cors' })
-                    .then(response => {
-                        console.log('AOI response status:', response.status);
-                        return response.text();
-                    })
-                    .then(text => {
-                        console.log('AOI response (first 500 chars):', text.substring(0, 500));
-                        const data = JSON.parse(text);
+                fetch('/api/aoi-boundary/')
+                    .then(response => response.json())
+                    .then(data => {
                         if (aoiLayer) map.removeLayer(aoiLayer);
-                        
+
                         aoiLayer = L.geoJSON(data, {
                             style: {
                                 color: '#1269e2',
@@ -558,26 +556,23 @@
                                 fillColor: '#1269e2',
                                 dashArray: '5, 5'
                             },
-                            onEachFeature: function(feature, layer) {
+                            onEachFeature: function (feature, layer) {
                                 if (feature.properties && feature.properties.name) {
                                     layer.bindPopup('<b>AOI:</b> ' + feature.properties.name);
                                 }
                             }
                         }).addTo(map);
-                        
-                        console.log('AOI boundary loaded successfully');
                     })
                     .catch(error => console.error('Error loading AOI boundary:', error));
             }
 
-            // Load Villages Boundary from hosted GeoServer
+            // Load Villages Boundary
             function loadVillagesBoundary() {
-                const url = `${GEOSERVER_BASE}/Purandar/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=Purandar:purandar_airport_village_bo&outputFormat=application/json&srsName=EPSG:4326`;
-                fetch(url, { mode: 'cors' })
+                fetch('/api/villages-boundary/')
                     .then(response => response.json())
                     .then(data => {
                         if (villagesBoundaryLayer) map.removeLayer(villagesBoundaryLayer);
-                        
+
                         villagesBoundaryLayer = L.geoJSON(data, {
                             style: {
                                 color: '#10b981',
@@ -585,27 +580,26 @@
                                 fillOpacity: 0.2,
                                 fillColor: '#10b981'
                             },
-                            onEachFeature: function(feature, layer) {
-                                if (feature.properties && feature.properties.Village_Na) {
-                                    layer.bindPopup('<b>Village:</b> ' + feature.properties.Village_Na);
+                            onEachFeature: function (feature, layer) {
+                                if (feature.properties && feature.properties.name) {
+                                    layer.bindPopup('<b>Village:</b> ' + feature.properties.name);
                                 }
                             }
                         }).addTo(map);
-                        
+
                         // Fit map to villages bounds
                         map.fitBounds(villagesBoundaryLayer.getBounds());
                     })
                     .catch(error => console.error('Error loading villages boundary:', error));
             }
 
-            // Load Villages with Gut Numbers from hosted GeoServer
+            // Load Villages with Gut Numbers
             function loadVillagesWithGut() {
-                const url = `${GEOSERVER_BASE}/Purandar/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=Purandar:purandar_airport_villages&outputFormat=application/json&srsName=EPSG:4326`;
-                fetch(url, { mode: 'cors' })
+                fetch('/api/villages-gut/')
                     .then(response => response.json())
                     .then(data => {
                         if (villagesGutLayer) map.removeLayer(villagesGutLayer);
-                        
+
                         villagesGutLayer = L.geoJSON(data, {
                             style: {
                                 color: '#8b5cf6',
@@ -613,39 +607,39 @@
                                 fillOpacity: 0.25,
                                 fillColor: '#8b5cf6'
                             },
-                            onEachFeature: function(feature, layer) {
+                            onEachFeature: function (feature, layer) {
                                 let popupContent = '<div style="font-size: 12px;">';
-                                if (feature.properties.Village_Na) {
-                                    popupContent += '<b>Village:</b> ' + feature.properties.Village_Na + '<br>';
+                                if (feature.properties.village) {
+                                    popupContent += '<b>Village:</b> ' + feature.properties.village + '<br>';
                                 }
-                                if (feature.properties.Gut_Number) {
-                                    popupContent += '<b>Gut No:</b> ' + feature.properties.Gut_Number + '<br>';
+                                if (feature.properties.gut_no) {
+                                    popupContent += '<b>Gut No:</b> ' + feature.properties.gut_no + '<br>';
                                 }
-                                if (feature.properties.New_Gut_No) {
-                                    popupContent += '<b>New Gut No:</b> ' + feature.properties.New_Gut_No + '<br>';
+                                if (feature.properties.new_gut_no) {
+                                    popupContent += '<b>New Gut No:</b> ' + feature.properties.new_gut_no + '<br>';
                                 }
-                                if (feature.properties.Area_In_Ha) {
-                                    popupContent += '<b>Area (Ha):</b> ' + parseFloat(feature.properties.Area_In_Ha).toFixed(2);
+                                if (feature.properties.area_ha) {
+                                    popupContent += '<b>Area (Ha):</b> ' + feature.properties.area_ha.toFixed(2);
                                 }
                                 popupContent += '</div>';
                                 layer.bindPopup(popupContent);
                             }
                         }).addTo(map);
-                        
+
                         // Fit map to villages bounds
                         map.fitBounds(villagesGutLayer.getBounds());
                     })
                     .catch(error => console.error('Error loading villages with gut:', error));
             }
 
-            // Load Villages List (use backend API)
+            // Load Villages List
             function loadVillagesList() {
                 fetch('/api/villages-list/')
                     .then(response => response.json())
                     .then(data => {
                         const villageSelect = document.getElementById('villageSelect');
                         villageSelect.innerHTML = '<option value="">Select Village</option>';
-                        
+
                         data.villages.forEach(village => {
                             const option = document.createElement('option');
                             option.value = village;
@@ -656,13 +650,13 @@
                     .catch(error => console.error('Error loading villages list:', error));
             }
 
-            // Load Single Village Boundary (use backend API)
+            // Load Single Village Boundary
             function loadSingleVillage(villageName) {
                 fetch(`/api/village/${encodeURIComponent(villageName)}/`)
                     .then(response => response.json())
                     .then(data => {
                         if (villagesBoundaryLayer) map.removeLayer(villagesBoundaryLayer);
-                        
+
                         villagesBoundaryLayer = L.geoJSON(data, {
                             style: {
                                 color: '#10b981',
@@ -670,14 +664,13 @@
                                 fillOpacity: 0.3,
                                 fillColor: '#10b981'
                             },
-                            onEachFeature: function(feature, layer) {
-                                const name = feature.properties && (feature.properties.Village_Na || feature.properties.name);
-                                if (name) {
-                                    layer.bindPopup(`<div style="font-size: 12px;"><b>Village:</b> ${name}</div>`);
+                            onEachFeature: function (feature, layer) {
+                                if (feature.properties && feature.properties.name) {
+                                    layer.bindPopup('<div style="font-size: 12px;"><b>Village:</b> ' + feature.properties.name + '</div>');
                                 }
                             }
                         }).addTo(map);
-                        
+
                         // Fit map to village bounds
                         if (villagesBoundaryLayer.getBounds().isValid()) {
                             map.fitBounds(villagesBoundaryLayer.getBounds());
@@ -706,21 +699,21 @@
                     .then(data => {
                         const container = document.getElementById('villageCompensationBars');
                         if (!container) return;
-                        
+
                         container.innerHTML = '';
-                        
+
                         if (!data.villages || data.villages.length === 0) {
                             container.innerHTML = '<p class="text-slate-500 text-xs">No data available</p>';
                             return;
                         }
-                        
+
                         // Find max compensation for percentage calculation
                         const maxCompensation = Math.max(...data.villages.map(v => v.compensation));
-                        
+
                         data.villages.forEach(village => {
                             const percentage = maxCompensation > 0 ? (village.compensation / maxCompensation * 100) : 0;
                             const compensationCr = village.compensation / 10000000; // Convert to Crores
-                            
+
                             const villageBar = document.createElement('div');
                             villageBar.className = 'space-y-1';
                             villageBar.innerHTML = `
@@ -747,22 +740,22 @@
                         if (affectedVillagesElement) {
                             affectedVillagesElement.textContent = String(data.affected_villages).padStart(2, '0');
                         }
-                        
+
                         const affectedFarmersElement = document.getElementById('affectedFarmersCount');
                         if (affectedFarmersElement) {
                             affectedFarmersElement.textContent = data.affected_farmers.toLocaleString();
                         }
-                        
+
                         const areaAcquiredElement = document.getElementById('areaAcquired');
                         if (areaAcquiredElement) {
                             areaAcquiredElement.textContent = data.area_acquired.toLocaleString('en-IN', { maximumFractionDigits: 2 }) + ' Ha';
                         }
-                        
+
                         const totalCompensationElement = document.getElementById('totalCompensation');
                         if (totalCompensationElement) {
                             totalCompensationElement.textContent = formatCurrency(data.total_compensation);
                         }
-                        
+
                         // Calculate and display total assets
                         if (data.assets) {
                             const totalAssets = Object.values(data.assets).reduce((sum, count) => sum + count, 0);
@@ -771,12 +764,12 @@
                                 totalAssetsElement.textContent = totalAssets.toLocaleString();
                             }
                         }
-                        
+
                         // Populate asset layers
                         if (data.assets) {
                             populateAssetLayers(data.assets);
                         }
-                        
+
                         // Populate land classification
                         if (data.land_classification) {
                             populateLandClassification(data.land_classification);
@@ -784,7 +777,7 @@
                         }
                     })
                     .catch(error => console.error('Error loading project stats:', error));
-                
+
                 // Fetch village compensation data
                 fetchVillageCompensation();
             }
@@ -806,7 +799,7 @@
             function populateLandClassification(landData) {
                 const landClassificationList = document.getElementById('landClassificationList');
                 if (!landClassificationList) return;
-                
+
                 landClassificationList.innerHTML = `
                     <!-- Trees Category -->
                     <div class="mb-3">
@@ -899,37 +892,37 @@
             // Populate assets distribution pie chart
             function populateAssetsDistribution(landData) {
                 const total = landData.trees_total + landData.structures_total + landData.water_total;
-                
+
                 if (total === 0) return;
-                
+
                 const treesPercent = (landData.trees_total / total * 100).toFixed(1);
                 const structuresPercent = (landData.structures_total / total * 100).toFixed(1);
                 const waterPercent = (landData.water_total / total * 100).toFixed(1);
-                
+
                 // Update percentages
                 document.getElementById('treesPercent').textContent = treesPercent + '%';
                 document.getElementById('structuresPercent').textContent = structuresPercent + '%';
                 document.getElementById('waterPercent').textContent = waterPercent + '%';
                 document.getElementById('totalAssetsDisplay').textContent = total.toLocaleString();
-                
+
                 // Calculate stroke-dasharray for pie chart (circumference = 2 * PI * r = 251.2)
                 const circumference = 251.2;
-                
+
                 const treesLength = (landData.trees_total / total) * circumference;
                 const structuresLength = (landData.structures_total / total) * circumference;
                 const waterLength = (landData.water_total / total) * circumference;
-                
+
                 // Update SVG segments
                 const treesSegment = document.getElementById('treesSegment');
                 const structuresSegment = document.getElementById('structuresSegment');
                 const waterSegment = document.getElementById('waterSegment');
-                
+
                 treesSegment.setAttribute('stroke-dasharray', `${treesLength} ${circumference - treesLength}`);
                 treesSegment.setAttribute('stroke-dashoffset', '0');
-                
+
                 structuresSegment.setAttribute('stroke-dasharray', `${structuresLength} ${circumference - structuresLength}`);
                 structuresSegment.setAttribute('stroke-dashoffset', `-${treesLength}`);
-                
+
                 waterSegment.setAttribute('stroke-dasharray', `${waterLength} ${circumference - waterLength}`);
                 waterSegment.setAttribute('stroke-dashoffset', `-${treesLength + structuresLength}`);
             }
@@ -938,7 +931,7 @@
             function populateAssetLayers(assets) {
                 const assetLayersList = document.getElementById('assetLayersList');
                 if (!assetLayersList) return;
-                
+
                 const assetIcons = {
                     'tree': 'park',
                     'bag': 'shopping_bag',
@@ -948,7 +941,7 @@
                     'shed': 'warehouse',
                     'purandar_farmers': 'person'
                 };
-                
+
                 const assetNames = {
                     'tree': 'Tree',
                     'bag': 'Bag',
@@ -958,14 +951,14 @@
                     'shed': 'Shed',
                     'purandar_farmers': 'Farmers'
                 };
-                
+
                 assetLayersList.innerHTML = '';
-                
+
                 Object.keys(assets).forEach(assetKey => {
                     const count = assets[assetKey];
                     const icon = assetIcons[assetKey] || 'category';
                     const name = assetNames[assetKey] || assetKey;
-                    
+
                     const assetItem = document.createElement('div');
                     assetItem.className = 'flex justify-between items-center text-xs py-2 border-b border-slate-100 dark:border-slate-800 last:border-0';
                     assetItem.innerHTML = `
@@ -981,12 +974,12 @@
                     `;
                     assetLayersList.appendChild(assetItem);
                 });
-                
+
                 // Add event listeners to toggles
                 document.querySelectorAll('.asset-layer-toggle').forEach(toggle => {
-                    toggle.addEventListener('change', function() {
+                    toggle.addEventListener('change', function () {
                         const assetName = this.getAttribute('data-asset');
-                        
+
                         if (this.checked) {
                             loadAssetLayerFromGeoServer(assetName);
                         } else {
@@ -999,10 +992,8 @@
             // Load asset layer from database via Django API
             function loadAssetLayerFromGeoServer(assetName) {
                 console.log(`Loading layer: ${assetName}`);
-                
-                // fetch asset layer directly from hosted GeoServer WFS
-                const url = `${GEOSERVER_BASE}/Purandar/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=Purandar:${assetName}&outputFormat=application/json&srsName=EPSG:4326`;
-                fetch(url, { mode: 'cors' })
+
+                fetch(`/api/asset-layer/${assetName}/`)
                     .then(response => {
                         if (!response.ok) {
                             throw new Error(`HTTP error! status: ${response.status}`);
@@ -1017,13 +1008,13 @@
                             if (toggle) toggle.checked = false;
                             return;
                         }
-                        
+
                         console.log(`Successfully loaded ${assetName} with ${data.features.length} features`);
-                        
+
                         if (assetLayers[assetName]) {
                             map.removeLayer(assetLayers[assetName]);
                         }
-                        
+
                         const colors = {
                             'tree': '#10b981',
                             'bag': '#f59e0b',
@@ -1033,9 +1024,9 @@
                             'shed': '#ec4899',
                             'purandar_farmers': '#ef4444'
                         };
-                        
+
                         assetLayers[assetName] = L.geoJSON(data, {
-                            pointToLayer: function(feature, latlng) {
+                            pointToLayer: function (feature, latlng) {
                                 return L.circleMarker(latlng, {
                                     radius: 6,
                                     fillColor: colors[assetName] || '#6b7280',
@@ -1045,14 +1036,14 @@
                                     fillOpacity: 0.8
                                 });
                             },
-                            style: function(feature) {
+                            style: function (feature) {
                                 return {
                                     color: colors[assetName] || '#6b7280',
                                     weight: 2,
                                     fillOpacity: 0.5
                                 };
                             },
-                            onEachFeature: function(feature, layer) {
+                            onEachFeature: function (feature, layer) {
                                 if (feature.properties) {
                                     let popupContent = '<div style="font-size: 12px; max-height: 200px; overflow-y: auto;">';
                                     popupContent += `<b style="color: ${colors[assetName]};">${assetName.toUpperCase()}</b><br><br>`;
@@ -1066,7 +1057,7 @@
                                 }
                             }
                         }).addTo(map);
-                        
+
                         if (assetLayers[assetName].getBounds().isValid()) {
                             map.fitBounds(assetLayers[assetName].getBounds(), { padding: [50, 50] });
                         }
