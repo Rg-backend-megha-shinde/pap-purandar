@@ -1,6 +1,9 @@
 from django.shortcuts import render
 from django.http import JsonResponse
 from django.db import connection
+import requests
+import os
+from django.conf import settings
 
 def home(request):
     return render(request, 'home.html')
@@ -455,58 +458,98 @@ def get_project_stats(request):
         })
 
 def get_asset_layer(request, asset_name):
-    """Fetch asset layer GeoJSON"""
-    # Validate asset name to prevent SQL injection
+    """Fetch asset layer GeoJSON - tries GeoServer first, falls back to PostGIS"""
     valid_assets = ['bag', 'tree', 'shed', 'structures', 'well', 'borewell', 'purandar_farmers']
     if asset_name not in valid_assets:
         return JsonResponse({'error': 'Invalid asset name'}, status=400)
-    
-    with connection.cursor() as cursor:
-        try:
-            # First, get column names excluding geometry columns
-            cursor.execute(f"""
-                SELECT column_name 
-                FROM information_schema.columns 
-                WHERE table_schema = 'public' 
-                AND table_name = '{asset_name}'
-                AND column_name NOT IN ('geometry', 'geom');
-            """)
-            columns = [row[0] for row in cursor.fetchall()]
-            
-            if not columns:
-                return JsonResponse({'type': 'FeatureCollection', 'features': []}, safe=False)
-            
-            # Build the properties JSON object
-            properties_fields = ', '.join([f"'{col}', \"{col}\"" for col in columns])
-            
-            # Check which geometry column exists
-            cursor.execute(f"""
-                SELECT column_name 
-                FROM information_schema.columns 
-                WHERE table_schema = 'public' 
-                AND table_name = '{asset_name}'
-                AND column_name IN ('geometry', 'geom');
-            """)
-            geom_col = cursor.fetchone()
-            geom_column = geom_col[0] if geom_col else 'geom'
-            
+
+    # --- Try GeoServer first ---
+    try:
+        geoserver_url = os.getenv('GEOSERVER_URL', 'http://209.182.233.103:9090/geoserver')
+        workspace = os.getenv('GEOSERVER_WORKSPACE', 'Purandar')
+        wfs_url = f"{geoserver_url}/wfs"
+        params = {
+            'service': 'WFS',
+            'version': '1.0.0',
+            'request': 'GetFeature',
+            'typeName': f'{workspace}:{asset_name}',
+            'outputFormat': 'application/json',
+            'srsName': 'EPSG:4326'
+        }
+        response = requests.get(wfs_url, params=params, timeout=10)
+        if response.status_code == 200:
+            data = response.json()
+            if data.get('features'):
+                print(f"GeoServer: loaded {asset_name} with {len(data['features'])} features")
+                return JsonResponse(data, safe=False)
+    except Exception as e:
+        print(f"GeoServer unavailable for {asset_name}, falling back to PostGIS: {e}")
+
+    # --- Fallback: query PostGIS directly ---
+    try:
+        with connection.cursor() as cursor:
+            # Detect geometry column name (geometry or geom)
+            cursor.execute("""
+                SELECT column_name
+                FROM information_schema.columns
+                WHERE table_schema = 'public'
+                  AND table_name = %s
+                  AND column_name IN ('geometry', 'geom')
+                LIMIT 1;
+            """, [asset_name])
+            geom_row = cursor.fetchone()
+
+            if not geom_row:
+                return JsonResponse({
+                    'error': f'No geometry column found in table {asset_name}',
+                    'type': 'FeatureCollection',
+                    'features': []
+                }, status=500)
+
+            geom_col = geom_row[0]
+
+            # Get all non-geometry columns for properties
+            cursor.execute("""
+                SELECT column_name
+                FROM information_schema.columns
+                WHERE table_schema = 'public'
+                  AND table_name = %s
+                  AND column_name NOT IN ('geometry', 'geom')
+                ORDER BY ordinal_position;
+            """, [asset_name])
+            prop_columns = [row[0] for row in cursor.fetchall()]
+
+            # Build properties JSON object dynamically
+            props_sql = ", ".join(
+                f"'{col}', \"{col}\"" for col in prop_columns
+            )
+
             cursor.execute(f"""
                 SELECT json_build_object(
                     'type', 'FeatureCollection',
                     'features', COALESCE(json_agg(
                         json_build_object(
                             'type', 'Feature',
-                            'geometry', ST_AsGeoJSON(ST_Transform({geom_column}, 4326))::json,
-                            'properties', json_build_object({properties_fields})
+                            'geometry', ST_AsGeoJSON(ST_Transform({geom_col}, 4326))::json,
+                            'properties', json_build_object({props_sql})
                         )
                     ), '[]'::json)
                 )
-                FROM public.{asset_name};
+                FROM public."{asset_name}";
             """)
+
             result = cursor.fetchone()
-            return JsonResponse(result[0] if result and result[0] else {'type': 'FeatureCollection', 'features': []}, safe=False)
-        except Exception as e:
-            print(f"Error loading {asset_name}: {str(e)}")
-            import traceback
-            traceback.print_exc()
-            return JsonResponse({'error': str(e), 'type': 'FeatureCollection', 'features': []}, status=500)
+            print(f"PostGIS fallback: loaded {asset_name}")
+            return JsonResponse(
+                result[0] if result and result[0] else {'type': 'FeatureCollection', 'features': []},
+                safe=False
+            )
+
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({
+            'error': f'Failed to load {asset_name} from both GeoServer and PostGIS: {str(e)}',
+            'type': 'FeatureCollection',
+            'features': []
+        }, status=500)
