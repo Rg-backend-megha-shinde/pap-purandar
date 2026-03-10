@@ -13,9 +13,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-# move into project folder where manage.py exists
-WORKDIR /app/lmrs
-
 EXPOSE 7890
 
 CMD ["sh", "-c", "python manage.py migrate && python manage.py collectstatic --noinput && gunicorn lmrs.wsgi:application --bind 0.0.0.0:7890"]
