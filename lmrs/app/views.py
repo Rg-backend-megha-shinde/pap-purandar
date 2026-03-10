@@ -460,40 +460,37 @@ def get_project_stats(request):
         # Sum valuations from each asset table
         asset_tables = ['bag', 'tree', 'shed', 'structures', 'well', 'borewell']
         
-        for table in asset_tables:
-            try:
-                if village_name:
-                    # Check if VILLAGE column exists
+        if village_name:
+            # when a village is selected, reuse the logic from get_village_compensation
+            for table in asset_tables:
+                try:
+                    # look for any column containing the word "village" (same as other endpoint)
                     cursor.execute(f"""
                         SELECT column_name 
                         FROM information_schema.columns 
                         WHERE table_schema = 'public' 
                         AND table_name = '{table}'
-                        AND (column_name ILIKE '%village%' OR column_name = 'VILLAGE')
-                        LIMIT 1;
+                        AND column_name ILIKE '%village%';
                     """)
-                    village_col_result = cursor.fetchone()
-                    
-                    if village_col_result:
-                        col_name = village_col_result[0]
+                    village_col = cursor.fetchone()
+                    if village_col:
+                        col_name = village_col[0]
                         cursor.execute(f"""
                             SELECT COALESCE(SUM(valuation), 0)
                             FROM public.{table}
-                            WHERE UPPER(TRIM("{col_name}")) = UPPER(TRIM(%s));
+                            WHERE "{col_name}" = %s;
                         """, [village_name])
                         result = cursor.fetchone()
                         if result and result[0]:
                             total_compensation += float(result[0])
-                            print(f"Compensation {table}: Village {village_name}, Amount: {result[0]}")
-                    else:
-                        cursor.execute(f"""
-                            SELECT COALESCE(SUM(valuation), 0)
-                            FROM public.{table};
-                        """)
-                        result = cursor.fetchone()
-                        if result and result[0]:
-                            total_compensation += float(result[0])
-                else:
+                    # if no village column was found, nothing is added for this table
+                except Exception as e:
+                    print(f"Error fetching compensation from {table} for village stats: {e}")
+                    continue
+        else:
+            # total project compensation (no village filter)
+            for table in asset_tables:
+                try:
                     cursor.execute(f"""
                         SELECT COALESCE(SUM(valuation), 0)
                         FROM public.{table};
@@ -501,9 +498,9 @@ def get_project_stats(request):
                     result = cursor.fetchone()
                     if result and result[0]:
                         total_compensation += float(result[0])
-            except Exception as e:
-                print(f"Error fetching valuation from {table}: {e}")
-                continue
+                except Exception as e:
+                    print(f"Error fetching valuation from {table}: {e}")
+                    continue
         
         # Get asset counts - with optional village filter
         assets = {}
@@ -554,32 +551,76 @@ def get_project_stats(request):
         # Calculate categorized counts for Land Classification - ALWAYS SHOW TOTAL (not village-specific)
         land_classification = {}
         
-        # Trees: sum of cnt_trees from bag table + count of tree table (TOTAL PROJECT DATA)
+        # Trees: sum of cnt_trees from bag table + count of tree table
+        # (respect village filter when provided)
         try:
-            cursor.execute("""
-                SELECT COALESCE(SUM(cnt_trees), 0)
-                FROM public.bag;
-            """)
-            bag_trees = cursor.fetchone()[0] or 0
-            
-            cursor.execute("""
-                SELECT COUNT(*)
-                FROM public.tree;
-            """)
-            tree_count = cursor.fetchone()[0] or 0
-            
-            cursor.execute("""
-                SELECT COALESCE(SUM(valuation), 0)
-                FROM public.bag;
-            """)
-            bag_valuation = cursor.fetchone()[0] or 0
-            
-            cursor.execute("""
-                SELECT COALESCE(SUM(valuation), 0)
-                FROM public.tree;
-            """)
-            tree_valuation = cursor.fetchone()[0] or 0
-            
+            if village_name:
+                # bag table
+                cursor.execute(f"""
+                    SELECT column_name
+                    FROM information_schema.columns
+                    WHERE table_schema = 'public'
+                      AND table_name = 'bag'
+                      AND column_name ILIKE '%village%'
+                    LIMIT 1;
+                """)
+                bag_vcol = cursor.fetchone()
+                if bag_vcol:
+                    bv = bag_vcol[0]
+                    cursor.execute(f"""
+                        SELECT COALESCE(SUM(cnt_trees),0), COALESCE(SUM(valuation),0)
+                        FROM public.bag
+                        WHERE UPPER(TRIM("{bv}")) = UPPER(TRIM(%s));
+                    """, [village_name])
+                    bag_trees, bag_valuation = cursor.fetchone() or (0,0)
+                else:
+                    bag_trees = bag_valuation = 0
+
+                # tree table
+                cursor.execute(f"""
+                    SELECT column_name
+                    FROM information_schema.columns
+                    WHERE table_schema = 'public'
+                      AND table_name = 'tree'
+                      AND column_name ILIKE '%village%'
+                    LIMIT 1;
+                """)
+                tree_vcol = cursor.fetchone()
+                if tree_vcol:
+                    tv = tree_vcol[0]
+                    cursor.execute(f"""
+                        SELECT COUNT(*), COALESCE(SUM(valuation),0)
+                        FROM public.tree
+                        WHERE UPPER(TRIM("{tv}")) = UPPER(TRIM(%s));
+                    """, [village_name])
+                    tree_count, tree_valuation = cursor.fetchone() or (0,0)
+                else:
+                    tree_count = tree_valuation = 0
+            else:
+                cursor.execute("""
+                    SELECT COALESCE(SUM(cnt_trees), 0)
+                    FROM public.bag;
+                """)
+                bag_trees = cursor.fetchone()[0] or 0
+                
+                cursor.execute("""
+                    SELECT COUNT(*)
+                    FROM public.tree;
+                """)
+                tree_count = cursor.fetchone()[0] or 0
+                
+                cursor.execute("""
+                    SELECT COALESCE(SUM(valuation), 0)
+                    FROM public.bag;
+                """)
+                bag_valuation = cursor.fetchone()[0] or 0
+                
+                cursor.execute("""
+                    SELECT COALESCE(SUM(valuation), 0)
+                    FROM public.tree;
+                """)
+                tree_valuation = cursor.fetchone()[0] or 0
+
             land_classification['trees_total'] = int(bag_trees) + int(tree_count)
             land_classification['trees_valuation'] = float(bag_valuation) + float(tree_valuation)
         except Exception as e:
@@ -587,24 +628,77 @@ def get_project_stats(request):
             land_classification['trees_total'] = 0
             land_classification['trees_valuation'] = 0
         
-        # Structures: permanent (structures table) + temporary (shed table) - ALWAYS TOTAL
+        # Structures: permanent (structures table) + temporary (shed table)
         try:
-            cursor.execute("""
-                SELECT COUNT(*), COALESCE(SUM(valuation), 0)
-                FROM public.structures;
-            """)
-            result = cursor.fetchone()
-            permanent_count = result[0] or 0
-            permanent_valuation = result[1] or 0
-            
-            cursor.execute("""
-                SELECT COUNT(*), COALESCE(SUM(valuation), 0)
-                FROM public.shed;
-            """)
-            result = cursor.fetchone()
-            temporary_count = result[0] or 0
-            temporary_valuation = result[1] or 0
-            
+            if village_name:
+                # structures table
+                cursor.execute(f"""
+                    SELECT column_name
+                    FROM information_schema.columns
+                    WHERE table_schema = 'public'
+                      AND table_name = 'structures'
+                      AND column_name ILIKE '%village%'
+                    LIMIT 1;
+                """)
+                str_vcol = cursor.fetchone()
+                if str_vcol:
+                    sv = str_vcol[0]
+                    cursor.execute(f"""
+                        SELECT COUNT(*), COALESCE(SUM(valuation),0)
+                        FROM public.structures
+                        WHERE UPPER(TRIM("{sv}")) = UPPER(TRIM(%s));
+                    """, [village_name])
+                else:
+                    cursor.execute("""
+                        SELECT COUNT(*), COALESCE(SUM(valuation),0)
+                        FROM public.structures;
+                    """)
+                result = cursor.fetchone()
+                permanent_count = result[0] or 0
+                permanent_valuation = result[1] or 0
+
+                # shed table
+                cursor.execute(f"""
+                    SELECT column_name
+                    FROM information_schema.columns
+                    WHERE table_schema = 'public'
+                      AND table_name = 'shed'
+                      AND column_name ILIKE '%village%'
+                    LIMIT 1;
+                """)
+                shed_vcol = cursor.fetchone()
+                if shed_vcol:
+                    sh = shed_vcol[0]
+                    cursor.execute(f"""
+                        SELECT COUNT(*), COALESCE(SUM(valuation),0)
+                        FROM public.shed
+                        WHERE UPPER(TRIM("{sh}")) = UPPER(TRIM(%s));
+                    """, [village_name])
+                else:
+                    cursor.execute("""
+                        SELECT COUNT(*), COALESCE(SUM(valuation),0)
+                        FROM public.shed;
+                    """)
+                result = cursor.fetchone()
+                temporary_count = result[0] or 0
+                temporary_valuation = result[1] or 0
+            else:
+                cursor.execute("""
+                    SELECT COUNT(*), COALESCE(SUM(valuation), 0)
+                    FROM public.structures;
+                """)
+                result = cursor.fetchone()
+                permanent_count = result[0] or 0
+                permanent_valuation = result[1] or 0
+                
+                cursor.execute("""
+                    SELECT COUNT(*), COALESCE(SUM(valuation), 0)
+                    FROM public.shed;
+                """)
+                result = cursor.fetchone()
+                temporary_count = result[0] or 0
+                temporary_valuation = result[1] or 0
+
             land_classification['structures_permanent'] = int(permanent_count)
             land_classification['structures_permanent_valuation'] = float(permanent_valuation)
             land_classification['structures_temporary'] = int(temporary_count)
@@ -620,24 +714,77 @@ def get_project_stats(request):
             land_classification['structures_total'] = 0
             land_classification['structures_valuation'] = 0
         
-        # Water: well + borewell - ALWAYS TOTAL
+        # Water: well + borewell (optionally filtered by village)
         try:
-            cursor.execute("""
-                SELECT COUNT(*), COALESCE(SUM(valuation), 0)
-                FROM public.well;
-            """)
-            result = cursor.fetchone()
-            well_count = result[0] or 0
-            well_valuation = result[1] or 0
-            
-            cursor.execute("""
-                SELECT COUNT(*), COALESCE(SUM(valuation), 0)
-                FROM public.borewell;
-            """)
-            result = cursor.fetchone()
-            borewell_count = result[0] or 0
-            borewell_valuation = result[1] or 0
-            
+            if village_name:
+                # well
+                cursor.execute(f"""
+                    SELECT column_name
+                    FROM information_schema.columns
+                    WHERE table_schema = 'public'
+                      AND table_name = 'well'
+                      AND column_name ILIKE '%village%'
+                    LIMIT 1;
+                """)
+                well_vcol = cursor.fetchone()
+                if well_vcol:
+                    wv = well_vcol[0]
+                    cursor.execute(f"""
+                        SELECT COUNT(*), COALESCE(SUM(valuation),0)
+                        FROM public.well
+                        WHERE UPPER(TRIM("{wv}")) = UPPER(TRIM(%s));
+                    """, [village_name])
+                else:
+                    cursor.execute("""
+                        SELECT COUNT(*), COALESCE(SUM(valuation),0)
+                        FROM public.well;
+                    """)
+                result = cursor.fetchone()
+                well_count = result[0] or 0
+                well_valuation = result[1] or 0
+
+                # borewell
+                cursor.execute(f"""
+                    SELECT column_name
+                    FROM information_schema.columns
+                    WHERE table_schema = 'public'
+                      AND table_name = 'borewell'
+                      AND column_name ILIKE '%village%'
+                    LIMIT 1;
+                """)
+                bore_vcol = cursor.fetchone()
+                if bore_vcol:
+                    bv = bore_vcol[0]
+                    cursor.execute(f"""
+                        SELECT COUNT(*), COALESCE(SUM(valuation),0)
+                        FROM public.borewell
+                        WHERE UPPER(TRIM("{bv}")) = UPPER(TRIM(%s));
+                    """, [village_name])
+                else:
+                    cursor.execute("""
+                        SELECT COUNT(*), COALESCE(SUM(valuation),0)
+                        FROM public.borewell;
+                    """)
+                result = cursor.fetchone()
+                borewell_count = result[0] or 0
+                borewell_valuation = result[1] or 0
+            else:
+                cursor.execute("""
+                    SELECT COUNT(*), COALESCE(SUM(valuation), 0)
+                    FROM public.well;
+                """)
+                result = cursor.fetchone()
+                well_count = result[0] or 0
+                well_valuation = result[1] or 0
+                
+                cursor.execute("""
+                    SELECT COUNT(*), COALESCE(SUM(valuation), 0)
+                    FROM public.borewell;
+                """)
+                result = cursor.fetchone()
+                borewell_count = result[0] or 0
+                borewell_valuation = result[1] or 0
+
             land_classification['water_well'] = int(well_count)
             land_classification['water_well_valuation'] = float(well_valuation)
             land_classification['water_borewell'] = int(borewell_count)

@@ -504,7 +504,8 @@
 
                 if (this.value) {
                     loadSingleVillage(this.value);
-                    // Fetch village-wise statistics
+                    // Fetch village-wise statistics (this will also update the
+                    // village compensation bars internally)
                     fetchProjectStats(this.value);
                 } else {
                     // Reset to total statistics when no village selected
@@ -727,15 +728,39 @@
                     .catch(error => console.error('Error loading village compensation:', error));
             }
 
-            // Fetch and display all villages compensation
-            function fetchVillageCompensation() {
-                fetch('/api/all-villages-compensation/')
+            // Fetch and display village compensation bars.  Pass a villageName to show
+            // only that village, otherwise totals for all villages will be shown.
+            function fetchVillageCompensation(villageName) {
+                const url = villageName
+                    ? `/api/village-compensation/${encodeURIComponent(villageName)}/`
+                    : '/api/all-villages-compensation/';
+
+                fetch(url)
                     .then(response => response.json())
                     .then(data => {
                         const container = document.getElementById('villageCompensationBars');
                         if (!container) return;
 
                         container.innerHTML = '';
+
+                        // if API returned a single village's compensation (project-filtered or explicit call)
+                        if (data.total_compensation !== undefined) {
+                            const comp = data.total_compensation || 0;
+                            const compensationCr = comp / 10000000;
+                            const villageBar = document.createElement('div');
+                            villageBar.className = 'space-y-1';
+                            villageBar.innerHTML = `
+                                <div class="flex justify-between text-[10px] text-slate-500 uppercase">
+                                    <span>${villageName}</span>
+                                    <span>₹${compensationCr.toFixed(2)} Cr</span>
+                                </div>
+                                <div class="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                                    <div class="bg-primary h-full" style="width:100%"></div>
+                                </div>
+                            `;
+                            container.appendChild(villageBar);
+                            return;
+                        }
 
                         if (!data.villages || data.villages.length === 0) {
                             container.innerHTML = '<p class="text-slate-500 text-xs">No data available</p>';
@@ -817,8 +842,8 @@
                     })
                     .catch(error => console.error('Error loading project stats:', error));
 
-                // Fetch village compensation data
-                fetchVillageCompensation();
+                // Fetch village compensation data (pass through village filter if any)
+                fetchVillageCompensation(villageName);
             }
 
             // Format currency in Lakh or Cr
