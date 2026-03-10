@@ -320,6 +320,8 @@
         let map, currentLayer, osmLayer, satelliteLayer, terrainLayer;
         let districtLayer, talukaLayer, aoiLayer, villagesBoundaryLayer, villagesGutLayer;
         let assetLayers = {}; // Store asset layers
+        // base URL of hosted GeoServer (change if host changes)
+        const GEOSERVER_BASE = 'http://209.182.233.103:9090/geoserver';
         
         document.addEventListener('DOMContentLoaded', function() {
             // Fetch project statistics
@@ -467,9 +469,10 @@
                 if (villagesGutLayer) map.removeLayer(villagesGutLayer);
             }
 
-            // Load District Boundary
+            // Load District Boundary from hosted GeoServer
             function loadDistrictBoundary() {
-                fetch('/api/district-boundary/')
+                const url = `${GEOSERVER_BASE}/Purandar/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=Purandar:district_boundry&outputFormat=application/json&srsName=EPSG:4326`;
+                fetch(url)
                     .then(response => response.json())
                     .then(data => {
                         if (districtLayer) map.removeLayer(districtLayer);
@@ -494,9 +497,10 @@
                     .catch(error => console.error('Error loading district boundary:', error));
             }
 
-            // Load Taluka Boundary
+            // Load Taluka Boundary from hosted GeoServer
             function loadTalukaBoundary() {
-                fetch('/api/taluka-boundary/')
+                const url = `${GEOSERVER_BASE}/Purandar/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=Purandar:purandar_tehsil&outputFormat=application/json&srsName=EPSG:4326`;
+                fetch(url, { mode: 'cors' })
                     .then(response => response.json())
                     .then(data => {
                         if (talukaLayer) map.removeLayer(talukaLayer);
@@ -521,9 +525,10 @@
                     .catch(error => console.error('Error loading taluka boundary:', error));
             }
 
-            // Load AOI Boundary
+            // Load AOI Boundary from hosted GeoServer
             function loadAOIBoundary() {
-                fetch('/api/aoi-boundary/')
+                const url = `${GEOSERVER_BASE}/Purandar/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=Purandar:purandar_aoi&outputFormat=application/json&srsName=EPSG:4326`;
+                fetch(url, { mode: 'cors' })
                     .then(response => response.json())
                     .then(data => {
                         if (aoiLayer) map.removeLayer(aoiLayer);
@@ -546,9 +551,10 @@
                     .catch(error => console.error('Error loading AOI boundary:', error));
             }
 
-            // Load Villages Boundary
+            // Load Villages Boundary from hosted GeoServer
             function loadVillagesBoundary() {
-                fetch('/api/villages-boundary/')
+                const url = `${GEOSERVER_BASE}/Purandar/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=Purandar:purandar_airport_village_bo&outputFormat=application/json&srsName=EPSG:4326`;
+                fetch(url, { mode: 'cors' })
                     .then(response => response.json())
                     .then(data => {
                         if (villagesBoundaryLayer) map.removeLayer(villagesBoundaryLayer);
@@ -561,8 +567,8 @@
                                 fillColor: '#10b981'
                             },
                             onEachFeature: function(feature, layer) {
-                                if (feature.properties && feature.properties.name) {
-                                    layer.bindPopup('<b>Village:</b> ' + feature.properties.name);
+                                if (feature.properties && feature.properties.Village_Na) {
+                                    layer.bindPopup('<b>Village:</b> ' + feature.properties.Village_Na);
                                 }
                             }
                         }).addTo(map);
@@ -573,9 +579,10 @@
                     .catch(error => console.error('Error loading villages boundary:', error));
             }
 
-            // Load Villages with Gut Numbers
+            // Load Villages with Gut Numbers from hosted GeoServer
             function loadVillagesWithGut() {
-                fetch('/api/villages-gut/')
+                const url = `${GEOSERVER_BASE}/Purandar/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=Purandar:purandar_airport_villages&outputFormat=application/json&srsName=EPSG:4326`;
+                fetch(url, { mode: 'cors' })
                     .then(response => response.json())
                     .then(data => {
                         if (villagesGutLayer) map.removeLayer(villagesGutLayer);
@@ -589,17 +596,17 @@
                             },
                             onEachFeature: function(feature, layer) {
                                 let popupContent = '<div style="font-size: 12px;">';
-                                if (feature.properties.village) {
-                                    popupContent += '<b>Village:</b> ' + feature.properties.village + '<br>';
+                                if (feature.properties.Village_Na) {
+                                    popupContent += '<b>Village:</b> ' + feature.properties.Village_Na + '<br>';
                                 }
-                                if (feature.properties.gut_no) {
-                                    popupContent += '<b>Gut No:</b> ' + feature.properties.gut_no + '<br>';
+                                if (feature.properties.Gut_Number) {
+                                    popupContent += '<b>Gut No:</b> ' + feature.properties.Gut_Number + '<br>';
                                 }
-                                if (feature.properties.new_gut_no) {
-                                    popupContent += '<b>New Gut No:</b> ' + feature.properties.new_gut_no + '<br>';
+                                if (feature.properties.New_Gut_No) {
+                                    popupContent += '<b>New Gut No:</b> ' + feature.properties.New_Gut_No + '<br>';
                                 }
-                                if (feature.properties.area_ha) {
-                                    popupContent += '<b>Area (Ha):</b> ' + feature.properties.area_ha.toFixed(2);
+                                if (feature.properties.Area_In_Ha) {
+                                    popupContent += '<b>Area (Ha):</b> ' + parseFloat(feature.properties.Area_In_Ha).toFixed(2);
                                 }
                                 popupContent += '</div>';
                                 layer.bindPopup(popupContent);
@@ -614,25 +621,33 @@
 
             // Load Villages List
             function loadVillagesList() {
-                fetch('/api/villages-list/')
+                // Load villages using hosted GeoServer WFS
+                const url = `${GEOSERVER_BASE}/Purandar/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=Purandar:purandar_airport_village_bo&outputFormat=application/json&srsName=EPSG:4326`;
+                fetch(url, { mode: 'cors' })
                     .then(response => response.json())
                     .then(data => {
                         const villageSelect = document.getElementById('villageSelect');
                         villageSelect.innerHTML = '<option value="">Select Village</option>';
                         
-                        data.villages.forEach(village => {
-                            const option = document.createElement('option');
-                            option.value = village;
-                            option.textContent = village;
-                            villageSelect.appendChild(option);
-                        });
+                        if (data.features) {
+                            data.features.forEach(f => {
+                                const name = f.properties && (f.properties.Village_Na || f.properties.name || f.properties.village);
+                                if (name) {
+                                    const option = document.createElement('option');
+                                    option.value = name;
+                                    option.textContent = name;
+                                    villageSelect.appendChild(option);
+                                }
+                            });
+                        }
                     })
                     .catch(error => console.error('Error loading villages list:', error));
             }
 
-            // Load Single Village Boundary
+            // Load Single Village Boundary from hosted GeoServer
             function loadSingleVillage(villageName) {
-                fetch(`/api/village/${encodeURIComponent(villageName)}/`)
+                const url = `${GEOSERVER_BASE}/Purandar/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=Purandar:purandar_airport_village_bo&cql_filter="Village_Na"='${encodeURIComponent(villageName)}'&outputFormat=application/json&srsName=EPSG:4326`;
+                fetch(url, { mode: 'cors' })
                     .then(response => response.json())
                     .then(data => {
                         if (villagesBoundaryLayer) map.removeLayer(villagesBoundaryLayer);
@@ -645,8 +660,9 @@
                                 fillColor: '#10b981'
                             },
                             onEachFeature: function(feature, layer) {
-                                if (feature.properties && feature.properties.name) {
-                                    layer.bindPopup('<div style="font-size: 12px;"><b>Village:</b> ' + feature.properties.name + '</div>');
+                                const name = feature.properties && (feature.properties.Village_Na || feature.properties.name);
+                                if (name) {
+                                    layer.bindPopup(`<div style="font-size: 12px;"><b>Village:</b> ${name}</div>`);
                                 }
                             }
                         }).addTo(map);
@@ -973,7 +989,9 @@
             function loadAssetLayerFromGeoServer(assetName) {
                 console.log(`Loading layer: ${assetName}`);
                 
-                fetch(`/api/asset-layer/${assetName}/`)
+                // fetch asset layer directly from hosted GeoServer WFS
+                const url = `${GEOSERVER_BASE}/Purandar/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=Purandar:${assetName}&outputFormat=application/json&srsName=EPSG:4326`;
+                fetch(url, { mode: 'cors' })
                     .then(response => {
                         if (!response.ok) {
                             throw new Error(`HTTP error! status: ${response.status}`);
