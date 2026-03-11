@@ -244,6 +244,57 @@ def get_all_villages_compensation(request):
         
         return JsonResponse({'villages': villages_data})
 
+def get_all_villages_farmers(request):
+    """Fetch affected farmers count for all villages"""
+    with connection.cursor() as cursor:
+        # Get list of all villages
+        cursor.execute("""
+            SELECT DISTINCT "Village_Na" 
+            FROM public.purandhar_airport_village_bo 
+            ORDER BY "Village_Na";
+        """)
+        villages = [row[0] for row in cursor.fetchall()]
+        
+        # Check which column name exists for village in purandar_farmers table
+        cursor.execute("""
+            SELECT column_name 
+            FROM information_schema.columns 
+            WHERE table_schema = 'public' 
+            AND table_name = 'purandar_farmers'
+            AND (column_name ILIKE '%village%' OR column_name = 'VILLAGE')
+            LIMIT 1;
+        """)
+        village_col_result = cursor.fetchone()
+        
+        if not village_col_result:
+            return JsonResponse({'villages': []})
+        
+        village_col = village_col_result[0]
+        villages_data = []
+        
+        for village in villages:
+            try:
+                cursor.execute(f"""
+                    SELECT COUNT(*)
+                    FROM public.purandar_farmers
+                    WHERE affected_farmer = true 
+                    AND UPPER(TRIM("{village_col}")) = UPPER(TRIM(%s));
+                """, [village])
+                farmers_count = cursor.fetchone()[0] or 0
+                
+                villages_data.append({
+                    'village_name': village,
+                    'farmers_count': farmers_count
+                })
+            except Exception as e:
+                print(f"Error fetching farmers from {village}: {e}")
+                continue
+        
+        # Sort by farmers count descending
+        villages_data.sort(key=lambda x: x['farmers_count'], reverse=True)
+        
+        return JsonResponse({'villages': villages_data})
+
 def get_project_stats(request):
     """Fetch project statistics - supports optional village filter"""
     village_name = request.GET.get('village', None)

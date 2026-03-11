@@ -12,6 +12,7 @@ urlpatterns = [
     path('api/village/<str:village_name>/', views.get_single_village_boundary, name='single_village'),
     path('api/village-compensation/<str:village_name>/', views.get_village_compensation, name='village_compensation'),
     path('api/all-villages-compensation/', views.get_all_villages_compensation, name='all_villages_compensation'),
+    path('api/all-villages-farmers/', views.get_all_villages_farmers, name='all_villages_farmers'),
     path('api/project-stats/', views.get_project_stats, name='project_stats'),
     path('api/asset-layer/<str:asset_name>/', views.get_asset_layer, name='asset_layer'),
 ]

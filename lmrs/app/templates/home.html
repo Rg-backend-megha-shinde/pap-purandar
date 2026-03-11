@@ -83,10 +83,6 @@
             <div class="flex flex-1 justify-end gap-6 items-center">
                 <nav class="hidden md:flex items-center gap-6">
                     <a class="text-primary text-sm font-semibold leading-normal" href="#">Dashboard</a>
-                    <a class="text-slate-600 dark:text-slate-400 text-sm font-medium leading-normal hover:text-primary"
-                        href="#">Village GIS</a>
-                    <a class="text-slate-600 dark:text-slate-400 text-sm font-medium leading-normal hover:text-primary"
-                        href="#">Reports</a>
                 </nav>
                 <div class="flex gap-3">
                     <button
@@ -303,6 +299,25 @@
                                 <span id="waterPercent"
                                     class="text-[10px] font-medium text-slate-700 dark:text-slate-300">--%</span>
                             </div>
+                        </div>
+                    </div>
+                    <div
+                        class="flex flex-col gap-3 rounded-xl p-4 bg-white dark:bg-slate-900 shadow-sm border border-slate-200 dark:border-slate-800">
+                        <h4 class="text-slate-700 dark:text-slate-300 text-xs font-bold uppercase mb-2">Affected Farmers
+                            by Village</h4>
+                        <div class="flex items-center justify-center py-2">
+                            <div class="relative size-32">
+                                <svg viewBox="0 0 100 100" class="transform -rotate-90" id="farmersPieChart">
+                                    <!-- Farmer segments will be added dynamically -->
+                                </svg>
+                                <div class="absolute inset-0 flex flex-col items-center justify-center">
+                                    <span id="totalFarmersDisplay" class="text-lg font-bold leading-none">--</span>
+                                    <span class="text-[9px] text-slate-500">Total</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="farmersLegend" class="flex flex-col gap-1.5 mt-1">
+                            <!-- Farmers legend will be loaded dynamically -->
                         </div>
                     </div>
                 </div>
@@ -844,6 +859,71 @@
 
                 // Fetch village compensation data (pass through village filter if any)
                 fetchVillageCompensation(villageName);
+                
+                // Fetch village farmers data - always show all villages
+                fetchVillageFarmers();
+            }
+
+            // Fetch and display village farmers pie chart - always show all villages
+            function fetchVillageFarmers() {
+                fetch('/api/all-villages-farmers/')
+                    .then(response => response.json())
+                    .then(data => {
+                        if (!data.villages || data.villages.length === 0) {
+                            console.log('No village farmers data available');
+                            return;
+                        }
+
+                        const totalFarmers = data.villages.reduce((sum, v) => sum + v.farmers_count, 0);
+                        const totalFarmersElement = document.getElementById('totalFarmersDisplay');
+                        if (totalFarmersElement) {
+                            totalFarmersElement.textContent = totalFarmers.toLocaleString();
+                        }
+
+                        const colors = ['#10b981', '#3b82f6', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#ef4444', '#84cc16', '#f97316', '#14b8a6'];
+                        const circumference = 251.2;
+                        let currentOffset = 0;
+
+                        const svgChart = document.getElementById('farmersPieChart');
+                        if (!svgChart) return;
+                        svgChart.innerHTML = '';
+
+                        const legendContainer = document.getElementById('farmersLegend');
+                        if (!legendContainer) return;
+                        legendContainer.innerHTML = '';
+
+                        data.villages.forEach((village, index) => {
+                            const percentage = (village.farmers_count / totalFarmers * 100).toFixed(1);
+                            const segmentLength = (village.farmers_count / totalFarmers) * circumference;
+                            const color = colors[index % colors.length];
+
+                            const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                            circle.setAttribute('cx', '50');
+                            circle.setAttribute('cy', '50');
+                            circle.setAttribute('r', '40');
+                            circle.setAttribute('fill', 'none');
+                            circle.setAttribute('stroke', color);
+                            circle.setAttribute('stroke-width', '20');
+                            circle.setAttribute('stroke-dasharray', `${segmentLength} ${circumference - segmentLength}`);
+                            circle.setAttribute('stroke-dashoffset', currentOffset);
+                            circle.setAttribute('class', 'transition-all duration-500');
+                            svgChart.appendChild(circle);
+
+                            currentOffset -= segmentLength;
+
+                            const legendItem = document.createElement('div');
+                            legendItem.className = 'flex items-center justify-between';
+                            legendItem.innerHTML = `
+                                <div class="flex items-center gap-2">
+                                    <span class="size-2 rounded-full" style="background-color: ${color}"></span>
+                                    <span class="text-[9px] text-slate-500">${village.village_name}</span>
+                                </div>
+                                <span class="text-[9px] font-medium text-slate-700 dark:text-slate-300">${village.farmers_count} (${percentage}%)</span>
+                            `;
+                            legendContainer.appendChild(legendItem);
+                        });
+                    })
+                    .catch(error => console.error('Error loading village farmers:', error));
             }
 
             // Format currency in Lakh or Cr
