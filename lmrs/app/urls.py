@@ -10,6 +10,7 @@ urlpatterns = [
     path('api/villages-gut/', views.get_villages_with_gut, name='villages_gut'),
     path('api/villages-list/', views.get_villages_list, name='villages_list'),
     path('api/village/<str:village_name>/', views.get_single_village_boundary, name='single_village'),
+    path('api/village-gut-boundaries/<str:village_name>/', views.get_village_gut_boundaries, name='village_gut_boundaries'),
     path('api/village-compensation/<str:village_name>/', views.get_village_compensation, name='village_compensation'),
     path('api/all-villages-compensation/', views.get_all_villages_compensation, name='all_villages_compensation'),
     path('api/all-villages-farmers/', views.get_all_villages_farmers, name='all_villages_farmers'),

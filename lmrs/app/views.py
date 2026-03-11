@@ -154,6 +154,40 @@ def get_single_village_boundary(request, village_name):
         result = cursor.fetchone()
         return JsonResponse(result[0] if result[0] else {'type': 'FeatureCollection', 'features': []}, safe=False)
 
+def get_village_gut_boundaries(request, village_name):
+    """Fetch all gut boundaries for a specific village"""
+    with connection.cursor() as cursor:
+        try:
+            cursor.execute("""
+                SELECT json_build_object(
+                    'type', 'FeatureCollection',
+                    'features', json_agg(
+                        json_build_object(
+                            'type', 'Feature',
+                            'geometry', ST_AsGeoJSON(ST_Transform(geom, 4326))::json,
+                            'properties', json_build_object(
+                                'gut_number', "Gut_Number",
+                                'village', "Village_Na",
+                                'area_ha', "Area_In_Ha",
+                                'taluka', "Taluka"
+                            )
+                        )
+                    )
+                )
+                FROM public.gut_bnd
+                WHERE "Village_Na" = %s;
+            """, [village_name])
+            result = cursor.fetchone()
+            
+            if result and result[0] and result[0].get('features'):
+                return JsonResponse(result[0], safe=False)
+            else:
+                return JsonResponse({'type': 'FeatureCollection', 'features': []}, safe=False)
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            return JsonResponse({'error': str(e), 'type': 'FeatureCollection', 'features': []}, status=500)
+
 def get_village_compensation(request, village_name):
     """Fetch village-wise compensation from all asset tables"""
     with connection.cursor() as cursor:
