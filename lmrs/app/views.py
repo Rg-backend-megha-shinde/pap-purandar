@@ -895,34 +895,13 @@ def get_project_stats(request):
         })
 
 def get_asset_layer(request, asset_name):
-    """Fetch asset layer GeoJSON - tries GeoServer first, falls back to PostGIS"""
+    """Fetch asset layer GeoJSON - filtered by village and AOI"""
     valid_assets = ['bag', 'tree', 'shed', 'structures', 'well', 'borewell', 'purandar_farmers']
     if asset_name not in valid_assets:
         return JsonResponse({'error': 'Invalid asset name'}, status=400)
 
-    # --- Try GeoServer first ---
-    try:
-        geoserver_url = os.getenv('GEOSERVER_URL', 'http://209.182.233.103:9090/geoserver')
-        workspace = os.getenv('GEOSERVER_WORKSPACE', 'Purandar')
-        wfs_url = f"{geoserver_url}/wfs"
-        params = {
-            'service': 'WFS',
-            'version': '1.0.0',
-            'request': 'GetFeature',
-            'typeName': f'{workspace}:{asset_name}',
-            'outputFormat': 'application/json',
-            'srsName': 'EPSG:4326'
-        }
-        response = requests.get(wfs_url, params=params, timeout=10)
-        if response.status_code == 200:
-            data = response.json()
-            if data.get('features'):
-                print(f"GeoServer: loaded {asset_name} with {len(data['features'])} features")
-                return JsonResponse(data, safe=False)
-    except Exception as e:
-        print(f"GeoServer unavailable for {asset_name}, falling back to PostGIS: {e}")
+    village_name = request.GET.get('village', None)
 
-    # --- Fallback: query PostGIS directly ---
     try:
         with connection.cursor() as cursor:
             # Detect geometry column name (geometry or geom)
@@ -961,22 +940,60 @@ def get_asset_layer(request, asset_name):
                 f"'{col}', \"{col}\"" for col in prop_columns
             )
 
+            # Build WHERE clause for spatial filtering with proper SRID handling
+            where_clause = ""
+            params = []
+            
+            if village_name:
+                # Filter by village boundary AND AOI (transform geometries to same SRID)
+                where_clause = f"""
+                    WHERE EXISTS (
+                        SELECT 1 FROM public.purandhar_airport_village_bo v
+                        WHERE UPPER(TRIM(v."Village_Na")) = UPPER(TRIM(%s))
+                        AND ST_Intersects(
+                            ST_Transform(a.{geom_col}, ST_SRID(v.geometry)),
+                            v.geometry
+                        )
+                    )
+                    AND EXISTS (
+                        SELECT 1 FROM public.purandar_aoi aoi
+                        WHERE ST_Intersects(
+                            ST_Transform(a.{geom_col}, ST_SRID(aoi.geometry)),
+                            aoi.geometry
+                        )
+                    )
+                """
+                params = [village_name]
+            else:
+                # Filter by AOI only when no village selected
+                where_clause = f"""
+                    WHERE EXISTS (
+                        SELECT 1 FROM public.purandar_aoi aoi
+                        WHERE ST_Intersects(
+                            ST_Transform(a.{geom_col}, ST_SRID(aoi.geometry)),
+                            aoi.geometry
+                        )
+                    )
+                """
+
             cursor.execute(f"""
                 SELECT json_build_object(
                     'type', 'FeatureCollection',
                     'features', COALESCE(json_agg(
                         json_build_object(
                             'type', 'Feature',
-                            'geometry', ST_AsGeoJSON(ST_Transform({geom_col}, 4326))::json,
+                            'geometry', ST_AsGeoJSON(ST_Transform(a.{geom_col}, 4326))::json,
                             'properties', json_build_object({props_sql})
                         )
                     ), '[]'::json)
                 )
-                FROM public."{asset_name}";
-            """)
+                FROM public."{asset_name}" a
+                {where_clause};
+            """, params)
 
             result = cursor.fetchone()
-            print(f"PostGIS fallback: loaded {asset_name}")
+            feature_count = len(result[0].get('features', [])) if result and result[0] else 0
+            print(f"Loaded {asset_name} with {feature_count} features (village: {village_name or 'all'})")
             return JsonResponse(
                 result[0] if result and result[0] else {'type': 'FeatureCollection', 'features': []},
                 safe=False
@@ -986,7 +1003,7 @@ def get_asset_layer(request, asset_name):
         import traceback
         traceback.print_exc()
         return JsonResponse({
-            'error': f'Failed to load {asset_name} from both GeoServer and PostGIS: {str(e)}',
+            'error': f'Failed to load {asset_name}: {str(e)}',
             'type': 'FeatureCollection',
             'features': []
         }, status=500)
