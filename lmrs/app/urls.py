@@ -17,4 +17,5 @@ urlpatterns = [
     path('api/asset-layer/<str:asset_name>/', views.get_asset_layer, name='asset_layer'),
     path('api/gut-numbers/<str:village_name>/', views.get_gut_numbers_by_village, name='gut_numbers'),
     path('api/gut-boundary/<str:village_name>/<str:gut_number>/', views.get_gut_boundary, name='gut_boundary'),
+    path('api/gut-stats/<str:village_name>/<str:gut_number>/', views.get_gut_stats, name='gut_stats'),
 ]

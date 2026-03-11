@@ -593,10 +593,14 @@
                 if (this.value && currentVillage) {
                     currentGutNumber = this.value;
                     loadGutBoundary(currentVillage, this.value);
+                    // Fetch gut-specific statistics
+                    fetchGutStats(currentVillage, this.value);
                     // Reload any active asset layers with gut filter
                     reloadActiveAssetLayers();
                 } else {
                     currentGutNumber = null;
+                    // Reset to village statistics when no gut selected
+                    fetchProjectStats(currentVillage);
                     // Reload any active asset layers with only village filter
                     reloadActiveAssetLayers();
                 }
@@ -967,6 +971,61 @@
                     .catch(error => console.error('Error loading village compensation:', error));
             }
 
+            // Fetch Gut Statistics
+            function fetchGutStats(villageName, gutNumber) {
+                console.log(`Fetching stats for gut: ${villageName}/${gutNumber}`);
+                
+                fetch(`/api/gut-stats/${encodeURIComponent(villageName)}/${encodeURIComponent(gutNumber)}/`)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        console.log('Gut stats:', data);
+                        
+                        // Update affected farmers
+                        const affectedFarmersElement = document.getElementById('affectedFarmersCount');
+                        if (affectedFarmersElement) {
+                            affectedFarmersElement.textContent = data.affected_farmers.toLocaleString();
+                        }
+
+                        // Update area acquired
+                        const areaAcquiredElement = document.getElementById('areaAcquired');
+                        if (areaAcquiredElement) {
+                            areaAcquiredElement.textContent = data.area_acquired.toLocaleString('en-IN', { maximumFractionDigits: 2 }) + ' Ha';
+                        }
+
+                        // Update total compensation
+                        const totalCompensationElement = document.getElementById('totalCompensation');
+                        if (totalCompensationElement) {
+                            totalCompensationElement.textContent = formatCurrency(data.total_compensation);
+                        }
+
+                        // Calculate and display total assets from land classification (matches Assets Distribution)
+                        if (data.land_classification) {
+                            const totalAssets = data.land_classification.trees_total + 
+                                              data.land_classification.structures_total + 
+                                              data.land_classification.water_total;
+                            const totalAssetsElement = document.getElementById('totalAssetsCount');
+                            if (totalAssetsElement) {
+                                totalAssetsElement.textContent = totalAssets.toLocaleString();
+                            }
+                        }
+
+                        // Populate land classification with gut-specific data
+                        if (data.land_classification) {
+                            populateLandClassification(data.land_classification);
+                            populateAssetsDistribution(data.land_classification);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error loading gut stats:', error);
+                        showNotification(`Failed to load gut statistics: ${error.message}`, 'error');
+                    });
+            }
+
             // Fetch Project Statistics - with optional village filter
             function fetchProjectStats(villageName = null) {
                 const url = villageName 
@@ -996,9 +1055,11 @@
                             totalCompensationElement.textContent = formatCurrency(data.total_compensation);
                         }
 
-                        // Calculate and display total assets
-                        if (data.assets) {
-                            const totalAssets = Object.values(data.assets).reduce((sum, count) => sum + count, 0);
+                        // Calculate and display total assets from land classification (matches Assets Distribution)
+                        if (data.land_classification) {
+                            const totalAssets = data.land_classification.trees_total + 
+                                              data.land_classification.structures_total + 
+                                              data.land_classification.water_total;
                             const totalAssetsElement = document.getElementById('totalAssetsCount');
                             if (totalAssetsElement) {
                                 totalAssetsElement.textContent = totalAssets.toLocaleString();
