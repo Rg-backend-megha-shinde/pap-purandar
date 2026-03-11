@@ -78,6 +78,12 @@
                         <option value="">Select Village</option>
                         <!-- Villages will be loaded dynamically -->
                     </select>
+                    <select id="gutSelect"
+                        class="form-select text-xs font-medium border-none bg-slate-100 dark:bg-slate-800 rounded-lg focus:ring-primary h-10 px-3 pr-8"
+                        disabled>
+                        <option value="">Select Gut Number</option>
+                        <!-- Gut numbers will be loaded dynamically -->
+                    </select>
                 </div>
             </div>
             <div class="flex flex-1 justify-end gap-6 items-center">
@@ -215,6 +221,10 @@
                             <div class="flex items-center gap-2 text-xs">
                                 <div class="w-3 h-3 rounded-sm bg-emerald-500 border border-white shadow-sm"></div>
                                 <span class="text-slate-700 dark:text-slate-200">Villages</span>
+                            </div>
+                            <div class="flex items-center gap-2 text-xs">
+                                <div class="w-3 h-3 rounded-sm border-2 border-red-500 bg-red-500/30" style="border-style: dashed;"></div>
+                                <span class="text-slate-700 dark:text-slate-200">Gut Boundary</span>
                             </div>
                         </div>
                     </div>
@@ -358,11 +368,28 @@
         .leaflet-control {
             display: none !important;
         }
+
+        @keyframes slide-in {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .animate-slide-in {
+            animation: slide-in 0.3s ease-out;
+        }
     </style>
     <script>
         let map, currentLayer, osmLayer, satelliteLayer, terrainLayer;
-        let districtLayer, talukaLayer, aoiLayer, villagesBoundaryLayer, villagesGutLayer;
+        let districtLayer, talukaLayer, aoiLayer, villagesBoundaryLayer, villagesGutLayer, gutBoundaryLayer;
         let assetLayers = {}; // Store asset layers
+        let currentVillage = null; // Track current selected village
+        let currentGutNumber = null; // Track current selected gut number
 
         document.addEventListener('DOMContentLoaded', function () {
             // Fetch project statistics
@@ -476,6 +503,7 @@
             const districtSelect = document.getElementById('districtSelect');
             const talukaSelect = document.getElementById('talukaSelect');
             const villageSelect = document.getElementById('villageSelect');
+            const gutSelect = document.getElementById('gutSelect');
 
             // District selection
             districtSelect.addEventListener('change', function () {
@@ -485,12 +513,20 @@
                     loadDistrictBoundary();
                     talukaSelect.disabled = false;
                     villageSelect.disabled = true;
+                    gutSelect.disabled = true;
                     villageSelect.value = '';
+                    gutSelect.value = '';
+                    currentVillage = null;
+                    currentGutNumber = null;
                 } else {
                     talukaSelect.disabled = true;
                     villageSelect.disabled = true;
+                    gutSelect.disabled = true;
                     talukaSelect.value = '';
                     villageSelect.value = '';
+                    gutSelect.value = '';
+                    currentVillage = null;
+                    currentGutNumber = null;
                 }
             });
 
@@ -500,14 +536,23 @@
                 if (talukaLayer) map.removeLayer(talukaLayer);
                 if (villagesBoundaryLayer) map.removeLayer(villagesBoundaryLayer);
                 if (villagesGutLayer) map.removeLayer(villagesGutLayer);
+                if (gutBoundaryLayer) map.removeLayer(gutBoundaryLayer);
 
                 if (this.value === 'taluka') {
                     loadTalukaBoundary();
                     loadVillagesList();
                     villageSelect.disabled = false;
+                    gutSelect.disabled = true;
+                    gutSelect.value = '';
+                    currentVillage = null;
+                    currentGutNumber = null;
                 } else {
                     villageSelect.disabled = true;
+                    gutSelect.disabled = true;
                     villageSelect.innerHTML = '<option value="">Select Village</option>';
+                    gutSelect.innerHTML = '<option value="">Select Gut Number</option>';
+                    currentVillage = null;
+                    currentGutNumber = null;
                 }
             });
 
@@ -516,15 +561,44 @@
                 // Remove existing village layers
                 if (villagesBoundaryLayer) map.removeLayer(villagesBoundaryLayer);
                 if (villagesGutLayer) map.removeLayer(villagesGutLayer);
+                if (gutBoundaryLayer) map.removeLayer(gutBoundaryLayer);
 
                 if (this.value) {
+                    currentVillage = this.value;
+                    currentGutNumber = null;
                     loadSingleVillage(this.value);
-                    // Fetch village-wise statistics (this will also update the
-                    // village compensation bars internally)
+                    loadGutNumbersList(this.value);
+                    gutSelect.disabled = false;
+                    // Fetch village-wise statistics
                     fetchProjectStats(this.value);
+                    // Reload any active asset layers with village filter
+                    reloadActiveAssetLayers();
                 } else {
+                    currentVillage = null;
+                    currentGutNumber = null;
+                    gutSelect.disabled = true;
+                    gutSelect.innerHTML = '<option value="">Select Gut Number</option>';
                     // Reset to total statistics when no village selected
                     fetchProjectStats();
+                    // Reload any active asset layers without filter
+                    reloadActiveAssetLayers();
+                }
+            });
+
+            // Gut Number selection
+            gutSelect.addEventListener('change', function () {
+                // Remove existing gut boundary layer
+                if (gutBoundaryLayer) map.removeLayer(gutBoundaryLayer);
+
+                if (this.value && currentVillage) {
+                    currentGutNumber = this.value;
+                    loadGutBoundary(currentVillage, this.value);
+                    // Reload any active asset layers with gut filter
+                    reloadActiveAssetLayers();
+                } else {
+                    currentGutNumber = null;
+                    // Reload any active asset layers with only village filter
+                    reloadActiveAssetLayers();
                 }
             });
 
@@ -534,6 +608,7 @@
                 if (talukaLayer) map.removeLayer(talukaLayer);
                 if (villagesBoundaryLayer) map.removeLayer(villagesBoundaryLayer);
                 if (villagesGutLayer) map.removeLayer(villagesGutLayer);
+                if (gutBoundaryLayer) map.removeLayer(gutBoundaryLayer);
             }
 
             // Load District Boundary
@@ -681,6 +756,92 @@
                         map.fitBounds(villagesGutLayer.getBounds());
                     })
                     .catch(error => console.error('Error loading villages with gut:', error));
+            }
+
+            // Load Gut Numbers List for selected village
+            function loadGutNumbersList(villageName) {
+                fetch(`/api/gut-numbers/${encodeURIComponent(villageName)}/`)
+                    .then(response => response.json())
+                    .then(data => {
+                        const gutSelect = document.getElementById('gutSelect');
+                        gutSelect.innerHTML = '<option value="">Select Gut Number</option>';
+
+                        data.gut_numbers.forEach(gutNumber => {
+                            const option = document.createElement('option');
+                            option.value = gutNumber;
+                            option.textContent = gutNumber;
+                            gutSelect.appendChild(option);
+                        });
+                    })
+                    .catch(error => console.error('Error loading gut numbers:', error));
+            }
+
+            // Load Gut Boundary
+            function loadGutBoundary(villageName, gutNumber) {
+                console.log(`Loading gut boundary for village: ${villageName}, gut: ${gutNumber}`);
+                
+                fetch(`/api/gut-boundary/${encodeURIComponent(villageName)}/${encodeURIComponent(gutNumber)}/`)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        console.log('Gut boundary data:', data);
+                        
+                        if (!data.features || data.features.length === 0) {
+                            console.warn(`No gut boundary found for ${villageName}/${gutNumber}`);
+                            showNotification(`No boundary found for Gut ${gutNumber} in ${villageName}`, 'error');
+                            return;
+                        }
+                        
+                        if (gutBoundaryLayer) map.removeLayer(gutBoundaryLayer);
+
+                        gutBoundaryLayer = L.geoJSON(data, {
+                            style: {
+                                color: '#ef4444',
+                                weight: 3,
+                                fillOpacity: 0.3,
+                                fillColor: '#ef4444',
+                                dashArray: '5, 5'
+                            },
+                            onEachFeature: function (feature, layer) {
+                                let popupContent = '<div style="font-size: 12px;">';
+                                if (feature.properties.village) {
+                                    popupContent += '<b>Village:</b> ' + feature.properties.village + '<br>';
+                                }
+                                if (feature.properties.gut_number) {
+                                    popupContent += '<b>Gut Number:</b> ' + feature.properties.gut_number + '<br>';
+                                }
+                                if (feature.properties.area_ha) {
+                                    popupContent += '<b>Area (Ha):</b> ' + feature.properties.area_ha.toFixed(2);
+                                }
+                                popupContent += '</div>';
+                                layer.bindPopup(popupContent);
+                            }
+                        }).addTo(map);
+
+                        // Zoom to gut boundary
+                        if (gutBoundaryLayer.getBounds().isValid()) {
+                            map.fitBounds(gutBoundaryLayer.getBounds(), { padding: [50, 50] });
+                            console.log('Zoomed to gut boundary');
+                        } else {
+                            console.warn('Gut boundary bounds are not valid');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error loading gut boundary:', error);
+                        showNotification(`Failed to load gut boundary: ${error.message}`, 'error');
+                    });
+            }
+
+            // Reload active asset layers with current filters
+            function reloadActiveAssetLayers() {
+                document.querySelectorAll('.asset-layer-toggle:checked').forEach(toggle => {
+                    const assetName = toggle.getAttribute('data-asset');
+                    loadAssetLayerFromGeoServer(assetName);
+                });
             }
 
             // Load Villages List
@@ -1136,8 +1297,26 @@
             // Load asset layer from database via Django API
             function loadAssetLayerFromGeoServer(assetName) {
                 console.log(`Loading layer: ${assetName}`);
+                console.log(`Current filters - Village: ${currentVillage}, Gut: ${currentGutNumber}`);
 
-                fetch(`/api/asset-layer/${assetName}/`)
+                // Build URL with filters
+                let url = `/api/asset-layer/${assetName}/`;
+                const params = new URLSearchParams();
+                
+                if (currentVillage) {
+                    params.append('village', currentVillage);
+                }
+                if (currentGutNumber) {
+                    params.append('gut_number', currentGutNumber);
+                }
+                
+                if (params.toString()) {
+                    url += '?' + params.toString();
+                }
+                
+                console.log(`Fetching URL: ${url}`);
+
+                fetch(url)
                     .then(response => {
                         if (!response.ok) {
                             throw new Error(`HTTP error! status: ${response.status}`);
@@ -1146,14 +1325,32 @@
                     })
                     .then(data => {
                         if (!data.features || data.features.length === 0) {
-                            console.warn(`No features found for ${assetName}`);
-                            alert(`No data found for ${assetName} layer.`);
+                            console.warn(`No features found for ${assetName} with current filters`);
+                            console.log(`Village: ${currentVillage}, Gut: ${currentGutNumber}`);
+                            
+                            // Show professional notification
+                            const filterInfo = currentGutNumber 
+                                ? `Gut ${currentGutNumber} in ${currentVillage}`
+                                : currentVillage 
+                                    ? `Village ${currentVillage}`
+                                    : 'selected area';
+                            showNotification(`No ${assetName} data available in ${filterInfo}`, 'info');
+                            
+                            // Uncheck the toggle
                             const toggle = document.querySelector(`.asset-layer-toggle[data-asset="${assetName}"]`);
                             if (toggle) toggle.checked = false;
                             return;
                         }
 
                         console.log(`Successfully loaded ${assetName} with ${data.features.length} features`);
+                        
+                        // Show success notification
+                        const filterInfo = currentGutNumber 
+                            ? `Gut ${currentGutNumber}`
+                            : currentVillage 
+                                ? `${currentVillage}`
+                                : 'area';
+                        showNotification(`Loaded ${data.features.length} ${assetName} feature(s) in ${filterInfo}`, 'success');
 
                         if (assetLayers[assetName]) {
                             map.removeLayer(assetLayers[assetName]);
@@ -1208,7 +1405,7 @@
                     })
                     .catch(error => {
                         console.error(`Error loading ${assetName}:`, error);
-                        alert(`Failed to load ${assetName} layer. Error: ${error.message}`);
+                        showNotification(`Failed to load ${assetName} layer: ${error.message}`, 'error');
                         const toggle = document.querySelector(`.asset-layer-toggle[data-asset="${assetName}"]`);
                         if (toggle) toggle.checked = false;
                     });
@@ -1220,6 +1417,42 @@
                     map.removeLayer(assetLayers[assetName]);
                     delete assetLayers[assetName];
                 }
+            }
+
+            // Show notification toast
+            function showNotification(message, type = 'info') {
+                // Create notification container if it doesn't exist
+                let container = document.getElementById('notification-container');
+                if (!container) {
+                    container = document.createElement('div');
+                    container.id = 'notification-container';
+                    container.className = 'fixed top-20 right-6 z-[9999] flex flex-col gap-2';
+                    document.body.appendChild(container);
+                }
+
+                // Create notification element
+                const notification = document.createElement('div');
+                const bgColor = type === 'error' ? 'bg-red-500' : type === 'success' ? 'bg-green-500' : 'bg-blue-500';
+                const icon = type === 'error' ? 'error' : type === 'success' ? 'check_circle' : 'info';
+                
+                notification.className = `${bgColor} text-white px-4 py-3 rounded-lg shadow-2xl flex items-center gap-3 min-w-[300px] max-w-md animate-slide-in`;
+                notification.innerHTML = `
+                    <span class="material-symbols-outlined text-xl">${icon}</span>
+                    <span class="flex-1 text-sm font-medium">${message}</span>
+                    <button class="text-white hover:text-gray-200 transition-colors" onclick="this.parentElement.remove()">
+                        <span class="material-symbols-outlined text-lg">close</span>
+                    </button>
+                `;
+
+                container.appendChild(notification);
+
+                // Auto remove after 4 seconds
+                setTimeout(() => {
+                    notification.style.opacity = '0';
+                    notification.style.transform = 'translateX(100%)';
+                    notification.style.transition = 'all 0.3s ease-out';
+                    setTimeout(() => notification.remove(), 300);
+                }, 4000);
             }
         });
     </script>

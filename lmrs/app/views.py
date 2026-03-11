@@ -894,6 +894,61 @@ def get_project_stats(request):
             'land_classification': land_classification
         })
 
+def get_gut_numbers_by_village(request, village_name):
+    """Fetch list of gut numbers for a specific village"""
+    with connection.cursor() as cursor:
+        try:
+            cursor.execute("""
+                SELECT DISTINCT "Gut_Number" 
+                FROM public.gut_bnd 
+                WHERE "Village_Na" = %s
+                ORDER BY "Gut_Number";
+            """, [village_name])
+            gut_numbers = [row[0] for row in cursor.fetchall()]
+            print(f"Found {len(gut_numbers)} gut numbers for village {village_name}: {gut_numbers[:10]}")
+            return JsonResponse({'gut_numbers': gut_numbers})
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            return JsonResponse({'error': str(e), 'gut_numbers': []}, status=500)
+
+def get_gut_boundary(request, village_name, gut_number):
+    """Fetch specific gut boundary GeoJSON"""
+    with connection.cursor() as cursor:
+        try:
+            cursor.execute("""
+                SELECT json_build_object(
+                    'type', 'FeatureCollection',
+                    'features', json_agg(
+                        json_build_object(
+                            'type', 'Feature',
+                            'geometry', ST_AsGeoJSON(ST_Transform(geom, 4326))::json,
+                            'properties', json_build_object(
+                                'gut_number', "Gut_Number",
+                                'village', "Village_Na",
+                                'area_ha', "Area_In_Ha",
+                                'taluka', "Taluka"
+                            )
+                        )
+                    )
+                )
+                FROM public.gut_bnd
+                WHERE "Village_Na" = %s AND "Gut_Number" = %s;
+            """, [village_name, gut_number])
+            result = cursor.fetchone()
+            print(f"Gut boundary query result for {village_name}/{gut_number}: {result}")
+            
+            if result and result[0] and result[0].get('features'):
+                print(f"Found {len(result[0]['features'])} gut boundary features")
+                return JsonResponse(result[0], safe=False)
+            else:
+                print(f"No gut boundary found for {village_name}/{gut_number}")
+                return JsonResponse({'type': 'FeatureCollection', 'features': []}, safe=False)
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            return JsonResponse({'error': str(e), 'type': 'FeatureCollection', 'features': []}, status=500)
+
 def get_asset_layer(request, asset_name):
     """Fetch asset layer GeoJSON - filtered by village and AOI"""
     valid_assets = ['bag', 'tree', 'shed', 'structures', 'well', 'borewell', 'purandar_farmers']
@@ -901,6 +956,9 @@ def get_asset_layer(request, asset_name):
         return JsonResponse({'error': 'Invalid asset name'}, status=400)
 
     village_name = request.GET.get('village', None)
+    gut_number = request.GET.get('gut_number', None)
+    
+    print(f"Loading asset layer: {asset_name}, village: {village_name}, gut_number: {gut_number}")
 
     try:
         with connection.cursor() as cursor:
@@ -944,34 +1002,52 @@ def get_asset_layer(request, asset_name):
             where_clause = ""
             params = []
             
-            if village_name:
+            if gut_number and village_name:
+                print(f"Filtering by gut: {village_name}/{gut_number}")
+                # Filter by specific gut boundary (gut_bnd uses 'geom' column)
+                # Use ST_Transform to ensure both geometries are in the same SRID (4326)
+                where_clause = f"""
+                    WHERE EXISTS (
+                        SELECT 1 FROM public.gut_bnd g
+                        WHERE g."Village_Na" = %s
+                        AND g."Gut_Number" = %s
+                        AND ST_Intersects(
+                            ST_Transform(a.{geom_col}, 4326),
+                            ST_Transform(g.geom, 4326)
+                        )
+                    )
+                """
+                params = [village_name, gut_number]
+            elif village_name:
+                print(f"Filtering by village: {village_name}")
                 # Filter by village boundary AND AOI (transform geometries to same SRID)
                 where_clause = f"""
                     WHERE EXISTS (
                         SELECT 1 FROM public.purandhar_airport_village_bo v
                         WHERE UPPER(TRIM(v."Village_Na")) = UPPER(TRIM(%s))
                         AND ST_Intersects(
-                            ST_Transform(a.{geom_col}, ST_SRID(v.geometry)),
-                            v.geometry
+                            ST_Transform(a.{geom_col}, 4326),
+                            ST_Transform(v.geometry, 4326)
                         )
                     )
                     AND EXISTS (
                         SELECT 1 FROM public.purandar_aoi aoi
                         WHERE ST_Intersects(
-                            ST_Transform(a.{geom_col}, ST_SRID(aoi.geometry)),
-                            aoi.geometry
+                            ST_Transform(a.{geom_col}, 4326),
+                            ST_Transform(aoi.geometry, 4326)
                         )
                     )
                 """
                 params = [village_name]
             else:
+                print("Filtering by AOI only")
                 # Filter by AOI only when no village selected
                 where_clause = f"""
                     WHERE EXISTS (
                         SELECT 1 FROM public.purandar_aoi aoi
                         WHERE ST_Intersects(
-                            ST_Transform(a.{geom_col}, ST_SRID(aoi.geometry)),
-                            aoi.geometry
+                            ST_Transform(a.{geom_col}, 4326),
+                            ST_Transform(aoi.geometry, 4326)
                         )
                     )
                 """
@@ -993,7 +1069,32 @@ def get_asset_layer(request, asset_name):
 
             result = cursor.fetchone()
             feature_count = len(result[0].get('features', [])) if result and result[0] else 0
-            print(f"Loaded {asset_name} with {feature_count} features (village: {village_name or 'all'})")
+            print(f"Loaded {asset_name} with {feature_count} features (village: {village_name or 'all'}, gut: {gut_number or 'all'})")
+            
+            # If no features found with gut filter, let's check if there are any in the village
+            if feature_count == 0 and gut_number and village_name:
+                cursor.execute(f"""
+                    SELECT COUNT(*) FROM public."{asset_name}" a
+                    WHERE EXISTS (
+                        SELECT 1 FROM public.purandhar_airport_village_bo v
+                        WHERE UPPER(TRIM(v."Village_Na")) = UPPER(TRIM(%s))
+                        AND ST_Intersects(
+                            ST_Transform(a.{geom_col}, 4326),
+                            ST_Transform(v.geometry, 4326)
+                        )
+                    );
+                """, [village_name])
+                village_count = cursor.fetchone()[0]
+                print(f"Total {asset_name} in village {village_name}: {village_count}")
+                
+                # Check if the gut boundary exists
+                cursor.execute("""
+                    SELECT COUNT(*) FROM public.gut_bnd
+                    WHERE "Village_Na" = %s AND "Gut_Number" = %s;
+                """, [village_name, gut_number])
+                gut_exists = cursor.fetchone()[0]
+                print(f"Gut boundary exists: {gut_exists > 0}")
+            
             return JsonResponse(
                 result[0] if result and result[0] else {'type': 'FeatureCollection', 'features': []},
                 safe=False
