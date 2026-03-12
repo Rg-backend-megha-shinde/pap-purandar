@@ -1307,6 +1307,454 @@ def get_gut_stats(request, village_name, gut_number):
             traceback.print_exc()
             return JsonResponse({'error': str(e)}, status=500)
 
+def get_layer_bounds(request, layer_name):
+    """Fetch bounding box for any layer"""
+    valid_layers = {
+        'district_boundry': 'district_boundry',
+        'purandar_tehsil': 'purandar_tehsil',
+        'purandar_aoi': 'purandar_aoi',
+        'purandhar_airport_village_bo': 'purandhar_airport_village_bo',
+        'purandhar_airport_villages': 'purandhar_airport_villages',
+        'gut_bnd': 'gut_bnd',
+        'bag': 'bag',
+        'tree': 'tree',
+        'shed': 'shed',
+        'structures': 'structures',
+        'well': 'well',
+        'borewell': 'borewell',
+        'purandar_farmers': 'purandar_farmers'
+    }
+    
+    if layer_name not in valid_layers:
+        return JsonResponse({'error': 'Invalid layer name'}, status=400)
+    
+    table_name = valid_layers[layer_name]
+    village_name = request.GET.get('village', None)
+    gut_number = request.GET.get('gut_number', None)
+    
+    try:
+        with connection.cursor() as cursor:
+            # Detect geometry column name
+            cursor.execute("""
+                SELECT column_name
+                FROM information_schema.columns
+                WHERE table_schema = 'public'
+                  AND table_name = %s
+                  AND column_name IN ('geometry', 'geom')
+                LIMIT 1;
+            """, [table_name])
+            geom_row = cursor.fetchone()
+            
+            if not geom_row:
+                return JsonResponse({'error': f'No geometry column found in {table_name}'}, status=500)
+            
+            geom_col = geom_row[0]
+            
+            # Build WHERE clause for filtering
+            where_clause = ""
+            params = []
+            
+            if gut_number and village_name and table_name != 'gut_bnd':
+                # Filter by gut intersection
+                where_clause = f"""
+                    WHERE EXISTS (
+                        SELECT 1 FROM public.gut_bnd g
+                        WHERE g."Village_Na" = %s
+                        AND g."Gut_Number" = %s
+                        AND ST_Intersects(
+                            ST_Transform(a.{geom_col}, 4326),
+                            ST_Transform(g.geom, 4326)
+                        )
+                    )
+                """
+                params = [village_name, gut_number]
+            elif village_name and table_name != 'gut_bnd':
+                # Filter by village intersection
+                where_clause = f"""
+                    WHERE EXISTS (
+                        SELECT 1 FROM public.purandhar_airport_village_bo v
+                        WHERE UPPER(TRIM(v."Village_Na")) = UPPER(TRIM(%s))
+                        AND ST_Intersects(
+                            ST_Transform(a.{geom_col}, 4326),
+                            ST_Transform(v.geometry, 4326)
+                        )
+                    )
+                """
+                params = [village_name]
+            elif village_name and table_name == 'gut_bnd':
+                # For gut_bnd, filter by Village_Na column
+                where_clause = 'WHERE "Village_Na" = %s'
+                params = [village_name]
+            
+            # Calculate bounds in WGS84
+            if where_clause:
+                query = f"""
+                    SELECT 
+                        ST_XMin(extent) as minx,
+                        ST_YMin(extent) as miny,
+                        ST_XMax(extent) as maxx,
+                        ST_YMax(extent) as maxy
+                    FROM (
+                        SELECT ST_Extent(ST_Transform({geom_col}, 4326)) as extent
+                        FROM public.{table_name} a
+                        {where_clause}
+                    ) as subquery;
+                """
+            else:
+                query = f"""
+                    SELECT 
+                        ST_XMin(extent) as minx,
+                        ST_YMin(extent) as miny,
+                        ST_XMax(extent) as maxx,
+                        ST_YMax(extent) as maxy
+                    FROM (
+                        SELECT ST_Extent(ST_Transform({geom_col}, 4326)) as extent
+                        FROM public.{table_name}
+                    ) as subquery;
+                """
+            
+            cursor.execute(query, params)
+            result = cursor.fetchone()
+            
+            if result and result[0] is not None:
+                return JsonResponse({
+                    'bounds': {
+                        'minLng': float(result[0]),
+                        'minLat': float(result[1]),
+                        'maxLng': float(result[2]),
+                        'maxLat': float(result[3])
+                    }
+                })
+            else:
+                return JsonResponse({'error': 'No features found'}, status=404)
+                
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({'error': str(e)}, status=500)
+    """Fetch statistics for a specific gut"""
+    with connection.cursor() as cursor:
+        try:
+            # Get gut area
+            cursor.execute("""
+                SELECT "Area_In_Ha"
+                FROM public.gut_bnd
+                WHERE "Village_Na" = %s AND "Gut_Number" = %s;
+            """, [village_name, gut_number])
+            gut_area_result = cursor.fetchone()
+            area_acquired = float(gut_area_result[0]) if gut_area_result and gut_area_result[0] else 0
+            
+            # Count affected farmers in this gut
+            cursor.execute("""
+                SELECT column_name 
+                FROM information_schema.columns 
+                WHERE table_schema = 'public' 
+                AND table_name = 'purandar_farmers'
+                AND column_name IN ('geometry', 'geom')
+                LIMIT 1;
+            """)
+            farmer_geom_col = cursor.fetchone()
+            
+            affected_farmers = 0
+            if farmer_geom_col:
+                geom_col = farmer_geom_col[0]
+                cursor.execute(f"""
+                    SELECT COUNT(*)
+                    FROM public.purandar_farmers f
+                    WHERE f.affected_farmer = true
+                    AND EXISTS (
+                        SELECT 1 FROM public.gut_bnd g
+                        WHERE g."Village_Na" = %s
+                        AND g."Gut_Number" = %s
+                        AND ST_Intersects(
+                            ST_Transform(f.{geom_col}, 4326),
+                            ST_Transform(g.geom, 4326)
+                        )
+                    );
+                """, [village_name, gut_number])
+                affected_farmers = cursor.fetchone()[0] or 0
+            
+            # Calculate total compensation from all assets in this gut
+            total_compensation = 0
+            asset_tables = ['bag', 'tree', 'shed', 'structures', 'well', 'borewell']
+            assets = {}
+            
+            for table in asset_tables:
+                try:
+                    # Check if geometry column exists
+                    cursor.execute(f"""
+                        SELECT column_name 
+                        FROM information_schema.columns 
+                        WHERE table_schema = 'public' 
+                        AND table_name = '{table}'
+                        AND column_name IN ('geometry', 'geom')
+                        LIMIT 1;
+                    """)
+                    geom_col_result = cursor.fetchone()
+                    
+                    if geom_col_result:
+                        geom_col = geom_col_result[0]
+                        
+                        # Count assets in gut
+                        cursor.execute(f"""
+                            SELECT COUNT(*), COALESCE(SUM(valuation), 0)
+                            FROM public.{table} a
+                            WHERE EXISTS (
+                                SELECT 1 FROM public.gut_bnd g
+                                WHERE g."Village_Na" = %s
+                                AND g."Gut_Number" = %s
+                                AND ST_Intersects(
+                                    ST_Transform(a.{geom_col}, 4326),
+                                    ST_Transform(g.geom, 4326)
+                                )
+                            );
+                        """, [village_name, gut_number])
+                        result = cursor.fetchone()
+                        count = result[0] or 0
+                        valuation = result[1] or 0
+                        
+                        assets[table] = count
+                        total_compensation += float(valuation)
+                except Exception as e:
+                    print(f"Error fetching {table} for gut: {e}")
+                    assets[table] = 0
+            
+            # Add farmers count to assets
+            assets['purandar_farmers'] = affected_farmers
+            
+            # Calculate land classification for gut
+            land_classification = {}
+            
+            # Trees
+            try:
+                # bag table - cnt_trees
+                cursor.execute("""
+                    SELECT column_name 
+                    FROM information_schema.columns 
+                    WHERE table_schema = 'public' 
+                    AND table_name = 'bag'
+                    AND column_name IN ('geometry', 'geom')
+                    LIMIT 1;
+                """)
+                bag_geom = cursor.fetchone()
+                
+                if bag_geom:
+                    geom_col = bag_geom[0]
+                    cursor.execute(f"""
+                        SELECT COALESCE(SUM(cnt_trees), 0), COALESCE(SUM(valuation), 0)
+                        FROM public.bag a
+                        WHERE EXISTS (
+                            SELECT 1 FROM public.gut_bnd g
+                            WHERE g."Village_Na" = %s
+                            AND g."Gut_Number" = %s
+                            AND ST_Intersects(
+                                ST_Transform(a.{geom_col}, 4326),
+                                ST_Transform(g.geom, 4326)
+                            )
+                        );
+                    """, [village_name, gut_number])
+                    bag_result = cursor.fetchone()
+                    bag_trees = int(bag_result[0] or 0)
+                    bag_valuation = float(bag_result[1] or 0)
+                else:
+                    bag_trees = bag_valuation = 0
+                
+                # tree table
+                tree_count = assets.get('tree', 0)
+                cursor.execute("""
+                    SELECT column_name 
+                    FROM information_schema.columns 
+                    WHERE table_schema = 'public' 
+                    AND table_name = 'tree'
+                    AND column_name IN ('geometry', 'geom')
+                    LIMIT 1;
+                """)
+                tree_geom = cursor.fetchone()
+                
+                tree_valuation = 0
+                if tree_geom:
+                    geom_col = tree_geom[0]
+                    cursor.execute(f"""
+                        SELECT COALESCE(SUM(valuation), 0)
+                        FROM public.tree a
+                        WHERE EXISTS (
+                            SELECT 1 FROM public.gut_bnd g
+                            WHERE g."Village_Na" = %s
+                            AND g."Gut_Number" = %s
+                            AND ST_Intersects(
+                                ST_Transform(a.{geom_col}, 4326),
+                                ST_Transform(g.geom, 4326)
+                            )
+                        );
+                    """, [village_name, gut_number])
+                    tree_valuation = float(cursor.fetchone()[0] or 0)
+                
+                land_classification['trees_total'] = bag_trees + tree_count
+                land_classification['trees_valuation'] = bag_valuation + tree_valuation
+            except Exception as e:
+                print(f"Error calculating trees for gut: {e}")
+                land_classification['trees_total'] = 0
+                land_classification['trees_valuation'] = 0
+            
+            # Structures
+            land_classification['structures_permanent'] = assets.get('structures', 0)
+            land_classification['structures_temporary'] = assets.get('shed', 0)
+            land_classification['structures_total'] = land_classification['structures_permanent'] + land_classification['structures_temporary']
+            
+            # Get valuations for structures
+            try:
+                cursor.execute("""
+                    SELECT column_name 
+                    FROM information_schema.columns 
+                    WHERE table_schema = 'public' 
+                    AND table_name = 'structures'
+                    AND column_name IN ('geometry', 'geom')
+                    LIMIT 1;
+                """)
+                struct_geom = cursor.fetchone()
+                
+                if struct_geom:
+                    geom_col = struct_geom[0]
+                    cursor.execute(f"""
+                        SELECT COALESCE(SUM(valuation), 0)
+                        FROM public.structures a
+                        WHERE EXISTS (
+                            SELECT 1 FROM public.gut_bnd g
+                            WHERE g."Village_Na" = %s
+                            AND g."Gut_Number" = %s
+                            AND ST_Intersects(
+                                ST_Transform(a.{geom_col}, 4326),
+                                ST_Transform(g.geom, 4326)
+                            )
+                        );
+                    """, [village_name, gut_number])
+                    land_classification['structures_permanent_valuation'] = float(cursor.fetchone()[0] or 0)
+                else:
+                    land_classification['structures_permanent_valuation'] = 0
+                
+                cursor.execute("""
+                    SELECT column_name 
+                    FROM information_schema.columns 
+                    WHERE table_schema = 'public' 
+                    AND table_name = 'shed'
+                    AND column_name IN ('geometry', 'geom')
+                    LIMIT 1;
+                """)
+                shed_geom = cursor.fetchone()
+                
+                if shed_geom:
+                    geom_col = shed_geom[0]
+                    cursor.execute(f"""
+                        SELECT COALESCE(SUM(valuation), 0)
+                        FROM public.shed a
+                        WHERE EXISTS (
+                            SELECT 1 FROM public.gut_bnd g
+                            WHERE g."Village_Na" = %s
+                            AND g."Gut_Number" = %s
+                            AND ST_Intersects(
+                                ST_Transform(a.{geom_col}, 4326),
+                                ST_Transform(g.geom, 4326)
+                            )
+                        );
+                    """, [village_name, gut_number])
+                    land_classification['structures_temporary_valuation'] = float(cursor.fetchone()[0] or 0)
+                else:
+                    land_classification['structures_temporary_valuation'] = 0
+                
+                land_classification['structures_valuation'] = land_classification['structures_permanent_valuation'] + land_classification['structures_temporary_valuation']
+            except Exception as e:
+                print(f"Error calculating structures valuation for gut: {e}")
+                land_classification['structures_permanent_valuation'] = 0
+                land_classification['structures_temporary_valuation'] = 0
+                land_classification['structures_valuation'] = 0
+            
+            # Water
+            land_classification['water_well'] = assets.get('well', 0)
+            land_classification['water_borewell'] = assets.get('borewell', 0)
+            land_classification['water_total'] = land_classification['water_well'] + land_classification['water_borewell']
+            
+            # Get valuations for water
+            try:
+                cursor.execute("""
+                    SELECT column_name 
+                    FROM information_schema.columns 
+                    WHERE table_schema = 'public' 
+                    AND table_name = 'well'
+                    AND column_name IN ('geometry', 'geom')
+                    LIMIT 1;
+                """)
+                well_geom = cursor.fetchone()
+                
+                if well_geom:
+                    geom_col = well_geom[0]
+                    cursor.execute(f"""
+                        SELECT COALESCE(SUM(valuation), 0)
+                        FROM public.well a
+                        WHERE EXISTS (
+                            SELECT 1 FROM public.gut_bnd g
+                            WHERE g."Village_Na" = %s
+                            AND g."Gut_Number" = %s
+                            AND ST_Intersects(
+                                ST_Transform(a.{geom_col}, 4326),
+                                ST_Transform(g.geom, 4326)
+                            )
+                        );
+                    """, [village_name, gut_number])
+                    land_classification['water_well_valuation'] = float(cursor.fetchone()[0] or 0)
+                else:
+                    land_classification['water_well_valuation'] = 0
+                
+                cursor.execute("""
+                    SELECT column_name 
+                    FROM information_schema.columns 
+                    WHERE table_schema = 'public' 
+                    AND table_name = 'borewell'
+                    AND column_name IN ('geometry', 'geom')
+                    LIMIT 1;
+                """)
+                bore_geom = cursor.fetchone()
+                
+                if bore_geom:
+                    geom_col = bore_geom[0]
+                    cursor.execute(f"""
+                        SELECT COALESCE(SUM(valuation), 0)
+                        FROM public.borewell a
+                        WHERE EXISTS (
+                            SELECT 1 FROM public.gut_bnd g
+                            WHERE g."Village_Na" = %s
+                            AND g."Gut_Number" = %s
+                            AND ST_Intersects(
+                                ST_Transform(a.{geom_col}, 4326),
+                                ST_Transform(g.geom, 4326)
+                            )
+                        );
+                    """, [village_name, gut_number])
+                    land_classification['water_borewell_valuation'] = float(cursor.fetchone()[0] or 0)
+                else:
+                    land_classification['water_borewell_valuation'] = 0
+                
+                land_classification['water_valuation'] = land_classification['water_well_valuation'] + land_classification['water_borewell_valuation']
+            except Exception as e:
+                print(f"Error calculating water valuation for gut: {e}")
+                land_classification['water_well_valuation'] = 0
+                land_classification['water_borewell_valuation'] = 0
+                land_classification['water_valuation'] = 0
+            
+            return JsonResponse({
+                'affected_farmers': affected_farmers,
+                'area_acquired': round(area_acquired, 2),
+                'total_compensation': total_compensation,
+                'assets': assets,
+                'land_classification': land_classification,
+                'village_name': village_name,
+                'gut_number': gut_number
+            })
+            
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            return JsonResponse({'error': str(e)}, status=500)
+
 def get_asset_layer(request, asset_name):
     """Fetch asset layer GeoJSON - filtered by village and AOI"""
     valid_assets = ['bag', 'tree', 'shed', 'structures', 'well', 'borewell', 'purandar_farmers']
