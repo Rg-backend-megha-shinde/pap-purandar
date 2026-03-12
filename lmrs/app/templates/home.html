@@ -266,7 +266,7 @@
                             <div class="flex items-center gap-2 text-xs">
                                 <div class="w-3 h-3 rounded-sm border-2 border-red-500 bg-red-500/30"
                                     style="border-style: dashed;"></div>
-                                <span class="text-slate-700 dark:text-slate-200">Selected Gut</span>
+                                <span class="text-slate-700 dark:text-slate-200">Selected Gut (Click to select)</span>
                             </div>
                         </div>
                     </div>
@@ -463,6 +463,15 @@
             background: rgba(0, 0, 0, 0.85);
             border-color: #fff;
             color: #fff;
+        }
+
+        /* Clickable gut boundaries cursor */
+        .leaflet-interactive {
+            cursor: pointer !important;
+        }
+
+        .leaflet-interactive:hover {
+            cursor: pointer !important;
         }
 
         @keyframes slide-in {
@@ -670,7 +679,12 @@
 
                 if (this.value) {
                     currentVillage = this.value;
-                    currentGutNumber = null;
+                    currentGutNumber = null; // Clear gut selection when changing village
+                    
+                    // Clear gut dropdown
+                    const gutSelect = document.getElementById('gutSelect');
+                    gutSelect.value = '';
+                    
                     loadSingleVillage(this.value);
                     loadVillageGutBoundaries(this.value); // Load all gut boundaries for the village
                     loadGutNumbersList(this.value);
@@ -698,13 +712,22 @@
 
                 if (this.value && currentVillage) {
                     currentGutNumber = this.value;
-                    loadGutBoundary(currentVillage, this.value);
+                    
+                    // Reload village gut boundaries to update styling for selected gut
+                    loadVillageGutBoundaries(currentVillage);
+                    
                     // Fetch gut-specific statistics
                     fetchGutStats(currentVillage, this.value);
                     // Reload any active asset layers with gut filter
                     reloadActiveAssetLayers();
                 } else {
                     currentGutNumber = null;
+                    
+                    // Reload village gut boundaries to clear selection styling
+                    if (currentVillage) {
+                        loadVillageGutBoundaries(currentVillage);
+                    }
+                    
                     // Reset to village statistics when no gut selected
                     fetchProjectStats(currentVillage);
                     // Reload any active asset layers with only village filter
@@ -1024,12 +1047,19 @@
                         if (villageGutBoundariesLayer) map.removeLayer(villageGutBoundariesLayer);
 
                         villageGutBoundariesLayer = L.geoJSON(data, {
-                            style: {
-                                color: '#000000',
-                                weight: 1.5,
-                                fillOpacity: 0.05,
-                                fillColor: '#000000',
-                                dashArray: '3, 3'
+                            style: function(feature) {
+                                // Check if this gut is currently selected
+                                const isSelected = currentGutNumber && 
+                                    feature.properties.gut_number && 
+                                    String(feature.properties.gut_number) === String(currentGutNumber);
+                                
+                                return {
+                                    color: isSelected ? '#ef4444' : '#000000',
+                                    weight: isSelected ? 3 : 1.5,
+                                    fillOpacity: isSelected ? 0.3 : 0.05,
+                                    fillColor: isSelected ? '#ef4444' : '#000000',
+                                    dashArray: isSelected ? '5, 5' : '3, 3'
+                                };
                             },
                             onEachFeature: function (feature, layer) {
                                 let popupContent = '<div style="font-size: 12px;">';
@@ -1042,6 +1072,7 @@
                                 if (feature.properties.area_ha) {
                                     popupContent += '<b>Area (Ha):</b> ' + feature.properties.area_ha.toFixed(2);
                                 }
+                                popupContent += '<br><i>Click to select this gut</i>';
                                 popupContent += '</div>';
                                 layer.bindPopup(popupContent);
 
@@ -1054,14 +1085,108 @@
                                         opacity: 0.9
                                     });
                                 }
+
+                                // Add click event for gut selection
+                                layer.on('click', function(e) {
+                                    const gutNumber = feature.properties.gut_number;
+                                    if (gutNumber && currentVillage) {
+                                        console.log(`Gut clicked: ${gutNumber} in village ${currentVillage}`);
+                                        
+                                        // Update the dropdown to reflect the selection
+                                        const gutSelect = document.getElementById('gutSelect');
+                                        if (gutSelect) {
+                                            gutSelect.value = String(gutNumber);
+                                        }
+                                        
+                                        // Update current gut number
+                                        currentGutNumber = String(gutNumber);
+                                        
+                                        // Remove existing single gut boundary layer
+                                        if (gutBoundaryLayer) map.removeLayer(gutBoundaryLayer);
+                                        
+                                        // Reload village gut boundaries to update styling
+                                        loadVillageGutBoundaries(currentVillage);
+                                        
+                                        // Zoom to selected gut
+                                        zoomToSelectedGut(layer);
+                                        
+                                        // Fetch gut-specific statistics
+                                        fetchGutStats(currentVillage, String(gutNumber));
+                                        
+                                        // Reload any active asset layers with gut filter
+                                        reloadActiveAssetLayers();
+                                        
+                                        // Show notification
+                                        showNotification(`Selected Gut ${gutNumber} in ${currentVillage}`, 'success');
+                                        
+                                        // Prevent event bubbling
+                                        L.DomEvent.stopPropagation(e);
+                                    }
+                                });
+
+                                // Add hover effects
+                                layer.on('mouseover', function(e) {
+                                    const isSelected = currentGutNumber && 
+                                        feature.properties.gut_number && 
+                                        String(feature.properties.gut_number) === String(currentGutNumber);
+                                    
+                                    if (!isSelected) {
+                                        layer.setStyle({
+                                            color: '#f59e0b',
+                                            weight: 2,
+                                            fillOpacity: 0.2,
+                                            fillColor: '#f59e0b'
+                                        });
+                                    }
+                                });
+
+                                layer.on('mouseout', function(e) {
+                                    const isSelected = currentGutNumber && 
+                                        feature.properties.gut_number && 
+                                        String(feature.properties.gut_number) === String(currentGutNumber);
+                                    
+                                    if (!isSelected) {
+                                        layer.setStyle({
+                                            color: '#000000',
+                                            weight: 1.5,
+                                            fillOpacity: 0.05,
+                                            fillColor: '#000000'
+                                        });
+                                    }
+                                });
                             }
                         }).addTo(map);
 
                         console.log(`Loaded ${data.features.length} gut boundaries for village ${villageName}`);
+                        
+                        // If there's a currently selected gut, zoom to it
+                        if (currentGutNumber) {
+                            zoomToSelectedGutByNumber(currentGutNumber);
+                        }
                     })
                     .catch(error => {
                         console.error('Error loading village gut boundaries:', error);
                     });
+            }
+
+            // Helper function to zoom to selected gut layer
+            function zoomToSelectedGut(layer) {
+                if (layer && layer.getBounds && layer.getBounds().isValid()) {
+                    map.fitBounds(layer.getBounds(), { padding: [50, 50] });
+                }
+            }
+
+            // Helper function to zoom to selected gut by gut number
+            function zoomToSelectedGutByNumber(gutNumber) {
+                if (villageGutBoundariesLayer) {
+                    villageGutBoundariesLayer.eachLayer(function(layer) {
+                        if (layer.feature && 
+                            layer.feature.properties.gut_number && 
+                            String(layer.feature.properties.gut_number) === String(gutNumber)) {
+                            zoomToSelectedGut(layer);
+                        }
+                    });
+                }
             }
 
             // Update compensation for selected village
