@@ -17,6 +17,43 @@
         rel="stylesheet" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- Highcharts from UNPKG CDN (more reliable) -->
+    <script src="https://unpkg.com/highcharts@11.2.0/highcharts.js"></script>
+    <script src="https://unpkg.com/highcharts@11.2.0/modules/exporting.js"></script>
+    <script src="https://unpkg.com/highcharts@11.2.0/modules/export-data.js"></script>
+    
+    <!-- Fallback CDN if UNPKG fails -->
+    <script>
+        // Check if Highcharts loaded, if not try alternative CDN
+        window.addEventListener('load', function() {
+            if (typeof Highcharts === 'undefined') {
+                console.log('Primary Highcharts CDN failed, trying fallback...');
+                const script1 = document.createElement('script');
+                script1.src = 'https://cdnjs.cloudflare.com/ajax/libs/highcharts/11.2.0/highcharts.min.js';
+                document.head.appendChild(script1);
+                
+                script1.onload = function() {
+                    const script2 = document.createElement('script');
+                    script2.src = 'https://cdnjs.cloudflare.com/ajax/libs/highcharts/11.2.0/modules/exporting.min.js';
+                    document.head.appendChild(script2);
+                    
+                    script2.onload = function() {
+                        const script3 = document.createElement('script');
+                        script3.src = 'https://cdnjs.cloudflare.com/ajax/libs/highcharts/11.2.0/modules/export-data.min.js';
+                        document.head.appendChild(script3);
+                        
+                        script3.onload = function() {
+                            console.log('Highcharts loaded from fallback CDN');
+                            // Retry chart creation if data is available
+                            if (window.lastLandData) {
+                                populateAssetsDistribution(window.lastLandData);
+                            }
+                        };
+                    };
+                };
+            }
+        });
+    </script>
     <script id="tailwind-config">
         tailwind.config = {
             darkMode: "class",
@@ -264,27 +301,21 @@
                     </div>
                     <div
                         class="flex flex-col gap-3 rounded-xl p-4 bg-white dark:bg-slate-900 shadow-sm border border-slate-200 dark:border-slate-800">
-                        <h4 class="text-slate-700 dark:text-slate-300 text-xs font-bold uppercase mb-2">Assets
-                            Distribution</h4>
+                        <div class="flex justify-between items-center">
+                            <h4 class="text-slate-700 dark:text-slate-300 text-xs font-bold uppercase mb-2">Assets
+                                Distribution</h4>
+                            <button id="exportAssetsChart" 
+                                class="text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 transition-colors"
+                                title="Export as PNG">
+                                <span class="material-symbols-outlined text-sm">download</span>
+                            </button>
+                        </div>
                         <div class="flex items-center justify-center py-4">
-                            <div class="relative size-40">
-                                <svg viewBox="0 0 100 100" class="transform -rotate-90">
-                                    <!-- Trees segment -->
-                                    <circle cx="50" cy="50" r="40" fill="none" stroke="#10b981" stroke-width="20"
-                                        stroke-dasharray="0 251.2" id="treesSegment"
-                                        class="transition-all duration-500" />
-                                    <!-- Structures segment -->
-                                    <circle cx="50" cy="50" r="40" fill="none" stroke="#8b5cf6" stroke-width="20"
-                                        stroke-dasharray="0 251.2" id="structuresSegment"
-                                        class="transition-all duration-500" />
-                                    <!-- Water segment -->
-                                    <circle cx="50" cy="50" r="40" fill="none" stroke="#06b6d4" stroke-width="20"
-                                        stroke-dasharray="0 251.2" id="waterSegment"
-                                        class="transition-all duration-500" />
-                                </svg>
-                                <div class="absolute inset-0 flex flex-col items-center justify-center">
-                                    <span id="totalAssetsDisplay" class="text-xl font-bold leading-none">--</span>
-                                    <span class="text-[10px] text-slate-500">Total</span>
+                            <div id="assetsDistributionChart" class="w-full h-40">
+                                <!-- Loading indicator -->
+                                <div class="flex flex-col items-center justify-center h-full">
+                                    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                                    <div class="text-xs text-slate-500 mt-2">Loading chart...</div>
                                 </div>
                             </div>
                         </div>
@@ -294,24 +325,24 @@
                                     <span class="size-2 rounded-full bg-emerald-500"></span>
                                     <span class="text-[10px] text-slate-500">Trees</span>
                                 </div>
-                                <span id="treesPercent"
-                                    class="text-[10px] font-medium text-slate-700 dark:text-slate-300">--%</span>
+                                <span id="treesCount"
+                                    class="text-[10px] font-medium text-slate-700 dark:text-slate-300">--</span>
                             </div>
                             <div class="flex items-center justify-between">
                                 <div class="flex items-center gap-2">
                                     <span class="size-2 rounded-full bg-purple-500"></span>
                                     <span class="text-[10px] text-slate-500">Structures</span>
                                 </div>
-                                <span id="structuresPercent"
-                                    class="text-[10px] font-medium text-slate-700 dark:text-slate-300">--%</span>
+                                <span id="structuresCount"
+                                    class="text-[10px] font-medium text-slate-700 dark:text-slate-300">--</span>
                             </div>
                             <div class="flex items-center justify-between">
                                 <div class="flex items-center gap-2">
                                     <span class="size-2 rounded-full bg-cyan-500"></span>
                                     <span class="text-[10px] text-slate-500">Water</span>
                                 </div>
-                                <span id="waterPercent"
-                                    class="text-[10px] font-medium text-slate-700 dark:text-slate-300">--%</span>
+                                <span id="waterCount"
+                                    class="text-[10px] font-medium text-slate-700 dark:text-slate-300">--</span>
                             </div>
                         </div>
                     </div>
@@ -373,6 +404,47 @@
             display: none !important;
         }
 
+        /* Highcharts container styling */
+        #assetsDistributionChart {
+            min-height: 160px;
+        }
+
+        /* Dark mode support for Highcharts */
+        .dark #assetsDistributionChart .highcharts-background {
+            fill: transparent;
+        }
+
+        /* Fallback CSS pie chart */
+        .css-pie-chart {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            position: relative;
+            margin: 0 auto;
+        }
+
+        .css-pie-slice {
+            position: absolute;
+            width: 50%;
+            height: 50%;
+            transform-origin: 100% 100%;
+        }
+
+        .css-pie-slice:nth-child(1) {
+            background: #10b981;
+            transform: rotate(0deg) skewY(0deg);
+        }
+
+        .css-pie-slice:nth-child(2) {
+            background: #8b5cf6;
+            transform: rotate(120deg) skewY(0deg);
+        }
+
+        .css-pie-slice:nth-child(3) {
+            background: #06b6d4;
+            transform: rotate(240deg) skewY(0deg);
+        }
+
         .gut-label {
             background: rgba(255, 255, 255, 0.85);
             border: 1px solid #000;
@@ -416,6 +488,13 @@
         document.addEventListener('DOMContentLoaded', function () {
             // Fetch project statistics
             fetchProjectStats();
+
+            // Wait a bit for Highcharts to load if needed
+            setTimeout(() => {
+                if (typeof Highcharts === 'undefined') {
+                    console.warn('Highcharts still not loaded after delay. Charts will use fallback display.');
+                }
+            }, 2000);
 
             // Accordion behavior for Asset Classification and Asset Layers
             const assetClassificationDetails = document.getElementById('assetClassificationDetails');
@@ -1342,42 +1421,196 @@
                 `;
             }
 
-            // Populate assets distribution pie chart
+            // Populate assets distribution pie chart using Highcharts
             function populateAssetsDistribution(landData) {
+                // Store data globally for potential retry
+                window.lastLandData = landData;
+                
                 const total = landData.trees_total + landData.structures_total + landData.water_total;
 
-                if (total === 0) return;
+                // Update counts in legend
+                document.getElementById('treesCount').textContent = landData.trees_total.toLocaleString();
+                document.getElementById('structuresCount').textContent = landData.structures_total.toLocaleString();
+                document.getElementById('waterCount').textContent = landData.water_total.toLocaleString();
 
-                const treesPercent = (landData.trees_total / total * 100).toFixed(1);
-                const structuresPercent = (landData.structures_total / total * 100).toFixed(1);
-                const waterPercent = (landData.water_total / total * 100).toFixed(1);
+                // Check if Highcharts is available
+                if (typeof Highcharts === 'undefined') {
+                    console.error('Highcharts library not loaded. Falling back to simple display.');
+                    // Fallback: show total in the chart container
+                    const chartContainer = document.getElementById('assetsDistributionChart');
+                    if (chartContainer) {
+                        chartContainer.innerHTML = `
+                            <div class="flex flex-col items-center justify-center h-full">
+                                <div class="text-2xl font-bold text-slate-900 dark:text-white">${total.toLocaleString()}</div>
+                                <div class="text-xs text-slate-500">Total Assets</div>
+                                <div class="text-xs text-red-500 mt-2">Chart library loading...</div>
+                            </div>
+                        `;
+                    }
+                    
+                    // Disable export button
+                    const exportBtn = document.getElementById('exportAssetsChart');
+                    if (exportBtn) {
+                        exportBtn.onclick = function() {
+                            alert('Chart export is not available. Chart library failed to load.');
+                        };
+                        exportBtn.style.opacity = '0.5';
+                        exportBtn.style.cursor = 'not-allowed';
+                    }
+                    return;
+                }
 
-                // Update percentages
-                document.getElementById('treesPercent').textContent = treesPercent + '%';
-                document.getElementById('structuresPercent').textContent = structuresPercent + '%';
-                document.getElementById('waterPercent').textContent = waterPercent + '%';
-                document.getElementById('totalAssetsDisplay').textContent = total.toLocaleString();
+                if (total === 0) {
+                    // Clear chart if no data
+                    Highcharts.chart('assetsDistributionChart', {
+                        title: { text: 'No Data Available', style: { fontSize: '12px' } },
+                        credits: { enabled: false }
+                    });
+                    return;
+                }
 
-                // Calculate stroke-dasharray for pie chart (circumference = 2 * PI * r = 251.2)
-                const circumference = 251.2;
+                // Prepare data for Highcharts
+                const chartData = [];
+                
+                if (landData.trees_total > 0) {
+                    chartData.push({
+                        name: 'Trees',
+                        y: landData.trees_total,
+                        color: '#10b981',
+                        categories: null // Trees don't have categories
+                    });
+                }
+                
+                if (landData.structures_total > 0) {
+                    chartData.push({
+                        name: 'Structures',
+                        y: landData.structures_total,
+                        color: '#8b5cf6',
+                        categories: {
+                            'Permanent': landData.structures_permanent,
+                            'Temporary': landData.structures_temporary
+                        }
+                    });
+                }
+                
+                if (landData.water_total > 0) {
+                    chartData.push({
+                        name: 'Water',
+                        y: landData.water_total,
+                        color: '#06b6d4',
+                        categories: {
+                            'Well': landData.water_well,
+                            'Borewell': landData.water_borewell
+                        }
+                    });
+                }
 
-                const treesLength = (landData.trees_total / total) * circumference;
-                const structuresLength = (landData.structures_total / total) * circumference;
-                const waterLength = (landData.water_total / total) * circumference;
+                // Detect dark mode
+                const isDarkMode = document.documentElement.classList.contains('dark');
+                const textColor = isDarkMode ? '#f1f5f9' : '#0f172a';
+                const tooltipBg = isDarkMode ? '#1e293b' : '#ffffff';
+                const tooltipBorder = isDarkMode ? '#475569' : '#e2e8f0';
 
-                // Update SVG segments
-                const treesSegment = document.getElementById('treesSegment');
-                const structuresSegment = document.getElementById('structuresSegment');
-                const waterSegment = document.getElementById('waterSegment');
+                try {
+                    // Create Highcharts pie chart
+                    Highcharts.chart('assetsDistributionChart', {
+                        chart: {
+                            type: 'pie',
+                            backgroundColor: 'transparent',
+                            height: 160
+                        },
+                        title: {
+                            text: total.toLocaleString(),
+                            align: 'center',
+                            verticalAlign: 'middle',
+                            style: {
+                                fontSize: '18px',
+                                fontWeight: 'bold',
+                                color: textColor
+                            }
+                        },
+                        tooltip: {
+                            useHTML: true,
+                            formatter: function() {
+                                let tooltip = `<b>${this.point.name}</b><br/>`;
+                                tooltip += `Count: <b>${this.point.y.toLocaleString()}</b><br/>`;
+                                tooltip += `Percentage: <b>${((this.point.y / total) * 100).toFixed(1)}%</b>`;
+                                
+                                // Add categories if available
+                                if (this.point.categories) {
+                                    tooltip += '<br/><br/><b>Categories:</b><br/>';
+                                    Object.entries(this.point.categories).forEach(([category, count]) => {
+                                        if (count > 0) {
+                                            tooltip += `• ${category}: ${count.toLocaleString()}<br/>`;
+                                        }
+                                    });
+                                }
+                                
+                                return tooltip;
+                            },
+                            backgroundColor: tooltipBg,
+                            borderColor: tooltipBorder,
+                            style: {
+                                color: textColor,
+                                fontSize: '12px'
+                            }
+                        },
+                        plotOptions: {
+                            pie: {
+                                allowPointSelect: true,
+                                cursor: 'pointer',
+                                dataLabels: {
+                                    enabled: false
+                                },
+                                showInLegend: false,
+                                innerSize: '60%',
+                                borderWidth: 0
+                            }
+                        },
+                        series: [{
+                            name: 'Assets',
+                            colorByPoint: true,
+                            data: chartData
+                        }],
+                        credits: {
+                            enabled: false
+                        },
+                        exporting: {
+                            enabled: false // We'll handle export manually
+                        }
+                    });
 
-                treesSegment.setAttribute('stroke-dasharray', `${treesLength} ${circumference - treesLength}`);
-                treesSegment.setAttribute('stroke-dashoffset', '0');
-
-                structuresSegment.setAttribute('stroke-dasharray', `${structuresLength} ${circumference - structuresLength}`);
-                structuresSegment.setAttribute('stroke-dashoffset', `-${treesLength}`);
-
-                waterSegment.setAttribute('stroke-dasharray', `${waterLength} ${circumference - waterLength}`);
-                waterSegment.setAttribute('stroke-dashoffset', `-${treesLength + structuresLength}`);
+                    // Add export functionality
+                    const exportBtn = document.getElementById('exportAssetsChart');
+                    if (exportBtn) {
+                        exportBtn.onclick = function() {
+                            const chart = Highcharts.charts.find(chart => chart && chart.renderTo.id === 'assetsDistributionChart');
+                            if (chart) {
+                                chart.exportChart({
+                                    type: 'image/png',
+                                    filename: 'assets-distribution-chart',
+                                    width: 800,
+                                    height: 600
+                                });
+                            } else {
+                                alert('Chart export is not available. Please try refreshing the page.');
+                            }
+                        };
+                    }
+                } catch (error) {
+                    console.error('Error creating Highcharts chart:', error);
+                    // Fallback display
+                    const chartContainer = document.getElementById('assetsDistributionChart');
+                    if (chartContainer) {
+                        chartContainer.innerHTML = `
+                            <div class="flex flex-col items-center justify-center h-full">
+                                <div class="text-2xl font-bold text-slate-900 dark:text-white">${total.toLocaleString()}</div>
+                                <div class="text-xs text-slate-500">Total Assets</div>
+                                <div class="text-xs text-red-500 mt-2">Chart error occurred</div>
+                            </div>
+                        `;
+                    }
+                }
             }
 
             // Populate asset layers list
