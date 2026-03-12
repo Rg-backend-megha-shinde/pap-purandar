@@ -998,6 +998,7 @@
                         }
 
                         // Calculate and display total assets from land classification (matches Assets Distribution)
+                        // Calculate and display total assets from land classification (matches Assets Distribution)
                         if (data.land_classification) {
                             const totalAssets = data.land_classification.trees_total +
                                 data.land_classification.structures_total +
@@ -1006,6 +1007,11 @@
                             if (totalAssetsElement) {
                                 totalAssetsElement.textContent = totalAssets.toLocaleString();
                             }
+                        }
+
+                        // Populate asset layers with gut-specific counts
+                        if (data.assets) {
+                            populateAssetLayers(data.assets);
                         }
 
                         // Populate land classification with gut-specific data
