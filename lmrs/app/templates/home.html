@@ -447,7 +447,8 @@
         const wmsOptions = {
             format: "image/png",
             transparent: true,
-            version: "1.1.1",
+            version: "1.1.0",
+            srs: "EPSG:3857",
             attribution: "GeoServer",
             crossOrigin: "anonymous",
         };
@@ -481,6 +482,13 @@
             // ensure Leaflet recalculates size once the container is fully rendered
             // fixes blank/grey area at bottom before first interaction
             setTimeout(() => map.invalidateSize(), 100);
+
+            // Create custom panes for proper layer ordering
+            map.createPane('gutPane');
+            map.getPane('gutPane').style.zIndex = 600;
+
+            map.createPane('selectedGutPane');
+            map.getPane('selectedGutPane').style.zIndex = 650;
 
             // Define base layers
             osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -685,29 +693,32 @@
             });
 
             gutSelect.addEventListener('change', function () {
-                if (gutBoundaryLayer) map.removeLayer(gutBoundaryLayer);
+                console.log(`🔍 Gut dropdown changed to: ${this.value}`);
 
                 if (this.value && currentVillage) {
                     currentGutNumber = this.value;
 
-                    // Zoom to selected gut
-                    fetch(`/api/layer-bounds/gut_bnd/?village=${encodeURIComponent(currentVillage)}&gut_number=${encodeURIComponent(currentGutNumber)}`)
-                        .then(r => r.json())
-                        .then(d => {
-                            if (d.bounds) {
-                                map.fitBounds([
-                                    [d.bounds.minLat, d.bounds.minLng],
-                                    [d.bounds.maxLat, d.bounds.maxLng]
-                                ], { padding: [50, 50] });
-                            }
-                        });
+                    console.log(`✅ Gut selected from dropdown: ${currentGutNumber} in village: ${currentVillage}`);
 
+                    // Reload village gut boundaries to update styling
+                    loadVillageGutBoundaries(currentVillage);
+
+                    // Fetch gut-specific statistics
                     fetchGutStats(currentVillage, this.value);
+
+                    // Reload any active asset layers with gut filter
                     reloadActiveAssetLayers();
                 } else {
                     currentGutNumber = null;
-                    if (currentVillage) loadVillageGutBoundaries(currentVillage);
-                    fetchProjectStats(currentVillage);
+                    console.log('✅ Gut deselected, showing all guts');
+
+                    // Reload village gut boundaries to clear selection styling
+                    if (currentVillage) {
+                        loadVillageGutBoundaries(currentVillage);
+                        fetchProjectStats(currentVillage);
+                    }
+
+                    // Reload any active asset layers with only village filter
                     reloadActiveAssetLayers();
                 }
             });
@@ -895,19 +906,50 @@
             }
 
 
-            // Load All Gut Boundaries for a Village - Multi-approach with fallbacks
+            // Load All Gut Boundaries for a Village - SECURE WMS approach
             function loadVillageGutBoundaries(villageName) {
+                console.log(`Loading gut boundaries for village: ${villageName}`);
+
                 if (villageGutBoundariesLayer) map.removeLayer(villageGutBoundariesLayer);
+                if (gutBoundaryLayer) {
+                    map.removeLayer(gutBoundaryLayer);
+                    gutBoundaryLayer = null;
+                }
 
                 const escapedVillageName = villageName.replace(/'/g, "''");
 
+                // Base layer: All gut boundaries with default style
                 villageGutBoundariesLayer = L.tileLayer.wms(GEOSERVER_URL, {
-                    ...wmsOptions,
                     layers: `${WORKSPACE}:gut_bnd`,
-                    styles: "",
-                    CQL_FILTER: `Village_Na='${escapedVillageName}'`
+                    format: 'image/png',
+                    transparent: true,
+                    version: '1.1.0',
+                    srs: 'EPSG:3857',
+                    styles: '',  // Use default GeoServer style
+                    CQL_FILTER: `Village_Na='${escapedVillageName}'`,
+                    pane: 'gutPane',
+                    attribution: ''
                 }).addTo(map);
 
+                // If a gut is selected, add overlay with selected style
+                if (currentGutNumber) {
+                    gutBoundaryLayer = L.tileLayer.wms(GEOSERVER_URL, {
+                        layers: `${WORKSPACE}:gut_bnd`,
+                        format: 'image/png',
+                        transparent: true,
+                        version: '1.1.0',
+                        srs: 'EPSG:3857',
+                        styles: '',
+                        CQL_FILTER: `Village_Na='${escapedVillageName}' AND Gut_Number=${currentGutNumber}`,
+                        SLD_BODY: `<?xml version="1.0"?><StyledLayerDescriptor version="1.0.0"><NamedLayer><Name>${WORKSPACE}:gut_bnd</Name><UserStyle><FeatureTypeStyle><Rule><PolygonSymbolizer><Fill><CssParameter name="fill">#ef4444</CssParameter><CssParameter name="fill-opacity">0.4</CssParameter></Fill><Stroke><CssParameter name="stroke">#ef4444</CssParameter><CssParameter name="stroke-width">2</CssParameter></Stroke></PolygonSymbolizer></Rule></FeatureTypeStyle></UserStyle></NamedLayer></StyledLayerDescriptor>`,
+                        pane: 'selectedGutPane',
+                        attribution: ''
+                    }).addTo(map);
+                }
+
+                console.log(`✅ Gut boundaries loaded for village: ${villageName}`);
+
+                // Zoom to village gut boundaries
                 fetch(`/api/layer-bounds/gut_bnd/?village=${encodeURIComponent(villageName)}`)
                     .then(r => r.json())
                     .then(data => {
@@ -917,68 +959,65 @@
                                 [data.bounds.maxLat, data.bounds.maxLng]
                             ], { padding: [50, 50] });
                         }
-                    });
+                    })
+                    .catch(err => console.log('⚠️ Bounds API not available:', err));
 
+                // Enable click detection using GetFeatureInfo
                 map.off('click', handleGutClick);
                 map.on('click', handleGutClick);
+
+                // Change cursor to pointer when over gut boundaries
+                map.getContainer().style.cursor = 'pointer';
             }
 
-
-
-            // Helper function to zoom to selected gut layer
-            function zoomToSelectedGut(layer) {
-                if (layer && layer.getBounds && layer.getBounds().isValid()) {
-                    map.fitBounds(layer.getBounds(), { padding: [50, 50] });
-                }
-            }
-
-            // Helper function to zoom to selected gut by gut number
-            function zoomToSelectedGutByNumber(gutNumber) {
-                if (villageGutBoundariesLayer) {
-                    villageGutBoundariesLayer.eachLayer(function (layer) {
-                        if (layer.feature &&
-                            layer.feature.properties.gut_number &&
-                            String(layer.feature.properties.gut_number) === String(gutNumber)) {
-                            zoomToSelectedGut(layer);
-                        }
-                    });
-                }
-            }
-
-            // Handle map clicks for gut selection using WMS GetFeatureInfo
+            // Handle map clicks for gut selection using WMS GetFeatureInfo (SECURE)
             function handleGutClick(e) {
                 if (!currentVillage || !villageGutBoundariesLayer) return;
 
-                const GEOSERVER_URL = "http://209.182.233.103:9090/geoserver/wms";
-                const WORKSPACE = "Purandar_New";
+                console.log(`🔍 Map clicked at: ${e.latlng.lat}, ${e.latlng.lng}`);
 
                 const point = map.latLngToContainerPoint(e.latlng);
                 const size = map.getSize();
-                const bbox = map.getBounds().toBBoxString();
-                const crs = map.options.crs.code;
+                const bounds = map.getBounds();
+                const sw = L.CRS.EPSG3857.project(bounds.getSouthWest());
+                const ne = L.CRS.EPSG3857.project(bounds.getNorthEast());
+                const bbox = `${sw.x},${sw.y},${ne.x},${ne.y}`;
 
                 const url = `${GEOSERVER_URL}?` +
-                    `SERVICE=WMS&VERSION=1.1.1&REQUEST=GetFeatureInfo&` +
+                    `SERVICE=WMS&VERSION=1.1.0&REQUEST=GetFeatureInfo&` +
                     `LAYERS=${WORKSPACE}:gut_bnd&QUERY_LAYERS=${WORKSPACE}:gut_bnd&` +
                     `BBOX=${bbox}&FEATURE_COUNT=1&HEIGHT=${size.y}&WIDTH=${size.x}&` +
-                    `FORMAT=image/png&INFO_FORMAT=application/json&SRS=${crs}&` +
+                    `FORMAT=image/png&INFO_FORMAT=application/json&SRS=EPSG:3857&` +
                     `X=${Math.round(point.x)}&Y=${Math.round(point.y)}&` +
                     `CQL_FILTER=Village_Na='${currentVillage.replace(/'/g, "''")}'`;
+
+                console.log(`🔍 GetFeatureInfo URL: ${url}`);
 
                 fetch(url)
                     .then(r => r.json())
                     .then(data => {
+                        console.log(`🔍 GetFeatureInfo response:`, data);
                         if (data.features && data.features.length > 0) {
                             const gutNumber = data.features[0].properties.Gut_Number ||
                                 data.features[0].properties.gut_number;
                             if (gutNumber) {
                                 currentGutNumber = String(gutNumber);
+                                console.log(`✅ Gut clicked: ${gutNumber}`);
 
+                                // Update dropdown
                                 const gutSelect = document.getElementById('gutSelect');
                                 if (gutSelect) gutSelect.value = currentGutNumber;
 
+                                // Reload gut boundaries to show selection
+                                loadVillageGutBoundaries(currentVillage);
+
+                                // Fetch gut-specific statistics
                                 fetchGutStats(currentVillage, currentGutNumber);
+
+                                // Reload any active asset layers with gut filter
                                 reloadActiveAssetLayers();
+
+                                // Show notification
                                 showNotification(`Selected Gut ${gutNumber} in ${currentVillage}`, 'success');
 
                                 // Zoom to selected gut
@@ -989,70 +1028,21 @@
                                             map.fitBounds([
                                                 [d.bounds.minLat, d.bounds.minLng],
                                                 [d.bounds.maxLat, d.bounds.maxLng]
-                                            ], { padding: [50, 50] });
+                                            ], { padding: [50, 50], maxZoom: 16 });
                                         }
-                                    });
+                                    })
+                                    .catch(err => console.log('⚠️ Bounds API not available'));
                             }
+                        } else {
+                            console.log('🔍 No gut found at clicked location');
                         }
                     })
-                    .catch(err => console.error('GetFeatureInfo error:', err));
-            }
-
-            // Load village gut boundaries with selection highlighting
-            function loadVillageGutBoundariesWithSelection(villageName, selectedGutNumber) {
-                console.log(`Loading gut boundaries with selection: ${villageName}, selected: ${selectedGutNumber}`);
-
-                if (villageGutBoundariesLayer) map.removeLayer(villageGutBoundariesLayer);
-
-                // Escape single quotes in village name for CQL filter
-                const escapedVillageName = villageName.replace(/'/g, "''");
-                const cqlFilter = `Village_Na='${escapedVillageName}'`;
-
-                // Create WMS layer for all gut boundaries
-                villageGutBoundariesLayer = L.tileLayer.wms(GEOSERVER_URL, {
-                    ...wmsOptions,
-                    layers: `${WORKSPACE}:gut_bnd`,
-                    styles: "",
-                    CQL_FILTER: `Village_Na='${escapedVillageName}'`
-                }).addTo(map);
-
-                // Add selected gut overlay if there's a selection
-                if (selectedGutNumber) {
-                    const selectedCqlFilter = `Village_Na='${escapedVillageName}' AND Gut_Number='${selectedGutNumber.replace(/'/g, "''")}'`;
-
-                    const selectedGutLayer = L.tileLayer.wms(GEOSERVER_URL, {
-                        ...wmsOptions,
-                        layers: `${WORKSPACE}:gut_bnd`,
-                        cql_filter: selectedCqlFilter,
-                        styles: 'selected_gut_style'
-                    }).addTo(map);
-
-                    // Store reference to selected gut layer for cleanup
-                    if (window.selectedGutOverlay) map.removeLayer(window.selectedGutOverlay);
-                    window.selectedGutOverlay = selectedGutLayer;
-                }
-
-                console.log(`Loaded gut boundaries with selection for village: ${villageName}`);
-            }
-
-            // Helper function to zoom to selected gut by gut number (using WMS GetFeatureInfo)
-            function zoomToSelectedGutByNumber(gutNumber) {
-                if (!currentVillage || !gutNumber) return;
-
-                // Fetch gut bounds from API to zoom properly
-                fetch(`/api/layer-bounds/gut_bnd/?village=${encodeURIComponent(currentVillage)}&gut_number=${encodeURIComponent(gutNumber)}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.bounds) {
-                            const bounds = [[data.bounds.minLat, data.bounds.minLng], [data.bounds.maxLat, data.bounds.maxLng]];
-                            map.fitBounds(bounds, { padding: [50, 50] });
-                            console.log(`Zoomed to selected gut: ${gutNumber}`);
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error fetching gut bounds for zoom:', error);
+                    .catch(err => {
+                        console.error('🚨 GetFeatureInfo error:', err);
                     });
             }
+
+
 
             // Update compensation for selected village
             function updateVillageCompensation(villageName) {
