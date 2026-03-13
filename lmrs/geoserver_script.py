@@ -7,6 +7,9 @@ STORE = "monarch_lmrs"
 USERNAME = "admin"
 PASSWORD = "geoserver"
 
+NATIVE_CRS = "EPSG:32643"
+SERVE_CRS  = "EPSG:3857"
+
 tables = [
     "bag",
     "borewell",
@@ -30,7 +33,9 @@ for table in tables:
     <name>{table}</name>
     <nativeName>{table}</nativeName>
     <title>{table}</title>
-    <srs>EPSG:3857</srs>
+    <nativeCRS>{NATIVE_CRS}</nativeCRS>
+    <srs>{SERVE_CRS}</srs>
+    <projectionPolicy>REPROJECT_TO_DECLARED</projectionPolicy>
     <enabled>true</enabled>
 </featureType>"""
     headers = {"Content-type": "text/xml"}
