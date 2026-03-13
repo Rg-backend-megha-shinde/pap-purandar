@@ -4,17 +4,15 @@
 <title>Purandar Map</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
 <style>
-#map { height: 100vh; width: 100%; }
+  #map { height: 100vh; width: 100%; }
 </style>
 </head>
 <body>
-
 <div id="map"></div>
-
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 <script>
 
-var map = L.map('map').setView([18.30, 74.00], 12);
+var map = L.map('map').setView([18.3, 74.1], 12); // ✅ Centered on Purandar, India
 
 // Base Map
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -22,61 +20,43 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 }).addTo(map);
 
 var wmsUrl = "http://209.182.233.103:9090/geoserver/wms";
+
 var wmsOptions = {
   format: "image/png",
   transparent: true,
-  version: "1.1.1",
-  crossOrigin: "anonymous"
+  version: "1.1.1"
 };
 
-// All Layers
-var bag                    = L.tileLayer.wms(wmsUrl, { ...wmsOptions, layers: "Purandar_New:bag",                     zIndex: 100 });
-var borewell               = L.tileLayer.wms(wmsUrl, { ...wmsOptions, layers: "Purandar_New:borewell",                zIndex: 101 });
-var bund                   = L.tileLayer.wms(wmsUrl, { ...wmsOptions, layers: "Purandar_New:bund",                    zIndex: 102 });
-var district_boundry       = L.tileLayer.wms(wmsUrl, { ...wmsOptions, layers: "Purandar_New:district_boundry",        zIndex: 103 });
-var gut_bnd                = L.tileLayer.wms(wmsUrl, { ...wmsOptions, layers: "Purandar_New:gut_bnd",                 zIndex: 104 });
-var purandar_aoi           = L.tileLayer.wms(wmsUrl, { ...wmsOptions, layers: "Purandar_New:purandar_aoi",            zIndex: 105 });
-var purandar_farmers       = L.tileLayer.wms(wmsUrl, { ...wmsOptions, layers: "Purandar_New:purandar_farmers",        zIndex: 106 });
-var purandar_tehsil        = L.tileLayer.wms(wmsUrl, { ...wmsOptions, layers: "Purandar_New:purandar_tehsil",         zIndex: 107 });
-var airport_village_bo     = L.tileLayer.wms(wmsUrl, { ...wmsOptions, layers: "Purandar_New:purandhar_airport_village_bo", zIndex: 108 });
-var airport_villages       = L.tileLayer.wms(wmsUrl, { ...wmsOptions, layers: "Purandar_New:purandhar_airport_villages",   zIndex: 109 });
-var shed                   = L.tileLayer.wms(wmsUrl, { ...wmsOptions, layers: "Purandar_New:shed",                    zIndex: 110 });
-var structures             = L.tileLayer.wms(wmsUrl, { ...wmsOptions, layers: "Purandar_New:structures",              zIndex: 111 });
-var tree                   = L.tileLayer.wms(wmsUrl, { ...wmsOptions, layers: "Purandar_New:tree",                    zIndex: 112 });
-var well                   = L.tileLayer.wms(wmsUrl, { ...wmsOptions, layers: "Purandar_New:well",                    zIndex: 113 });
+var USA_Population    = L.tileLayer.wms(wmsUrl, { ...wmsOptions, layers: "topp:states", zIndex: 200 });
+var bag               = L.tileLayer.wms(wmsUrl, { ...wmsOptions, layers: "Purandar_New:bag" }).addTo(map);
+var borewell          = L.tileLayer.wms(wmsUrl, { ...wmsOptions, layers: "Purandar_New:borewell" });
+var bund              = L.tileLayer.wms(wmsUrl, { ...wmsOptions, layers: "Purandar_New:bund" });
+var district_boundry  = L.tileLayer.wms(wmsUrl, { ...wmsOptions, layers: "Purandar_New:district_boundry" });
+var gut_bnd           = L.tileLayer.wms(wmsUrl, { ...wmsOptions, layers: "Purandar_New:gut_bnd" });
+var purandar_aoi      = L.tileLayer.wms(wmsUrl, { ...wmsOptions, layers: "Purandar_New:purandar_aoi" });
+var purandar_farmers  = L.tileLayer.wms(wmsUrl, { ...wmsOptions, layers: "Purandar_New:purandar_farmers" });
+var purandar_tehsil   = L.tileLayer.wms(wmsUrl, { ...wmsOptions, layers: "Purandar_New:purandar_tehsil" });
+var airport_village_bo = L.tileLayer.wms(wmsUrl, { ...wmsOptions, layers: "Purandar_New:purandhar_airport_village_bo" });
+var airport_villages  = L.tileLayer.wms(wmsUrl, { ...wmsOptions, layers: "Purandar_New:purandhar_airport_villages" });
+var shed              = L.tileLayer.wms(wmsUrl, { ...wmsOptions, layers: "Purandar_New:shed" });
+var structures        = L.tileLayer.wms(wmsUrl, { ...wmsOptions, layers: "Purandar_New:structures" });
+var tree              = L.tileLayer.wms(wmsUrl, { ...wmsOptions, layers: "Purandar_New:tree" });
 
-// Add all layers to map
-bag.addTo(map);
-borewell.addTo(map);
-bund.addTo(map);
-district_boundry.addTo(map);
-gut_bnd.addTo(map);
-purandar_aoi.addTo(map);
-purandar_farmers.addTo(map);
-purandar_tehsil.addTo(map);
-airport_village_bo.addTo(map);
-airport_villages.addTo(map);
-shed.addTo(map);
-structures.addTo(map);
-tree.addTo(map);
-well.addTo(map);
-
-// Layer Control (toggle on/off)
 var overlays = {
-  "Bag":                    bag,
-  "Borewell":               borewell,
-  "Bund":                   bund,
-  "District Boundary":      district_boundry,
-  "Gut Boundary":           gut_bnd,
-  "Purandar AOI":           purandar_aoi,
-  "Farmers":                purandar_farmers,
-  "Tehsil":                 purandar_tehsil,
-  "Airport Village BO":     airport_village_bo,
-  "Airport Villages":       airport_villages,
-  "Shed":                   shed,
-  "Structures":             structures,
-  "Tree":                   tree,
-  "Well":                   well
+  "USA Population"    : USA_Population,
+  "Bag"               : bag,
+  "Borewell"          : borewell,
+  "Bund"              : bund,
+  "District Boundary" : district_boundry,
+  "Gut Boundary"      : gut_bnd,
+  "Purandar AOI"      : purandar_aoi,
+  "Farmers"           : purandar_farmers,
+  "Tehsil"            : purandar_tehsil,
+  "Airport Village BO": airport_village_bo,
+  "Airport Villages"  : airport_villages,
+  "Shed"              : shed,
+  "Structures"        : structures,
+  "Tree"              : tree
 };
 
 L.control.layers(null, overlays, { collapsed: false }).addTo(map);

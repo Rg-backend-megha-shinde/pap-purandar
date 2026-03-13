@@ -231,7 +231,7 @@
                             <div class="flex items-center gap-2 text-xs">
                                 <div class="w-3 h-3 rounded-sm border-2 border-red-500 bg-red-500/30"
                                     style="border-style: dashed;"></div>
-                                <span class="text-slate-700 dark:text-slate-200">Selected Gut</span>
+                                <span class="text-slate-700 dark:text-slate-200">Selected Gut (Click to select)</span>
                             </div>
                         </div>
                     </div>
@@ -395,6 +395,24 @@
             color: #fff;
         }
 
+        /* Clickable gut boundaries cursor */
+        .leaflet-interactive {
+            cursor: pointer !important;
+        }
+
+        .leaflet-interactive:hover {
+            cursor: pointer !important;
+        }
+
+        /* Map cursor when village is selected (for gut clicking) */
+        .map-clickable-for-guts {
+            cursor: crosshair !important;
+        }
+
+        .map-clickable-for-guts * {
+            cursor: crosshair !important;
+        }
+
         @keyframes slide-in {
             from {
                 transform: translateX(100%);
@@ -427,7 +445,8 @@
             format: "image/png",
             transparent: true,
             version: "1.1.1",
-            attribution: "GeoServer"
+            attribution: "GeoServer",
+            crossOrigin: "anonymous",
         };
 
         document.addEventListener('DOMContentLoaded', function () {
@@ -484,6 +503,13 @@
             // fix Leaflet when container dimensions change (e.g. window resize)
             window.addEventListener('resize', () => {
                 map.invalidateSize();
+            });
+
+            // Zoom controls
+            document.getElementById('zoomIn').addEventListener('click', () => map.zoomIn());
+            document.getElementById('zoomOut').addEventListener('click', () => map.zoomOut());
+            document.getElementById('myLocation').addEventListener('click', () => {
+                map.setView([18.2811, 74.0194], 13);
             });
 
             // Zoom controls
@@ -607,15 +633,32 @@
 
             // Village selection
             villageSelect.addEventListener('change', function () {
+                console.log(`Village selection changed to: ${this.value}`);
+
                 // Remove existing village layers
                 if (villagesBoundaryLayer) map.removeLayer(villagesBoundaryLayer);
                 if (villagesGutLayer) map.removeLayer(villagesGutLayer);
                 if (gutBoundaryLayer) map.removeLayer(gutBoundaryLayer);
                 if (villageGutBoundariesLayer) map.removeLayer(villageGutBoundariesLayer);
 
+                // Clean up selected gut overlay
+                if (window.selectedGutOverlay) {
+                    map.removeLayer(window.selectedGutOverlay);
+                    window.selectedGutOverlay = null;
+                }
+
+
                 if (this.value) {
                     currentVillage = this.value;
-                    currentGutNumber = null;
+                    currentGutNumber = null; // Clear gut selection when changing village
+
+                    // Clear gut dropdown
+                    const gutSelect = document.getElementById('gutSelect');
+                    gutSelect.value = '';
+
+                    // Add clickable cursor for gut selection
+
+                    console.log(`Loading layers for village: ${this.value}`);
                     loadSingleVillage(this.value);
                     loadVillageGutBoundaries(this.value); // Load all gut boundaries for the village
                     loadGutNumbersList(this.value);
@@ -625,8 +668,10 @@
                     // Reload any active asset layers with village filter
                     reloadActiveAssetLayers();
                 } else {
+                    console.log('No village selected, clearing layers');
                     currentVillage = null;
                     currentGutNumber = null;
+
                     gutSelect.disabled = true;
                     gutSelect.innerHTML = '<option value="">Select Gut Number</option>';
                     // Reset to total statistics when no village selected
@@ -636,23 +681,30 @@
                 }
             });
 
-            // Gut Number selection
             gutSelect.addEventListener('change', function () {
-                // Remove existing single gut boundary layer (but keep village gut boundaries visible)
                 if (gutBoundaryLayer) map.removeLayer(gutBoundaryLayer);
 
                 if (this.value && currentVillage) {
                     currentGutNumber = this.value;
-                    loadGutBoundary(currentVillage, this.value);
-                    // Fetch gut-specific statistics
+
+                    // Zoom to selected gut
+                    fetch(`/api/layer-bounds/gut_bnd/?village=${encodeURIComponent(currentVillage)}&gut_number=${encodeURIComponent(currentGutNumber)}`)
+                        .then(r => r.json())
+                        .then(d => {
+                            if (d.bounds) {
+                                map.fitBounds([
+                                    [d.bounds.minLat, d.bounds.minLng],
+                                    [d.bounds.maxLat, d.bounds.maxLng]
+                                ], { padding: [50, 50] });
+                            }
+                        });
+
                     fetchGutStats(currentVillage, this.value);
-                    // Reload any active asset layers with gut filter
                     reloadActiveAssetLayers();
                 } else {
                     currentGutNumber = null;
-                    // Reset to village statistics when no gut selected
+                    if (currentVillage) loadVillageGutBoundaries(currentVillage);
                     fetchProjectStats(currentVillage);
-                    // Reload any active asset layers with only village filter
                     reloadActiveAssetLayers();
                 }
             });
@@ -784,40 +836,6 @@
                     .catch(error => console.error('Error loading gut numbers:', error));
             }
 
-            // Load Gut Boundary - using WMS with CQL filter
-            function loadGutBoundary(villageName, gutNumber) {
-                console.log(`Loading gut boundary for village: ${villageName}, gut: ${gutNumber}`);
-
-                if (gutBoundaryLayer) map.removeLayer(gutBoundaryLayer);
-
-                const cqlFilter = `Village_Na='${villageName}' AND Gut_Number='${gutNumber}'`;
-
-                gutBoundaryLayer = L.tileLayer.wms(GEOSERVER_URL, {
-                    ...wmsOptions,
-                    layers: `${WORKSPACE}:gut_bnd`,
-                    cql_filter: cqlFilter,
-                    styles: 'selected_gut_style'
-                }).addTo(map);
-
-                console.log(`Loaded gut boundary for ${villageName}/${gutNumber}`);
-
-                // Fetch gut bounds from API to zoom properly
-                fetch(`/api/layer-bounds/gut_bnd/?village=${encodeURIComponent(villageName)}&gut_number=${encodeURIComponent(gutNumber)}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.bounds) {
-                            const bounds = [[data.bounds.minLat, data.bounds.minLng], [data.bounds.maxLat, data.bounds.maxLng]];
-                            map.fitBounds(bounds, { padding: [50, 50] });
-                        } else {
-                            showNotification(`No boundary found for Gut ${gutNumber} in ${villageName}`, 'error');
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error fetching gut bounds:', error);
-                        showNotification(`Failed to load gut boundary: ${error.message}`, 'error');
-                    });
-            }
-
             // Reload active asset layers with current filters
             function reloadActiveAssetLayers() {
                 document.querySelectorAll('.asset-layer-toggle:checked').forEach(toggle => {
@@ -848,7 +866,9 @@
             function loadSingleVillage(villageName) {
                 if (villagesBoundaryLayer) map.removeLayer(villagesBoundaryLayer);
 
-                const cqlFilter = `Village_Na='${villageName}'`;
+                // Escape single quotes in village name for CQL filter
+                const escapedVillageName = villageName.replace(/'/g, "''");
+                const cqlFilter = `Village_Na='${escapedVillageName}'`;
 
                 villagesBoundaryLayer = L.tileLayer.wms(GEOSERVER_URL, {
                     ...wmsOptions,
@@ -857,7 +877,7 @@
                     styles: 'village_style'
                 }).addTo(map);
 
-                console.log(`Loaded village boundary for: ${villageName}`);
+                console.log(`Loaded village boundary for: ${villageName} with CQL filter: ${cqlFilter}`);
 
                 // Fetch village bounds from API to zoom properly
                 fetch(`/api/layer-bounds/purandhar_airport_village_bo/?village=${encodeURIComponent(villageName)}`)
@@ -871,22 +891,166 @@
                     .catch(error => console.error('Error fetching village bounds:', error));
             }
 
-            // Load All Gut Boundaries for a Village - using WMS with CQL filter
+            
+            // Load All Gut Boundaries for a Village - Multi-approach with fallbacks
             function loadVillageGutBoundaries(villageName) {
-                console.log(`Loading all gut boundaries for village: ${villageName}`);
+                if (villageGutBoundariesLayer) map.removeLayer(villageGutBoundariesLayer);
+
+                const escapedVillageName = villageName.replace(/'/g, "''");
+
+                villageGutBoundariesLayer = L.tileLayer.wms("http://209.182.233.103:9090/geoserver/wms", {
+                    layers: "Purandar_New:gut_bnd",
+                    format: "image/png",
+                    transparent: true,
+                    styles: "gut_boundary_style",
+                    CQL_FILTER: `Village_Na='${escapedVillageName}'`
+                }).addTo(map);
+
+                fetch(`/api/layer-bounds/gut_bnd/?village=${encodeURIComponent(villageName)}`)
+                    .then(r => r.json())
+                    .then(data => {
+                        if (data.bounds) {
+                            map.fitBounds([
+                                [data.bounds.minLat, data.bounds.minLng],
+                                [data.bounds.maxLat, data.bounds.maxLng]
+                            ], { padding: [50, 50] });
+                        }
+                    });
+
+                map.off('click', handleGutClick);
+                map.on('click', handleGutClick);
+            }
+
+
+
+            // Helper function to zoom to selected gut layer
+            function zoomToSelectedGut(layer) {
+                if (layer && layer.getBounds && layer.getBounds().isValid()) {
+                    map.fitBounds(layer.getBounds(), { padding: [50, 50] });
+                }
+            }
+
+            // Helper function to zoom to selected gut by gut number
+            function zoomToSelectedGutByNumber(gutNumber) {
+                if (villageGutBoundariesLayer) {
+                    villageGutBoundariesLayer.eachLayer(function (layer) {
+                        if (layer.feature &&
+                            layer.feature.properties.gut_number &&
+                            String(layer.feature.properties.gut_number) === String(gutNumber)) {
+                            zoomToSelectedGut(layer);
+                        }
+                    });
+                }
+            }
+
+            // Handle map clicks for gut selection using WMS GetFeatureInfo
+            function handleGutClick(e) {
+                if (!currentVillage || !villageGutBoundariesLayer) return;
+
+                const GEOSERVER_URL = "http://209.182.233.103:9090/geoserver/wms";
+                const WORKSPACE = "Purandar_New";
+
+                const point = map.latLngToContainerPoint(e.latlng);
+                const size = map.getSize();
+                const bbox = map.getBounds().toBBoxString();
+                const crs = map.options.crs.code;
+
+                const url = `${GEOSERVER_URL}?` +
+                    `SERVICE=WMS&VERSION=1.1.1&REQUEST=GetFeatureInfo&` +
+                    `LAYERS=${WORKSPACE}:gut_bnd&QUERY_LAYERS=${WORKSPACE}:gut_bnd&` +
+                    `BBOX=${bbox}&FEATURE_COUNT=1&HEIGHT=${size.y}&WIDTH=${size.x}&` +
+                    `FORMAT=image/png&INFO_FORMAT=application/json&SRS=${crs}&` +
+                    `X=${Math.round(point.x)}&Y=${Math.round(point.y)}&` +
+                    `CQL_FILTER=Village_Na='${currentVillage.replace(/'/g, "''")}'`;
+
+                fetch(url)
+                    .then(r => r.json())
+                    .then(data => {
+                        if (data.features && data.features.length > 0) {
+                            const gutNumber = data.features[0].properties.Gut_Number ||
+                                data.features[0].properties.gut_number;
+                            if (gutNumber) {
+                                currentGutNumber = String(gutNumber);
+
+                                const gutSelect = document.getElementById('gutSelect');
+                                if (gutSelect) gutSelect.value = currentGutNumber;
+
+                                fetchGutStats(currentVillage, currentGutNumber);
+                                reloadActiveAssetLayers();
+                                showNotification(`Selected Gut ${gutNumber} in ${currentVillage}`, 'success');
+
+                                // Zoom to selected gut
+                                fetch(`/api/layer-bounds/gut_bnd/?village=${encodeURIComponent(currentVillage)}&gut_number=${encodeURIComponent(currentGutNumber)}`)
+                                    .then(r => r.json())
+                                    .then(d => {
+                                        if (d.bounds) {
+                                            map.fitBounds([
+                                                [d.bounds.minLat, d.bounds.minLng],
+                                                [d.bounds.maxLat, d.bounds.maxLng]
+                                            ], { padding: [50, 50] });
+                                        }
+                                    });
+                            }
+                        }
+                    })
+                    .catch(err => console.error('GetFeatureInfo error:', err));
+            }
+
+            // Load village gut boundaries with selection highlighting
+            function loadVillageGutBoundariesWithSelection(villageName, selectedGutNumber) {
+                console.log(`Loading gut boundaries with selection: ${villageName}, selected: ${selectedGutNumber}`);
 
                 if (villageGutBoundariesLayer) map.removeLayer(villageGutBoundariesLayer);
 
-                const cqlFilter = `Village_Na='${villageName}'`;
+                // Escape single quotes in village name for CQL filter
+                const escapedVillageName = villageName.replace(/'/g, "''");
+                const cqlFilter = `Village_Na='${escapedVillageName}'`;
 
-                villageGutBoundariesLayer = L.tileLayer.wms(GEOSERVER_URL, {
-                    ...wmsOptions,
-                    layers: `${WORKSPACE}:gut_bnd`,
-                    cql_filter: cqlFilter,
-                    styles: 'gut_boundary_style'
+                // Create WMS layer for all gut boundaries
+                villageGutBoundariesLayer = L.tileLayer.wms("http://209.182.233.103:9090/geoserver/wms", {
+                    layers: "Purandar_New:gut_bnd",
+                    format: "image/png",
+                    transparent: true,
+                    styles: "gut_boundary_style",
+                    CQL_FILTER: `Village_Na='${escapedVillageName}'`
                 }).addTo(map);
 
-                console.log(`Loaded gut boundaries for village: ${villageName}`);
+                // Add selected gut overlay if there's a selection
+                if (selectedGutNumber) {
+                    const selectedCqlFilter = `Village_Na='${escapedVillageName}' AND Gut_Number='${selectedGutNumber.replace(/'/g, "''")}'`;
+
+                    const selectedGutLayer = L.tileLayer.wms(GEOSERVER_URL, {
+                        ...wmsOptions,
+                        layers: `${WORKSPACE}:gut_bnd`,
+                        cql_filter: selectedCqlFilter,
+                        styles: 'selected_gut_style'
+                    }).addTo(map);
+
+                    // Store reference to selected gut layer for cleanup
+                    if (window.selectedGutOverlay) map.removeLayer(window.selectedGutOverlay);
+                    window.selectedGutOverlay = selectedGutLayer;
+                }
+
+                console.log(`Loaded gut boundaries with selection for village: ${villageName}`);
+            }
+
+            // Helper function to zoom to selected gut by gut number (using WMS GetFeatureInfo)
+            function zoomToSelectedGutByNumber(gutNumber) {
+                if (!currentVillage || !gutNumber) return;
+
+                // Fetch gut bounds from API to zoom properly
+                fetch(`/api/layer-bounds/gut_bnd/?village=${encodeURIComponent(currentVillage)}&gut_number=${encodeURIComponent(gutNumber)}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.bounds) {
+                            const bounds = [[data.bounds.minLat, data.bounds.minLng], [data.bounds.maxLat, data.bounds.maxLng]];
+                            map.fitBounds(bounds, { padding: [50, 50] });
+                            console.log(`Zoomed to selected gut: ${gutNumber}`);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error fetching gut bounds for zoom:', error);
+                    });
             }
 
             // Update compensation for selected village
@@ -1358,7 +1522,7 @@
             // Load asset layer from GeoServer WMS
             // Load asset layer from GeoServer WMS
             function loadAssetLayerFromGeoServer(assetName) {
-                console.log(`Loading layer: ${assetName}`);
+                console.log(`Loading WMS layer: ${assetName}`);
                 console.log(`Current filters - Village: ${currentVillage}, Gut: ${currentGutNumber}`);
 
                 // Remove existing layer
@@ -1367,81 +1531,56 @@
                     delete assetLayers[assetName];
                 }
 
-                // Build the API URL with village/gut filters
-                let apiUrl = `/api/asset-layer/${encodeURIComponent(assetName)}/`;
-                const params = [];
-                if (currentVillage) params.push(`village=${encodeURIComponent(currentVillage)}`);
-                if (currentGutNumber) params.push(`gut_number=${encodeURIComponent(currentGutNumber)}`);
-                if (params.length > 0) apiUrl += '?' + params.join('&');
-
+                // Build CQL filter based on current selection
+                let cqlFilter = null;
                 const filterInfo = currentGutNumber
                     ? `Gut ${currentGutNumber} in ${currentVillage}`
                     : currentVillage
                         ? `Village ${currentVillage}`
-                        : 'AOI area';
+                        : 'All areas';
 
-                fetch(apiUrl)
-                    .then(response => {
-                        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                        return response.json();
-                    })
-                    .then(geojson => {
-                        const features = geojson.features || [];
-                        if (features.length === 0) {
-                            showNotification(`No ${assetName} data in ${filterInfo}`, 'info');
-                            const toggle = document.querySelector(`.asset-layer-toggle[data-asset="${assetName}"]`);
-                            if (toggle) toggle.checked = false;
-                            return;
-                        }
+                if (currentGutNumber && currentVillage) {
+                    // Filter by gut intersection
+                    const escapedVillage = currentVillage.replace(/'/g, "''");
+                    cqlFilter = `INTERSECTS(geometry, querySingle('gut_bnd', 'geometry', 'Village_Na=''${escapedVillage}'' AND Gut_Number=${currentGutNumber}'))`;
+                } else if (currentVillage) {
+                    // Filter by village intersection
+                    const escapedVillage = currentVillage.replace(/'/g, "''");
+                    cqlFilter = `INTERSECTS(geometry, querySingle('purandhar_airport_village_bo', 'geometry', 'Village_Na=''${escapedVillage}'''))`;
+                }
 
-                        assetLayers[assetName] = L.geoJSON(geojson, {
-                            pointToLayer: function (feature, latlng) {
-                                return L.circleMarker(latlng, {
-                                    radius: 5,
-                                    fillColor: '#f97316',
-                                    color: '#fff',
-                                    weight: 1,
-                                    opacity: 1,
-                                    fillOpacity: 0.85
-                                });
-                            },
-                            style: function (feature) {
-                                // For polygon/line features
-                                return {
-                                    color: '#f97316',
-                                    weight: 1.5,
-                                    fillColor: '#f97316',
-                                    fillOpacity: 0.4
-                                };
-                            },
-                            onEachFeature: function (feature, layer) {
-                                if (feature.properties) {
-                                    const props = Object.entries(feature.properties)
-                                        .filter(([k, v]) => v !== null && v !== undefined)
-                                        .map(([k, v]) => `<b>${k}:</b> ${v}`)
-                                        .join('<br>');
-                                    layer.bindPopup(`<div class="text-xs">${props}</div>`);
-                                }
-                            }
-                        }).addTo(map);
+                // Create WMS layer
+                const wmsParams = {
+                    layers: `${WORKSPACE}:${assetName}`,
+                    format: 'image/png',
+                    transparent: true,
+                    version: '1.1.0',
+                    pane: 'overlayPane'
+                };
 
-                        // Zoom to layer bounds
-                        const bounds = assetLayers[assetName].getBounds();
-                        if (bounds.isValid()) {
-                            map.fitBounds(bounds, { padding: [50, 50] });
-                        }
-                        showNotification(`Loaded ${assetName} (${features.length} features) in ${filterInfo}`, 'success');
-                    })
-                    .catch(error => {
-                        console.warn(`Failed to load ${assetName}:`, error);
-                        showNotification(`No ${assetName} data available in ${filterInfo}`, 'info');
-                        const toggle = document.querySelector(`.asset-layer-toggle[data-asset="${assetName}"]`);
-                        if (toggle) toggle.checked = false;
-                        if (assetLayers[assetName]) {
-                            map.removeLayer(assetLayers[assetName]);
-                            delete assetLayers[assetName];
-                        }
-                    });
+                if (cqlFilter) {
+                    wmsParams.CQL_FILTER = cqlFilter;
+                }
+
+                assetLayers[assetName] = L.tileLayer.wms(GEOSERVER_URL, wmsParams);
+
+                assetLayers[assetName].on('load', function() {
+                    console.log(`✅ ${assetName} layer loaded successfully`);
+                    showNotification(`Loaded ${assetName} in ${filterInfo}`, 'success');
+                });
+
+                assetLayers[assetName].on('tileerror', function(error) {
+                    console.warn(`Failed to load ${assetName}:`, error);
+                    showNotification(`No ${assetName} data available in ${filterInfo}`, 'info');
+                    const toggle = document.querySelector(`.asset-layer-toggle[data-asset="${assetName}"]`);
+                    if (toggle) toggle.checked = false;
+                    if (assetLayers[assetName]) {
+                        map.removeLayer(assetLayers[assetName]);
+                        delete assetLayers[assetName];
+                    }
+                });
+
+                assetLayers[assetName].addTo(map);
             }
 
             // Remove asset layer from map
@@ -1452,7 +1591,7 @@
                 }
             }
 
-            // Show notification toast
+            // Show notification toast with enhanced styling
             function showNotification(message, type = 'info') {
                 // Create notification container if it doesn't exist
                 let container = document.getElementById('notification-container');

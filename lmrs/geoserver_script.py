@@ -30,7 +30,7 @@ for table in tables:
     <name>{table}</name>
     <nativeName>{table}</nativeName>
     <title>{table}</title>
-    <srs>EPSG:4326</srs>
+    <srs>EPSG:3857</srs>
     <enabled>true</enabled>
 </featureType>"""
     headers = {"Content-type": "text/xml"}
