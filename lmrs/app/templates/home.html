@@ -17,7 +17,7 @@
         rel="stylesheet" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    
+
     <!-- Highcharts -->
     <script src="https://unpkg.com/highcharts@11.4.0/highcharts.js"></script>
     <script src="https://unpkg.com/highcharts@11.4.0/modules/exporting.js"></script>
@@ -278,16 +278,21 @@
                     <div
                         class="flex flex-col gap-3 rounded-xl p-4 bg-white dark:bg-slate-900 shadow-sm border border-slate-200 dark:border-slate-800">
                         <div class="flex items-center justify-between mb-2">
-                            <h4 class="text-slate-700 dark:text-slate-300 text-xs font-bold uppercase">Assets Distribution</h4>
-                            <button onclick="downloadAssetsCSV()" class="text-slate-500 hover:text-slate-800 dark:hover:text-white transition-colors flex items-center justify-center rounded-md" title="Export CSV">
+                            <h4 class="text-slate-700 dark:text-slate-300 text-xs font-bold uppercase">Assets
+                                Distribution</h4>
+                            <button onclick="downloadAssetsCSV()"
+                                class="text-slate-500 hover:text-slate-800 dark:hover:text-white transition-colors flex items-center justify-center rounded-md"
+                                title="Export CSV">
                                 <span class="material-symbols-outlined text-base">download</span>
                             </button>
                         </div>
                         <div class="flex items-center justify-center py-1">
                             <div class="relative size-32">
                                 <div id="assetsDistributionChart" class="w-full h-full"></div>
-                                <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                                    <span id="totalAssetsDisplay" class="text-lg font-bold leading-none text-slate-900 dark:text-white">--</span>
+                                <div
+                                    class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                                    <span id="totalAssetsDisplay"
+                                        class="text-lg font-bold leading-none text-slate-900 dark:text-white">--</span>
                                     <span class="text-[9px] text-slate-500 mt-1">Total</span>
                                 </div>
                             </div>
@@ -859,7 +864,7 @@
             // Load Villages List - Simple Django API approach
             function loadVillagesList() {
                 console.log(`🔍 Fetching villages from Django API: /api/villages-list/`);
-                
+
                 fetch('/api/villages-list/')
                     .then(response => {
                         console.log(`📡 Response status: ${response.status}`);
@@ -872,7 +877,7 @@
                         console.log(`📄 Raw response:`, text);
                         const data = JSON.parse(text); // Then parse as JSON
                         console.log(`✅ Parsed JSON:`, data);
-                        
+
                         const villageSelect = document.getElementById('villageSelect');
                         villageSelect.innerHTML = '<option value="">Select Village</option>';
 
@@ -973,7 +978,7 @@
                                 map.fitBounds([
                                     [data.bounds.minLat, data.bounds.minLng],
                                     [data.bounds.maxLat, data.bounds.maxLng]
-                                ], { 
+                                ], {
                                     padding: [80, 80],  // More padding for better view
                                     maxZoom: 18  // Zoom in closer to see the gut properly
                                 });
@@ -1457,10 +1462,10 @@
                 // Update HTML custom legend
                 const treesEl = document.getElementById('treesCount');
                 if (treesEl) treesEl.textContent = landData.trees_total.toLocaleString();
-                
+
                 const structuresEl = document.getElementById('structuresCount');
                 if (structuresEl) structuresEl.textContent = landData.structures_total.toLocaleString();
-                
+
                 const waterEl = document.getElementById('waterCount');
                 if (waterEl) waterEl.textContent = landData.water_total.toLocaleString();
 
@@ -1531,12 +1536,12 @@
                             },
                             borderWidth: 0,
                             shadow: true,
-                            formatter: function() {
+                            formatter: function () {
                                 let html = `<div style="padding: 8px; border-radius: 4px;">`;
                                 html += `<div style="font-size: 13px; font-weight: bold; border-bottom: 1px solid ${isDarkMode ? '#334155' : '#e2e8f0'}; margin-bottom: 5px; padding-bottom: 3px;">
                                             <span style="color:${this.point.color}">\u25CF</span> ${this.key}: ${this.y.toLocaleString()}
                                          </div>`;
-                                
+
                                 if (this.point.customData && Object.keys(this.point.customData).length > 0) {
                                     html += `<div style="font-size: 12px; display: flex; flex-direction: column; gap: 3px;">`;
                                     for (const [key, val] of Object.entries(this.point.customData)) {
@@ -1574,42 +1579,42 @@
             }
 
             // Custom function for Assets Distribution CSV export perfectly formatted
-            window.downloadAssetsCSV = function() {
+            window.downloadAssetsCSV = function () {
                 if (!window.currentLandData) return;
-                
+
                 const d = window.currentLandData;
                 const total = d.trees_total + d.structures_total + d.water_total;
-                
+
                 // Get contextual filter state
-                const filterText = currentGutNumber 
-                    ? `Gut ${currentGutNumber} in ${currentVillage}` 
-                    : currentVillage 
-                        ? `Village ${currentVillage}` 
+                const filterText = currentGutNumber
+                    ? `Gut ${currentGutNumber} in ${currentVillage}`
+                    : currentVillage
+                        ? `Village ${currentVillage}`
                         : 'All Areas';
-                        
+
                 // Format current time properly
                 const now = new Date();
                 const dateStr = now.toLocaleDateString() + ' ' + now.toLocaleTimeString();
-                
+
                 // Construct CSV exact template
                 let csv = `Assets Distribution Report\n`;
                 csv += `Filter:,${filterText}\n`;
                 csv += `Generated:,${dateStr}\n\n`;
                 csv += `Category,Count,Percentage,Subcategory,Subcount\n`;
-                
+
                 const treePct = total ? (d.trees_total / total * 100).toFixed(2) + '%' : '0.00%';
                 csv += `Trees,${d.trees_total},${treePct},,\n`;
-                
+
                 const structPct = total ? (d.structures_total / total * 100).toFixed(2) + '%' : '0.00%';
                 csv += `Structures,${d.structures_total},${structPct},Permanent,${d.structures_permanent}\n`;
                 csv += `Structures,${d.structures_total},${structPct},Temporary,${d.structures_temporary}\n`;
-                
+
                 const waterPct = total ? (d.water_total / total * 100).toFixed(2) + '%' : '0.00%';
                 csv += `Water,${d.water_total},${waterPct},Wells,${d.water_well}\n`;
                 csv += `Water,${d.water_total},${waterPct},Borewells,${d.water_borewell}\n\n`;
-                
+
                 csv += `Total Assets,${total},100%,,\n`;
-                
+
                 // Download execution
                 const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
                 const url = URL.createObjectURL(blob);
@@ -1726,24 +1731,24 @@
 
                 // First, check if there's any data using GetFeatureInfo
                 const checkUrl = `${GEOSERVER_URL}?SERVICE=WFS&VERSION=1.0.0&REQUEST=GetFeature&TYPENAME=${WORKSPACE}:${assetName}&outputFormat=application/json&maxFeatures=1${cqlFilter ? '&CQL_FILTER=' + encodeURIComponent(cqlFilter) : ''}`;
-                
+
                 console.log(`🔍 Checking for data: ${checkUrl}`);
-                
+
                 fetch(checkUrl)
                     .then(response => response.json())
                     .then(data => {
                         if (!data.features || data.features.length === 0) {
                             console.warn(`⚠️ No ${assetName} data found for ${filterInfo}`);
                             showNotification(`No ${assetName} data available in ${filterInfo}`, 'info');
-                            
+
                             // Uncheck the toggle
                             const toggle = document.querySelector(`.asset-layer-toggle[data-asset="${assetName}"]`);
                             if (toggle) toggle.checked = false;
                             return;
                         }
-                        
+
                         console.log(`✅ Data exists for ${assetName}, loading WMS layer...`);
-                        
+
                         // Data exists, now load the WMS layer
                         const wmsParams = {
                             layers: `${WORKSPACE}:${assetName}`,
@@ -1771,7 +1776,7 @@
                             assetLayers[assetName].on('tileerror', function (error) {
                                 console.error(`❌ Failed to load ${assetName} tiles:`, error);
                                 showNotification(`Failed to load ${assetName}`, 'error');
-                                
+
                                 const toggle = document.querySelector(`.asset-layer-toggle[data-asset="${assetName}"]`);
                                 if (toggle) toggle.checked = false;
                                 if (assetLayers[assetName]) {
