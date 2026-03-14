@@ -295,7 +295,7 @@ def get_all_villages_farmers(request):
             FROM information_schema.columns 
             WHERE table_schema = 'public' 
             AND table_name = 'purandar_farmers'
-            AND (column_name ILIKE '%village%' OR column_name = 'VILLAGE')
+            AND (column_name ILIKE '%village%' OR column_name = 'village')
             LIMIT 1;
         """)
         village_col_result = cursor.fetchone()
@@ -350,7 +350,7 @@ def get_project_stats(request):
                 FROM information_schema.columns 
                 WHERE table_schema = 'public' 
                 AND table_name = 'purandar_farmers'
-                AND (column_name ILIKE '%village%' OR column_name = 'VILLAGE')
+                AND (column_name ILIKE '%village%' OR column_name = 'village')
                 LIMIT 1;
             """)
             village_col_result = cursor.fetchone()
@@ -392,7 +392,7 @@ def get_project_stats(request):
                     FROM information_schema.columns 
                     WHERE table_schema = 'public' 
                     AND table_name = 'gut_bnd'
-                    AND (column_name ILIKE '%village%' OR column_name = 'VILLAGE')
+                    AND (column_name ILIKE '%village%' OR column_name = 'village')
                     LIMIT 1;
                 """)
                 village_col_result = cursor.fetchone()
@@ -600,7 +600,7 @@ def get_project_stats(request):
                         FROM information_schema.columns 
                         WHERE table_schema = 'public' 
                         AND table_name = '{asset}'
-                        AND (column_name ILIKE '%village%' OR column_name = 'VILLAGE')
+                        AND (column_name ILIKE '%village%' OR column_name = 'village')
                         LIMIT 1;
                     """)
                     village_col_result = cursor.fetchone()
@@ -1754,4 +1754,3 @@ def get_layer_bounds(request, layer_name):
             import traceback
             traceback.print_exc()
             return JsonResponse({'error': str(e)}, status=500)
-
