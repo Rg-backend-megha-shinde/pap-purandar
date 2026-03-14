@@ -1,124 +1,14 @@
 from django.shortcuts import render
 from django.http import JsonResponse
 from django.db import connection
-import requests
-import os
-from django.conf import settings
 
 def home(request):
     return render(request, 'home.html')
 
 #to fetch the district
-def get_district_boundary(request):
-    """Fetch district boundary GeoJSON"""
-    with connection.cursor() as cursor:
-        cursor.execute("""
-            SELECT json_build_object(
-                'type', 'FeatureCollection',
-                'features', json_agg(
-                    json_build_object(
-                        'type', 'Feature',
-                        'geometry', ST_AsGeoJSON(ST_Transform(geometry, 4326))::json,
-                        'properties', json_build_object(
-                            'name', name,
-                            'name_m', name_m
-                        )
-                    )
-                )
-            )
-            FROM public.district_boundry;
-        """)
-        result = cursor.fetchone()
-        return JsonResponse(result[0] if result[0] else {'type': 'FeatureCollection', 'features': []}, safe=False)
+# Views moved or removed because they were redundant (using GeoServer WMS instead)
 
-def get_taluka_boundary(request):
-    """Fetch taluka boundary GeoJSON"""
-    with connection.cursor() as cursor:
-        cursor.execute("""
-            SELECT json_build_object(
-                'type', 'FeatureCollection',
-                'features', json_agg(
-                    json_build_object(
-                        'type', 'Feature',
-                        'geometry', ST_AsGeoJSON(ST_Transform(geometry, 4326))::json,
-                        'properties', json_build_object(
-                            'name', 'Purandar'
-                        )
-                    )
-                )
-            )
-            FROM public.purandar_tehsil;
-        """)
-        result = cursor.fetchone()
-        return JsonResponse(result[0] if result[0] else {'type': 'FeatureCollection', 'features': []}, safe=False)
 
-def get_aoi_boundary(request):
-    """Fetch AOI boundary GeoJSON"""
-    with connection.cursor() as cursor:
-        cursor.execute("""
-            SELECT json_build_object(
-                'type', 'FeatureCollection',
-                'features', json_agg(
-                    json_build_object(
-                        'type', 'Feature',
-                        'geometry', ST_AsGeoJSON(ST_Transform(geometry, 4326))::json,
-                        'properties', json_build_object(
-                            'name', 'Airport AOI'
-                        )
-                    )
-                )
-            )
-            FROM public.purandar_aoi;
-        """)
-        result = cursor.fetchone()
-        return JsonResponse(result[0] if result[0] else {'type': 'FeatureCollection', 'features': []}, safe=False)
-
-def get_villages_boundary(request):
-    """Fetch villages outer boundary GeoJSON"""
-    with connection.cursor() as cursor:
-        cursor.execute("""
-            SELECT json_build_object(
-                'type', 'FeatureCollection',
-                'features', json_agg(
-                    json_build_object(
-                        'type', 'Feature',
-                        'geometry', ST_AsGeoJSON(ST_Transform(geometry, 4326))::json,
-                        'properties', json_build_object(
-                            'name', "village",
-                            'taluka', "Taluka"
-                        )
-                    )
-                )
-            )
-            FROM public.purandhar_airport_village_bo;
-        """)
-        result = cursor.fetchone()
-        return JsonResponse(result[0] if result[0] else {'type': 'FeatureCollection', 'features': []}, safe=False)
-
-def get_villages_with_gut(request):
-    """Fetch villages with gut numbers GeoJSON"""
-    with connection.cursor() as cursor:
-        cursor.execute("""
-            SELECT json_build_object(
-                'type', 'FeatureCollection',
-                'features', json_agg(
-                    json_build_object(
-                        'type', 'Feature',
-                        'geometry', ST_AsGeoJSON(ST_Transform(geometry, 4326))::json,
-                        'properties', json_build_object(
-                            'village', "village",
-                            'gut_no', "Gut_Number",
-                            'new_gut_no', "New_Gut_No",
-                            'area_ha', "Area_In_Ha",
-                            'taluka', "Taluka"
-                        )
-                    )
-                )
-            )
-            FROM public.purandhar_airport_villages;
-        """)
-        result = cursor.fetchone()
-        return JsonResponse(result[0] if result[0] else {'type': 'FeatureCollection', 'features': []}, safe=False)
 
 def get_villages_list(request):
     """Fetch list of all villages"""
@@ -131,99 +21,8 @@ def get_villages_list(request):
         villages = [row[0] for row in cursor.fetchall()]
         return JsonResponse({'villages': villages})
 
-def get_single_village_boundary(request, village_name):
-    """Fetch single village boundary GeoJSON"""
-    with connection.cursor() as cursor:
-        cursor.execute("""
-            SELECT json_build_object(
-                'type', 'FeatureCollection',
-                'features', json_agg(
-                    json_build_object(
-                        'type', 'Feature',
-                        'geometry', ST_AsGeoJSON(ST_Transform(geometry, 4326))::json,
-                        'properties', json_build_object(
-                            'name', "village",
-                            'taluka', "Taluka"
-                        )
-                    )
-                )
-            )
-            FROM public.purandhar_airport_village_bo
-            WHERE "village" = %s;
-        """, [village_name])
-        result = cursor.fetchone()
-        return JsonResponse(result[0] if result[0] else {'type': 'FeatureCollection', 'features': []}, safe=False)
 
-def get_village_gut_boundaries(request, village_name):
-    """Fetch all gut boundaries for a specific village"""
-    with connection.cursor() as cursor:
-        try:
-            cursor.execute("""
-                SELECT json_build_object(
-                    'type', 'FeatureCollection',
-                    'features', json_agg(
-                        json_build_object(
-                            'type', 'Feature',
-                            'geometry', ST_AsGeoJSON(ST_Transform(geometry, 4326))::json,
-                            'properties', json_build_object(
-                                'gut_number', "Gut_Number",
-                                'village', "village",
-                                'area_ha', "Area_In_Ha",
-                                'taluka', "Taluka"
-                            )
-                        )
-                    )
-                )
-                FROM public.gut_bnd
-                WHERE "village" = %s;
-            """, [village_name])
-            result = cursor.fetchone()
-            
-            if result and result[0] and result[0].get('features'):
-                return JsonResponse(result[0], safe=False)
-            else:
-                return JsonResponse({'type': 'FeatureCollection', 'features': []}, safe=False)
-        except Exception as e:
-            import traceback
-            traceback.print_exc()
-            return JsonResponse({'error': str(e), 'type': 'FeatureCollection', 'features': []}, status=500)
 
-def get_village_compensation(request, village_name):
-    """Fetch village-wise compensation from all asset tables"""
-    with connection.cursor() as cursor:
-        total_compensation = 0
-        asset_tables = ['bag', 'tree', 'shed', 'structures', 'well', 'borewell']
-        
-        for table in asset_tables:
-            try:
-                # Check if VILLAGE column exists
-                cursor.execute(f"""
-                    SELECT column_name 
-                    FROM information_schema.columns 
-                    WHERE table_schema = 'public' 
-                    AND table_name = '{table}'
-                    AND column_name ILIKE '%village%';
-                """)
-                village_col = cursor.fetchone()
-                
-                if village_col:
-                    col_name = village_col[0]
-                    cursor.execute(f"""
-                        SELECT COALESCE(SUM(valuation), 0)
-                        FROM public.{table}
-                        WHERE "{col_name}" = %s;
-                    """, [village_name])
-                    result = cursor.fetchone()
-                    if result and result[0]:
-                        total_compensation += float(result[0])
-            except Exception as e:
-                print(f"Error fetching compensation from {table}: {e}")
-                continue
-        
-        return JsonResponse({
-            'village_name': village_name,
-            'total_compensation': total_compensation
-        })
 
 def get_all_villages_compensation(request):
     """Fetch compensation for all villages"""
@@ -946,42 +745,6 @@ def get_gut_numbers_by_village(request, village_name):
             traceback.print_exc()
             return JsonResponse({'error': str(e), 'gut_numbers': []}, status=500)
 
-def get_gut_boundary(request, village_name, gut_number):
-    """Fetch specific gut boundary GeoJSON"""
-    with connection.cursor() as cursor:
-        try:
-            cursor.execute("""
-                SELECT json_build_object(
-                    'type', 'FeatureCollection',
-                    'features', json_agg(
-                        json_build_object(
-                            'type', 'Feature',
-                            'geometry', ST_AsGeoJSON(ST_Transform(geometry, 4326))::json,
-                            'properties', json_build_object(
-                                'gut_number', "Gut_Number",
-                                'village', "village",
-                                'area_ha', "Area_In_Ha",
-                                'taluka', "Taluka"
-                            )
-                        )
-                    )
-                )
-                FROM public.gut_bnd
-                WHERE "village" = %s AND "Gut_Number" = %s;
-            """, [village_name, gut_number])
-            result = cursor.fetchone()
-            print(f"Gut boundary query result for {village_name}/{gut_number}: {result}")
-            
-            if result and result[0] and result[0].get('features'):
-                print(f"Found {len(result[0]['features'])} gut boundary features")
-                return JsonResponse(result[0], safe=False)
-            else:
-                print(f"No gut boundary found for {village_name}/{gut_number}")
-                return JsonResponse({'type': 'FeatureCollection', 'features': []}, safe=False)
-        except Exception as e:
-            import traceback
-            traceback.print_exc()
-            return JsonResponse({'error': str(e), 'type': 'FeatureCollection', 'features': []}, status=500)
 
 def get_gut_stats(request, village_name, gut_number):
     """Fetch statistics for a specific gut"""
@@ -1359,7 +1122,7 @@ def get_layer_bounds(request, layer_name):
                 where_clause = f"""
                     WHERE EXISTS (
                         SELECT 1 FROM public.gut_bnd g
-                        WHERE g."village" = %s
+                        WHERE UPPER(TRIM(g."village")) = UPPER(TRIM(%s))
                         AND g."Gut_Number" = %s
                         AND ST_Intersects(
                             ST_Transform(a.{geom_col}, 4326),
@@ -1382,9 +1145,13 @@ def get_layer_bounds(request, layer_name):
                 """
                 params = [village_name]
             elif village_name and table_name == 'gut_bnd':
-                # For gut_bnd, filter by village column
-                where_clause = 'WHERE "village" = %s'
-                params = [village_name]
+                # For gut_bnd, filter by village and optionally Gut_Number
+                if gut_number:
+                    where_clause = 'WHERE UPPER(TRIM("village")) = UPPER(TRIM(%s)) AND "Gut_Number" = %s'
+                    params = [village_name, gut_number]
+                else:
+                    where_clause = 'WHERE UPPER(TRIM("village")) = UPPER(TRIM(%s))'
+                    params = [village_name]
             
             # Calculate bounds in WGS84
             if where_clause:

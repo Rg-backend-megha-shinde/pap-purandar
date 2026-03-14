@@ -1068,7 +1068,7 @@
                                             map.fitBounds([
                                                 [d.bounds.minLat, d.bounds.minLng],
                                                 [d.bounds.maxLat, d.bounds.maxLng]
-                                            ], { padding: [50, 50], maxZoom: 16 });
+                                            ], { padding: [80, 80], maxZoom: 18 });
                                         }
                                     })
                                     .catch(err => console.log('⚠️ Bounds API not available'));
@@ -1084,54 +1084,17 @@
 
 
 
-            // Update compensation for selected village
-            function updateVillageCompensation(villageName) {
-                fetch(`/api/village-compensation/${encodeURIComponent(villageName)}/`)
-                    .then(response => response.json())
-                    .then(data => {
-                        const totalCompensationElement = document.getElementById('totalCompensation');
-                        if (totalCompensationElement) {
-                            totalCompensationElement.textContent = formatCurrency(data.total_compensation);
-                        }
-                    })
-                    .catch(error => console.error('Error loading village compensation:', error));
-            }
 
-            // Fetch and display village compensation bars.  Pass a villageName to show
-            // only that village, otherwise totals for all villages will be shown.
-            function fetchVillageCompensation(villageName) {
-                const url = villageName
-                    ? `/api/village-compensation/${encodeURIComponent(villageName)}/`
-                    : '/api/all-villages-compensation/';
-
-                fetch(url)
+            // Fetch and display village compensation bars ranking
+            function fetchAllVillagesCompensation() {
+                fetch('/api/all-villages-compensation/')
                     .then(response => response.json())
                     .then(data => {
                         const container = document.getElementById('villageCompensationBars');
-                        if (!container) return;
+                        if (!container || !data.villages) return;
 
                         container.innerHTML = '';
-
-                        // if API returned a single village's compensation (project-filtered or explicit call)
-                        if (data.total_compensation !== undefined) {
-                            const comp = data.total_compensation || 0;
-                            const compensationCr = comp / 10000000;
-                            const villageBar = document.createElement('div');
-                            villageBar.className = 'space-y-1';
-                            villageBar.innerHTML = `
-                                <div class="flex justify-between text-[10px] text-slate-500 uppercase">
-                                    <span>${villageName}</span>
-                                    <span>₹${compensationCr.toFixed(2)} Cr</span>
-                                </div>
-                                <div class="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                                    <div class="bg-primary h-full" style="width:100%"></div>
-                                </div>
-                            `;
-                            container.appendChild(villageBar);
-                            return;
-                        }
-
-                        if (!data.villages || data.villages.length === 0) {
+                        if (data.villages.length === 0) {
                             container.innerHTML = '<p class="text-slate-500 text-xs">No data available</p>';
                             return;
                         }
@@ -1141,7 +1104,7 @@
 
                         data.villages.forEach(village => {
                             const percentage = maxCompensation > 0 ? (village.compensation / maxCompensation * 100) : 0;
-                            const compensationCr = village.compensation / 10000000; // Convert to Crores
+                            const compensationCr = village.compensation / 10000000;
 
                             const villageBar = document.createElement('div');
                             villageBar.className = 'space-y-1';
@@ -1157,7 +1120,7 @@
                             container.appendChild(villageBar);
                         });
                     })
-                    .catch(error => console.error('Error loading village compensation:', error));
+                    .catch(error => console.error('Error loading all village compensation:', error));
             }
 
             // Fetch Gut Statistics
@@ -1193,11 +1156,10 @@
                         }
 
                         // Calculate and display total assets from land classification (matches Assets Distribution)
-                        // Calculate and display total assets from land classification (matches Assets Distribution)
                         if (data.land_classification) {
-                            const totalAssets = data.land_classification.trees_total +
-                                data.land_classification.structures_total +
-                                data.land_classification.water_total;
+                            const totalAssets = (data.land_classification.trees_total || 0) +
+                                (data.land_classification.structures_total || 0) +
+                                (data.land_classification.water_total || 0);
                             const totalAssetsElement = document.getElementById('totalAssetsCount');
                             if (totalAssetsElement) {
                                 totalAssetsElement.textContent = totalAssets.toLocaleString();
@@ -1252,12 +1214,36 @@
 
                         // Calculate and display total assets from land classification (matches Assets Distribution)
                         if (data.land_classification) {
-                            const totalAssets = data.land_classification.trees_total +
-                                data.land_classification.structures_total +
-                                data.land_classification.water_total;
+                            const totalAssets = (data.land_classification.trees_total || 0) +
+                                (data.land_classification.structures_total || 0) +
+                                (data.land_classification.water_total || 0);
                             const totalAssetsElement = document.getElementById('totalAssetsCount');
                             if (totalAssetsElement) {
                                 totalAssetsElement.textContent = totalAssets.toLocaleString();
+                            }
+                        }
+
+                        // Update the compensation bar container
+                        const container = document.getElementById('villageCompensationBars');
+                        if (container) {
+                            if (villageName) {
+                                // Show ONLY selected village bar
+                                const comp = data.total_compensation || 0;
+                                const compensationCr = comp / 10000000;
+                                container.innerHTML = `
+                                    <div class="space-y-1">
+                                        <div class="flex justify-between text-[10px] text-slate-500 uppercase">
+                                            <span>${villageName}</span>
+                                            <span>₹${compensationCr.toFixed(2)} Cr</span>
+                                        </div>
+                                        <div class="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                                            <div class="bg-primary h-full" style="width:100%"></div>
+                                        </div>
+                                    </div>
+                                `;
+                            } else {
+                                // Show all villages ranking
+                                fetchAllVillagesCompensation();
                             }
                         }
 
@@ -1273,9 +1259,6 @@
                         }
                     })
                     .catch(error => console.error('Error loading project stats:', error));
-
-                // Fetch village compensation data (pass through village filter if any)
-                fetchVillageCompensation(villageName);
 
                 // Fetch village farmers data - always show all villages
                 fetchVillageFarmers();
