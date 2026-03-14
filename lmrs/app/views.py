@@ -84,7 +84,7 @@ def get_villages_boundary(request):
                         'type', 'Feature',
                         'geometry', ST_AsGeoJSON(ST_Transform(geometry, 4326))::json,
                         'properties', json_build_object(
-                            'name', "Village_Na",
+                            'name', "Village",
                             'taluka', "Taluka"
                         )
                     )
@@ -106,7 +106,7 @@ def get_villages_with_gut(request):
                         'type', 'Feature',
                         'geometry', ST_AsGeoJSON(ST_Transform(geometry, 4326))::json,
                         'properties', json_build_object(
-                            'village', "Village_Na",
+                            'village', "Village",
                             'gut_no', "Gut_Number",
                             'new_gut_no', "New_Gut_No",
                             'area_ha', "Area_In_Ha",
@@ -124,9 +124,9 @@ def get_villages_list(request):
     """Fetch list of all villages"""
     with connection.cursor() as cursor:
         cursor.execute("""
-            SELECT DISTINCT "Village_Na" 
+            SELECT DISTINCT "village" 
             FROM public.purandhar_airport_village_bo 
-            ORDER BY "Village_Na";
+            ORDER BY "village";
         """)
         villages = [row[0] for row in cursor.fetchall()]
         return JsonResponse({'villages': villages})
@@ -142,14 +142,14 @@ def get_single_village_boundary(request, village_name):
                         'type', 'Feature',
                         'geometry', ST_AsGeoJSON(ST_Transform(geometry, 4326))::json,
                         'properties', json_build_object(
-                            'name', "Village_Na",
+                            'name', "Village",
                             'taluka', "Taluka"
                         )
                     )
                 )
             )
             FROM public.purandhar_airport_village_bo
-            WHERE "Village_Na" = %s;
+            WHERE "village" = %s;
         """, [village_name])
         result = cursor.fetchone()
         return JsonResponse(result[0] if result[0] else {'type': 'FeatureCollection', 'features': []}, safe=False)
@@ -167,7 +167,7 @@ def get_village_gut_boundaries(request, village_name):
                             'geometry', ST_AsGeoJSON(ST_Transform(geom, 4326))::json,
                             'properties', json_build_object(
                                 'gut_number', "Gut_Number",
-                                'village', "Village_Na",
+                                'village', "Village",
                                 'area_ha', "Area_In_Ha",
                                 'taluka', "Taluka"
                             )
@@ -175,7 +175,7 @@ def get_village_gut_boundaries(request, village_name):
                     )
                 )
                 FROM public.gut_bnd
-                WHERE "Village_Na" = %s;
+                WHERE "Village" = %s;
             """, [village_name])
             result = cursor.fetchone()
             
@@ -230,9 +230,9 @@ def get_all_villages_compensation(request):
     with connection.cursor() as cursor:
         # Get list of all villages
         cursor.execute("""
-            SELECT DISTINCT "Village_Na" 
+            SELECT DISTINCT "Village" 
             FROM public.purandhar_airport_village_bo 
-            ORDER BY "Village_Na";
+            ORDER BY "Village";
         """)
         villages = [row[0] for row in cursor.fetchall()]
         
@@ -283,9 +283,9 @@ def get_all_villages_farmers(request):
     with connection.cursor() as cursor:
         # Get list of all villages
         cursor.execute("""
-            SELECT DISTINCT "Village_Na" 
+            SELECT DISTINCT "Village" 
             FROM public.purandhar_airport_village_bo 
-            ORDER BY "Village_Na";
+            ORDER BY "Village";
         """)
         villages = [row[0] for row in cursor.fetchall()]
         
@@ -336,7 +336,7 @@ def get_project_stats(request):
     with connection.cursor() as cursor:
         # Count villages within AOI boundary
         cursor.execute("""
-            SELECT COUNT(DISTINCT v."Village_Na")
+            SELECT COUNT(DISTINCT v."Village")
             FROM public.purandhar_airport_village_bo v, public.purandar_aoi a
             WHERE ST_Intersects(v.geometry, a.geometry);
         """)
@@ -451,7 +451,7 @@ def get_project_stats(request):
                         cursor.execute("""
                             SELECT COALESCE(SUM("Area_In_Ha"), 0)
                             FROM public.purandhar_airport_villages
-                            WHERE UPPER("Village_Na") = UPPER(%s);
+                            WHERE UPPER("Village") = UPPER(%s);
                         """, [village_name])
                         area_acquired = cursor.fetchone()[0] or 0
                         area_acquired = round(float(area_acquired), 2)
@@ -460,7 +460,7 @@ def get_project_stats(request):
                     cursor.execute("""
                         SELECT COALESCE(SUM("Area_In_Ha"), 0)
                         FROM public.purandhar_airport_villages
-                        WHERE UPPER("Village_Na") = UPPER(%s);
+                        WHERE UPPER("Village") = UPPER(%s);
                     """, [village_name])
                     area_acquired = cursor.fetchone()[0] or 0
                     area_acquired = round(float(area_acquired), 2)
@@ -935,7 +935,7 @@ def get_gut_numbers_by_village(request, village_name):
             cursor.execute("""
                 SELECT DISTINCT "Gut_Number" 
                 FROM public.gut_bnd 
-                WHERE "Village_Na" = %s
+                WHERE "village" = %s
                 ORDER BY "Gut_Number";
             """, [village_name])
             gut_numbers = [row[0] for row in cursor.fetchall()]
@@ -959,7 +959,7 @@ def get_gut_boundary(request, village_name, gut_number):
                             'geometry', ST_AsGeoJSON(ST_Transform(geom, 4326))::json,
                             'properties', json_build_object(
                                 'gut_number', "Gut_Number",
-                                'village', "Village_Na",
+                                'village', "Village",
                                 'area_ha', "Area_In_Ha",
                                 'taluka', "Taluka"
                             )
@@ -967,7 +967,7 @@ def get_gut_boundary(request, village_name, gut_number):
                     )
                 )
                 FROM public.gut_bnd
-                WHERE "Village_Na" = %s AND "Gut_Number" = %s;
+                WHERE "village" = %s AND "Gut_Number" = %s;
             """, [village_name, gut_number])
             result = cursor.fetchone()
             print(f"Gut boundary query result for {village_name}/{gut_number}: {result}")
@@ -991,7 +991,7 @@ def get_gut_stats(request, village_name, gut_number):
             cursor.execute("""
                 SELECT "Area_In_Ha"
                 FROM public.gut_bnd
-                WHERE "Village_Na" = %s AND "Gut_Number" = %s;
+                WHERE "village" = %s AND "Gut_Number" = %s;
             """, [village_name, gut_number])
             gut_area_result = cursor.fetchone()
             area_acquired = float(gut_area_result[0]) if gut_area_result and gut_area_result[0] else 0
@@ -1016,7 +1016,7 @@ def get_gut_stats(request, village_name, gut_number):
                     WHERE f.affected_farmer = true
                     AND EXISTS (
                         SELECT 1 FROM public.gut_bnd g
-                        WHERE g."Village_Na" = %s
+                        WHERE g."Village" = %s
                         AND g."Gut_Number" = %s
                         AND ST_Intersects(
                             ST_Transform(f.{geom_col}, 4326),
@@ -1053,7 +1053,7 @@ def get_gut_stats(request, village_name, gut_number):
                             FROM public.{table} a
                             WHERE EXISTS (
                                 SELECT 1 FROM public.gut_bnd g
-                                WHERE g."Village_Na" = %s
+                                WHERE g."Village" = %s
                                 AND g."Gut_Number" = %s
                                 AND ST_Intersects(
                                     ST_Transform(a.{geom_col}, 4326),
@@ -1097,7 +1097,7 @@ def get_gut_stats(request, village_name, gut_number):
                         FROM public.bag a
                         WHERE EXISTS (
                             SELECT 1 FROM public.gut_bnd g
-                            WHERE g."Village_Na" = %s
+                            WHERE g."Village" = %s
                             AND g."Gut_Number" = %s
                             AND ST_Intersects(
                                 ST_Transform(a.{geom_col}, 4326),
@@ -1131,7 +1131,7 @@ def get_gut_stats(request, village_name, gut_number):
                         FROM public.tree a
                         WHERE EXISTS (
                             SELECT 1 FROM public.gut_bnd g
-                            WHERE g."Village_Na" = %s
+                            WHERE g."Village" = %s
                             AND g."Gut_Number" = %s
                             AND ST_Intersects(
                                 ST_Transform(a.{geom_col}, 4326),
@@ -1172,7 +1172,7 @@ def get_gut_stats(request, village_name, gut_number):
                         FROM public.structures a
                         WHERE EXISTS (
                             SELECT 1 FROM public.gut_bnd g
-                            WHERE g."Village_Na" = %s
+                            WHERE g."Village" = %s
                             AND g."Gut_Number" = %s
                             AND ST_Intersects(
                                 ST_Transform(a.{geom_col}, 4326),
@@ -1201,7 +1201,7 @@ def get_gut_stats(request, village_name, gut_number):
                         FROM public.shed a
                         WHERE EXISTS (
                             SELECT 1 FROM public.gut_bnd g
-                            WHERE g."Village_Na" = %s
+                            WHERE g."Village" = %s
                             AND g."Gut_Number" = %s
                             AND ST_Intersects(
                                 ST_Transform(a.{geom_col}, 4326),
@@ -1244,7 +1244,7 @@ def get_gut_stats(request, village_name, gut_number):
                         FROM public.well a
                         WHERE EXISTS (
                             SELECT 1 FROM public.gut_bnd g
-                            WHERE g."Village_Na" = %s
+                            WHERE g."Village" = %s
                             AND g."Gut_Number" = %s
                             AND ST_Intersects(
                                 ST_Transform(a.{geom_col}, 4326),
@@ -1273,7 +1273,7 @@ def get_gut_stats(request, village_name, gut_number):
                         FROM public.borewell a
                         WHERE EXISTS (
                             SELECT 1 FROM public.gut_bnd g
-                            WHERE g."Village_Na" = %s
+                            WHERE g."Village" = %s
                             AND g."Gut_Number" = %s
                             AND ST_Intersects(
                                 ST_Transform(a.{geom_col}, 4326),
@@ -1359,7 +1359,7 @@ def get_layer_bounds(request, layer_name):
                 where_clause = f"""
                     WHERE EXISTS (
                         SELECT 1 FROM public.gut_bnd g
-                        WHERE g."Village_Na" = %s
+                        WHERE g."Village" = %s
                         AND g."Gut_Number" = %s
                         AND ST_Intersects(
                             ST_Transform(a.{geom_col}, 4326),
@@ -1373,7 +1373,7 @@ def get_layer_bounds(request, layer_name):
                 where_clause = f"""
                     WHERE EXISTS (
                         SELECT 1 FROM public.purandhar_airport_village_bo v
-                        WHERE UPPER(TRIM(v."Village_Na")) = UPPER(TRIM(%s))
+                        WHERE UPPER(TRIM(v."Village")) = UPPER(TRIM(%s))
                         AND ST_Intersects(
                             ST_Transform(a.{geom_col}, 4326),
                             ST_Transform(v.geometry, 4326)
@@ -1382,8 +1382,8 @@ def get_layer_bounds(request, layer_name):
                 """
                 params = [village_name]
             elif village_name and table_name == 'gut_bnd':
-                # For gut_bnd, filter by Village_Na column
-                where_clause = 'WHERE "Village_Na" = %s'
+                # For gut_bnd, filter by Village column
+                where_clause = 'WHERE "village" = %s'
                 params = [village_name]
             
             # Calculate bounds in WGS84
@@ -1439,7 +1439,7 @@ def get_layer_bounds(request, layer_name):
             cursor.execute("""
                 SELECT "Area_In_Ha"
                 FROM public.gut_bnd
-                WHERE "Village_Na" = %s AND "Gut_Number" = %s;
+                WHERE "village" = %s AND "Gut_Number" = %s;
             """, [village_name, gut_number])
             gut_area_result = cursor.fetchone()
             area_acquired = float(gut_area_result[0]) if gut_area_result and gut_area_result[0] else 0
@@ -1464,7 +1464,7 @@ def get_layer_bounds(request, layer_name):
                     WHERE f.affected_farmer = true
                     AND EXISTS (
                         SELECT 1 FROM public.gut_bnd g
-                        WHERE g."Village_Na" = %s
+                        WHERE g."Village" = %s
                         AND g."Gut_Number" = %s
                         AND ST_Intersects(
                             ST_Transform(f.{geom_col}, 4326),
@@ -1501,7 +1501,7 @@ def get_layer_bounds(request, layer_name):
                             FROM public.{table} a
                             WHERE EXISTS (
                                 SELECT 1 FROM public.gut_bnd g
-                                WHERE g."Village_Na" = %s
+                                WHERE g."Village" = %s
                                 AND g."Gut_Number" = %s
                                 AND ST_Intersects(
                                     ST_Transform(a.{geom_col}, 4326),
@@ -1545,7 +1545,7 @@ def get_layer_bounds(request, layer_name):
                         FROM public.bag a
                         WHERE EXISTS (
                             SELECT 1 FROM public.gut_bnd g
-                            WHERE g."Village_Na" = %s
+                            WHERE g."Village" = %s
                             AND g."Gut_Number" = %s
                             AND ST_Intersects(
                                 ST_Transform(a.{geom_col}, 4326),
@@ -1579,7 +1579,7 @@ def get_layer_bounds(request, layer_name):
                         FROM public.tree a
                         WHERE EXISTS (
                             SELECT 1 FROM public.gut_bnd g
-                            WHERE g."Village_Na" = %s
+                            WHERE g."Village" = %s
                             AND g."Gut_Number" = %s
                             AND ST_Intersects(
                                 ST_Transform(a.{geom_col}, 4326),
@@ -1620,7 +1620,7 @@ def get_layer_bounds(request, layer_name):
                         FROM public.structures a
                         WHERE EXISTS (
                             SELECT 1 FROM public.gut_bnd g
-                            WHERE g."Village_Na" = %s
+                            WHERE g."Village" = %s
                             AND g."Gut_Number" = %s
                             AND ST_Intersects(
                                 ST_Transform(a.{geom_col}, 4326),
@@ -1649,7 +1649,7 @@ def get_layer_bounds(request, layer_name):
                         FROM public.shed a
                         WHERE EXISTS (
                             SELECT 1 FROM public.gut_bnd g
-                            WHERE g."Village_Na" = %s
+                            WHERE g."Village" = %s
                             AND g."Gut_Number" = %s
                             AND ST_Intersects(
                                 ST_Transform(a.{geom_col}, 4326),
@@ -1692,7 +1692,7 @@ def get_layer_bounds(request, layer_name):
                         FROM public.well a
                         WHERE EXISTS (
                             SELECT 1 FROM public.gut_bnd g
-                            WHERE g."Village_Na" = %s
+                            WHERE g."Village" = %s
                             AND g."Gut_Number" = %s
                             AND ST_Intersects(
                                 ST_Transform(a.{geom_col}, 4326),
@@ -1721,7 +1721,7 @@ def get_layer_bounds(request, layer_name):
                         FROM public.borewell a
                         WHERE EXISTS (
                             SELECT 1 FROM public.gut_bnd g
-                            WHERE g."Village_Na" = %s
+                            WHERE g."Village" = %s
                             AND g."Gut_Number" = %s
                             AND ST_Intersects(
                                 ST_Transform(a.{geom_col}, 4326),

@@ -858,22 +858,42 @@
                 });
             }
 
-            // Load Villages List
+            // Load Villages List - Simple Django API approach
             function loadVillagesList() {
+                console.log(`🔍 Fetching villages from Django API: /api/villages-list/`);
+                
                 fetch('/api/villages-list/')
-                    .then(response => response.json())
-                    .then(data => {
+                    .then(response => {
+                        console.log(`📡 Response status: ${response.status}`);
+                        if (!response.ok) {
+                            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                        }
+                        return response.text(); // Get as text first to see what we're receiving
+                    })
+                    .then(text => {
+                        console.log(`📄 Raw response:`, text);
+                        const data = JSON.parse(text); // Then parse as JSON
+                        console.log(`✅ Parsed JSON:`, data);
+                        
                         const villageSelect = document.getElementById('villageSelect');
                         villageSelect.innerHTML = '<option value="">Select Village</option>';
 
-                        data.villages.forEach(village => {
-                            const option = document.createElement('option');
-                            option.value = village;
-                            option.textContent = village;
-                            villageSelect.appendChild(option);
-                        });
+                        if (data.villages && data.villages.length > 0) {
+                            data.villages.forEach(village => {
+                                const option = document.createElement('option');
+                                option.value = village;
+                                option.textContent = village;
+                                villageSelect.appendChild(option);
+                            });
+                            console.log(`✅ Loaded ${data.villages.length} villages`);
+                        } else {
+                            console.warn('⚠️ No villages found in response');
+                        }
                     })
-                    .catch(error => console.error('Error loading villages list:', error));
+                    .catch(error => {
+                        console.error('❌ Error loading villages list:', error);
+                        console.error('❌ Error details:', error.message);
+                    });
             }
 
             // Load Single Village Boundary - using WMS with CQL filter
@@ -882,7 +902,7 @@
 
                 // Escape single quotes in village name for CQL filter
                 const escapedVillageName = villageName.replace(/'/g, "''");
-                const cqlFilter = `Village_Na='${escapedVillageName}'`;
+                const cqlFilter = `village='${escapedVillageName}'`;
 
                 villagesBoundaryLayer = L.tileLayer.wms(GEOSERVER_URL, {
                     ...wmsOptions,
@@ -926,7 +946,7 @@
                     version: '1.1.0',
                     srs: 'EPSG:3857',
                     styles: 'gut_boundary_style',  // Use your GeoServer style with labels
-                    CQL_FILTER: `Village_Na='${escapedVillageName}'`,
+                    CQL_FILTER: `village='${escapedVillageName}'`,
                     pane: 'gutPane',
                     attribution: ''
                 }).addTo(map);
@@ -940,7 +960,7 @@
                         version: '1.1.0',
                         srs: 'EPSG:3857',
                         styles: 'selected_gut_style',  // Use your selected style (should have NO labels)
-                        CQL_FILTER: `Village_Na='${escapedVillageName}' AND Gut_Number=${currentGutNumber}`,
+                        CQL_FILTER: `village='${escapedVillageName}' AND Gut_Number=${currentGutNumber}`,
                         pane: 'selectedGutPane',
                         attribution: ''
                     }).addTo(map);
@@ -1006,7 +1026,7 @@
                     `BBOX=${bbox}&FEATURE_COUNT=1&HEIGHT=${size.y}&WIDTH=${size.x}&` +
                     `FORMAT=image/png&INFO_FORMAT=application/json&SRS=EPSG:3857&` +
                     `X=${Math.round(point.x)}&Y=${Math.round(point.y)}&` +
-                    `CQL_FILTER=Village_Na='${currentVillage.replace(/'/g, "''")}'`;
+                    `CQL_FILTER=village='${currentVillage.replace(/'/g, "''")}'`;
 
                 console.log(`🔍 GetFeatureInfo URL: ${url}`);
 
@@ -1551,14 +1571,14 @@
                     if (currentGutNumber && currentVillage) {
                         // Filter by spatial intersection with specific gut boundary
                         const escapedVillage = currentVillage.replace(/'/g, "''");
-                        // Use INTERSECTS with collectGeometries - try both 'geom' and 'geometry' column names
-                        cqlFilter = `INTERSECTS(geom, collectGeometries(queryCollection('${WORKSPACE}:gut_bnd','geom','Village_Na=''${escapedVillage}'' AND Gut_Number=${currentGutNumber}')))`;
+                        // Use INTERSECTS with collectGeometries with correct column names
+                        cqlFilter = `INTERSECTS(geometry, collectGeometries(queryCollection('${WORKSPACE}:gut_bnd','geometry','village=''${escapedVillage}'' AND Gut_Number=${currentGutNumber}')))`;
                         console.log(`🔍 Gut-level CQL filter: ${cqlFilter}`);
                     } else if (currentVillage) {
                         // Filter by spatial intersection with village boundary
                         const escapedVillage = currentVillage.replace(/'/g, "''");
-                        // Use INTERSECTS with collectGeometries
-                        cqlFilter = `INTERSECTS(geom, collectGeometries(queryCollection('${WORKSPACE}:purandhar_airport_village_bo','geom','Village_Na=''${escapedVillage}''')))`;
+                        // Use INTERSECTS with collectGeometries with correct column names
+                        cqlFilter = `INTERSECTS(geometry, collectGeometries(queryCollection('${WORKSPACE}:purandhar_airport_village_bo','geometry','VILLAGE=''${escapedVillage}''')))`;
                         console.log(`🔍 Village-level CQL filter: ${cqlFilter}`);
                     } else {
                         console.log(`🔍 No filter applied - showing all assets`);
@@ -1597,7 +1617,7 @@
 
                     assetLayers[assetName].on('tileerror', function (error) {
                         console.error(`❌ Failed to load ${assetName} tiles:`, error);
-                        console.error(`❌ Geometry column might be 'geometry' instead of 'geom' - check GeoServer layer schema`);
+                        console.error(`❌ Check if CQL filter syntax is correct or if layer exists in GeoServer`);
                         showNotification(`Failed to load ${assetName}`, 'error');
                         
                         const toggle = document.querySelector(`.asset-layer-toggle[data-asset="${assetName}"]`);
