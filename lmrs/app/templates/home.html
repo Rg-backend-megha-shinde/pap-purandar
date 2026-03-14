@@ -17,6 +17,13 @@
         rel="stylesheet" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <!-- Highcharts -->
+    <script src="https://unpkg.com/highcharts@11.4.0/highcharts.js"></script>
+    <script src="https://unpkg.com/highcharts@11.4.0/modules/exporting.js"></script>
+    <script src="https://unpkg.com/highcharts@11.4.0/modules/export-data.js"></script>
+    <script src="https://unpkg.com/highcharts@11.4.0/modules/accessibility.js"></script>
+
     <script id="tailwind-config">
         tailwind.config = {
             darkMode: "class",
@@ -38,7 +45,7 @@
 </head>
 
 <body class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100 antialiased">
-    <div class="relative flex min-h-screen w-full flex-col overflow-x-hidden">
+    <div class="relative flex h-screen w-full flex-col overflow-x-hidden">
         <header
             class="flex items-center justify-between whitespace-nowrap border-b border-solid border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-6 py-3 sticky top-0 z-50">
             <div class="flex items-center gap-8">
@@ -272,26 +279,11 @@
                         class="flex flex-col gap-3 rounded-xl p-4 bg-white dark:bg-slate-900 shadow-sm border border-slate-200 dark:border-slate-800">
                         <h4 class="text-slate-700 dark:text-slate-300 text-xs font-bold uppercase mb-2">Assets
                             Distribution</h4>
-                        <div class="flex items-center justify-center py-4">
-                            <div class="relative size-40">
-                                <svg viewBox="0 0 100 100" class="transform -rotate-90">
-                                    <!-- Trees segment -->
-                                    <circle cx="50" cy="50" r="40" fill="none" stroke="#10b981" stroke-width="20"
-                                        stroke-dasharray="0 251.2" id="treesSegment"
-                                        class="transition-all duration-500" />
-                                    <!-- Structures segment -->
-                                    <circle cx="50" cy="50" r="40" fill="none" stroke="#8b5cf6" stroke-width="20"
-                                        stroke-dasharray="0 251.2" id="structuresSegment"
-                                        class="transition-all duration-500" />
-                                    <!-- Water segment -->
-                                    <circle cx="50" cy="50" r="40" fill="none" stroke="#06b6d4" stroke-width="20"
-                                        stroke-dasharray="0 251.2" id="waterSegment"
-                                        class="transition-all duration-500" />
-                                </svg>
-                                <div class="absolute inset-0 flex flex-col items-center justify-center">
-                                    <span id="totalAssetsDisplay" class="text-xl font-bold leading-none">--</span>
-                                    <span class="text-[10px] text-slate-500">Total</span>
-                                </div>
+                        <div class="relative w-full h-40 mt-2">
+                            <div id="assetsDistributionChart" class="w-full h-full"></div>
+                            <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                                <span id="totalAssetsDisplay" class="text-[18px] font-bold leading-none text-slate-900 dark:text-white">--</span>
+                                <span class="text-[10px] text-slate-500 mt-1">Total</span>
                             </div>
                         </div>
                         <div class="flex flex-col gap-2 mt-2">
@@ -300,24 +292,24 @@
                                     <span class="size-2 rounded-full bg-emerald-500"></span>
                                     <span class="text-[10px] text-slate-500">Trees</span>
                                 </div>
-                                <span id="treesPercent"
-                                    class="text-[10px] font-medium text-slate-700 dark:text-slate-300">--%</span>
+                                <span id="treesCount"
+                                    class="text-[10px] font-medium text-slate-700 dark:text-slate-300">--</span>
                             </div>
                             <div class="flex items-center justify-between">
                                 <div class="flex items-center gap-2">
                                     <span class="size-2 rounded-full bg-purple-500"></span>
                                     <span class="text-[10px] text-slate-500">Structures</span>
                                 </div>
-                                <span id="structuresPercent"
-                                    class="text-[10px] font-medium text-slate-700 dark:text-slate-300">--%</span>
+                                <span id="structuresCount"
+                                    class="text-[10px] font-medium text-slate-700 dark:text-slate-300">--</span>
                             </div>
                             <div class="flex items-center justify-between">
                                 <div class="flex items-center gap-2">
                                     <span class="size-2 rounded-full bg-cyan-500"></span>
                                     <span class="text-[10px] text-slate-500">Water</span>
                                 </div>
-                                <span id="waterPercent"
-                                    class="text-[10px] font-medium text-slate-700 dark:text-slate-300">--%</span>
+                                <span id="waterCount"
+                                    class="text-[10px] font-medium text-slate-700 dark:text-slate-300">--</span>
                             </div>
                         </div>
                     </div>
@@ -1447,42 +1439,134 @@
                 `;
             }
 
+            // Store Highcharts instance
+            let assetsDistributionChartInstance = null;
+
             // Populate assets distribution pie chart
             function populateAssetsDistribution(landData) {
                 const total = landData.trees_total + landData.structures_total + landData.water_total;
 
                 if (total === 0) return;
 
-                const treesPercent = (landData.trees_total / total * 100).toFixed(1);
-                const structuresPercent = (landData.structures_total / total * 100).toFixed(1);
-                const waterPercent = (landData.water_total / total * 100).toFixed(1);
+                // Update HTML custom legend
+                const treesEl = document.getElementById('treesCount');
+                if (treesEl) treesEl.textContent = landData.trees_total.toLocaleString();
+                
+                const structuresEl = document.getElementById('structuresCount');
+                if (structuresEl) structuresEl.textContent = landData.structures_total.toLocaleString();
+                
+                const waterEl = document.getElementById('waterCount');
+                if (waterEl) waterEl.textContent = landData.water_total.toLocaleString();
 
-                // Update percentages
-                document.getElementById('treesPercent').textContent = treesPercent + '%';
-                document.getElementById('structuresPercent').textContent = structuresPercent + '%';
-                document.getElementById('waterPercent').textContent = waterPercent + '%';
-                document.getElementById('totalAssetsDisplay').textContent = total.toLocaleString();
+                const isDarkMode = document.documentElement.classList.contains('dark');
+                const textColor = isDarkMode ? '#f8fafc' : '#0f172a';
+                const legendColor = isDarkMode ? '#cbd5e1' : '#475569';
 
-                // Calculate stroke-dasharray for pie chart (circumference = 2 * PI * r = 251.2)
-                const circumference = 251.2;
+                const chartData = [
+                    {
+                        name: 'Trees',
+                        y: landData.trees_total,
+                        color: '#10b981',
+                        customData: {} // no subcategories for trees
+                    },
+                    {
+                        name: 'Structures',
+                        y: landData.structures_total,
+                        color: '#8b5cf6',
+                        customData: {
+                            'Permanent': landData.structures_permanent,
+                            'Temporary': landData.structures_temporary
+                        }
+                    },
+                    {
+                        name: 'Water',
+                        y: landData.water_total,
+                        color: '#06b6d4',
+                        customData: {
+                            'Well': landData.water_well,
+                            'Borewell': landData.water_borewell
+                        }
+                    }
+                ];
 
-                const treesLength = (landData.trees_total / total) * circumference;
-                const structuresLength = (landData.structures_total / total) * circumference;
-                const waterLength = (landData.water_total / total) * circumference;
+                const totalAssetsDisplay = document.getElementById('totalAssetsDisplay');
+                if (totalAssetsDisplay) totalAssetsDisplay.textContent = total.toLocaleString();
 
-                // Update SVG segments
-                const treesSegment = document.getElementById('treesSegment');
-                const structuresSegment = document.getElementById('structuresSegment');
-                const waterSegment = document.getElementById('waterSegment');
-
-                treesSegment.setAttribute('stroke-dasharray', `${treesLength} ${circumference - treesLength}`);
-                treesSegment.setAttribute('stroke-dashoffset', '0');
-
-                structuresSegment.setAttribute('stroke-dasharray', `${structuresLength} ${circumference - structuresLength}`);
-                structuresSegment.setAttribute('stroke-dashoffset', `-${treesLength}`);
-
-                waterSegment.setAttribute('stroke-dasharray', `${waterLength} ${circumference - waterLength}`);
-                waterSegment.setAttribute('stroke-dashoffset', `-${treesLength + structuresLength}`);
+                if (assetsDistributionChartInstance) {
+                    assetsDistributionChartInstance.series[0].setData(chartData);
+                } else {
+                    assetsDistributionChartInstance = Highcharts.chart('assetsDistributionChart', {
+                        chart: {
+                            type: 'pie',
+                            backgroundColor: 'transparent',
+                            margin: [0, 0, 0, 0],
+                            spacingTop: 0,
+                            spacingBottom: 0,
+                            spacingLeft: 0,
+                            spacingRight: 0
+                        },
+                        title: {
+                            text: null
+                        },
+                        exporting: {
+                            enabled: true,
+                            buttons: {
+                                contextButton: {
+                                    menuItems: ["downloadCSV"]
+                                }
+                            }
+                        },
+                        tooltip: {
+                            useHTML: true,
+                            outside: true,
+                            backgroundColor: isDarkMode ? 'rgba(15, 23, 42, 0.95)' : 'rgba(255, 255, 255, 0.95)',
+                            style: {
+                                color: textColor,
+                                padding: 0,
+                                zIndex: 9999
+                            },
+                            borderWidth: 0,
+                            shadow: true,
+                            formatter: function() {
+                                let html = `<div style="padding: 8px; border-radius: 4px;">`;
+                                html += `<div style="font-size: 13px; font-weight: bold; border-bottom: 1px solid ${isDarkMode ? '#334155' : '#e2e8f0'}; margin-bottom: 5px; padding-bottom: 3px;">
+                                            <span style="color:${this.point.color}">\u25CF</span> ${this.key}: ${this.y.toLocaleString()}
+                                         </div>`;
+                                
+                                if (this.point.customData && Object.keys(this.point.customData).length > 0) {
+                                    html += `<div style="font-size: 12px; display: flex; flex-direction: column; gap: 3px;">`;
+                                    for (const [key, val] of Object.entries(this.point.customData)) {
+                                        html += `<div style="display: flex; justify-content: space-between; gap: 12px;"><span>${key}:</span> <b>${val.toLocaleString()}</b></div>`;
+                                    }
+                                    html += `</div>`;
+                                }
+                                html += `</div>`;
+                                return html;
+                            }
+                        },
+                        plotOptions: {
+                            pie: {
+                                innerSize: '70%',
+                                size: '100%',
+                                dataLabels: {
+                                    enabled: false
+                                },
+                                showInLegend: false,
+                                borderWidth: 0
+                            }
+                        },
+                        legend: {
+                            enabled: false
+                        },
+                        credits: {
+                            enabled: false
+                        },
+                        series: [{
+                            name: 'Assets',
+                            data: chartData
+                        }]
+                    });
+                }
             }
 
             // Populate asset layers list
