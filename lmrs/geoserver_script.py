@@ -1,7 +1,7 @@
 import requests
 from requests.auth import HTTPBasicAuth
 
-GEOSERVER_URL = "http://209.182.233.103:9090/geoserver"
+GEOSERVER_URL = "https://geoserver.rottengrapes.tech/geoserver"
 WORKSPACE = "Purandar_New"
 STORE = "monarch_lmrs"
 USERNAME = "admin"
