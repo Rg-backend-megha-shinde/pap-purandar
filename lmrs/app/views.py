@@ -1,15 +1,60 @@
 from django.shortcuts import render
 from django.http import JsonResponse
 from django.db import connection
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth import authenticate, login, logout
+from django.shortcuts import render, redirect
+from django.http import JsonResponse
+from django.http import HttpResponse
+from django.http import HttpResponseForbidden
+from django.http import JsonResponse
+from django.db import connection
 
+def api_login_required(view_func):
+    def wrapper(request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return JsonResponse({"error": "Unauthorized"}, status=401)
+        return view_func(request, *args, **kwargs)
+    return wrapper
+
+@login_required
 def home(request):
     return render(request, 'home.html')
 
+@login_required
+def tools(request):
+    return render(request, 'tools.html')
+
+@login_required
+def inspection_form(request):
+    if request.method == "POST":
+        print(request.POST)  # later we save in DB
+
+    return render(request, "inspection_form.html")  # form page
+
+@login_required
+def dashboard(request):
+    if not request.user.is_superuser:
+        return redirect('/tools/')   # 🔥 redirect instead of Access Denied
+
+    return render(request, "dashboard.html")
+
+
+# @login_required
+# def tools(request):
+#     if request.method == "POST":
+#         print(request.POST)  # debug
+
+#     return render(request, "tools.html")
+
+# @login_required
+# def tools(request):
+#     return HttpResponse("Tools OK")
 #to fetch the district
 # Views moved or removed because they were redundant (using GeoServer WMS instead)
 
 
-
+@api_login_required
 def get_villages_list(request):
     """Fetch list of all villages"""
     with connection.cursor() as cursor:
@@ -23,7 +68,7 @@ def get_villages_list(request):
 
 
 
-
+@api_login_required
 def get_all_villages_compensation(request):
     """Fetch compensation for all villages"""
     with connection.cursor() as cursor:
@@ -76,7 +121,7 @@ def get_all_villages_compensation(request):
         villages_data.sort(key=lambda x: x['compensation'], reverse=True)
         
         return JsonResponse({'villages': villages_data})
-
+@api_login_required
 def get_all_villages_farmers(request):
     """Fetch affected farmers count for all villages"""
     with connection.cursor() as cursor:
@@ -127,7 +172,7 @@ def get_all_villages_farmers(request):
         villages_data.sort(key=lambda x: x['farmers_count'], reverse=True)
         
         return JsonResponse({'villages': villages_data})
-
+@api_login_required
 def get_project_stats(request):
     """Fetch project statistics - supports optional village filter"""
     village_name = request.GET.get('village', None)
@@ -726,7 +771,7 @@ def get_project_stats(request):
             'asset_areas': asset_areas,
             'land_classification': land_classification
         })
-
+@api_login_required
 def get_gut_numbers_by_village(request, village_name):
     """Fetch list of gut numbers for a specific village"""
     with connection.cursor() as cursor:
@@ -745,7 +790,7 @@ def get_gut_numbers_by_village(request, village_name):
             traceback.print_exc()
             return JsonResponse({'error': str(e), 'gut_numbers': []}, status=500)
 
-
+@api_login_required
 def get_gut_stats(request, village_name, gut_number):
     """Fetch statistics for a specific gut"""
     with connection.cursor() as cursor:
@@ -1069,7 +1114,7 @@ def get_gut_stats(request, village_name, gut_number):
             import traceback
             traceback.print_exc()
             return JsonResponse({'error': str(e)}, status=500)
-
+@api_login_required
 def get_layer_bounds(request, layer_name):
     """Fetch bounding box for any layer"""
     valid_layers = {
@@ -1521,3 +1566,74 @@ def get_layer_bounds(request, layer_name):
             import traceback
             traceback.print_exc()
             return JsonResponse({'error': str(e)}, status=500)
+
+def login_view(request):
+    if request.method == "POST":
+        username = request.POST.get("username")
+        password = request.POST.get("password")
+
+        user = authenticate(request, username=username, password=password)
+
+        if user:
+            login(request, user)
+            return redirect('home')
+        else:
+            return render(request, 'login.html', {"error": "Invalid credentials"})
+
+    return render(request, 'login.html')
+
+
+def logout_view(request):
+    logout(request)
+    return redirect('login')
+
+
+
+def get_location_data(request):
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("""
+                SELECT DISTINCT
+                    'Pune' as district,
+                    "Taluka",
+                    "village"
+                FROM public.purandhar_airport_villages
+                ORDER BY "Taluka", "village";
+            """)
+
+            rows = cursor.fetchall()
+
+            data = [
+                {
+                    "district": row[0],
+                    "taluka": row[1],
+                    "village_name": row[2],
+                }
+                for row in rows
+            ]
+
+            return JsonResponse({"villages": data})
+
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
+
+
+
+def get_gut_numbers(request, village):
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("""
+                SELECT DISTINCT "Gut_Number"
+                FROM public.purandhar_airport_villages
+                WHERE "village" = %s
+                ORDER BY "Gut_Number";
+            """, [village])
+
+            rows = cursor.fetchall()
+
+            data = [row[0] for row in rows]
+
+            return JsonResponse({"gut_numbers": data})
+
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)

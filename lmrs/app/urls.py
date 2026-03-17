@@ -2,7 +2,13 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
+    path('', views.dashboard),
+    path('tools/', views.tools),
+    path('login/', views.login_view, name='login'),
+    path('logout/', views.logout_view, name='logout'),
+    # path('tools/', views.tools, name='tools'),
     path('', views.home, name='home'),
+    path('tools/inspection/', views.inspection_form),
     path('api/villages-list/', views.get_villages_list, name='villages_list'),
     path('api/all-villages-compensation/', views.get_all_villages_compensation, name='all_villages_compensation'),
     path('api/all-villages-farmers/', views.get_all_villages_farmers, name='all_villages_farmers'),
@@ -10,4 +16,6 @@ urlpatterns = [
     path('api/gut-numbers/<str:village_name>/', views.get_gut_numbers_by_village, name='gut_numbers'),
     path('api/gut-stats/<str:village_name>/<str:gut_number>/', views.get_gut_stats, name='gut_stats'),
     path('api/layer-bounds/<str:layer_name>/', views.get_layer_bounds, name='layer_bounds'),
+    path("api/location-data/", views.get_location_data),
+    path("api/gut-numbers/<str:village>/", views.get_gut_numbers),
 ]
