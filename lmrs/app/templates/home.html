@@ -234,6 +234,40 @@
         #map {
             height: 100%;
             width: 100%;
+            position: relative;
+        }
+
+        /* Loading indicator for map tiles */
+        #map-loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255, 255, 255, 0.9);
+            padding: 20px 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            z-index: 1000;
+            display: none;
+            align-items: center;
+            gap: 12px;
+        }
+
+        #map-loading.active {
+            display: flex;
+        }
+
+        .loading-spinner {
+            width: 24px;
+            height: 24px;
+            border: 3px solid #e2e8f0;
+            border-top-color: #1269e2;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
         }
 
         .ol-control {
@@ -298,6 +332,7 @@
         let assetLayers = {}; // Store asset layers
         let currentVillage = null; // Track current selected village
         let currentGutNumber = null; // Track current selected gut number
+        let loadingTiles = 0; // Track loading tiles
         
         // GeoServer configuration
         const GEOSERVER_URL = "https://geoserver.rottengrapes.tech/geoserver/wms";
@@ -312,6 +347,22 @@
             attribution: "GeoServer",
             crossOrigin: "anonymous",
         };
+
+        // Show/hide loading indicator
+        function showMapLoading() {
+            loadingTiles++;
+            const loader = document.getElementById('map-loading');
+            if (loader) loader.classList.add('active');
+        }
+
+        function hideMapLoading() {
+            loadingTiles--;
+            if (loadingTiles <= 0) {
+                loadingTiles = 0;
+                const loader = document.getElementById('map-loading');
+                if (loader) loader.classList.remove('active');
+            }
+        }
 
         document.addEventListener('DOMContentLoaded', function () {
             // Fetch project statistics
@@ -340,7 +391,9 @@
                     center: ol.proj.fromLonLat([74.0194, 18.2811]),
                     zoom: 12
                 }),
-                controls: []
+                controls: [],
+                loadTilesWhileAnimating: true,
+                loadTilesWhileInteracting: true
             });
             // ensure OpenLayers recalculates size once the container is fully rendered
             // fixes blank/grey area at bottom before first interaction
@@ -348,21 +401,28 @@
 
             // Define base layers
             osmLayer = new ol.layer.Tile({
-                source: new ol.source.OSM()
+                source: new ol.source.OSM({
+                    preload: 3
+                }),
+                preload: Infinity
             });
 
             satelliteLayer = new ol.layer.Tile({
                 source: new ol.source.XYZ({
                     url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-                    attributions: 'Esri'
-                })
+                    attributions: 'Esri',
+                    preload: 3
+                }),
+                preload: Infinity
             });
 
             terrainLayer = new ol.layer.Tile({
                 source: new ol.source.XYZ({
                     url: 'https://{a-c}.tile.opentopomap.org/{z}/{x}/{y}.png',
-                    attributions: 'OpenTopoMap'
-                })
+                    attributions: 'OpenTopoMap',
+                    preload: 3
+                }),
+                preload: Infinity
             });
 
             // Set default layer to Satellite
@@ -606,20 +666,28 @@
             function loadDistrictBoundary() {
                 if (districtLayer) map.removeLayer(districtLayer);
 
+                const source = new ol.source.TileWMS({
+                    url: GEOSERVER_URL,
+                    params: {
+                        'LAYERS': `${WORKSPACE}:district_boundry`,
+                        'STYLES': 'district_style',
+                        'FORMAT': 'image/png',
+                        'TRANSPARENT': true,
+                        'VERSION': '1.1.0'
+                    },
+                    serverType: 'geoserver',
+                    crossOrigin: 'anonymous',
+                    transition: 0
+                });
+
+                source.on('tileloadstart', showMapLoading);
+                source.on('tileloadend', hideMapLoading);
+                source.on('tileloaderror', hideMapLoading);
+
                 districtLayer = new ol.layer.Tile({
-                    source: new ol.source.TileWMS({
-                        url: GEOSERVER_URL,
-                        params: {
-                            'LAYERS': `${WORKSPACE}:district_boundry`,
-                            'STYLES': 'district_style',
-                            'FORMAT': 'image/png',
-                            'TRANSPARENT': true,
-                            'VERSION': '1.1.0'
-                        },
-                        serverType: 'geoserver',
-                        crossOrigin: 'anonymous'
-                    }),
-                    zIndex: 10
+                    source: source,
+                    zIndex: 10,
+                    preload: Infinity
                 });
                 map.addLayer(districtLayer);
 
@@ -643,20 +711,28 @@
             function loadTalukaBoundary() {
                 if (talukaLayer) map.removeLayer(talukaLayer);
 
+                const source = new ol.source.TileWMS({
+                    url: GEOSERVER_URL,
+                    params: {
+                        'LAYERS': `${WORKSPACE}:purandar_tehsil`,
+                        'STYLES': 'taluka_style',
+                        'FORMAT': 'image/png',
+                        'TRANSPARENT': true,
+                        'VERSION': '1.1.0'
+                    },
+                    serverType: 'geoserver',
+                    crossOrigin: 'anonymous',
+                    transition: 0
+                });
+
+                source.on('tileloadstart', showMapLoading);
+                source.on('tileloadend', hideMapLoading);
+                source.on('tileloaderror', hideMapLoading);
+
                 talukaLayer = new ol.layer.Tile({
-                    source: new ol.source.TileWMS({
-                        url: GEOSERVER_URL,
-                        params: {
-                            'LAYERS': `${WORKSPACE}:purandar_tehsil`,
-                            'STYLES': 'taluka_style',
-                            'FORMAT': 'image/png',
-                            'TRANSPARENT': true,
-                            'VERSION': '1.1.0'
-                        },
-                        serverType: 'geoserver',
-                        crossOrigin: 'anonymous'
-                    }),
-                    zIndex: 10
+                    source: source,
+                    zIndex: 10,
+                    preload: Infinity
                 });
                 map.addLayer(talukaLayer);
 
@@ -680,20 +756,28 @@
             function loadAOIBoundary() {
                 if (aoiLayer) map.removeLayer(aoiLayer);
 
+                const source = new ol.source.TileWMS({
+                    url: GEOSERVER_URL,
+                    params: {
+                        'LAYERS': `${WORKSPACE}:purandar_aoi`,
+                        'STYLES': 'aoi_style',
+                        'FORMAT': 'image/png',
+                        'TRANSPARENT': true,
+                        'VERSION': '1.1.0'
+                    },
+                    serverType: 'geoserver',
+                    crossOrigin: 'anonymous',
+                    transition: 0
+                });
+
+                source.on('tileloadstart', showMapLoading);
+                source.on('tileloadend', hideMapLoading);
+                source.on('tileloaderror', hideMapLoading);
+
                 aoiLayer = new ol.layer.Tile({
-                    source: new ol.source.TileWMS({
-                        url: GEOSERVER_URL,
-                        params: {
-                            'LAYERS': `${WORKSPACE}:purandar_aoi`,
-                            'STYLES': 'aoi_style',
-                            'FORMAT': 'image/png',
-                            'TRANSPARENT': true,
-                            'VERSION': '1.1.0'
-                        },
-                        serverType: 'geoserver',
-                        crossOrigin: 'anonymous'
-                    }),
-                    zIndex: 10
+                    source: source,
+                    zIndex: 10,
+                    preload: Infinity
                 });
                 map.addLayer(aoiLayer);
             }
