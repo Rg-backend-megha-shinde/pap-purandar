@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login | Purandar CMS</title>
+
+<!-- Tailwind -->
+<script src="https://cdn.tailwindcss.com"></script>
+
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+<style>
+    body {
+        font-family: 'Public Sans', sans-serif;
+    }
+</style>
+
+
+</head>
+
+<body class="bg-gradient-to-br from-blue-50 via-white to-slate-100 flex items-center justify-center min-h-screen">
+
+
+<div class="w-full max-w-md px-4">
+
+    <!-- Header -->
+    <div class="text-center mb-8">
+        <div class="flex justify-center mb-3">
+            <!-- <div class="w-12 h-12 bg-blue-100 text-blue-600 flex items-center justify-center rounded-xl shadow-sm">
+                
+            </div> -->
+        </div>
+        <h1 class="text-2xl font-bold text-blue-600">LMRS purandar</h1>
+        <p class="text-sm text-gray-500">GIS Dashboard Access</p>
+    </div>
+
+    <!-- Login Card -->
+    <div class="bg-white shadow-2xl rounded-2xl p-8 border border-gray-100">
+
+        <h2 class="text-xl font-semibold text-gray-800 mb-6 text-center">
+            Login to your account
+        </h2>
+
+        <form method="POST" class="space-y-5">
+            {% csrf_token %}
+
+            <!-- Username -->
+            <div>
+                <label class="text-sm text-gray-600">Username</label>
+                <input type="text" name="username"
+                    class="w-full mt-1 p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none transition"
+                    placeholder="Enter username" required>
+            </div>
+
+            <!-- Password -->
+            <div>
+                <label class="text-sm text-gray-600">Password</label>
+                <div class="relative">
+                    <input type="password" name="password" id="password"
+                        class="w-full mt-1 p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none transition pr-10"
+                        placeholder="Enter password" required>
+
+                    <!-- Show/Hide -->
+                    <span onclick="togglePassword()"
+                        class="absolute right-3 top-3 cursor-pointer text-gray-400 hover:text-gray-600">
+                        👁
+                    </span>
+                </div>
+            </div>
+
+            <!-- Error -->
+            {% if error %}
+                <div class="bg-red-50 text-red-600 text-sm p-2 rounded text-center">
+                    {{ error }}
+                </div>
+            {% endif %}
+
+            <!-- Button -->
+            <button type="submit"
+                class="w-full bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-lg font-medium transition duration-200 shadow-md hover:shadow-lg">
+                Login
+            </button>
+        </form>
+    </div>
+
+    <!-- Footer -->
+    <p class="text-center text-xs text-gray-400 mt-6">
+        © 2026 Purandar Airport Project
+    </p>
+
+</div>
+
+<!-- JS -->
+<script>
+    function togglePassword() {
+        const password = document.getElementById("password");
+        password.type = password.type === "password" ? "text" : "password";
+    }
+</script>
+
+
+</body>
+</html>

@@ -2,6 +2,8 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
+    path('login/', views.login_view, name='login'),
+    path('logout/', views.logout_view, name='logout'),
     path('', views.home, name='home'),
     path('api/villages-list/', views.get_villages_list, name='villages_list'),
     path('api/all-villages-compensation/', views.get_all_villages_compensation, name='all_villages_compensation'),
