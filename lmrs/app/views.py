@@ -3,12 +3,12 @@ from django.http import JsonResponse
 from django.db import connection
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import authenticate, login, logout
-from django.shortcuts import redirect
 from django.shortcuts import render, redirect
-from django.contrib.auth import authenticate, login, logout
 from django.http import JsonResponse
-
-
+from django.http import HttpResponse
+from django.http import HttpResponseForbidden
+from django.http import JsonResponse
+from django.db import connection
 
 def api_login_required(view_func):
     def wrapper(request, *args, **kwargs):
@@ -21,6 +21,35 @@ def api_login_required(view_func):
 def home(request):
     return render(request, 'home.html')
 
+@login_required
+def tools(request):
+    return render(request, 'tools.html')
+
+@login_required
+def inspection_form(request):
+    if request.method == "POST":
+        print(request.POST)  # later we save in DB
+
+    return render(request, "inspection_form.html")  # form page
+
+@login_required
+def dashboard(request):
+    if not request.user.is_superuser:
+        return redirect('/tools/')   # 🔥 redirect instead of Access Denied
+
+    return render(request, "dashboard.html")
+
+
+# @login_required
+# def tools(request):
+#     if request.method == "POST":
+#         print(request.POST)  # debug
+
+#     return render(request, "tools.html")
+
+# @login_required
+# def tools(request):
+#     return HttpResponse("Tools OK")
 #to fetch the district
 # Views moved or removed because they were redundant (using GeoServer WMS instead)
 
@@ -1557,3 +1586,54 @@ def login_view(request):
 def logout_view(request):
     logout(request)
     return redirect('login')
+
+
+
+def get_location_data(request):
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("""
+                SELECT DISTINCT
+                    'Pune' as district,
+                    "Taluka",
+                    "village"
+                FROM public.purandhar_airport_villages
+                ORDER BY "Taluka", "village";
+            """)
+
+            rows = cursor.fetchall()
+
+            data = [
+                {
+                    "district": row[0],
+                    "taluka": row[1],
+                    "village_name": row[2],
+                }
+                for row in rows
+            ]
+
+            return JsonResponse({"villages": data})
+
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
+
+
+
+def get_gut_numbers(request, village):
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("""
+                SELECT DISTINCT "Gut_Number"
+                FROM public.purandhar_airport_villages
+                WHERE "village" = %s
+                ORDER BY "Gut_Number";
+            """, [village])
+
+            rows = cursor.fetchall()
+
+            data = [row[0] for row in rows]
+
+            return JsonResponse({"gut_numbers": data})
+
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)

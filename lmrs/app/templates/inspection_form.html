@@ -1,0 +1,216 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="max-w-6xl mx-auto bg-white p-6 border border-gray-300 mt-6 rounded-lg shadow">
+
+    <!-- HEADER -->
+    <h2 class="text-center font-bold text-xl underline">
+        मौका तपासणी करताना करावयाचा पंचनामा
+    </h2>
+
+    <p class="text-center text-sm mt-1">
+        श्री छत्रपती संभाजी राजे आंतरराष्ट्रीय विमानतळासाठी भूसंपादन
+    </p>
+
+    <!-- FORM -->
+    <form method="POST" class="mt-6">
+        {% csrf_token %}
+
+        <!-- LOCATION SECTION -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
+
+            <div>
+                <label class="font-semibold">जिल्हा</label>
+                <select id="district" name="district" required class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-400">
+                    <option value="">जिल्हा निवडा</option>
+                </select>
+            </div>
+
+            <div>
+                <label class="font-semibold">तालुका</label>
+                <select id="taluka" name="taluka" required class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-400">
+                    <option value="">तालुका निवडा</option>
+                </select>
+            </div>
+
+            <div>
+                <label class="font-semibold">गाव</label>
+                <select id="village" name="village" required class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-400">
+                    <option value="">गाव निवडा</option>
+                </select>
+            </div>
+
+            <div>
+                <label class="font-semibold">गट क्रमांक</label>
+                <select id="gut" name="survey" required class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-400">
+                    <option value="">गट क्रमांक निवडा</option>
+                </select>
+            </div>
+
+        </div>
+
+        <!-- OFFICER + DATE -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+
+            <div>
+                <label class="font-semibold">अधिकारी नाव</label>
+                <input type="text" name="officer" class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-400">
+            </div>
+
+            <div>
+                <label class="font-semibold">दिनांक</label>
+                <input type="date" name="date" class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-400">
+            </div>
+
+        </div>
+
+        <!-- TABLE -->
+        <div class="overflow-x-auto mt-6">
+            <table class="w-full border text-sm text-center border-collapse">
+
+                <thead class="bg-gray-200 font-semibold">
+                    <tr>
+                        <th class="border p-2">क्रमांक</th>
+                        <th class="border p-2">नाव</th>
+                        <th class="border p-2">लांबी</th>
+                        <th class="border p-2">रुंदी</th>
+                        <th class="border p-2">घेर</th>
+                        <th class="border p-2">उंची</th>
+                    </tr>
+                </thead>
+
+                <tbody id="tableBody">
+                    <tr>
+                        <td class="border"><input name="plot[]" class="w-full p-1 text-center"></td>
+                        <td class="border"><input name="name[]" class="w-full p-1 text-center"></td>
+                        <td class="border"><input name="length[]" class="w-full p-1 text-center"></td>
+                        <td class="border"><input name="width[]" class="w-full p-1 text-center"></td>
+                        <td class="border"><input name="girth[]" class="w-full p-1 text-center"></td>
+                        <td class="border"><input name="height[]" class="w-full p-1 text-center"></td>
+                    </tr>
+                </tbody>
+
+            </table>
+        </div>
+
+        <!-- BUTTONS -->
+        <div class="flex gap-3 mt-4">
+            <button type="button" onclick="addRow()"
+                class="bg-gray-700 hover:bg-gray-800 text-white px-4 py-2 rounded">
+                + ओळ जोडा
+            </button>
+
+            <button type="submit"
+                class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded">
+                सबमिट करा
+            </button>
+        </div>
+
+    </form>
+
+</div>
+
+<!-- JS -->
+<script>
+
+let fullData = [];
+
+// Load Data
+fetch('/api/location-data/')
+    .then(res => res.json())
+    .then(data => {
+        fullData = data.villages;
+
+        let districtDropdown = document.getElementById("district");
+        let districts = [...new Set(fullData.map(v => v.district))];
+
+        districts.forEach(d => {
+            if (d) districtDropdown.add(new Option(d, d));
+        });
+    });
+
+
+// District → Taluka
+document.getElementById("district").addEventListener("change", function () {
+
+    let district = this.value;
+
+    let talukaDropdown = document.getElementById("taluka");
+    let villageDropdown = document.getElementById("village");
+    let gutDropdown = document.getElementById("gut");
+
+    talukaDropdown.innerHTML = '<option value="">तालुका निवडा</option>';
+    villageDropdown.innerHTML = '<option value="">गाव निवडा</option>';
+    gutDropdown.innerHTML = '<option value="">गट क्रमांक निवडा</option>';
+
+    let talukas = [...new Set(
+        fullData.filter(v => v.district === district).map(v => v.taluka)
+    )];
+
+    talukas.forEach(t => talukaDropdown.add(new Option(t, t)));
+});
+
+
+// Taluka → Village (UNIQUE FIX)
+document.getElementById("taluka").addEventListener("change", function () {
+
+    let taluka = this.value;
+    let district = document.getElementById("district").value;
+
+    let villageDropdown = document.getElementById("village");
+    let gutDropdown = document.getElementById("gut");
+
+    villageDropdown.innerHTML = '<option value="">गाव निवडा</option>';
+    gutDropdown.innerHTML = '<option value="">गट क्रमांक निवडा</option>';
+
+    let villages = fullData.filter(
+        v => v.taluka === taluka && v.district === district
+    );
+
+    let uniqueVillages = [...new Set(villages.map(v => v.village_name))];
+
+    uniqueVillages.forEach(v => {
+        villageDropdown.add(new Option(v, v));
+    });
+});
+
+
+// Village → Gut
+document.getElementById("village").addEventListener("change", function () {
+
+    let village = this.value;
+
+    let gutDropdown = document.getElementById("gut");
+    gutDropdown.innerHTML = '<option value="">गट क्रमांक निवडा</option>';
+
+    if (!village) return;
+
+    fetch(`/api/gut-numbers/${village}/`)
+        .then(res => res.json())
+        .then(data => {
+            data.gut_numbers.forEach(g => {
+                gutDropdown.add(new Option(g, g));
+            });
+        });
+});
+
+
+// Add Row
+function addRow() {
+    let row = `
+    <tr>
+        <td class="border"><input name="plot[]" class="w-full p-1 text-center"></td>
+        <td class="border"><input name="name[]" class="w-full p-1 text-center"></td>
+        <td class="border"><input name="length[]" class="w-full p-1 text-center"></td>
+        <td class="border"><input name="width[]" class="w-full p-1 text-center"></td>
+        <td class="border"><input name="girth[]" class="w-full p-1 text-center"></td>
+        <td class="border"><input name="height[]" class="w-full p-1 text-center"></td>
+    </tr>`;
+    
+    document.getElementById("tableBody").insertAdjacentHTML('beforeend', row);
+}
+
+</script>
+
+{% endblock %}

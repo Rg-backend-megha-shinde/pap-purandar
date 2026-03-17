@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Purandar CMS</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-gray-100">
+
+    <!-- ✅ NAVBAR -->
+    <header class="flex justify-between items-center bg-white px-6 py-3 shadow">
+
+        <h2 class="font-bold text-lg text-blue-600">
+            Purandar Airport CMS
+        </h2>
+
+        <div class="flex items-center gap-5">
+
+            <!-- Role Based -->
+            <!-- 🔥 NAV TABS -->
+            <!-- 🔥 NAV TABS -->
+            <div class="flex items-center gap-4">
+
+                <!-- Dashboard → ONLY ADMIN -->
+                {% if request.user.is_superuser %}
+                <a href="/" class="px-4 py-1 rounded-full text-sm font-semibold
+           {% if request.path == '/' %}
+               bg-blue-600 text-white
+           {% else %}
+               text-gray-600 hover:bg-gray-200
+           {% endif %}">
+                    Dashboard
+                </a>
+                {% endif %}
+
+                <!-- Tools → ADMIN + STAFF -->
+                {% if request.user.is_staff %}
+                <a href="/tools/" class="px-4 py-1 rounded-full text-sm font-semibold
+           {% if '/tools' in request.path %}
+               bg-blue-600 text-white
+           {% else %}
+               text-gray-600 hover:bg-gray-200
+           {% endif %}">
+                    Tools
+                </a>
+                {% endif %}
+
+            </div>
+            <!-- User -->
+            <span>{{ request.user.username }}</span>
+
+            <a href="/logout/" class="text-red-500">Logout</a>
+
+        </div>
+
+    </header>
+
+    <!-- ✅ PAGE CONTENT -->
+    <div>
+        {% block content %}
+        {% endblock %}
+    </div>
+
+    <script>
+        const menuBtn = document.getElementById("menuBtn");
+        const dropdown = document.getElementById("menuDropdown");
+
+        if (menuBtn && dropdown) {
+            menuBtn.addEventListener("click", () => {
+                dropdown.classList.toggle("hidden");
+            });
+
+            document.addEventListener("click", (e) => {
+                if (!menuBtn.contains(e.target) && !dropdown.contains(e.target)) {
+                    dropdown.classList.add("hidden");
+                }
+            });
+        }
+    </script>
+
+</body>
+
+</html>

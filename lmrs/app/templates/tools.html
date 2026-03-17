@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="max-w-6xl mx-auto mt-6 px-4">
+
+    <h2 class="text-xl font-bold mb-6">Tools</h2>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+        <!-- 🔥 INSPECTION TOOL CARD -->
+        <div onclick="goToInspection()"
+            class="cursor-pointer bg-white rounded-xl shadow-md hover:shadow-xl transition p-5 border border-gray-200">
+
+            <!-- ICON -->
+            <div class="flex items-center gap-3 mb-3">
+                <div class="bg-blue-100 text-blue-600 p-3 rounded-full text-xl">
+                    📝
+                </div>
+                <h3 class="text-lg font-semibold">
+                    Inspection Tool
+                </h3>
+            </div>
+
+            <!-- DESCRIPTION -->
+            <p class="text-sm text-gray-600 leading-relaxed">
+                वापर करून क्षेत्र तपासणी पंचनामा डिजिटल पद्धतीने भरा.  
+                झाडे, मालमत्ता आणि मोजमाप नोंदवण्यासाठी वापरा.
+            </p>
+
+            <!-- FEATURES -->
+            <ul class="mt-4 text-xs text-gray-500 space-y-1">
+                <li>✔ Field inspection entry</li>
+                <li>✔ Tree & asset recording</li>
+                <li>✔ Dynamic row entry</li>
+                <li>✔ अधिकारी वापरासाठी</li>
+            </ul>
+
+            <!-- BUTTON -->
+            <button class="mt-4 w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">
+                Open Tool →
+            </button>
+
+        </div>
+
+        <!-- FUTURE CARD -->
+        <div class="bg-gray-100 rounded-xl p-5 border text-center text-gray-500">
+            More tools coming soon...
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+function goToInspection() {
+    window.location.href = "/tools/inspection/";
+}
+</script>
+
+{% endblock %}
