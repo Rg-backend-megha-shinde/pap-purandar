@@ -200,6 +200,7 @@ def dashboard(request):
 
 
 @api_login_required
+@api_login_required
 def get_villages_list(request):
     """Fetch list of all villages"""
     with connection.cursor() as cursor:
@@ -213,6 +214,7 @@ def get_villages_list(request):
 
 
 
+@api_login_required
 @api_login_required
 def get_all_villages_compensation(request):
     """Fetch compensation for all villages"""
@@ -267,6 +269,7 @@ def get_all_villages_compensation(request):
         
         return JsonResponse({'villages': villages_data})
 @api_login_required
+@api_login_required
 def get_all_villages_farmers(request):
     """Fetch affected farmers count for all villages"""
     with connection.cursor() as cursor:
@@ -317,6 +320,7 @@ def get_all_villages_farmers(request):
         villages_data.sort(key=lambda x: x['farmers_count'], reverse=True)
         
         return JsonResponse({'villages': villages_data})
+@api_login_required
 @api_login_required
 def get_project_stats(request):
     """Fetch project statistics - supports optional village filter"""
@@ -917,6 +921,7 @@ def get_project_stats(request):
             'land_classification': land_classification
         })
 @api_login_required
+@api_login_required
 def get_gut_numbers_by_village(request, village_name):
     """Fetch list of gut numbers for a specific village"""
     with connection.cursor() as cursor:
@@ -935,6 +940,7 @@ def get_gut_numbers_by_village(request, village_name):
             traceback.print_exc()
             return JsonResponse({'error': str(e), 'gut_numbers': []}, status=500)
 
+@api_login_required
 @api_login_required
 def get_gut_stats(request, village_name, gut_number):
     """Fetch statistics for a specific gut"""
@@ -1259,6 +1265,7 @@ def get_gut_stats(request, village_name, gut_number):
             import traceback
             traceback.print_exc()
             return JsonResponse({'error': str(e)}, status=500)
+@api_login_required
 @api_login_required
 def get_layer_bounds(request, layer_name):
     """Fetch bounding box for any layer"""
