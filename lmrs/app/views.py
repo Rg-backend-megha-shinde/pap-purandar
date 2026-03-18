@@ -1,4 +1,4 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.http import JsonResponse
 from django.db import connection
 from django.contrib.auth.decorators import login_required
@@ -9,6 +9,8 @@ from django.http import HttpResponse
 from django.http import HttpResponseForbidden
 from django.http import JsonResponse
 from django.db import connection
+from .models import Inspection, TreeDetail, ReadyReckonerRate, LandRecord712
+import csv
 
 def api_login_required(view_func):
     def wrapper(request, *args, **kwargs):
@@ -26,16 +28,159 @@ def tools(request):
     return render(request, 'tools.html')
 
 @login_required
-def inspection_form(request):
+def ready_reckoner(request):
     if request.method == "POST":
-        print(request.POST)  # later we save in DB
+        obj = ReadyReckonerRate.objects.create(
+            district=request.POST.get('district'),
+            taluka=request.POST.get('taluka'),
+            village=request.POST.get('village'),
+            assessment_type=request.POST.get('assessment_type'),
+            assessment_range_min=request.POST.get('assessment_range_min'),
+            assessment_range_max=request.POST.get('assessment_range_max'),
+            rate=request.POST.get('rate'),
+            unit=request.POST.get('unit'),
+        )
+        return redirect('ready_reckoner_list')
+    return render(request, "readyreckoner.html")
 
-    return render(request, "inspection_form.html")  # form page
+@login_required
+def ready_reckoner_list(request):
+    records = ReadyReckonerRate.objects.all().order_by('-id')
+    return render(request, 'ready_reckoner_list.html', {'records': records})
+
+@login_required
+def edit_ready_reckoner(request, id):
+    obj = ReadyReckonerRate.objects.get(id=id)
+    if request.method == "POST":
+        obj.district = request.POST.get('district')
+        obj.taluka = request.POST.get('taluka')
+        obj.village = request.POST.get('village')
+        obj.assessment_type = request.POST.get('assessment_type')
+        obj.assessment_range_min = request.POST.get('assessment_range_min')
+        obj.assessment_range_max = request.POST.get('assessment_range_max')
+        obj.rate = request.POST.get('rate')
+        obj.unit = request.POST.get('unit')
+        obj.save()
+        return redirect('edit_ready_reckoner', id=obj.id)
+    return render(request, 'edit_ready_reckoner.html', {'obj': obj})
+
+@login_required
+def delete_ready_reckoner(request, id):
+    ReadyReckonerRate.objects.filter(id=id).delete()
+    return redirect('ready_reckoner_list')
+
+@login_required
+def land_record_712(request):
+    if request.method == "POST":
+        obj = LandRecord712.objects.create(
+            district=request.POST.get('district'),
+            taluka=request.POST.get('taluka'),
+            village=request.POST.get('village'),
+            gut_number=request.POST.get('gut_number'),
+            farmer_name=request.POST.get('farmer_name'),
+            assessment_type=request.POST.get('assessment_type'),
+            aakarnee=request.POST.get('aakarnee'),
+            rate_applied=request.POST.get('rate_applied'),
+            document_712=request.FILES.get('document_712'),
+        )
+        return redirect('land_record_712_list')
+    return render(request, "landrecord.html")
+
+@login_required
+def land_record_712_list(request):
+    records = LandRecord712.objects.all().order_by('-id')
+    return render(request, 'land_record_712_list.html', {'records': records})
+
+@login_required
+def edit_land_record_712(request, id):
+    obj = LandRecord712.objects.get(id=id)
+    if request.method == "POST":
+        obj.district = request.POST.get('district')
+        obj.taluka = request.POST.get('taluka')
+        obj.village = request.POST.get('village')
+        obj.gut_number = request.POST.get('gut_number')
+        obj.farmer_name = request.POST.get('farmer_name')
+        obj.assessment_type = request.POST.get('assessment_type')
+        obj.aakarnee = request.POST.get('aakarnee')
+        obj.rate_applied = request.POST.get('rate_applied')
+        if request.FILES.get('document_712'):
+            obj.document_712 = request.FILES.get('document_712')
+        obj.save()
+        return redirect('edit_land_record_712', id=obj.id)
+    return render(request, 'edit_land_record_712.html', {'obj': obj})
+
+@login_required
+def delete_land_record_712(request, id):
+    LandRecord712.objects.filter(id=id).delete()
+    return redirect('land_record_712_list')
+
+@api_login_required
+def get_assessment_types_by_village(request, village):
+    types = list(
+        ReadyReckonerRate.objects.filter(village=village)
+        .values_list('assessment_type', flat=True)
+        .distinct()
+    )
+    return JsonResponse({'assessment_types': types})
+
+@api_login_required
+def get_rates_by_village_assessment(request, village, assessment_type):
+    records = list(
+        ReadyReckonerRate.objects.filter(village=village, assessment_type=assessment_type)
+        .values('assessment_range_min', 'assessment_range_max', 'rate', 'unit')
+    )
+    # Convert Decimal to float for JSON serialization
+    for r in records:
+        r['assessment_range_min'] = float(r['assessment_range_min'])
+        r['assessment_range_max'] = float(r['assessment_range_max'])
+        r['rate'] = float(r['rate'])
+    return JsonResponse({'rates': records})
+
+@login_required
+def inspection_form(request):
+
+    if request.method == "POST":
+
+        # ✅ 1. Save main inspection
+        inspection = Inspection.objects.create(
+            district=request.POST.get("district"),
+            taluka=request.POST.get("taluka"),
+            village=request.POST.get("village"),
+            gut_number=request.POST.get("survey"),
+            officer=request.POST.get("officer"),
+            date=request.POST.get("date"),
+        )
+
+        # ✅ 2. Get table data (multiple rows)
+        plots = request.POST.getlist("plot[]")
+        names = request.POST.getlist("name[]")
+        lengths = request.POST.getlist("length[]")
+        widths = request.POST.getlist("width[]")
+        girths = request.POST.getlist("girth[]")
+        heights = request.POST.getlist("height[]")
+
+        # ✅ 3. Save each row
+        for i in range(len(names)):
+            if names[i]:  # skip empty rows
+                TreeDetail.objects.create(
+                    inspection=inspection,
+                    plot=plots[i],
+                    name=names[i],
+                    length=lengths[i] or None,
+                    width=widths[i] or None,
+                    girth=girths[i] or None,
+                    height=heights[i] or None,
+                )
+
+       
+        return redirect('inspection_list')
+
+    return render(request, "inspection_form.html")
 
 @login_required
 def dashboard(request):
     if not request.user.is_superuser:
-        return redirect('/tools/')   # 🔥 redirect instead of Access Denied
+        return redirect('/tools/')  
 
     return render(request, "dashboard.html")
 
@@ -55,6 +200,7 @@ def dashboard(request):
 
 
 @api_login_required
+@api_login_required
 def get_villages_list(request):
     """Fetch list of all villages"""
     with connection.cursor() as cursor:
@@ -68,6 +214,7 @@ def get_villages_list(request):
 
 
 
+@api_login_required
 @api_login_required
 def get_all_villages_compensation(request):
     """Fetch compensation for all villages"""
@@ -122,6 +269,7 @@ def get_all_villages_compensation(request):
         
         return JsonResponse({'villages': villages_data})
 @api_login_required
+@api_login_required
 def get_all_villages_farmers(request):
     """Fetch affected farmers count for all villages"""
     with connection.cursor() as cursor:
@@ -172,6 +320,7 @@ def get_all_villages_farmers(request):
         villages_data.sort(key=lambda x: x['farmers_count'], reverse=True)
         
         return JsonResponse({'villages': villages_data})
+@api_login_required
 @api_login_required
 def get_project_stats(request):
     """Fetch project statistics - supports optional village filter"""
@@ -772,6 +921,7 @@ def get_project_stats(request):
             'land_classification': land_classification
         })
 @api_login_required
+@api_login_required
 def get_gut_numbers_by_village(request, village_name):
     """Fetch list of gut numbers for a specific village"""
     with connection.cursor() as cursor:
@@ -790,6 +940,7 @@ def get_gut_numbers_by_village(request, village_name):
             traceback.print_exc()
             return JsonResponse({'error': str(e), 'gut_numbers': []}, status=500)
 
+@api_login_required
 @api_login_required
 def get_gut_stats(request, village_name, gut_number):
     """Fetch statistics for a specific gut"""
@@ -1114,6 +1265,7 @@ def get_gut_stats(request, village_name, gut_number):
             import traceback
             traceback.print_exc()
             return JsonResponse({'error': str(e)}, status=500)
+@api_login_required
 @api_login_required
 def get_layer_bounds(request, layer_name):
     """Fetch bounding box for any layer"""
@@ -1637,3 +1789,143 @@ def get_gut_numbers(request, village):
 
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
+
+# @login_required
+# def inspection_list(request):
+#     inspections = Inspection.objects.all().order_by('-id')
+#     return render(request, 'inspection_list.html', {'inspections': inspections})
+
+@login_required
+def inspection_list(request):
+    try:
+        inspections = Inspection.objects.all().order_by('-id')
+        return render(request, 'inspection_list.html', {'inspections': inspections})
+
+    except Exception as e:
+        import traceback
+        print("🔥 ERROR IN inspection_list VIEW:")
+        traceback.print_exc()   # prints full error in terminal
+
+        return HttpResponse(f"Error occurred: {str(e)}")
+
+@login_required
+def delete_inspection(request, id):
+    try:
+        inspection = Inspection.objects.get(id=id)
+        inspection.delete()
+        return redirect('/inspections/')  
+    except Inspection.DoesNotExist:
+        return HttpResponse("Record not found")
+
+@login_required
+def edit_inspection(request, id):
+    try:
+        inspection = Inspection.objects.get(id=id)
+        tree_details = TreeDetail.objects.filter(inspection=inspection)
+
+        if request.method == "POST":
+
+            # ✅ Update main inspection
+            inspection.district = request.POST.get("district")
+            inspection.taluka = request.POST.get("taluka")
+            inspection.village = request.POST.get("village")
+            inspection.gut_number = request.POST.get("survey")
+            inspection.officer = request.POST.get("officer")
+            inspection.date = request.POST.get("date")
+            inspection.save()
+
+            # ✅ Delete old tree data
+            tree_details.delete()
+
+            # ✅ Save new rows
+            plots = request.POST.getlist("plot[]")
+            names = request.POST.getlist("name[]")
+            lengths = request.POST.getlist("length[]")
+            widths = request.POST.getlist("width[]")
+            girths = request.POST.getlist("girth[]")
+            heights = request.POST.getlist("height[]")
+
+            for i in range(len(names)):
+                if names[i]:
+                    TreeDetail.objects.create(
+                        inspection=inspection,
+                        plot=plots[i],
+                        name=names[i],
+                        length=lengths[i] or None,
+                        width=widths[i] or None,
+                        girth=girths[i] or None,
+                        height=heights[i] or None,
+                    )
+
+            return redirect('inspection_list')
+
+        return render(request, "edit_inspection.html", {
+            "inspection": inspection,
+            "tree_details": tree_details
+        })
+
+    except Inspection.DoesNotExist:
+        return HttpResponse("Record not found")
+
+
+@login_required
+def download_all_inspections_csv(request):
+    inspections = Inspection.objects.all().order_by('id')
+
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="all_inspections.csv"'
+
+    writer = csv.writer(response)
+
+    # Header
+    writer.writerow([
+        'Inspection ID',
+        'District',
+        'Taluka',
+        'Village',
+        'Gut Number',
+        'Officer',
+        'Date',
+        'Plot',
+        'Tree Name',
+        'Length',
+        'Width',
+        'Girth',
+        'Height'
+    ])
+
+    # Data
+    for inspection in inspections:
+        trees = TreeDetail.objects.filter(inspection=inspection)
+
+        if trees.exists():
+            for tree in trees:
+                writer.writerow([
+                    inspection.id,
+                    inspection.district,
+                    inspection.taluka,
+                    inspection.village,
+                    inspection.gut_number,
+                    inspection.officer,
+                    inspection.date,
+                    tree.plot,
+                    tree.name,
+                    tree.length,
+                    tree.width,
+                    tree.girth,
+                    tree.height
+                ])
+        else:
+            # If no tree data
+            writer.writerow([
+                inspection.id,
+                inspection.district,
+                inspection.taluka,
+                inspection.village,
+                inspection.gut_number,
+                inspection.officer,
+                inspection.date,
+                '', '', '', '', '', ''
+            ])
+
+    return response

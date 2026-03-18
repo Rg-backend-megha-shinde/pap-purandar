@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="max-w-6xl mx-auto bg-white p-6 mt-6 rounded shadow">
+
+    <div class="max-w-6xl mx-auto bg-white p-6 mt-6 rounded shadow">
+
+        <!-- HEADER + BUTTON INLINE -->
+        <div class="flex justify-between items-center mb-4">
+
+            <h2 class="text-xl font-bold">
+                तपासणी नोंदी (Inspection Records)
+            </h2>
+
+            <div class="flex gap-2">
+                <a href="{% url 'download_all_inspections_csv' %}" class="bg-green-600 text-white px-4 py-2 rounded">
+                    ⬇️ डाउनलोड
+                </a>
+
+                <a href="{% url 'inspection_form' %}" class="bg-gray-800 text-white px-4 py-2 rounded">
+                    ➕ नवीन तपासणी नोंद
+                </a>
+            </div>
+
+        </div>
+        <table id="inspectionTable" class="display w-full text-sm">
+
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>गाव</th>
+                    <th>गट क्रमांक</th>
+                    <th>अधिकारी</th>
+                    <th>दिनांक</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for item in inspections %}
+                <tr>
+                    <td>{{ item.id }}</td>
+                    <td>{{ item.village }}</td>
+                    <td>{{ item.gut_number }}</td>
+                    <td>{{ item.officer }}</td>
+                    <td>{{ item.date }}</td>
+                    <td class="flex gap-2">
+
+                        <!-- Edit -->
+                        <a href="{% url 'edit_inspection' item.id %}" title="Edit"
+                            class="flex items-center justify-center w-8 h-8 bg-blue-600 hover:bg-blue-700 text-white rounded">
+                            ✏️
+                        </a>
+
+                        <!-- Delete -->
+                        <a href="{% url 'delete_inspection' item.id %}" title="Delete"
+                            class="flex items-center justify-center w-8 h-8 bg-red-600 hover:bg-red-700 text-white rounded"
+                            onclick="return confirm('तुम्हाला ही नोंद हटवायची आहे का?');">
+                            🗑
+                        </a>
+
+
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+
+        </table>
+
+    </div>
+
+    <!-- DataTables JS -->
+    <script>
+        $(document).ready(function () {
+
+            setTimeout(() => {
+                let table = $('#inspectionTable');
+
+                if ($.fn.DataTable.isDataTable(table)) {
+                    table.DataTable().destroy();
+                }
+
+                table.DataTable({
+                    pageLength: 5
+                });
+
+            }, 100);
+
+        });
+    </script>
+
+    {% endblock %}

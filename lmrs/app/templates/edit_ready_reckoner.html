@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="max-w-4xl mx-auto bg-white p-6 border border-gray-300 mt-6 rounded-lg shadow">
+
+    <h2 class="text-center font-bold text-xl underline">
+        रेडी रेकनर दर संपादन
+    </h2>
+
+    <form method="POST" class="mt-6">
+        {% csrf_token %}
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+            <div>
+                <label class="font-semibold">जिल्हा</label>
+                <input type="text" name="district" value="{{ obj.district }}" required class="w-full border p-2 rounded">
+            </div>
+            <div>
+                <label class="font-semibold">तालुका</label>
+                <input type="text" name="taluka" value="{{ obj.taluka }}" required class="w-full border p-2 rounded">
+            </div>
+            <div>
+                <label class="font-semibold">गाव</label>
+                <input type="text" name="village" value="{{ obj.village }}" required class="w-full border p-2 rounded">
+            </div>
+        </div>
+
+        <div class="mt-6 border-t pt-4">
+            <h3 class="font-semibold text-sm text-gray-700 mb-3">दर माहिती</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+
+                <div class="md:col-span-2">
+                    <label class="font-semibold">मूल्यांकन प्रकार (Assessment Type)</label>
+                    <input type="text" name="assessment_type" value="{{ obj.assessment_type }}" required class="w-full border p-2 rounded">
+                </div>
+
+                <div>
+                    <label class="font-semibold">आकारणी श्रेणी - किमान (Range Min)</label>
+                    <input type="number" step="0.01" name="assessment_range_min" value="{{ obj.assessment_range_min }}" required class="w-full border p-2 rounded">
+                </div>
+
+                <div>
+                    <label class="font-semibold">आकारणी श्रेणी - कमाल (Range Max)</label>
+                    <input type="number" step="0.01" name="assessment_range_max" value="{{ obj.assessment_range_max }}" required class="w-full border p-2 rounded">
+                </div>
+
+                <div>
+                    <label class="font-semibold">दर (Rate) ₹</label>
+                    <input type="number" step="0.01" name="rate" value="{{ obj.rate }}" required class="w-full border p-2 rounded">
+                </div>
+
+                <div>
+                    <label class="font-semibold">एकक (Unit)</label>
+                    <select name="unit" required class="w-full border p-2 rounded">
+                        <option value="हेक्टर" {% if obj.unit == "हेक्टर" %}selected{% endif %}>हेक्टर</option>
+                        <option value="चौ. मीटर" {% if obj.unit == "चौ. मीटर" %}selected{% endif %}>चौ. मीटर</option>
+                    </select>
+                </div>
+
+            </div>
+        </div>
+
+        <div class="flex gap-3 mt-6">
+            <a href="{% url 'ready_reckoner_list' %}" class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded">
+                ← यादीकडे जा
+            </a>
+            <button type="submit" class="bg-orange-600 hover:bg-orange-700 text-white px-6 py-2 rounded">
+                अपडेट करा
+            </button>
+            <a href="{% url 'delete_ready_reckoner' obj.id %}"
+                class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded"
+                onclick="return confirm('तुम्हाला ही नोंद हटवायची आहे का?');">
+                🗑 हटवा
+            </a>
+        </div>
+
+    </form>
+
+</div>
+
+{% endblock %}

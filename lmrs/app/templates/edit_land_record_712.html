@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="max-w-4xl mx-auto bg-white p-6 border border-gray-300 mt-6 rounded-lg shadow">
+
+    <h2 class="text-center font-bold text-xl underline">
+        ७/१२ उतारा संपादन
+    </h2>
+
+    <form method="POST" enctype="multipart/form-data" class="mt-6">
+        {% csrf_token %}
+
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
+            <div>
+                <label class="font-semibold">जिल्हा</label>
+                <input type="text" name="district" value="{{ obj.district }}" required class="w-full border p-2 rounded">
+            </div>
+            <div>
+                <label class="font-semibold">तालुका</label>
+                <input type="text" name="taluka" value="{{ obj.taluka }}" required class="w-full border p-2 rounded">
+            </div>
+            <div>
+                <label class="font-semibold">गाव</label>
+                <input type="text" name="village" value="{{ obj.village }}" required class="w-full border p-2 rounded">
+            </div>
+            <div>
+                <label class="font-semibold">गट क्रमांक</label>
+                <input type="text" name="gut_number" value="{{ obj.gut_number }}" required class="w-full border p-2 rounded">
+            </div>
+        </div>
+
+        <div class="mt-6 border-t pt-4">
+            <h3 class="font-semibold text-sm text-gray-700 mb-3">शेतकरी माहिती</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+
+                <div>
+                    <label class="font-semibold">शेतकऱ्याचे नाव</label>
+                    <input type="text" name="farmer_name" value="{{ obj.farmer_name }}" required class="w-full border p-2 rounded">
+                </div>
+
+                <div>
+                    <label class="font-semibold">आकारणी</label>
+                    <input type="text" name="aakarnee" value="{{ obj.aakarnee }}" class="w-full border p-2 rounded">
+                </div>
+
+                <div>
+                    <label class="font-semibold">मूल्यांकन प्रकार (Assessment Type)</label>
+                    <input type="text" name="assessment_type" value="{{ obj.assessment_type }}" class="w-full border p-2 rounded">
+                </div>
+
+                <div>
+                    <label class="font-semibold">लागू दर (Rate Applied)</label>
+                    <input type="text" name="rate_applied" value="{{ obj.rate_applied }}" class="w-full border p-2 rounded">
+                </div>
+
+                <div class="md:col-span-2">
+                    <label class="font-semibold">७/१२ उतारा अपलोड करा (PDF/Image)</label>
+                    {% if obj.document_712 %}
+                    <p class="text-xs text-gray-500 mb-1">सध्याची फाइल:
+                        <a href="{{ obj.document_712.url }}" target="_blank" class="text-blue-600 underline">पाहा</a>
+                    </p>
+                    {% endif %}
+                    <input type="file" name="document_712" accept=".pdf,.jpg,.jpeg,.png" class="w-full border p-2 rounded bg-white">
+                    <p class="text-xs text-gray-400 mt-1">नवीन फाइल निवडल्यास जुनी बदलेल</p>
+                </div>
+
+            </div>
+        </div>
+
+        <div class="flex gap-3 mt-6">
+            <a href="{% url 'land_record_712_list' %}" class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded">
+                ← यादीकडे जा
+            </a>
+            <button type="submit" class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded">
+                अपडेट करा
+            </button>
+            <a href="{% url 'delete_land_record_712' obj.id %}"
+                class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded"
+                onclick="return confirm('तुम्हाला ही नोंद हटवायची आहे का?');">
+                🗑 हटवा
+            </a>
+        </div>
+
+    </form>
+
+</div>
+
+{% endblock %}

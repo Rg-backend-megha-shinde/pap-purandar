@@ -43,6 +43,76 @@
 
         </div>
 
+        <!-- READY RECKONER CARD -->
+        <div onclick="goToReadyReckoner()"
+            class="cursor-pointer bg-white rounded-xl shadow-md hover:shadow-xl transition p-5 border border-gray-200">
+
+            <!-- ICON -->
+            <div class="flex items-center gap-3 mb-3">
+                <div class="bg-orange-100 text-orange-600 p-3 rounded-full text-xl">
+                    💰
+                </div>
+                <h3 class="text-lg font-semibold">
+                    रेडी रेकनर दर
+                </h3>
+            </div>
+
+            <!-- DESCRIPTION -->
+            <p class="text-sm text-gray-600 leading-relaxed">
+                जमिनीचा बाजारभाव दर डिजिटल पद्धतीने नोंदवा.
+                मूल्यांकन प्रकार, श्रेणी आणि दर भरण्यासाठी वापरा.
+            </p>
+
+            <!-- FEATURES -->
+            <ul class="mt-4 text-xs text-gray-500 space-y-1">
+                <li>✔ मूल्यांकन प्रकार नोंद</li>
+                <li>✔ आकारणी श्रेणी</li>
+                <li>✔ दर व एकक नोंद</li>
+                <li>✔ तलाठी वापरासाठी</li>
+            </ul>
+
+            <!-- BUTTON -->
+            <button class="mt-4 w-full bg-orange-600 text-white py-2 rounded hover:bg-orange-700">
+                उघडा →
+            </button>
+
+        </div>
+
+        <!-- 7/12 ENTRY CARD -->
+        <div onclick="goTo712()"
+            class="cursor-pointer bg-white rounded-xl shadow-md hover:shadow-xl transition p-5 border border-gray-200">
+
+            <!-- ICON -->
+            <div class="flex items-center gap-3 mb-3">
+                <div class="bg-green-100 text-green-600 p-3 rounded-full text-xl">
+                    📋
+                </div>
+                <h3 class="text-lg font-semibold">
+                    ७/१२ नोंद
+                </h3>
+            </div>
+
+            <!-- DESCRIPTION -->
+            <p class="text-sm text-gray-600 leading-relaxed">
+                जमिनीचा ७/१२ उतारा माहिती डिजिटल पद्धतीने भरा.
+                गट नंबर, शेतकरी नाव आणि आकारणी नोंदवण्यासाठी वापरा.
+            </p>
+
+            <!-- FEATURES -->
+            <ul class="mt-4 text-xs text-gray-500 space-y-1">
+                <li>✔ गट नंबर नोंद</li>
+                <li>✔ शेतकरी माहिती</li>
+                <li>✔ आकारणी व दर नोंद</li>
+                <li>✔ तलाठी वापरासाठी</li>
+            </ul>
+
+            <!-- BUTTON -->
+            <button class="mt-4 w-full bg-green-600 text-white py-2 rounded hover:bg-green-700">
+                उघडा →
+            </button>
+
+        </div>
+
         <!-- FUTURE CARD -->
         <div class="bg-gray-100 rounded-xl p-5 border text-center text-gray-500">
             More tools coming soon...
@@ -55,6 +125,12 @@
 <script>
 function goToInspection() {
     window.location.href = "/tools/inspection/";
+}
+function goToReadyReckoner() {
+    window.location.href = "/tools/ready-reckoner/";
+}
+function goTo712() {
+    window.location.href = "/tools/712/";
 }
 </script>
 

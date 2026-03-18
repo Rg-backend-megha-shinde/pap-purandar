@@ -15,8 +15,8 @@
     <link
         href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
         rel="stylesheet" />
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ol@v10.2.1/ol.css" />
+    <script src="https://cdn.jsdelivr.net/npm/ol@v10.2.1/dist/ol.js"></script>
 
     <!-- Highcharts -->
     <script src="https://unpkg.com/highcharts@11.4.0/highcharts.js"></script>
@@ -234,9 +234,43 @@
         #map {
             height: 100%;
             width: 100%;
+            position: relative;
         }
 
-        .leaflet-control {
+        /* Loading indicator for map tiles */
+        #map-loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255, 255, 255, 0.9);
+            padding: 20px 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            z-index: 1000;
+            display: none;
+            align-items: center;
+            gap: 12px;
+        }
+
+        #map-loading.active {
+            display: flex;
+        }
+
+        .loading-spinner {
+            width: 24px;
+            height: 24px;
+            border: 3px solid #e2e8f0;
+            border-top-color: #1269e2;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .ol-control {
             display: none !important;
         }
 
@@ -259,11 +293,11 @@
         }
 
         /* Clickable gut boundaries cursor */
-        .leaflet-interactive {
-            cursor: pointer !important;
+        .ol-viewport {
+            cursor: default;
         }
-
-        .leaflet-interactive:hover {
+        
+        .ol-viewport.clickable {
             cursor: pointer !important;
         }
 
@@ -298,7 +332,7 @@
         let assetLayers = {}; // Store asset layers
         let currentVillage = null; // Track current selected village
         let currentGutNumber = null; // Track current selected gut number
-        
+
         // GeoServer configuration
         const GEOSERVER_URL = "https://geoserver.rottengrapes.tech/geoserver/wms";
         const WORKSPACE = "Purandar_New";
@@ -312,6 +346,22 @@
             attribution: "GeoServer",
             crossOrigin: "anonymous",
         };
+
+        // Show/hide loading indicator
+        function showMapLoading() {
+            loadingTiles++;
+            const loader = document.getElementById('map-loading');
+            if (loader) loader.classList.add('active');
+        }
+
+        function hideMapLoading() {
+            loadingTiles--;
+            if (loadingTiles <= 0) {
+                loadingTiles = 0;
+                const loader = document.getElementById('map-loading');
+                if (loader) loader.classList.remove('active');
+            }
+        }
 
         document.addEventListener('DOMContentLoaded', function () {
             // Fetch project statistics
@@ -334,60 +384,72 @@
             });
 
             // Initialize map centered on Purandar, Pune
-            map = L.map('map', {
-                center: [18.2811, 74.0194],
-                zoom: 12,
-                zoomControl: false
+            map = new ol.Map({
+                target: 'map',
+                view: new ol.View({
+                    center: ol.proj.fromLonLat([74.0194, 18.2811]),
+                    zoom: 12
+                }),
+                controls: [],
+                loadTilesWhileAnimating: true,
+                loadTilesWhileInteracting: true
             });
-            // ensure Leaflet recalculates size once the container is fully rendered
+            // ensure OpenLayers recalculates size once the container is fully rendered
             // fixes blank/grey area at bottom before first interaction
-            setTimeout(() => map.invalidateSize(), 100);
-
-            // Create custom panes for proper layer ordering
-            map.createPane('gutPane');
-            map.getPane('gutPane').style.zIndex = 600;
-
-            map.createPane('selectedGutPane');
-            map.getPane('selectedGutPane').style.zIndex = 650;
+            setTimeout(() => map.updateSize(), 100);
 
             // Define base layers
-            osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: 'OpenStreetMap'
+            osmLayer = new ol.layer.Tile({
+                source: new ol.source.OSM({
+                    preload: 3
+                }),
+                preload: Infinity
             });
 
-            satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-                attribution: 'Esri'
+            satelliteLayer = new ol.layer.Tile({
+                source: new ol.source.XYZ({
+                    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+                    attributions: 'Esri',
+                    preload: 3
+                }),
+                preload: Infinity
             });
 
-            terrainLayer = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
-                attribution: 'OpenTopoMap'
+            terrainLayer = new ol.layer.Tile({
+                source: new ol.source.XYZ({
+                    url: 'https://{a-c}.tile.opentopomap.org/{z}/{x}/{y}.png',
+                    attributions: 'OpenTopoMap',
+                    preload: 3
+                }),
+                preload: Infinity
             });
 
             // Set default layer to Satellite
             currentLayer = satelliteLayer;
-            currentLayer.addTo(map);
+            map.addLayer(currentLayer);
 
             // Load default boundary layers
             loadTalukaBoundary();
             loadAOIBoundary();
 
-            // fix Leaflet when container dimensions change (e.g. window resize)
+            // fix OpenLayers when container dimensions change (e.g. window resize)
             window.addEventListener('resize', () => {
-                map.invalidateSize();
+                map.updateSize();
             });
 
             // Zoom controls
-            document.getElementById('zoomIn').addEventListener('click', () => map.zoomIn());
-            document.getElementById('zoomOut').addEventListener('click', () => map.zoomOut());
-            document.getElementById('myLocation').addEventListener('click', () => {
-                map.setView([18.2811, 74.0194], 13);
+            document.getElementById('zoomIn').addEventListener('click', () => {
+                const view = map.getView();
+                view.setZoom(view.getZoom() + 1);
             });
-
-            // Zoom controls
-            document.getElementById('zoomIn').addEventListener('click', () => map.zoomIn());
-            document.getElementById('zoomOut').addEventListener('click', () => map.zoomOut());
+            document.getElementById('zoomOut').addEventListener('click', () => {
+                const view = map.getView();
+                view.setZoom(view.getZoom() - 1);
+            });
             document.getElementById('myLocation').addEventListener('click', () => {
-                map.setView([18.2811, 74.0194], 13);
+                const view = map.getView();
+                view.setCenter(ol.proj.fromLonLat([74.0194, 18.2811]));
+                view.setZoom(13);
             });
 
             // Layer menu toggle
@@ -415,7 +477,7 @@
                     } else if (layerType === 'terrain') {
                         currentLayer = terrainLayer;
                     }
-                    currentLayer.addTo(map);
+                    map.addLayer(currentLayer);
 
                     // Update button styles
                     document.querySelectorAll('.layer-btn').forEach(b => {
@@ -448,7 +510,9 @@
                 if (this.value === 'district') {
                     loadDistrictBoundary();
                     // Zoom out to show district level
-                    map.setView([18.5204, 73.8567], 10);
+                    const view = map.getView();
+                    view.setCenter(ol.proj.fromLonLat([73.8567, 18.5204]));
+                    view.setZoom(10);
                     talukaSelect.disabled = false;
                     villageSelect.disabled = true;
                     gutSelect.disabled = true;
@@ -468,7 +532,9 @@
                     // Reset to default view
                     loadTalukaBoundary();
                     loadAOIBoundary();
-                    map.setView([18.2811, 74.0194], 12);
+                    const view = map.getView();
+                    view.setCenter(ol.proj.fromLonLat([74.0194, 18.2811]));
+                    view.setZoom(12);
                 }
             });
 
@@ -486,7 +552,9 @@
                     loadAOIBoundary();
                     loadVillagesList();
                     // Zoom to Purandar Taluka
-                    map.setView([18.2811, 74.0194], 12);
+                    const view = map.getView();
+                    view.setCenter(ol.proj.fromLonLat([74.0194, 18.2811]));
+                    view.setZoom(12);
                     villageSelect.disabled = false;
                     gutSelect.disabled = true;
                     gutSelect.value = '';
@@ -597,19 +665,42 @@
             function loadDistrictBoundary() {
                 if (districtLayer) map.removeLayer(districtLayer);
 
-                districtLayer = L.tileLayer.wms(GEOSERVER_URL, {
-                    ...wmsOptions,
-                    layers: `${WORKSPACE}:district_boundry`,
-                    styles: 'district_style'
-                }).addTo(map);
+                const source = new ol.source.TileWMS({
+                    url: GEOSERVER_URL,
+                    params: {
+                        'LAYERS': `${WORKSPACE}:district_boundry`,
+                        'STYLES': 'district_style',
+                        'FORMAT': 'image/png',
+                        'TRANSPARENT': true,
+                        'VERSION': '1.1.0'
+                    },
+                    serverType: 'geoserver',
+                    crossOrigin: 'anonymous',
+                    transition: 0
+                });
+
+                source.on('tileloadstart', showMapLoading);
+                source.on('tileloadend', hideMapLoading);
+                source.on('tileloaderror', hideMapLoading);
+
+                districtLayer = new ol.layer.Tile({
+                    source: source,
+                    zIndex: 10,
+                    preload: Infinity
+                });
+                map.addLayer(districtLayer);
 
                 // Fetch bounds from API to zoom properly
                 fetch('/api/layer-bounds/district_boundry/')
                     .then(response => response.json())
                     .then(data => {
                         if (data.bounds) {
-                            const bounds = [[data.bounds.minLat, data.bounds.minLng], [data.bounds.maxLat, data.bounds.maxLng]];
-                            map.fitBounds(bounds, { padding: [50, 50] });
+                            const extent = ol.proj.transformExtent(
+                                [data.bounds.minLng, data.bounds.minLat, data.bounds.maxLng, data.bounds.maxLat],
+                                'EPSG:4326',
+                                'EPSG:3857'
+                            );
+                            map.getView().fit(extent, { padding: [50, 50, 50, 50] });
                         }
                     })
                     .catch(error => console.error('Error fetching district bounds:', error));
@@ -619,19 +710,42 @@
             function loadTalukaBoundary() {
                 if (talukaLayer) map.removeLayer(talukaLayer);
 
-                talukaLayer = L.tileLayer.wms(GEOSERVER_URL, {
-                    ...wmsOptions,
-                    layers: `${WORKSPACE}:purandar_tehsil`,
-                    styles: 'taluka_style'
-                }).addTo(map);
+                const source = new ol.source.TileWMS({
+                    url: GEOSERVER_URL,
+                    params: {
+                        'LAYERS': `${WORKSPACE}:purandar_tehsil`,
+                        'STYLES': 'taluka_style',
+                        'FORMAT': 'image/png',
+                        'TRANSPARENT': true,
+                        'VERSION': '1.1.0'
+                    },
+                    serverType: 'geoserver',
+                    crossOrigin: 'anonymous',
+                    transition: 0
+                });
+
+                source.on('tileloadstart', showMapLoading);
+                source.on('tileloadend', hideMapLoading);
+                source.on('tileloaderror', hideMapLoading);
+
+                talukaLayer = new ol.layer.Tile({
+                    source: source,
+                    zIndex: 10,
+                    preload: Infinity
+                });
+                map.addLayer(talukaLayer);
 
                 // Fetch bounds from API to zoom properly
                 fetch('/api/layer-bounds/purandar_tehsil/')
                     .then(response => response.json())
                     .then(data => {
                         if (data.bounds) {
-                            const bounds = [[data.bounds.minLat, data.bounds.minLng], [data.bounds.maxLat, data.bounds.maxLng]];
-                            map.fitBounds(bounds, { padding: [50, 50] });
+                            const extent = ol.proj.transformExtent(
+                                [data.bounds.minLng, data.bounds.minLat, data.bounds.maxLng, data.bounds.maxLat],
+                                'EPSG:4326',
+                                'EPSG:3857'
+                            );
+                            map.getView().fit(extent, { padding: [50, 50, 50, 50] });
                         }
                     })
                     .catch(error => console.error('Error fetching taluka bounds:', error));
@@ -641,30 +755,64 @@
             function loadAOIBoundary() {
                 if (aoiLayer) map.removeLayer(aoiLayer);
 
-                aoiLayer = L.tileLayer.wms(GEOSERVER_URL, {
-                    ...wmsOptions,
-                    layers: `${WORKSPACE}:purandar_aoi`,
-                    styles: 'aoi_style'
-                }).addTo(map);
+                const source = new ol.source.TileWMS({
+                    url: GEOSERVER_URL,
+                    params: {
+                        'LAYERS': `${WORKSPACE}:purandar_aoi`,
+                        'STYLES': 'aoi_style',
+                        'FORMAT': 'image/png',
+                        'TRANSPARENT': true,
+                        'VERSION': '1.1.0'
+                    },
+                    serverType: 'geoserver',
+                    crossOrigin: 'anonymous',
+                    transition: 0
+                });
+
+                source.on('tileloadstart', showMapLoading);
+                source.on('tileloadend', hideMapLoading);
+                source.on('tileloaderror', hideMapLoading);
+
+                aoiLayer = new ol.layer.Tile({
+                    source: source,
+                    zIndex: 10,
+                    preload: Infinity
+                });
+                map.addLayer(aoiLayer);
             }
 
             // Load Villages Boundary
             function loadVillagesBoundary() {
                 if (villagesBoundaryLayer) map.removeLayer(villagesBoundaryLayer);
 
-                villagesBoundaryLayer = L.tileLayer.wms(GEOSERVER_URL, {
-                    ...wmsOptions,
-                    layers: `${WORKSPACE}:purandhar_airport_village_bo`,
-                    styles: 'village_style'
-                }).addTo(map);
+                villagesBoundaryLayer = new ol.layer.Tile({
+                    source: new ol.source.TileWMS({
+                        url: GEOSERVER_URL,
+                        params: {
+                            'LAYERS': `${WORKSPACE}:purandhar_airport_village_bo`,
+                            'STYLES': 'village_style',
+                            'FORMAT': 'image/png',
+                            'TRANSPARENT': true,
+                            'VERSION': '1.1.0'
+                        },
+                        serverType: 'geoserver',
+                        crossOrigin: 'anonymous'
+                    }),
+                    zIndex: 10
+                });
+                map.addLayer(villagesBoundaryLayer);
 
                 // Fetch bounds from API to zoom properly
                 fetch('/api/layer-bounds/purandhar_airport_village_bo/')
                     .then(response => response.json())
                     .then(data => {
                         if (data.bounds) {
-                            const bounds = [[data.bounds.minLat, data.bounds.minLng], [data.bounds.maxLat, data.bounds.maxLng]];
-                            map.fitBounds(bounds, { padding: [50, 50] });
+                            const extent = ol.proj.transformExtent(
+                                [data.bounds.minLng, data.bounds.minLat, data.bounds.maxLng, data.bounds.maxLat],
+                                'EPSG:4326',
+                                'EPSG:3857'
+                            );
+                            map.getView().fit(extent, { padding: [50, 50, 50, 50] });
                         }
                     })
                     .catch(error => console.error('Error fetching villages bounds:', error));
@@ -674,19 +822,34 @@
             function loadVillagesWithGut() {
                 if (villagesGutLayer) map.removeLayer(villagesGutLayer);
 
-                villagesGutLayer = L.tileLayer.wms(GEOSERVER_URL, {
-                    ...wmsOptions,
-                    layers: `${WORKSPACE}:purandhar_airport_villages`,
-                    styles: 'village_style'
-                }).addTo(map);
+                villagesGutLayer = new ol.layer.Tile({
+                    source: new ol.source.TileWMS({
+                        url: GEOSERVER_URL,
+                        params: {
+                            'LAYERS': `${WORKSPACE}:purandhar_airport_villages`,
+                            'STYLES': 'village_style',
+                            'FORMAT': 'image/png',
+                            'TRANSPARENT': true,
+                            'VERSION': '1.1.0'
+                        },
+                        serverType: 'geoserver',
+                        crossOrigin: 'anonymous'
+                    }),
+                    zIndex: 10
+                });
+                map.addLayer(villagesGutLayer);
 
                 // Fetch bounds from API to zoom properly
                 fetch('/api/layer-bounds/purandhar_airport_villages/')
                     .then(response => response.json())
                     .then(data => {
                         if (data.bounds) {
-                            const bounds = [[data.bounds.minLat, data.bounds.minLng], [data.bounds.maxLat, data.bounds.maxLng]];
-                            map.fitBounds(bounds, { padding: [50, 50] });
+                            const extent = ol.proj.transformExtent(
+                                [data.bounds.minLng, data.bounds.minLat, data.bounds.maxLng, data.bounds.maxLat],
+                                'EPSG:4326',
+                                'EPSG:3857'
+                            );
+                            map.getView().fit(extent, { padding: [50, 50, 50, 50] });
                         }
                     })
                     .catch(error => console.error('Error fetching villages gut bounds:', error));
@@ -764,12 +927,23 @@
                 const escapedVillageName = villageName.replace(/'/g, "''");
                 const cqlFilter = `village='${escapedVillageName}'`;
 
-                villagesBoundaryLayer = L.tileLayer.wms(GEOSERVER_URL, {
-                    ...wmsOptions,
-                    layers: `${WORKSPACE}:purandhar_airport_village_bo`,
-                    cql_filter: cqlFilter,
-                    styles: 'village_style'
-                }).addTo(map);
+                villagesBoundaryLayer = new ol.layer.Tile({
+                    source: new ol.source.TileWMS({
+                        url: GEOSERVER_URL,
+                        params: {
+                            'LAYERS': `${WORKSPACE}:purandhar_airport_village_bo`,
+                            'STYLES': 'village_style',
+                            'CQL_FILTER': cqlFilter,
+                            'FORMAT': 'image/png',
+                            'TRANSPARENT': true,
+                            'VERSION': '1.1.0'
+                        },
+                        serverType: 'geoserver',
+                        crossOrigin: 'anonymous'
+                    }),
+                    zIndex: 10
+                });
+                map.addLayer(villagesBoundaryLayer);
 
                 console.log(`Loaded village boundary for: ${villageName} with CQL filter: ${cqlFilter}`);
 
@@ -778,8 +952,12 @@
                     .then(response => response.json())
                     .then(data => {
                         if (data.bounds) {
-                            const bounds = [[data.bounds.minLat, data.bounds.minLng], [data.bounds.maxLat, data.bounds.maxLng]];
-                            map.fitBounds(bounds, { padding: [50, 50] });
+                            const extent = ol.proj.transformExtent(
+                                [data.bounds.minLng, data.bounds.minLat, data.bounds.maxLng, data.bounds.maxLat],
+                                'EPSG:4326',
+                                'EPSG:3857'
+                            );
+                            map.getView().fit(extent, { padding: [50, 50, 50, 50] });
                         }
                     })
                     .catch(error => console.error('Error fetching village bounds:', error));
@@ -799,31 +977,43 @@
                 const escapedVillageName = villageName.replace(/'/g, "''");
 
                 // Base layer: All gut boundaries with your custom style (includes labels)
-                villageGutBoundariesLayer = L.tileLayer.wms(GEOSERVER_URL, {
-                    layers: `${WORKSPACE}:gut_bnd`,
-                    format: 'image/png',
-                    transparent: true,
-                    version: '1.1.0',
-                    srs: 'EPSG:3857',
-                    styles: 'gut_boundary_style',  // Use your GeoServer style with labels
-                    CQL_FILTER: `village='${escapedVillageName}'`,
-                    pane: 'gutPane',
-                    attribution: ''
-                }).addTo(map);
+                villageGutBoundariesLayer = new ol.layer.Tile({
+                    source: new ol.source.TileWMS({
+                        url: GEOSERVER_URL,
+                        params: {
+                            'LAYERS': `${WORKSPACE}:gut_bnd`,
+                            'STYLES': 'gut_boundary_style',
+                            'CQL_FILTER': `village='${escapedVillageName}'`,
+                            'FORMAT': 'image/png',
+                            'TRANSPARENT': true,
+                            'VERSION': '1.1.0'
+                        },
+                        serverType: 'geoserver',
+                        crossOrigin: 'anonymous'
+                    }),
+                    zIndex: 600
+                });
+                map.addLayer(villageGutBoundariesLayer);
 
                 // If a gut is selected, add overlay with selected style (NO LABELS to avoid duplicates)
                 if (currentGutNumber) {
-                    gutBoundaryLayer = L.tileLayer.wms(GEOSERVER_URL, {
-                        layers: `${WORKSPACE}:gut_bnd`,
-                        format: 'image/png',
-                        transparent: true,
-                        version: '1.1.0',
-                        srs: 'EPSG:3857',
-                        styles: 'selected_gut_style',  // Use your selected style (should have NO labels)
-                        CQL_FILTER: `village='${escapedVillageName}' AND Gut_Number=${currentGutNumber}`,
-                        pane: 'selectedGutPane',
-                        attribution: ''
-                    }).addTo(map);
+                    gutBoundaryLayer = new ol.layer.Tile({
+                        source: new ol.source.TileWMS({
+                            url: GEOSERVER_URL,
+                            params: {
+                                'LAYERS': `${WORKSPACE}:gut_bnd`,
+                                'STYLES': 'selected_gut_style',
+                                'CQL_FILTER': `village='${escapedVillageName}' AND Gut_Number=${currentGutNumber}`,
+                                'FORMAT': 'image/png',
+                                'TRANSPARENT': true,
+                                'VERSION': '1.1.0'
+                            },
+                            serverType: 'geoserver',
+                            crossOrigin: 'anonymous'
+                        }),
+                        zIndex: 650
+                    });
+                    map.addLayer(gutBoundaryLayer);
 
                     // Zoom to selected gut
                     console.log(`🔍 Zooming to selected gut: ${currentGutNumber}`);
@@ -832,12 +1022,14 @@
                         .then(data => {
                             if (data.bounds) {
                                 console.log(`✅ Zooming to gut bounds:`, data.bounds);
-                                map.fitBounds([
-                                    [data.bounds.minLat, data.bounds.minLng],
-                                    [data.bounds.maxLat, data.bounds.maxLng]
-                                ], {
-                                    padding: [80, 80],  // More padding for better view
-                                    maxZoom: 18  // Zoom in closer to see the gut properly
+                                const extent = ol.proj.transformExtent(
+                                    [data.bounds.minLng, data.bounds.minLat, data.bounds.maxLng, data.bounds.maxLat],
+                                    'EPSG:4326',
+                                    'EPSG:3857'
+                                );
+                                map.getView().fit(extent, { 
+                                    padding: [80, 80, 80, 80],
+                                    maxZoom: 18
                                 });
                             }
                         })
@@ -848,10 +1040,12 @@
                         .then(r => r.json())
                         .then(data => {
                             if (data.bounds) {
-                                map.fitBounds([
-                                    [data.bounds.minLat, data.bounds.minLng],
-                                    [data.bounds.maxLat, data.bounds.maxLng]
-                                ], { padding: [50, 50] });
+                                const extent = ol.proj.transformExtent(
+                                    [data.bounds.minLng, data.bounds.minLat, data.bounds.maxLng, data.bounds.maxLat],
+                                    'EPSG:4326',
+                                    'EPSG:3857'
+                                );
+                                map.getView().fit(extent, { padding: [50, 50, 50, 50] });
                             }
                         })
                         .catch(err => console.log('⚠️ Bounds API not available:', err));
@@ -860,83 +1054,90 @@
                 console.log(`✅ Gut boundaries loaded for village: ${villageName}`);
 
                 // Enable click detection using GetFeatureInfo
-                map.off('click', handleGutClick);
-                map.on('click', handleGutClick);
+                map.un('singleclick', handleGutClick);
+                map.on('singleclick', handleGutClick);
 
                 // Change cursor to pointer when over gut boundaries
-                map.getContainer().style.cursor = 'pointer';
+                map.getTargetElement().style.cursor = 'pointer';
             }
 
             // Handle map clicks for gut selection using WMS GetFeatureInfo (SECURE)
             function handleGutClick(e) {
                 if (!currentVillage || !villageGutBoundariesLayer) return;
 
-                console.log(`🔍 Map clicked at: ${e.latlng.lat}, ${e.latlng.lng}`);
+                const coordinate = e.coordinate;
+                const lonLat = ol.proj.toLonLat(coordinate);
+                console.log(`🔍 Map clicked at: ${lonLat[1]}, ${lonLat[0]}`);
 
-                const point = map.latLngToContainerPoint(e.latlng);
-                const size = map.getSize();
-                const bounds = map.getBounds();
-                const sw = L.CRS.EPSG3857.project(bounds.getSouthWest());
-                const ne = L.CRS.EPSG3857.project(bounds.getNorthEast());
-                const bbox = `${sw.x},${sw.y},${ne.x},${ne.y}`;
+                const viewResolution = map.getView().getResolution();
+                const source = villageGutBoundariesLayer.getSource();
+                const url = source.getFeatureInfoUrl(
+                    coordinate,
+                    viewResolution,
+                    'EPSG:3857',
+                    {
+                        'INFO_FORMAT': 'application/json',
+                        'FEATURE_COUNT': 1,
+                        'CQL_FILTER': `village='${currentVillage.replace(/'/g, "''")}'`
+                    }
+                );
 
-                const url = `${GEOSERVER_URL}?` +
-                    `SERVICE=WMS&VERSION=1.1.0&REQUEST=GetFeatureInfo&` +
-                    `LAYERS=${WORKSPACE}:gut_bnd&QUERY_LAYERS=${WORKSPACE}:gut_bnd&` +
-                    `BBOX=${bbox}&FEATURE_COUNT=1&HEIGHT=${size.y}&WIDTH=${size.x}&` +
-                    `FORMAT=image/png&INFO_FORMAT=application/json&SRS=EPSG:3857&` +
-                    `X=${Math.round(point.x)}&Y=${Math.round(point.y)}&` +
-                    `CQL_FILTER=village='${currentVillage.replace(/'/g, "''")}'`;
+                if (url) {
+                    console.log(`🔍 GetFeatureInfo URL: ${url}`);
 
-                console.log(`🔍 GetFeatureInfo URL: ${url}`);
+                    fetch(url)
+                        .then(r => r.json())
+                        .then(data => {
+                            console.log(`🔍 GetFeatureInfo response:`, data);
+                            if (data.features && data.features.length > 0) {
+                                const gutNumber = data.features[0].properties.Gut_Number ||
+                                    data.features[0].properties.gut_number;
+                                if (gutNumber) {
+                                    currentGutNumber = String(gutNumber);
+                                    console.log(`✅ Gut clicked: ${gutNumber}`);
 
-                fetch(url)
-                    .then(r => r.json())
-                    .then(data => {
-                        console.log(`🔍 GetFeatureInfo response:`, data);
-                        if (data.features && data.features.length > 0) {
-                            const gutNumber = data.features[0].properties.Gut_Number ||
-                                data.features[0].properties.gut_number;
-                            if (gutNumber) {
-                                currentGutNumber = String(gutNumber);
-                                console.log(`✅ Gut clicked: ${gutNumber}`);
+                                    // Update dropdown
+                                    const gutSelect = document.getElementById('gutSelect');
+                                    if (gutSelect) gutSelect.value = currentGutNumber;
 
-                                // Update dropdown
-                                const gutSelect = document.getElementById('gutSelect');
-                                if (gutSelect) gutSelect.value = currentGutNumber;
+                                    // Reload gut boundaries to show selection
+                                    loadVillageGutBoundaries(currentVillage);
 
-                                // Reload gut boundaries to show selection
-                                loadVillageGutBoundaries(currentVillage);
+                                    // Fetch gut-specific statistics
+                                    fetchGutStats(currentVillage, currentGutNumber);
 
-                                // Fetch gut-specific statistics
-                                fetchGutStats(currentVillage, currentGutNumber);
+                                    // Reload any active asset layers with gut filter
+                                    reloadActiveAssetLayers();
 
-                                // Reload any active asset layers with gut filter
-                                reloadActiveAssetLayers();
+                                    // Show notification
+                                    showNotification(`Selected Gut ${gutNumber} in ${currentVillage}`, 'success');
 
-                                // Show notification
-                                showNotification(`Selected Gut ${gutNumber} in ${currentVillage}`, 'success');
-
-                                // Zoom to selected gut
-                                fetch(`/api/layer-bounds/gut_bnd/?village=${encodeURIComponent(currentVillage)}&gut_number=${encodeURIComponent(currentGutNumber)}`)
-                                    .then(r => r.json())
-                                    .then(d => {
-                                        if (d.bounds) {
-                                            map.fitBounds([
-                                                [d.bounds.minLat, d.bounds.minLng],
-                                                [d.bounds.maxLat, d.bounds.maxLng]
-                                            ], { padding: [80, 80], maxZoom: 18 });
-                                        }
-                                    })
-                                    .catch(err => console.log('⚠️ Bounds API not available'));
+                                    // Zoom to selected gut
+                                    fetch(`/api/layer-bounds/gut_bnd/?village=${encodeURIComponent(currentVillage)}&gut_number=${encodeURIComponent(currentGutNumber)}`)
+                                        .then(r => r.json())
+                                        .then(d => {
+                                            if (d.bounds) {
+                                                const extent = ol.proj.transformExtent(
+                                                    [d.bounds.minLng, d.bounds.minLat, d.bounds.maxLng, d.bounds.maxLat],
+                                                    'EPSG:4326',
+                                                    'EPSG:3857'
+                                                );
+                                                map.getView().fit(extent, { 
+                                                    padding: [80, 80, 80, 80],
+                                                    maxZoom: 18
+                                                });
+                                            }
+                                        })
+                                        .catch(err => console.log('⚠️ Bounds API not available'));
+                                }
+                            } else {
+                                console.log('🔍 No gut found at clicked location');
                             }
-                        } else {
-                            console.log('🔍 No gut found at clicked location');
-                        }
-                    })
-                    .catch(err => {
-                        console.error('🚨 GetFeatureInfo error:', err);
-                    });
+                        })
+                        .catch(err => {
+                            console.error('🚨 GetFeatureInfo error:', err);
+                        });
+                }
             }
 
 
@@ -1591,12 +1792,10 @@
 
                         // Data exists, now load the WMS layer
                         const wmsParams = {
-                            layers: `${WORKSPACE}:${assetName}`,
-                            format: 'image/png',
-                            transparent: true,
-                            version: '1.1.0',
-                            srs: 'EPSG:3857',
-                            pane: 'overlayPane'
+                            'LAYERS': `${WORKSPACE}:${assetName}`,
+                            'FORMAT': 'image/png',
+                            'TRANSPARENT': true,
+                            'VERSION': '1.1.0'
                         };
 
                         if (cqlFilter) {
@@ -1606,14 +1805,26 @@
                         console.log(`🔍 WMS params for ${assetName}:`, wmsParams);
 
                         try {
-                            assetLayers[assetName] = L.tileLayer.wms(GEOSERVER_URL, wmsParams);
+                            assetLayers[assetName] = new ol.layer.Tile({
+                                source: new ol.source.TileWMS({
+                                    url: GEOSERVER_URL,
+                                    params: wmsParams,
+                                    serverType: 'geoserver',
+                                    crossOrigin: 'anonymous'
+                                }),
+                                zIndex: 100
+                            });
 
-                            assetLayers[assetName].on('load', function () {
+                            assetLayers[assetName].getSource().on('tileloadstart', function () {
+                                console.log(`🔄 Loading ${assetName} tiles...`);
+                            });
+
+                            assetLayers[assetName].getSource().on('tileloadend', function () {
                                 console.log(`✅ ${assetName} layer loaded successfully`);
                                 showNotification(`Loaded ${assetName} in ${filterInfo}`, 'success');
                             });
 
-                            assetLayers[assetName].on('tileerror', function (error) {
+                            assetLayers[assetName].getSource().on('tileloaderror', function (error) {
                                 console.error(`❌ Failed to load ${assetName} tiles:`, error);
                                 showNotification(`Failed to load ${assetName}`, 'error');
 
@@ -1625,7 +1836,7 @@
                                 }
                             });
 
-                            assetLayers[assetName].addTo(map);
+                            map.addLayer(assetLayers[assetName]);
                             console.log(`✅ ${assetName} layer added to map`);
                         } catch (error) {
                             console.error(`❌ Error creating WMS layer for ${assetName}:`, error);

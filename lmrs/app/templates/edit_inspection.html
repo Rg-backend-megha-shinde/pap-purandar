@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="max-w-6xl mx-auto bg-white p-6 border border-gray-300 mt-6 rounded-lg shadow">
+
+    <h2 class="text-center font-bold text-xl underline">
+        तपासणी संपादन (Edit Inspection)
+    </h2>
+
+    <form method="POST" class="mt-6">
+        {% csrf_token %}
+
+        <!-- LOCATION -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
+
+            <div>
+                <label>जिल्हा</label>
+                <input type="text" name="district" value="{{ inspection.district }}" class="w-full border p-2 rounded">
+            </div>
+
+            <div>
+                <label>तालुका</label>
+                <input type="text" name="taluka" value="{{ inspection.taluka }}" class="w-full border p-2 rounded">
+            </div>
+
+            <div>
+                <label>गाव</label>
+                <input type="text" name="village" value="{{ inspection.village }}" class="w-full border p-2 rounded">
+            </div>
+
+            <div>
+                <label>गट क्रमांक</label>
+                <input type="text" name="survey" value="{{ inspection.gut_number }}" class="w-full border p-2 rounded">
+            </div>
+
+        </div>
+
+        <!-- OFFICER -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+
+            <div>
+                <label>अधिकारी नाव</label>
+                <input type="text" name="officer" value="{{ inspection.officer }}" class="w-full border p-2 rounded">
+            </div>
+
+            <div>
+                <label>दिनांक</label>
+                <input type="date" name="date" value="{{ inspection.date|date:'Y-m-d' }}" class="w-full border p-2 rounded">
+            </div>
+
+        </div>
+
+        <!-- TREE TABLE -->
+        <div class="overflow-x-auto mt-6">
+            <table class="w-full border text-sm text-center">
+
+                <thead class="bg-gray-200">
+                    <tr>
+                        <th class="border p-2">क्रमांक</th>
+                        <th class="border p-2">नाव</th>
+                        <th class="border p-2">लांबी</th>
+                        <th class="border p-2">रुंदी</th>
+                        <th class="border p-2">घेर</th>
+                        <th class="border p-2">उंची</th>
+                    </tr>
+                </thead>
+
+                <tbody id="tableBody">
+
+                    {% for tree in tree_details %}
+                    <tr>
+                        <td class="border"><input name="plot[]" value="{{ tree.plot }}" class="w-full text-center"></td>
+                        <td class="border"><input name="name[]" value="{{ tree.name }}" class="w-full text-center"></td>
+                        <td class="border"><input name="length[]" value="{{ tree.length }}" class="w-full text-center"></td>
+                        <td class="border"><input name="width[]" value="{{ tree.width }}" class="w-full text-center"></td>
+                        <td class="border"><input name="girth[]" value="{{ tree.girth }}" class="w-full text-center"></td>
+                        <td class="border"><input name="height[]" value="{{ tree.height }}" class="w-full text-center"></td>
+                    </tr>
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+        </div>
+
+        <!-- BUTTONS -->
+        <div class="flex gap-3 mt-4">
+
+            <button type="button" onclick="addRow()"
+                class="bg-gray-700 text-white px-4 py-2 rounded">
+                + ओळ जोडा
+            </button>
+
+            <button type="submit"
+                class="bg-green-600 text-white px-6 py-2 rounded">
+                अपडेट करा
+            </button>
+
+        </div>
+
+    </form>
+
+</div>
+
+<!-- JS -->
+<script>
+function addRow() {
+    let row = `
+    <tr>
+        <td class="border"><input name="plot[]" class="w-full text-center"></td>
+        <td class="border"><input name="name[]" class="w-full text-center"></td>
+        <td class="border"><input name="length[]" class="w-full text-center"></td>
+        <td class="border"><input name="width[]" class="w-full text-center"></td>
+        <td class="border"><input name="girth[]" class="w-full text-center"></td>
+        <td class="border"><input name="height[]" class="w-full text-center"></td>
+    </tr>`;
+    
+    document.getElementById("tableBody").insertAdjacentHTML('beforeend', row);
+}
+</script>
+
+{% endblock %}
