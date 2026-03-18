@@ -8,7 +8,7 @@ urlpatterns = [
     path('logout/', views.logout_view, name='logout'),
     # path('tools/', views.tools, name='tools'),
     path('', views.home, name='home'),
-    path('tools/inspection/', views.inspection_form),
+    path('tools/inspection/', views.inspection_form, name='inspection_form'),
     path('api/villages-list/', views.get_villages_list, name='villages_list'),
     path('api/all-villages-compensation/', views.get_all_villages_compensation, name='all_villages_compensation'),
     path('api/all-villages-farmers/', views.get_all_villages_farmers, name='all_villages_farmers'),
@@ -18,4 +18,8 @@ urlpatterns = [
     path('api/layer-bounds/<str:layer_name>/', views.get_layer_bounds, name='layer_bounds'),
     path("api/location-data/", views.get_location_data),
     path("api/gut-numbers/<str:village>/", views.get_gut_numbers),
+    path('inspections/', views.inspection_list, name='inspection_list'),
+    path('inspection/edit/<int:id>/', views.edit_inspection, name='edit_inspection'),
+    path('inspection/delete/<int:id>/', views.delete_inspection, name='delete_inspection'),
+    path('inspection/download/<int:id>/', views.download_inspection_csv, name='download_inspection_csv'),
 ]
