@@ -1750,39 +1750,65 @@ def edit_inspection(request, id):
     except Inspection.DoesNotExist:
         return HttpResponse("Record not found")
 
+
 @login_required
-def download_inspection_csv(request, id):
-    inspection = Inspection.objects.get(id=id)
-    trees = TreeDetail.objects.filter(inspection=inspection)
+def download_all_inspections_csv(request):
+    inspections = Inspection.objects.all().order_by('id')
 
     response = HttpResponse(content_type='text/csv')
-    response['Content-Disposition'] = f'attachment; filename="inspection_{id}.csv"'
+    response['Content-Disposition'] = 'attachment; filename="all_inspections.csv"'
 
     writer = csv.writer(response)
 
-    # Inspection Info
-    writer.writerow(['तपासणी माहिती'])
-    writer.writerow(['जिल्हा', inspection.district])
-    writer.writerow(['तालुका', inspection.taluka])
-    writer.writerow(['गाव', inspection.village])
-    writer.writerow(['गट क्रमांक', inspection.gut_number])
-    writer.writerow(['अधिकारी नाव', inspection.officer])
-    writer.writerow(['दिनांक', inspection.date])
+    # Header
+    writer.writerow([
+        'Inspection ID',
+        'District',
+        'Taluka',
+        'Village',
+        'Gut Number',
+        'Officer',
+        'Date',
+        'Plot',
+        'Tree Name',
+        'Length',
+        'Width',
+        'Girth',
+        'Height'
+    ])
 
-    writer.writerow([])
+    # Data
+    for inspection in inspections:
+        trees = TreeDetail.objects.filter(inspection=inspection)
 
-    # Tree Details
-    writer.writerow(['झाड तपशील'])
-    writer.writerow(['क्रमांक', 'नाव', 'लांबी', 'रुंदी', 'घेर', 'उंची'])
-
-    for tree in trees:
-        writer.writerow([
-            tree.plot,
-            tree.name,
-            tree.length,
-            tree.width,
-            tree.girth,
-            tree.height
-        ])
+        if trees.exists():
+            for tree in trees:
+                writer.writerow([
+                    inspection.id,
+                    inspection.district,
+                    inspection.taluka,
+                    inspection.village,
+                    inspection.gut_number,
+                    inspection.officer,
+                    inspection.date,
+                    tree.plot,
+                    tree.name,
+                    tree.length,
+                    tree.width,
+                    tree.girth,
+                    tree.height
+                ])
+        else:
+            # If no tree data
+            writer.writerow([
+                inspection.id,
+                inspection.district,
+                inspection.taluka,
+                inspection.village,
+                inspection.gut_number,
+                inspection.officer,
+                inspection.date,
+                '', '', '', '', '', ''
+            ])
 
     return response

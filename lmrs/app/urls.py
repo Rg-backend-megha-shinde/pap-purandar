@@ -21,5 +21,5 @@ urlpatterns = [
     path('inspections/', views.inspection_list, name='inspection_list'),
     path('inspection/edit/<int:id>/', views.edit_inspection, name='edit_inspection'),
     path('inspection/delete/<int:id>/', views.delete_inspection, name='delete_inspection'),
-    path('inspection/download/<int:id>/', views.download_inspection_csv, name='download_inspection_csv'),
+    path('inspections/download-all/', views.download_all_inspections_csv, name='download_all_inspections_csv'),
 ]
