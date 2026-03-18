@@ -8,6 +8,7 @@ urlpatterns = [
     path('logout/', views.logout_view, name='logout'),
     # path('tools/', views.tools, name='tools'),
     path('', views.home, name='home'),
+    path('tools/inspection/', views.inspection_form, name='inspection_form'),
     path('tools/inspection/', views.inspection_form),
     path('tools/ready-reckoner/', views.ready_reckoner),
     path('tools/712/', views.land_record_712),
@@ -23,4 +24,8 @@ urlpatterns = [
     #APIS to fetch location data and Gut numbers for dropdowns
     path("api/location-data/", views.get_location_data),
     path("api/gut-numbers/<str:village>/", views.get_gut_numbers),
+    path('inspections/', views.inspection_list, name='inspection_list'),
+    path('inspection/edit/<int:id>/', views.edit_inspection, name='edit_inspection'),
+    path('inspection/delete/<int:id>/', views.delete_inspection, name='delete_inspection'),
+    path('inspection/download/<int:id>/', views.download_inspection_csv, name='download_inspection_csv'),
 ]

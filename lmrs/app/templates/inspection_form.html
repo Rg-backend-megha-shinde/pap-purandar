@@ -22,28 +22,32 @@
 
             <div>
                 <label class="font-semibold">जिल्हा</label>
-                <select id="district" name="district" required class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-400">
+                <select id="district" name="district" required
+                    class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-400">
                     <option value="">जिल्हा निवडा</option>
                 </select>
             </div>
 
             <div>
                 <label class="font-semibold">तालुका</label>
-                <select id="taluka" name="taluka" required class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-400">
+                <select id="taluka" name="taluka" required
+                    class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-400">
                     <option value="">तालुका निवडा</option>
                 </select>
             </div>
 
             <div>
                 <label class="font-semibold">गाव</label>
-                <select id="village" name="village" required class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-400">
+                <select id="village" name="village" required
+                    class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-400">
                     <option value="">गाव निवडा</option>
                 </select>
             </div>
 
             <div>
                 <label class="font-semibold">गट क्रमांक</label>
-                <select id="gut" name="survey" required class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-400">
+                <select id="gut" name="survey" required
+                    class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-400">
                     <option value="">गट क्रमांक निवडा</option>
                 </select>
             </div>
@@ -95,17 +99,51 @@
         </div>
 
         <!-- BUTTONS -->
-        <div class="flex gap-3 mt-4">
-            <button type="button" onclick="addRow()"
-                class="bg-gray-700 hover:bg-gray-800 text-white px-4 py-2 rounded">
-                + ओळ जोडा
-            </button>
+        <div class="flex gap-3 mt-6">
 
-            <button type="submit"
-                class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded">
-                सबमिट करा
-            </button>
-        </div>
+    <!-- Add Row -->
+    <button type="button" onclick="addRow()"
+        class="flex items-center gap-2 bg-gray-700 hover:bg-gray-800 text-white px-4 py-2 rounded-md shadow-sm transition duration-200">
+
+        <!-- Plus Icon -->
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none"
+            viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M12 4v16m8-8H4" />
+        </svg>
+
+        ओळ जोडा
+    </button>
+
+    <!-- Submit -->
+    <button type="submit"
+        class="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-md shadow-sm transition duration-200">
+
+        <!-- Save Icon -->
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none"
+            viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M5 13l4 4L19 7" />
+        </svg>
+
+        सबमिट करा
+    </button>
+
+    <!-- View Records -->
+    <a href="{% url 'inspection_list' %}"
+        class="flex items-center gap-2 bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-md shadow-sm transition duration-200">
+
+        <!-- List Icon -->
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none"
+            viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M4 6h16M4 12h16M4 18h16" />
+        </svg>
+
+        नोंदी पहा
+    </a>
+
+</div>
 
     </form>
 
@@ -114,91 +152,91 @@
 <!-- JS -->
 <script>
 
-let fullData = [];
+    let fullData = [];
 
-// Load Data
-fetch('/api/location-data/')
-    .then(res => res.json())
-    .then(data => {
-        fullData = data.villages;
-
-        let districtDropdown = document.getElementById("district");
-        let districts = [...new Set(fullData.map(v => v.district))];
-
-        districts.forEach(d => {
-            if (d) districtDropdown.add(new Option(d, d));
-        });
-    });
-
-
-// District → Taluka
-document.getElementById("district").addEventListener("change", function () {
-
-    let district = this.value;
-
-    let talukaDropdown = document.getElementById("taluka");
-    let villageDropdown = document.getElementById("village");
-    let gutDropdown = document.getElementById("gut");
-
-    talukaDropdown.innerHTML = '<option value="">तालुका निवडा</option>';
-    villageDropdown.innerHTML = '<option value="">गाव निवडा</option>';
-    gutDropdown.innerHTML = '<option value="">गट क्रमांक निवडा</option>';
-
-    let talukas = [...new Set(
-        fullData.filter(v => v.district === district).map(v => v.taluka)
-    )];
-
-    talukas.forEach(t => talukaDropdown.add(new Option(t, t)));
-});
-
-
-// Taluka → Village (UNIQUE FIX)
-document.getElementById("taluka").addEventListener("change", function () {
-
-    let taluka = this.value;
-    let district = document.getElementById("district").value;
-
-    let villageDropdown = document.getElementById("village");
-    let gutDropdown = document.getElementById("gut");
-
-    villageDropdown.innerHTML = '<option value="">गाव निवडा</option>';
-    gutDropdown.innerHTML = '<option value="">गट क्रमांक निवडा</option>';
-
-    let villages = fullData.filter(
-        v => v.taluka === taluka && v.district === district
-    );
-
-    let uniqueVillages = [...new Set(villages.map(v => v.village_name))];
-
-    uniqueVillages.forEach(v => {
-        villageDropdown.add(new Option(v, v));
-    });
-});
-
-
-// Village → Gut
-document.getElementById("village").addEventListener("change", function () {
-
-    let village = this.value;
-
-    let gutDropdown = document.getElementById("gut");
-    gutDropdown.innerHTML = '<option value="">गट क्रमांक निवडा</option>';
-
-    if (!village) return;
-
-    fetch(`/api/gut-numbers/${village}/`)
+    // Load Data
+    fetch('/api/location-data/')
         .then(res => res.json())
         .then(data => {
-            data.gut_numbers.forEach(g => {
-                gutDropdown.add(new Option(g, g));
+            fullData = data.villages;
+
+            let districtDropdown = document.getElementById("district");
+            let districts = [...new Set(fullData.map(v => v.district))];
+
+            districts.forEach(d => {
+                if (d) districtDropdown.add(new Option(d, d));
             });
         });
-});
 
 
-// Add Row
-function addRow() {
-    let row = `
+    // District → Taluka
+    document.getElementById("district").addEventListener("change", function () {
+
+        let district = this.value;
+
+        let talukaDropdown = document.getElementById("taluka");
+        let villageDropdown = document.getElementById("village");
+        let gutDropdown = document.getElementById("gut");
+
+        talukaDropdown.innerHTML = '<option value="">तालुका निवडा</option>';
+        villageDropdown.innerHTML = '<option value="">गाव निवडा</option>';
+        gutDropdown.innerHTML = '<option value="">गट क्रमांक निवडा</option>';
+
+        let talukas = [...new Set(
+            fullData.filter(v => v.district === district).map(v => v.taluka)
+        )];
+
+        talukas.forEach(t => talukaDropdown.add(new Option(t, t)));
+    });
+
+
+    // Taluka → Village (UNIQUE FIX)
+    document.getElementById("taluka").addEventListener("change", function () {
+
+        let taluka = this.value;
+        let district = document.getElementById("district").value;
+
+        let villageDropdown = document.getElementById("village");
+        let gutDropdown = document.getElementById("gut");
+
+        villageDropdown.innerHTML = '<option value="">गाव निवडा</option>';
+        gutDropdown.innerHTML = '<option value="">गट क्रमांक निवडा</option>';
+
+        let villages = fullData.filter(
+            v => v.taluka === taluka && v.district === district
+        );
+
+        let uniqueVillages = [...new Set(villages.map(v => v.village_name))];
+
+        uniqueVillages.forEach(v => {
+            villageDropdown.add(new Option(v, v));
+        });
+    });
+
+
+    // Village → Gut
+    document.getElementById("village").addEventListener("change", function () {
+
+        let village = this.value;
+
+        let gutDropdown = document.getElementById("gut");
+        gutDropdown.innerHTML = '<option value="">गट क्रमांक निवडा</option>';
+
+        if (!village) return;
+
+        fetch(`/api/gut-numbers/${village}/`)
+            .then(res => res.json())
+            .then(data => {
+                data.gut_numbers.forEach(g => {
+                    gutDropdown.add(new Option(g, g));
+                });
+            });
+    });
+
+
+    // Add Row
+    function addRow() {
+        let row = `
     <tr>
         <td class="border"><input name="plot[]" class="w-full p-1 text-center"></td>
         <td class="border"><input name="name[]" class="w-full p-1 text-center"></td>
@@ -207,9 +245,9 @@ function addRow() {
         <td class="border"><input name="girth[]" class="w-full p-1 text-center"></td>
         <td class="border"><input name="height[]" class="w-full p-1 text-center"></td>
     </tr>`;
-    
-    document.getElementById("tableBody").insertAdjacentHTML('beforeend', row);
-}
+
+        document.getElementById("tableBody").insertAdjacentHTML('beforeend', row);
+    }
 
 </script>
 

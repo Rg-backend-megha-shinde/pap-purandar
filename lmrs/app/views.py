@@ -3,8 +3,14 @@ from django.http import JsonResponse
 from django.db import connection
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import authenticate, login, logout
-from django.http import HttpResponse, HttpResponseForbidden
-from app.models import ReadyReckonerRate, LandRecord712
+from django.shortcuts import render, redirect
+from django.http import JsonResponse
+from django.http import HttpResponse
+from django.http import HttpResponseForbidden
+from django.http import JsonResponse
+from django.db import connection
+from .models import Inspection, TreeDetail, ReadyReckonerRate, LandRecord712
+import csv
 
 def api_login_required(view_func):
     def wrapper(request, *args, **kwargs):
@@ -78,15 +84,49 @@ def get_rates_by_village_assessment(request, village, assessment_type):
 
 @login_required
 def inspection_form(request):
-    if request.method == "POST":
-        print(request.POST)  # later we save in DB
 
-    return render(request, "inspection_form.html")  # form page
+    if request.method == "POST":
+
+        # ✅ 1. Save main inspection
+        inspection = Inspection.objects.create(
+            district=request.POST.get("district"),
+            taluka=request.POST.get("taluka"),
+            village=request.POST.get("village"),
+            gut_number=request.POST.get("survey"),
+            officer=request.POST.get("officer"),
+            date=request.POST.get("date"),
+        )
+
+        # ✅ 2. Get table data (multiple rows)
+        plots = request.POST.getlist("plot[]")
+        names = request.POST.getlist("name[]")
+        lengths = request.POST.getlist("length[]")
+        widths = request.POST.getlist("width[]")
+        girths = request.POST.getlist("girth[]")
+        heights = request.POST.getlist("height[]")
+
+        # ✅ 3. Save each row
+        for i in range(len(names)):
+            if names[i]:  # skip empty rows
+                TreeDetail.objects.create(
+                    inspection=inspection,
+                    plot=plots[i],
+                    name=names[i],
+                    length=lengths[i] or None,
+                    width=widths[i] or None,
+                    girth=girths[i] or None,
+                    height=heights[i] or None,
+                )
+
+       
+        return redirect('inspection_list')
+
+    return render(request, "inspection_form.html")
 
 @login_required
 def dashboard(request):
     if not request.user.is_superuser:
-        return redirect('/tools/')   # 🔥 redirect instead of Access Denied
+        return redirect('/tools/')  
 
     return render(request, "dashboard.html")
 
@@ -1688,3 +1728,117 @@ def get_gut_numbers(request, village):
 
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
+
+# @login_required
+# def inspection_list(request):
+#     inspections = Inspection.objects.all().order_by('-id')
+#     return render(request, 'inspection_list.html', {'inspections': inspections})
+
+@login_required
+def inspection_list(request):
+    try:
+        inspections = Inspection.objects.all().order_by('-id')
+        return render(request, 'inspection_list.html', {'inspections': inspections})
+
+    except Exception as e:
+        import traceback
+        print("🔥 ERROR IN inspection_list VIEW:")
+        traceback.print_exc()   # prints full error in terminal
+
+        return HttpResponse(f"Error occurred: {str(e)}")
+
+@login_required
+def delete_inspection(request, id):
+    try:
+        inspection = Inspection.objects.get(id=id)
+        inspection.delete()
+        return redirect('/inspections/')  
+    except Inspection.DoesNotExist:
+        return HttpResponse("Record not found")
+
+@login_required
+def edit_inspection(request, id):
+    try:
+        inspection = Inspection.objects.get(id=id)
+        tree_details = TreeDetail.objects.filter(inspection=inspection)
+
+        if request.method == "POST":
+
+            # ✅ Update main inspection
+            inspection.district = request.POST.get("district")
+            inspection.taluka = request.POST.get("taluka")
+            inspection.village = request.POST.get("village")
+            inspection.gut_number = request.POST.get("survey")
+            inspection.officer = request.POST.get("officer")
+            inspection.date = request.POST.get("date")
+            inspection.save()
+
+            # ✅ Delete old tree data
+            tree_details.delete()
+
+            # ✅ Save new rows
+            plots = request.POST.getlist("plot[]")
+            names = request.POST.getlist("name[]")
+            lengths = request.POST.getlist("length[]")
+            widths = request.POST.getlist("width[]")
+            girths = request.POST.getlist("girth[]")
+            heights = request.POST.getlist("height[]")
+
+            for i in range(len(names)):
+                if names[i]:
+                    TreeDetail.objects.create(
+                        inspection=inspection,
+                        plot=plots[i],
+                        name=names[i],
+                        length=lengths[i] or None,
+                        width=widths[i] or None,
+                        girth=girths[i] or None,
+                        height=heights[i] or None,
+                    )
+
+            return redirect('inspection_list')
+
+        return render(request, "edit_inspection.html", {
+            "inspection": inspection,
+            "tree_details": tree_details
+        })
+
+    except Inspection.DoesNotExist:
+        return HttpResponse("Record not found")
+
+@login_required
+def download_inspection_csv(request, id):
+    inspection = Inspection.objects.get(id=id)
+    trees = TreeDetail.objects.filter(inspection=inspection)
+
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = f'attachment; filename="inspection_{id}.csv"'
+
+    writer = csv.writer(response)
+
+    # Inspection Info
+    writer.writerow(['तपासणी माहिती'])
+    writer.writerow(['जिल्हा', inspection.district])
+    writer.writerow(['तालुका', inspection.taluka])
+    writer.writerow(['गाव', inspection.village])
+    writer.writerow(['गट क्रमांक', inspection.gut_number])
+    writer.writerow(['अधिकारी नाव', inspection.officer])
+    writer.writerow(['दिनांक', inspection.date])
+
+    writer.writerow([])
+
+    # Tree Details
+    writer.writerow(['झाड तपशील'])
+    writer.writerow(['क्रमांक', 'नाव', 'लांबी', 'रुंदी', 'घेर', 'उंची'])
+
+    for tree in trees:
+        writer.writerow([
+            tree.plot,
+            tree.name,
+            tree.length,
+            tree.width,
+            tree.girth,
+            tree.height
+        ])
+
+    return response
