@@ -1,0 +1,212 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="max-w-4xl mx-auto bg-white p-6 border border-gray-300 mt-6 rounded-lg shadow">
+
+    <!-- HEADER -->
+    <h2 class="text-center font-bold text-xl underline">
+        ७/१२ उतारा नोंद
+    </h2>
+    <p class="text-center text-sm mt-1 text-gray-500">
+        जमीन नोंदवही माहिती भरा
+    </p>
+
+    <form method="POST" enctype="multipart/form-data" class="mt-6">
+        {% csrf_token %}
+
+        <!-- LOCATION SECTION -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
+
+            <div>
+                <label class="font-semibold">जिल्हा</label>
+                <select id="district" name="district" required class="w-full border p-2 rounded focus:ring-2 focus:ring-green-400">
+                    <option value="">जिल्हा निवडा</option>
+                </select>
+            </div>
+
+            <div>
+                <label class="font-semibold">तालुका</label>
+                <select id="taluka" name="taluka" required class="w-full border p-2 rounded focus:ring-2 focus:ring-green-400">
+                    <option value="">तालुका निवडा</option>
+                </select>
+            </div>
+
+            <div>
+                <label class="font-semibold">गाव</label>
+                <select id="village" name="village" required class="w-full border p-2 rounded focus:ring-2 focus:ring-green-400">
+                    <option value="">गाव निवडा</option>
+                </select>
+            </div>
+
+            <div>
+                <label class="font-semibold">गट क्रमांक</label>
+                <select id="gut" name="gut_number" required class="w-full border p-2 rounded focus:ring-2 focus:ring-green-400">
+                    <option value="">गट क्रमांक निवडा</option>
+                </select>
+            </div>
+
+        </div>
+
+        <!-- FARMER & LAND DETAILS -->
+        <div class="mt-6 border-t pt-4">
+            <h3 class="font-semibold text-sm text-gray-700 mb-3">शेतकरी माहिती</h3>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+
+                <div>
+                    <label class="font-semibold">शेतकऱ्याचे नाव</label>
+                    <input type="text" name="farmer_name" required
+                        placeholder="पूर्ण नाव टाका"
+                        class="w-full border p-2 rounded focus:ring-2 focus:ring-green-400">
+                </div>
+
+                <div>
+                    <label class="font-semibold">आकारणी</label>
+                    <input type="text" id="aakarnee" name="aakarnee"
+                        placeholder="उदा. 10.1.1"
+                        class="w-full border p-2 rounded focus:ring-2 focus:ring-green-400">
+                </div>
+
+                <div>
+                    <label class="font-semibold">मूल्यांकन प्रकार (Assessment Type)</label>
+                    <select id="assessment_type" name="assessment_type" class="w-full border p-2 rounded focus:ring-2 focus:ring-green-400">
+                        <option value="">गाव निवडल्यावर दिसेल</option>
+                    </select>
+                </div>
+
+                <div class="md:col-span-2">
+                    <label class="font-semibold">लागू दर (Rate Applied)</label>
+                    <input type="text" id="rate_applied" name="rate_applied"
+                        placeholder="आकारणी भरल्यावर आपोआप भरेल"
+                        class="w-full border p-2 rounded bg-gray-50 focus:ring-2 focus:ring-green-400">
+                </div>
+
+                <div class="md:col-span-2">
+                    <label class="font-semibold">७/१२ उतारा अपलोड करा (PDF/Image)</label>
+                    <input type="file" name="document_712" accept=".pdf,.jpg,.jpeg,.png"
+                        class="w-full border p-2 rounded bg-white focus:ring-2 focus:ring-green-400">
+                    <p class="text-xs text-gray-400 mt-1">फक्त PDF, JPG, PNG फाइल चालतील</p>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- BUTTONS -->
+        <div class="flex gap-3 mt-6">
+            <button type="button" onclick="window.history.back()"
+                class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded">
+                ← मागे जा
+            </button>
+            <button type="submit"
+                class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded">
+                सबमिट करा
+            </button>
+        </div>
+
+    </form>
+
+</div>
+
+<script>
+
+let fullData = [];
+
+fetch('/api/location-data/')
+    .then(res => res.json())
+    .then(data => {
+        fullData = data.villages;
+        let districtDropdown = document.getElementById("district");
+        let districts = [...new Set(fullData.map(v => v.district))];
+        districts.forEach(d => {
+            if (d) districtDropdown.add(new Option(d, d));
+        });
+    });
+
+document.getElementById("district").addEventListener("change", function () {
+    let district = this.value;
+    let talukaDropdown = document.getElementById("taluka");
+    let villageDropdown = document.getElementById("village");
+    let gutDropdown = document.getElementById("gut");
+
+    talukaDropdown.innerHTML = '<option value="">तालुका निवडा</option>';
+    villageDropdown.innerHTML = '<option value="">गाव निवडा</option>';
+    gutDropdown.innerHTML = '<option value="">गट क्रमांक निवडा</option>';
+    document.getElementById("assessment_type").innerHTML = '<option value="">गाव निवडल्यावर दिसेल</option>';
+
+    let talukas = [...new Set(fullData.filter(v => v.district === district).map(v => v.taluka))];
+    talukas.forEach(t => talukaDropdown.add(new Option(t, t)));
+});
+
+document.getElementById("taluka").addEventListener("change", function () {
+    let taluka = this.value;
+    let district = document.getElementById("district").value;
+    let villageDropdown = document.getElementById("village");
+    let gutDropdown = document.getElementById("gut");
+
+    villageDropdown.innerHTML = '<option value="">गाव निवडा</option>';
+    gutDropdown.innerHTML = '<option value="">गट क्रमांक निवडा</option>';
+    document.getElementById("assessment_type").innerHTML = '<option value="">गाव निवडल्यावर दिसेल</option>';
+
+    let uniqueVillages = [...new Set(
+        fullData.filter(v => v.taluka === taluka && v.district === district).map(v => v.village_name)
+    )];
+    uniqueVillages.forEach(v => villageDropdown.add(new Option(v, v)));
+});
+
+document.getElementById("village").addEventListener("change", function () {
+    let village = this.value;
+    let gutDropdown = document.getElementById("gut");
+    let assessmentDropdown = document.getElementById("assessment_type");
+
+    gutDropdown.innerHTML = '<option value="">गट क्रमांक निवडा</option>';
+    assessmentDropdown.innerHTML = '<option value="">गाव निवडल्यावर दिसेल</option>';
+    if (!village) return;
+
+    fetch(`/api/gut-numbers/${village}/`)
+        .then(res => res.json())
+        .then(data => {
+            data.gut_numbers.forEach(g => gutDropdown.add(new Option(g, g)));
+        });
+
+    fetch(`/api/assessment-types/${village}/`)
+        .then(res => res.json())
+        .then(data => {
+            data.assessment_types.forEach(t => assessmentDropdown.add(new Option(t, t)));
+        });
+});
+
+let rateData = [];
+
+document.getElementById("assessment_type").addEventListener("change", function () {
+    let village = document.getElementById("village").value;
+    let assessmentType = this.value;
+    rateData = [];
+    document.getElementById("rate_applied").value = '';
+    if (!village || !assessmentType) return;
+
+    fetch(`/api/rates/${village}/${encodeURIComponent(assessmentType)}/`)
+        .then(res => res.json())
+        .then(data => {
+            rateData = data.rates;
+            applyRate();
+        });
+});
+
+document.getElementById("aakarnee").addEventListener("input", applyRate);
+
+function applyRate() {
+    let aakarnee = parseFloat(document.getElementById("aakarnee").value);
+    let rateField = document.getElementById("rate_applied");
+    rateField.value = '';
+    if (isNaN(aakarnee) || rateData.length === 0) return;
+
+    let match = rateData.find(r => aakarnee >= r.assessment_range_min && aakarnee <= r.assessment_range_max);
+    if (match) {
+        rateField.value = match.rate;
+    }
+}
+
+</script>
+
+{% endblock %}

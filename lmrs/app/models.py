@@ -15,14 +15,17 @@ class ReadyReckonerRate(models.Model):
     assessment_range_min = models.DecimalField(max_digits=10, decimal_places=2)
     assessment_range_max = models.DecimalField(max_digits=10, decimal_places=2)
     rate = models.DecimalField(max_digits=15, decimal_places=2)
-    unit = models.CharField(max_length=50)
+    UNIT_CHOICES = [
+        ('हेक्टर', 'हेक्टर'),
+        ('चौ. मीटर', 'चौ. मीटर'),
+    ]
+    unit = models.CharField(max_length=50, choices=UNIT_CHOICES)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return f"{self.village} | {self.assessment_type} | {self.assessment_range_min}-{self.assessment_range_max} | ₹{self.rate}"
-    
     
 
 class LandRecord712(models.Model):
@@ -31,8 +34,10 @@ class LandRecord712(models.Model):
     village = models.CharField(max_length=150)
     gut_number = models.CharField(max_length=50)
     farmer_name = models.CharField(max_length=200)
+    assessment_type = models.CharField(max_length=200, null=True, blank=True)
     aakarnee = models.CharField(max_length=100, null=True, blank=True)  # आकारणी e.g. 10.1.1
     rate_applied = models.CharField(max_length=100, null=True, blank=True)  # e.g. 2298500, 685000, 1000
+    document_712 = models.FileField(upload_to='712_documents/', null=True, blank=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
 

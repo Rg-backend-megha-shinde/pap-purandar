@@ -9,6 +9,10 @@ urlpatterns = [
     # path('tools/', views.tools, name='tools'),
     path('', views.home, name='home'),
     path('tools/inspection/', views.inspection_form),
+    path('tools/ready-reckoner/', views.ready_reckoner),
+    path('tools/712/', views.land_record_712),
+    path('api/assessment-types/<str:village>/', views.get_assessment_types_by_village),
+    path('api/rates/<str:village>/<str:assessment_type>/', views.get_rates_by_village_assessment),
     path('api/villages-list/', views.get_villages_list, name='villages_list'),
     path('api/all-villages-compensation/', views.get_all_villages_compensation, name='all_villages_compensation'),
     path('api/all-villages-farmers/', views.get_all_villages_farmers, name='all_villages_farmers'),
@@ -16,6 +20,7 @@ urlpatterns = [
     path('api/gut-numbers/<str:village_name>/', views.get_gut_numbers_by_village, name='gut_numbers'),
     path('api/gut-stats/<str:village_name>/<str:gut_number>/', views.get_gut_stats, name='gut_stats'),
     path('api/layer-bounds/<str:layer_name>/', views.get_layer_bounds, name='layer_bounds'),
+    #APIS to fetch location data and Gut numbers for dropdowns
     path("api/location-data/", views.get_location_data),
     path("api/gut-numbers/<str:village>/", views.get_gut_numbers),
 ]

@@ -1,14 +1,10 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.http import JsonResponse
 from django.db import connection
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import authenticate, login, logout
-from django.shortcuts import render, redirect
-from django.http import JsonResponse
-from django.http import HttpResponse
-from django.http import HttpResponseForbidden
-from django.http import JsonResponse
-from django.db import connection
+from django.http import HttpResponse, HttpResponseForbidden
+from app.models import ReadyReckonerRate, LandRecord712
 
 def api_login_required(view_func):
     def wrapper(request, *args, **kwargs):
@@ -24,6 +20,61 @@ def home(request):
 @login_required
 def tools(request):
     return render(request, 'tools.html')
+
+@login_required
+def ready_reckoner(request):
+    if request.method == "POST":
+        ReadyReckonerRate.objects.create(
+            district=request.POST.get('district'),
+            taluka=request.POST.get('taluka'),
+            village=request.POST.get('village'),
+            assessment_type=request.POST.get('assessment_type'),
+            assessment_range_min=request.POST.get('assessment_range_min'),
+            assessment_range_max=request.POST.get('assessment_range_max'),
+            rate=request.POST.get('rate'),
+            unit=request.POST.get('unit'),
+        )
+        return redirect('/tools/ready-reckoner/')
+    return render(request, "readyreckoner.html")
+
+@login_required
+def land_record_712(request):
+    if request.method == "POST":
+        LandRecord712.objects.create(
+            district=request.POST.get('district'),
+            taluka=request.POST.get('taluka'),
+            village=request.POST.get('village'),
+            gut_number=request.POST.get('gut_number'),
+            farmer_name=request.POST.get('farmer_name'),
+            assessment_type=request.POST.get('assessment_type'),
+            aakarnee=request.POST.get('aakarnee'),
+            rate_applied=request.POST.get('rate_applied'),
+            document_712=request.FILES.get('document_712'),
+        )
+        return redirect('/tools/712/')
+    return render(request, "landrecord.html")
+
+@api_login_required
+def get_assessment_types_by_village(request, village):
+    types = list(
+        ReadyReckonerRate.objects.filter(village=village)
+        .values_list('assessment_type', flat=True)
+        .distinct()
+    )
+    return JsonResponse({'assessment_types': types})
+
+@api_login_required
+def get_rates_by_village_assessment(request, village, assessment_type):
+    records = list(
+        ReadyReckonerRate.objects.filter(village=village, assessment_type=assessment_type)
+        .values('assessment_range_min', 'assessment_range_max', 'rate', 'unit')
+    )
+    # Convert Decimal to float for JSON serialization
+    for r in records:
+        r['assessment_range_min'] = float(r['assessment_range_min'])
+        r['assessment_range_max'] = float(r['assessment_range_max'])
+        r['rate'] = float(r['rate'])
+    return JsonResponse({'rates': records})
 
 @login_required
 def inspection_form(request):
