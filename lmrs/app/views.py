@@ -30,7 +30,7 @@ def tools(request):
 @login_required
 def ready_reckoner(request):
     if request.method == "POST":
-        ReadyReckonerRate.objects.create(
+        obj = ReadyReckonerRate.objects.create(
             district=request.POST.get('district'),
             taluka=request.POST.get('taluka'),
             village=request.POST.get('village'),
@@ -40,13 +40,39 @@ def ready_reckoner(request):
             rate=request.POST.get('rate'),
             unit=request.POST.get('unit'),
         )
-        return redirect('/tools/ready-reckoner/')
+        return redirect('ready_reckoner_list')
     return render(request, "readyreckoner.html")
+
+@login_required
+def ready_reckoner_list(request):
+    records = ReadyReckonerRate.objects.all().order_by('-id')
+    return render(request, 'ready_reckoner_list.html', {'records': records})
+
+@login_required
+def edit_ready_reckoner(request, id):
+    obj = ReadyReckonerRate.objects.get(id=id)
+    if request.method == "POST":
+        obj.district = request.POST.get('district')
+        obj.taluka = request.POST.get('taluka')
+        obj.village = request.POST.get('village')
+        obj.assessment_type = request.POST.get('assessment_type')
+        obj.assessment_range_min = request.POST.get('assessment_range_min')
+        obj.assessment_range_max = request.POST.get('assessment_range_max')
+        obj.rate = request.POST.get('rate')
+        obj.unit = request.POST.get('unit')
+        obj.save()
+        return redirect('edit_ready_reckoner', id=obj.id)
+    return render(request, 'edit_ready_reckoner.html', {'obj': obj})
+
+@login_required
+def delete_ready_reckoner(request, id):
+    ReadyReckonerRate.objects.filter(id=id).delete()
+    return redirect('ready_reckoner_list')
 
 @login_required
 def land_record_712(request):
     if request.method == "POST":
-        LandRecord712.objects.create(
+        obj = LandRecord712.objects.create(
             district=request.POST.get('district'),
             taluka=request.POST.get('taluka'),
             village=request.POST.get('village'),
@@ -57,8 +83,36 @@ def land_record_712(request):
             rate_applied=request.POST.get('rate_applied'),
             document_712=request.FILES.get('document_712'),
         )
-        return redirect('/tools/712/')
+        return redirect('land_record_712_list')
     return render(request, "landrecord.html")
+
+@login_required
+def land_record_712_list(request):
+    records = LandRecord712.objects.all().order_by('-id')
+    return render(request, 'land_record_712_list.html', {'records': records})
+
+@login_required
+def edit_land_record_712(request, id):
+    obj = LandRecord712.objects.get(id=id)
+    if request.method == "POST":
+        obj.district = request.POST.get('district')
+        obj.taluka = request.POST.get('taluka')
+        obj.village = request.POST.get('village')
+        obj.gut_number = request.POST.get('gut_number')
+        obj.farmer_name = request.POST.get('farmer_name')
+        obj.assessment_type = request.POST.get('assessment_type')
+        obj.aakarnee = request.POST.get('aakarnee')
+        obj.rate_applied = request.POST.get('rate_applied')
+        if request.FILES.get('document_712'):
+            obj.document_712 = request.FILES.get('document_712')
+        obj.save()
+        return redirect('edit_land_record_712', id=obj.id)
+    return render(request, 'edit_land_record_712.html', {'obj': obj})
+
+@login_required
+def delete_land_record_712(request, id):
+    LandRecord712.objects.filter(id=id).delete()
+    return redirect('land_record_712_list')
 
 @api_login_required
 def get_assessment_types_by_village(request, village):
