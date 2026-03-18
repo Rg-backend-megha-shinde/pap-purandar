@@ -33,11 +33,6 @@ class TreeDetail(models.Model):
 
     def __str__(self):
         return self.name or "Tree"
-# Create your models here.
-
-
-from django.db import models
-
 
 class ReadyReckonerRate(models.Model):
     district = models.CharField(max_length=100)
