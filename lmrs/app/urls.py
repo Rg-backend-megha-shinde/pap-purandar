@@ -20,6 +20,7 @@ urlpatterns = [
     path('tools/712/edit/<int:id>/', views.edit_land_record_712, name='edit_land_record_712'),
     path('tools/712/delete/<int:id>/', views.delete_land_record_712, name='delete_land_record_712'),
     path('api/assessment-types/<str:village>/', views.get_assessment_types_by_village),
+    path('api/years/<str:village>/<str:assessment_type>/', views.get_years_by_village_assessment),
     path('api/rates/<str:village>/<str:assessment_type>/', views.get_rates_by_village_assessment),
     path('api/villages-list/', views.get_villages_list, name='villages_list'),
     path('api/all-villages-compensation/', views.get_all_villages_compensation, name='all_villages_compensation'),
