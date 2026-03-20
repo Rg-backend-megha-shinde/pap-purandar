@@ -3,36 +3,35 @@
 {% block content %}
 
 <div class="max-w-6xl mx-auto bg-white p-6 mt-6 rounded shadow">
+    <div class="flex justify-between items-center mb-4">
+        <h2 class="text-xl font-bold">
+            तपासणी नोंदी (Inspection Records)
+        </h2>
 
-    <div class="max-w-6xl mx-auto bg-white p-6 mt-6 rounded shadow">
+        <div class="flex gap-2">
+            <a href="{% url 'download_all_inspections_csv' %}"
+               class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded">
+                ⬇️ डाउनलोड
+            </a>
 
-        <!-- HEADER + BUTTON INLINE -->
-        <div class="flex justify-between items-center mb-4">
-
-            <h2 class="text-xl font-bold">
-                तपासणी नोंदी (Inspection Records)
-            </h2>
-
-            <div class="flex gap-2">
-                <a href="{% url 'download_all_inspections_csv' %}" class="bg-green-600 text-white px-4 py-2 rounded">
-                    ⬇️ डाउनलोड
-                </a>
-
-                <a href="{% url 'inspection_form' %}" class="bg-gray-800 text-white px-4 py-2 rounded">
-                    ➕ नवीन तपासणी नोंद
-                </a>
-            </div>
-
+            <a href="{% url 'inspection_form' %}"
+               class="bg-gray-800 hover:bg-gray-900 text-white px-4 py-2 rounded">
+                ➕ नवीन तपासणी नोंद
+            </a>
         </div>
-        <table id="inspectionTable" class="display w-full text-sm">
+    </div>
 
+    <div class="overflow-x-auto">
+        <table id="inspectionTable" class="display w-full text-sm text-left" style="width:100%;">
             <thead>
                 <tr>
-                    <th>ID</th>
-                    <th>गाव</th>
-                    <th>गट क्रमांक</th>
-                    <th>अधिकारी</th>
-                    <th>दिनांक</th>
+                    <th>क्रमांक</th>
+                    <th>नाव</th>
+                    <th>लांबी</th>
+                    <th>रुंदी</th>
+                    <th>घेर</th>
+                    <th>उंची</th>
+                    <th>तयार केले</th>
                     <th>Actions</th>
                 </tr>
             </thead>
@@ -40,54 +39,63 @@
             <tbody>
                 {% for item in inspections %}
                 <tr>
-                    <td>{{ item.id }}</td>
-                    <td>{{ item.village }}</td>
-                    <td>{{ item.gut_number }}</td>
-                    <td>{{ item.officer }}</td>
-                    <td>{{ item.date }}</td>
-                    <td class="flex gap-2">
-
-                        <!-- Edit -->
-                        <a href="{% url 'edit_inspection' item.id %}" title="Edit"
-                            class="flex items-center justify-center w-8 h-8 bg-blue-600 hover:bg-blue-700 text-white rounded">
+                    <td>{{ item.plot|default:"-" }}</td>
+                    <td>{{ item.name|default:"-" }}</td>
+                    <td>{{ item.length|default:"-" }}</td>
+                    <td>{{ item.width|default:"-" }}</td>
+                    <td>{{ item.girth|default:"-" }}</td>
+                    <td>{{ item.height|default:"-" }}</td>
+                    <td>{{ item.inspection.user.username|default:"-" }}</td>
+                    <td style="white-space: nowrap; text-align: left;">
+                        <a href="{% url 'edit_inspection' item.inspection.id %}"
+                           title="Edit"
+                           style="display:inline-flex; align-items:center; justify-content:center; width:32px; height:32px; background:#2563eb; color:white; border-radius:6px; margin-right:6px; text-decoration:none;">
                             ✏️
                         </a>
 
-                        <!-- Delete -->
-                        <a href="{% url 'delete_inspection' item.id %}" title="Delete"
-                            class="flex items-center justify-center w-8 h-8 bg-red-600 hover:bg-red-700 text-white rounded"
-                            onclick="return confirm('तुम्हाला ही नोंद हटवायची आहे का?');">
-                            🗑
+                        <a href="{% url 'delete_inspection' item.inspection.id %}"
+                           title="Delete"
+                           style="display:inline-flex; align-items:center; justify-content:center; width:32px; height:32px; background:#dc2626; color:white; border-radius:6px; text-decoration:none;"
+                           onclick="return confirm('तुम्हाला ही नोंद हटवायची आहे का?');">
+                            🗑️
                         </a>
-
-
                     </td>
                 </tr>
                 {% endfor %}
             </tbody>
-
         </table>
-
     </div>
+</div>
 
-    <!-- DataTables JS -->
-    <script>
-        $(document).ready(function () {
+<script>
+    $(document).ready(function () {
+        if ($.fn.DataTable.isDataTable('#inspectionTable')) {
+            $('#inspectionTable').DataTable().destroy();
+        }
 
-            setTimeout(() => {
-                let table = $('#inspectionTable');
-
-                if ($.fn.DataTable.isDataTable(table)) {
-                    table.DataTable().destroy();
+        $('#inspectionTable').DataTable({
+            pageLength: 5,
+            lengthMenu: [5, 10, 25, 50],
+            ordering: true,
+            searching: true,
+            autoWidth: false,
+            columnDefs: [
+                { targets: -1, orderable: false, searchable: false }
+            ],
+            language: {
+                emptyTable: "कोणतीही नोंद उपलब्ध नाही.",
+                zeroRecords: "जुळणारी नोंद सापडली नाही.",
+                search: "Search:",
+                lengthMenu: "Show _MENU_ entries",
+                info: "Showing _START_ to _END_ of _TOTAL_ entries",
+                infoEmpty: "Showing 0 to 0 of 0 entries",
+                paginate: {
+                    previous: "Previous",
+                    next: "Next"
                 }
-
-                table.DataTable({
-                    pageLength: 5
-                });
-
-            }, 100);
-
+            }
         });
-    </script>
+    });
+</script>
 
-    {% endblock %}
+{% endblock %}

@@ -4,6 +4,10 @@ from django.db import connection
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import authenticate, login, logout
 from .models import Inspection, TreeDetail, ReadyReckonerRate, LandRecord712, FarmerNames
+from django.shortcuts import render, redirect
+from django.http import HttpResponseForbidden
+from django.db import connection
+from .models import Inspection, TreeDetail, ReadyReckonerRate, LandRecord712, TreeMaster
 import csv
 
 def api_login_required(view_func):
@@ -1787,8 +1791,8 @@ def get_gut_numbers(request, village):
 
 @login_required
 def inspection_list(request):
-    inspections = Inspection.objects.all().order_by('-id')
-    return render(request, 'inspection_list.html', {'inspections': inspections})
+    inspections = TreeDetail.objects.select_related('inspection', 'inspection__user').all()
+    return render(request, "inspection_list.html", {"inspections": inspections})
 
 @login_required
 def delete_inspection(request, id):
@@ -1854,12 +1858,12 @@ def edit_inspection(request, id):
 def download_all_inspections_csv(request):
     inspections = Inspection.objects.all().order_by('id')
 
-    response = HttpResponse(content_type='text/csv')
+    response = HttpResponse(content_type='text/csv; charset=utf-8-sig')
     response['Content-Disposition'] = 'attachment; filename="all_inspections.csv"'
+    response.write('\ufeff')  # Excel UTF-8 BOM fix
 
     writer = csv.writer(response)
 
-    # Header
     writer.writerow([
         'Inspection ID',
         'District',
@@ -1876,7 +1880,6 @@ def download_all_inspections_csv(request):
         'Height'
     ])
 
-    # Data
     for inspection in inspections:
         trees = TreeDetail.objects.filter(inspection=inspection)
 
@@ -1898,7 +1901,6 @@ def download_all_inspections_csv(request):
                     tree.height
                 ])
         else:
-            # If no tree data
             writer.writerow([
                 inspection.id,
                 inspection.district,
@@ -1907,7 +1909,24 @@ def download_all_inspections_csv(request):
                 inspection.gut_number,
                 inspection.officer,
                 inspection.date,
-                '', '', '', '', '', ''
+                '',
+                '',
+                '',
+                '',
+                '',
+                ''
             ])
 
     return response
+
+@login_required
+def get_tree_master_list(request):
+    try:
+        trees = TreeMaster.objects.all().values("id", "tree_name_marathi")
+        return JsonResponse({"trees": list(trees)})
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
+    
+@login_required
+def asset_creation(request):
+    return render(request, "asset_creation.html")
