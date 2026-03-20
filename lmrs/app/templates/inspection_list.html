@@ -46,7 +46,7 @@
                     <td>{{ item.girth|default:"-" }}</td>
                     <td>{{ item.height|default:"-" }}</td>
                     <td>{{ item.inspection.user.username|default:"-" }}</td>
-                    <td style="white-space: nowrap; text-align: center;">
+                    <td style="white-space: nowrap; text-align: left;">
                         <a href="{% url 'edit_inspection' item.inspection.id %}"
                            title="Edit"
                            style="display:inline-flex; align-items:center; justify-content:center; width:32px; height:32px; background:#2563eb; color:white; border-radius:6px; margin-right:6px; text-decoration:none;">
