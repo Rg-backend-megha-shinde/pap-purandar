@@ -39,4 +39,5 @@ urlpatterns = [
     path('inspection/delete/<int:id>/', views.delete_inspection, name='delete_inspection'),
     path('inspections/download-all/', views.download_all_inspections_csv, name='download_all_inspections_csv'),
     path('api/tree-master/', views.get_tree_master_list, name='get_tree_master_list'),
+    path("tools/asset-creation/", views.asset_creation, name="asset_creation"),
 ]
