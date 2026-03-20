@@ -1923,3 +1923,7 @@ def get_tree_master_list(request):
         return JsonResponse({"trees": list(trees)})
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
+    
+@login_required
+def asset_creation(request):
+    return render(request, "asset_creation.html")

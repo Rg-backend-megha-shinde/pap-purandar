@@ -8,46 +8,40 @@
 
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
 
-        <!-- 🔥 INSPECTION TOOL CARD -->
+        <!-- INSPECTION TOOL CARD -->
         <div onclick="goToInspection()"
             class="cursor-pointer bg-white rounded-xl shadow-md hover:shadow-xl transition p-5 border border-gray-200">
 
-            <!-- ICON -->
             <div class="flex items-center gap-3 mb-3">
                 <div class="bg-blue-100 text-blue-600 p-3 rounded-full text-xl">
                     📝
                 </div>
                 <h3 class="text-lg font-semibold">
-                    Inspection Tool
+                    तपासणी साधन
                 </h3>
             </div>
 
-            <!-- DESCRIPTION -->
             <p class="text-sm text-gray-600 leading-relaxed">
-                वापर करून क्षेत्र तपासणी पंचनामा डिजिटल पद्धतीने भरा.  
+                क्षेत्र तपासणी पंचनामा डिजिटल पद्धतीने भरा.
                 झाडे, मालमत्ता आणि मोजमाप नोंदवण्यासाठी वापरा.
             </p>
 
-            <!-- FEATURES -->
             <ul class="mt-4 text-xs text-gray-500 space-y-1">
-                <li>✔ Field inspection entry</li>
-                <li>✔ Tree & asset recording</li>
+                <li>✔ तपासणी नोंद</li>
+                <li>✔ झाडे व मालमत्ता नोंद</li>
                 <li>✔ Dynamic row entry</li>
                 <li>✔ अधिकारी वापरासाठी</li>
             </ul>
 
-            <!-- BUTTON -->
             <button class="mt-4 w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">
-                Open Tool →
+                उघडा →
             </button>
-
         </div>
 
         <!-- READY RECKONER CARD -->
         <div onclick="goToReadyReckoner()"
             class="cursor-pointer bg-white rounded-xl shadow-md hover:shadow-xl transition p-5 border border-gray-200">
 
-            <!-- ICON -->
             <div class="flex items-center gap-3 mb-3">
                 <div class="bg-orange-100 text-orange-600 p-3 rounded-full text-xl">
                     💰
@@ -57,13 +51,11 @@
                 </h3>
             </div>
 
-            <!-- DESCRIPTION -->
             <p class="text-sm text-gray-600 leading-relaxed">
                 जमिनीचा बाजारभाव दर डिजिटल पद्धतीने नोंदवा.
                 मूल्यांकन प्रकार, श्रेणी आणि दर भरण्यासाठी वापरा.
             </p>
 
-            <!-- FEATURES -->
             <ul class="mt-4 text-xs text-gray-500 space-y-1">
                 <li>✔ मूल्यांकन प्रकार नोंद</li>
                 <li>✔ आकारणी श्रेणी</li>
@@ -71,18 +63,15 @@
                 <li>✔ तलाठी वापरासाठी</li>
             </ul>
 
-            <!-- BUTTON -->
             <button class="mt-4 w-full bg-orange-600 text-white py-2 rounded hover:bg-orange-700">
                 उघडा →
             </button>
-
         </div>
 
         <!-- 7/12 ENTRY CARD -->
         <div onclick="goTo712()"
             class="cursor-pointer bg-white rounded-xl shadow-md hover:shadow-xl transition p-5 border border-gray-200">
 
-            <!-- ICON -->
             <div class="flex items-center gap-3 mb-3">
                 <div class="bg-green-100 text-green-600 p-3 rounded-full text-xl">
                     📋
@@ -92,13 +81,11 @@
                 </h3>
             </div>
 
-            <!-- DESCRIPTION -->
             <p class="text-sm text-gray-600 leading-relaxed">
                 जमिनीचा ७/१२ उतारा माहिती डिजिटल पद्धतीने भरा.
                 गट नंबर, शेतकरी नाव आणि आकारणी नोंदवण्यासाठी वापरा.
             </p>
 
-            <!-- FEATURES -->
             <ul class="mt-4 text-xs text-gray-500 space-y-1">
                 <li>✔ गट नंबर नोंद</li>
                 <li>✔ शेतकरी माहिती</li>
@@ -106,11 +93,39 @@
                 <li>✔ तलाठी वापरासाठी</li>
             </ul>
 
-            <!-- BUTTON -->
             <button class="mt-4 w-full bg-green-600 text-white py-2 rounded hover:bg-green-700">
                 उघडा →
             </button>
+        </div>
 
+        <!-- ASSET CREATION TOOL CARD -->
+        <div onclick="goToAssetCreation()"
+            class="cursor-pointer bg-white rounded-xl shadow-md hover:shadow-xl transition p-5 border border-gray-200">
+
+            <div class="flex items-center gap-3 mb-3">
+                <div class="bg-purple-100 text-purple-600 p-3 rounded-full text-xl">
+                    🏗️
+                </div>
+                <h3 class="text-lg font-semibold">
+                    मालमत्ता निर्मिती साधन
+                </h3>
+            </div>
+
+            <p class="text-sm text-gray-600 leading-relaxed">
+                मालमत्ता नोंद डिजिटल पद्धतीने तयार करा.
+                बांधकाम, संरचना, मोजमाप आणि मालमत्तेची माहिती नोंदवण्यासाठी वापरा.
+            </p>
+
+            <ul class="mt-4 text-xs text-gray-500 space-y-1">
+                <li>✔ मालमत्ता नोंद</li>
+                <li>✔ संरचना तपशील</li>
+                <li>✔ मोजमाप नोंद</li>
+                <li>✔ अधिकारी वापरासाठी</li>
+            </ul>
+
+            <button class="mt-4 w-full bg-purple-600 text-white py-2 rounded hover:bg-purple-700">
+                उघडा →
+            </button>
         </div>
 
         <!-- FUTURE CARD -->
@@ -126,11 +141,17 @@
 function goToInspection() {
     window.location.href = "/tools/inspection/";
 }
+
 function goToReadyReckoner() {
     window.location.href = "/tools/ready-reckoner/";
 }
+
 function goTo712() {
     window.location.href = "/tools/712/";
+}
+
+function goToAssetCreation() {
+    window.location.href = "/tools/asset-creation/";
 }
 </script>
 
