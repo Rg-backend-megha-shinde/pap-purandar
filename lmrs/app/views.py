@@ -9,7 +9,7 @@ from django.http import HttpResponse
 from django.http import HttpResponseForbidden
 from django.http import JsonResponse
 from django.db import connection
-from .models import Inspection, TreeDetail, ReadyReckonerRate, LandRecord712
+from .models import Inspection, TreeDetail, ReadyReckonerRate, LandRecord712, TreeMaster
 import csv
 
 def api_login_required(view_func):
@@ -1929,3 +1929,11 @@ def download_all_inspections_csv(request):
             ])
 
     return response
+
+@login_required
+def get_tree_master_list(request):
+    try:
+        trees = TreeMaster.objects.all().values("id", "tree_name_marathi")
+        return JsonResponse({"trees": list(trees)})
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
