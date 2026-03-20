@@ -5,10 +5,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth import authenticate, login, logout
 from .models import Inspection, TreeDetail, ReadyReckonerRate, LandRecord712, FarmerNames
 from django.shortcuts import render, redirect
-from django.http import JsonResponse
-from django.http import HttpResponse
 from django.http import HttpResponseForbidden
-from django.http import JsonResponse
 from django.db import connection
 from .models import Inspection, TreeDetail, ReadyReckonerRate, LandRecord712, TreeMaster
 import csv
@@ -1791,8 +1788,8 @@ def get_gut_numbers(request, village):
 
 @login_required
 def inspection_list(request):
-    inspections = Inspection.objects.all().order_by('-id')
-    return render(request, 'inspection_list.html', {'inspections': inspections})
+    inspections = TreeDetail.objects.select_related('inspection', 'inspection__user').all()
+    return render(request, "inspection_list.html", {"inspections": inspections})
 
 @login_required
 def delete_inspection(request, id):

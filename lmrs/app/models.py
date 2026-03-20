@@ -166,7 +166,6 @@ class FarmerNames(models.Model):
 
     def __str__(self):
         return f"{self.farmer_name} - Gut {self.land_record.gut_number}"
-        return f"{self.village} - Gut {self.gut_number} - {self.farmer_name}"
     
 
 class TreeMaster(models.Model):
