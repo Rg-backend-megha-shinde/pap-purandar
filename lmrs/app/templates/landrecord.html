@@ -218,9 +218,13 @@ document.getElementById("assessment_type").addEventListener("change", function (
                 data.years.forEach(y => yearDropdown.add(new Option(y, y)));
                 // Select first year by default
                 yearDropdown.selectedIndex = 0;
+                // Fetch rates immediately after populating years
+                fetchRates();
             } else {
                 // Keep default year if no years found
                 yearDropdown.innerHTML = '<option value="20252026" selected>20252026</option>';
+                // Try to fetch rates with default year
+                fetchRates();
             }
         });
 });
@@ -235,15 +239,26 @@ function fetchRates() {
     const village = document.getElementById("village").value;
     const assessmentType = document.getElementById("assessment_type").value;
     const year = document.getElementById("rate_year_select").value;
+    
+    console.log('Fetching rates for:', { village, assessmentType, year });
+    
     rateData = [];
     document.getElementById('rate_applied').value = '';
-    if (!village || !assessmentType || !year) return;
+    
+    if (!village || !assessmentType || !year) {
+        console.log('Missing required fields for rate fetch');
+        return;
+    }
 
     fetch(`/api/rates/${village}/${encodeURIComponent(assessmentType)}/?year=${encodeURIComponent(year)}`)
         .then(res => res.json())
         .then(data => {
+            console.log('Rates fetched:', data.rates);
             rateData = data.rates;
             applyRate();
+        })
+        .catch(error => {
+            console.error('Error fetching rates:', error);
         });
 }
 
@@ -252,10 +267,24 @@ document.getElementById("aakarnee").addEventListener("input", applyRate);
 function applyRate() {
     let aakarnee = parseFloat(document.getElementById("aakarnee").value);
     let rateField = document.getElementById("rate_applied");
+    
+    console.log('Applying rate for aakarnee:', aakarnee, 'Available rates:', rateData);
+    
     rateField.value = '';
-    if (isNaN(aakarnee) || rateData.length === 0) return;
+    
+    if (isNaN(aakarnee) || rateData.length === 0) {
+        console.log('Cannot apply rate - invalid aakarnee or no rate data');
+        return;
+    }
+    
     let match = rateData.find(r => aakarnee >= r.assessment_range_min && aakarnee <= r.assessment_range_max);
-    if (match) rateField.value = match.rate;
+    
+    if (match) {
+        console.log('Rate matched:', match);
+        rateField.value = match.rate;
+    } else {
+        console.log('No matching rate found for aakarnee:', aakarnee);
+    }
 }
 
 function resetAssessmentAndYear() {
