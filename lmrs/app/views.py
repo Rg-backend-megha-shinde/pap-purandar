@@ -1855,12 +1855,12 @@ def edit_inspection(request, id):
 def download_all_inspections_csv(request):
     inspections = Inspection.objects.all().order_by('id')
 
-    response = HttpResponse(content_type='text/csv')
+    response = HttpResponse(content_type='text/csv; charset=utf-8-sig')
     response['Content-Disposition'] = 'attachment; filename="all_inspections.csv"'
+    response.write('\ufeff')  # Excel UTF-8 BOM fix
 
     writer = csv.writer(response)
 
-    # Header
     writer.writerow([
         'Inspection ID',
         'District',
@@ -1877,7 +1877,6 @@ def download_all_inspections_csv(request):
         'Height'
     ])
 
-    # Data
     for inspection in inspections:
         trees = TreeDetail.objects.filter(inspection=inspection)
 
@@ -1899,7 +1898,6 @@ def download_all_inspections_csv(request):
                     tree.height
                 ])
         else:
-            # If no tree data
             writer.writerow([
                 inspection.id,
                 inspection.district,
@@ -1908,7 +1906,12 @@ def download_all_inspections_csv(request):
                 inspection.gut_number,
                 inspection.officer,
                 inspection.date,
-                '', '', '', '', '', ''
+                '',
+                '',
+                '',
+                '',
+                '',
+                ''
             ])
 
     return response
