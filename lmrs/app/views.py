@@ -1,15 +1,9 @@
 from django.shortcuts import render, redirect
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from django.db import connection
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import authenticate, login, logout
-from django.shortcuts import render, redirect
-from django.http import JsonResponse
-from django.http import HttpResponse
-from django.http import HttpResponseForbidden
-from django.http import JsonResponse
-from django.db import connection
-from .models import Inspection, TreeDetail, ReadyReckonerRate, LandRecord712
+from .models import Inspection, TreeDetail, ReadyReckonerRate, LandRecord712, FarmerNames
 import csv
 
 def api_login_required(view_func):
@@ -31,9 +25,11 @@ def tools(request):
 def ready_reckoner(request):
     if request.method == "POST":
         obj = ReadyReckonerRate.objects.create(
+            user=request.user,
             district=request.POST.get('district'),
             taluka=request.POST.get('taluka'),
             village=request.POST.get('village'),
+            year=request.POST.get('year'),
             assessment_type=request.POST.get('assessment_type'),
             assessment_range_min=request.POST.get('assessment_range_min'),
             assessment_range_max=request.POST.get('assessment_range_max'),
@@ -55,6 +51,7 @@ def edit_ready_reckoner(request, id):
         obj.district = request.POST.get('district')
         obj.taluka = request.POST.get('taluka')
         obj.village = request.POST.get('village')
+        obj.year = request.POST.get('year')
         obj.assessment_type = request.POST.get('assessment_type')
         obj.assessment_range_min = request.POST.get('assessment_range_min')
         obj.assessment_range_max = request.POST.get('assessment_range_max')
@@ -73,41 +70,52 @@ def delete_ready_reckoner(request, id):
 def land_record_712(request):
     if request.method == "POST":
         obj = LandRecord712.objects.create(
+            user=request.user,
             district=request.POST.get('district'),
             taluka=request.POST.get('taluka'),
             village=request.POST.get('village'),
             gut_number=request.POST.get('gut_number'),
-            farmer_name=request.POST.get('farmer_name'),
+            date=request.POST.get('date') or None,
             assessment_type=request.POST.get('assessment_type'),
             aakarnee=request.POST.get('aakarnee'),
             rate_applied=request.POST.get('rate_applied'),
+            rate_year=request.POST.get('rate_year'),
             document_712=request.FILES.get('document_712'),
         )
+        for name in request.POST.getlist('farmer_name[]'):
+            if name.strip():
+                FarmerNames.objects.create(land_record=obj, farmer_name=name.strip())
         return redirect('land_record_712_list')
     return render(request, "landrecord.html")
 
 @login_required
 def land_record_712_list(request):
-    records = LandRecord712.objects.all().order_by('-id')
+    records = LandRecord712.objects.prefetch_related('farmers').all().order_by('-id')
     return render(request, 'land_record_712_list.html', {'records': records})
 
 @login_required
 def edit_land_record_712(request, id):
     obj = LandRecord712.objects.get(id=id)
+    farmers = FarmerNames.objects.filter(land_record=obj)
     if request.method == "POST":
         obj.district = request.POST.get('district')
         obj.taluka = request.POST.get('taluka')
         obj.village = request.POST.get('village')
         obj.gut_number = request.POST.get('gut_number')
-        obj.farmer_name = request.POST.get('farmer_name')
+        obj.date = request.POST.get('date') or None
         obj.assessment_type = request.POST.get('assessment_type')
         obj.aakarnee = request.POST.get('aakarnee')
         obj.rate_applied = request.POST.get('rate_applied')
+        obj.rate_year = request.POST.get('rate_year')
         if request.FILES.get('document_712'):
             obj.document_712 = request.FILES.get('document_712')
         obj.save()
+        farmers.delete()
+        for name in request.POST.getlist('farmer_name[]'):
+            if name.strip():
+                FarmerNames.objects.create(land_record=obj, farmer_name=name.strip())
         return redirect('edit_land_record_712', id=obj.id)
-    return render(request, 'edit_land_record_712.html', {'obj': obj})
+    return render(request, 'edit_land_record_712.html', {'obj': obj, 'farmers': farmers})
 
 @login_required
 def delete_land_record_712(request, id):
@@ -124,25 +132,38 @@ def get_assessment_types_by_village(request, village):
     return JsonResponse({'assessment_types': types})
 
 @api_login_required
-def get_rates_by_village_assessment(request, village, assessment_type):
-    records = list(
+def get_years_by_village_assessment(request, village, assessment_type):
+    years = list(
         ReadyReckonerRate.objects.filter(village=village, assessment_type=assessment_type)
-        .values('assessment_range_min', 'assessment_range_max', 'rate', 'unit')
+        .order_by('-year').values_list('year', flat=True).distinct()
     )
-    # Convert Decimal to float for JSON serialization
+    return JsonResponse({'years': years})
+
+@api_login_required
+def get_rates_by_village_assessment(request, village, assessment_type):
+    requested_year = request.GET.get('year')
+    qs = ReadyReckonerRate.objects.filter(village=village, assessment_type=assessment_type)
+    if requested_year:
+        year = requested_year if qs.filter(year=requested_year).exists() else (
+            qs.order_by('-year').values_list('year', flat=True).first()
+        )
+    else:
+        year = qs.order_by('-year').values_list('year', flat=True).first()
+    records = list(
+        qs.filter(year=year)
+        .values('assessment_range_min', 'assessment_range_max', 'rate', 'unit', 'year')
+    )
     for r in records:
         r['assessment_range_min'] = float(r['assessment_range_min'])
         r['assessment_range_max'] = float(r['assessment_range_max'])
         r['rate'] = float(r['rate'])
-    return JsonResponse({'rates': records})
+    return JsonResponse({'rates': records, 'year': year})
 
 @login_required
 def inspection_form(request):
-
     if request.method == "POST":
-
-        # ✅ 1. Save main inspection
         inspection = Inspection.objects.create(
+            user=request.user,
             district=request.POST.get("district"),
             taluka=request.POST.get("taluka"),
             village=request.POST.get("village"),
@@ -150,18 +171,14 @@ def inspection_form(request):
             officer=request.POST.get("officer"),
             date=request.POST.get("date"),
         )
-
-        # ✅ 2. Get table data (multiple rows)
         plots = request.POST.getlist("plot[]")
         names = request.POST.getlist("name[]")
         lengths = request.POST.getlist("length[]")
         widths = request.POST.getlist("width[]")
         girths = request.POST.getlist("girth[]")
         heights = request.POST.getlist("height[]")
-
-        # ✅ 3. Save each row
         for i in range(len(names)):
-            if names[i]:  # skip empty rows
+            if names[i]:
                 TreeDetail.objects.create(
                     inspection=inspection,
                     plot=plots[i],
@@ -171,35 +188,16 @@ def inspection_form(request):
                     girth=girths[i] or None,
                     height=heights[i] or None,
                 )
-
-       
         return redirect('inspection_list')
-
     return render(request, "inspection_form.html")
 
 @login_required
 def dashboard(request):
     if not request.user.is_superuser:
-        return redirect('/tools/')  
-
+        return redirect('/tools/')
     return render(request, "dashboard.html")
 
 
-# @login_required
-# def tools(request):
-#     if request.method == "POST":
-#         print(request.POST)  # debug
-
-#     return render(request, "tools.html")
-
-# @login_required
-# def tools(request):
-#     return HttpResponse("Tools OK")
-#to fetch the district
-# Views moved or removed because they were redundant (using GeoServer WMS instead)
-
-
-@api_login_required
 @api_login_required
 def get_villages_list(request):
     """Fetch list of all villages"""
@@ -214,7 +212,6 @@ def get_villages_list(request):
 
 
 
-@api_login_required
 @api_login_required
 def get_all_villages_compensation(request):
     """Fetch compensation for all villages"""
@@ -269,7 +266,6 @@ def get_all_villages_compensation(request):
         
         return JsonResponse({'villages': villages_data})
 @api_login_required
-@api_login_required
 def get_all_villages_farmers(request):
     """Fetch affected farmers count for all villages"""
     with connection.cursor() as cursor:
@@ -320,7 +316,6 @@ def get_all_villages_farmers(request):
         villages_data.sort(key=lambda x: x['farmers_count'], reverse=True)
         
         return JsonResponse({'villages': villages_data})
-@api_login_required
 @api_login_required
 def get_project_stats(request):
     """Fetch project statistics - supports optional village filter"""
@@ -921,7 +916,6 @@ def get_project_stats(request):
             'land_classification': land_classification
         })
 @api_login_required
-@api_login_required
 def get_gut_numbers_by_village(request, village_name):
     """Fetch list of gut numbers for a specific village"""
     with connection.cursor() as cursor:
@@ -940,7 +934,6 @@ def get_gut_numbers_by_village(request, village_name):
             traceback.print_exc()
             return JsonResponse({'error': str(e), 'gut_numbers': []}, status=500)
 
-@api_login_required
 @api_login_required
 def get_gut_stats(request, village_name, gut_number):
     """Fetch statistics for a specific gut"""
@@ -1265,7 +1258,6 @@ def get_gut_stats(request, village_name, gut_number):
             import traceback
             traceback.print_exc()
             return JsonResponse({'error': str(e)}, status=500)
-@api_login_required
 @api_login_required
 def get_layer_bounds(request, layer_name):
     """Fetch bounding box for any layer"""
@@ -1790,23 +1782,10 @@ def get_gut_numbers(request, village):
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
 
-# @login_required
-# def inspection_list(request):
-#     inspections = Inspection.objects.all().order_by('-id')
-#     return render(request, 'inspection_list.html', {'inspections': inspections})
-
 @login_required
 def inspection_list(request):
-    try:
-        inspections = Inspection.objects.all().order_by('-id')
-        return render(request, 'inspection_list.html', {'inspections': inspections})
-
-    except Exception as e:
-        import traceback
-        print("🔥 ERROR IN inspection_list VIEW:")
-        traceback.print_exc()   # prints full error in terminal
-
-        return HttpResponse(f"Error occurred: {str(e)}")
+    inspections = Inspection.objects.all().order_by('-id')
+    return render(request, 'inspection_list.html', {'inspections': inspections})
 
 @login_required
 def delete_inspection(request, id):

@@ -34,7 +34,7 @@
                 <td>{{ item.id }}</td>
                 <td>{{ item.village }}</td>
                 <td>{{ item.gut_number }}</td>
-                <td>{{ item.farmer_name }}</td>
+                <td>{% for f in item.farmers.all %}{{ f.farmer_name }}{% if not forloop.last %}<br>{% endif %}{% endfor %}</td>
                 <td>{{ item.assessment_type }}</td>
                 <td>{{ item.aakarnee }}</td>
                 <td>{{ item.rate_applied }}</td>

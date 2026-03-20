@@ -54,18 +54,21 @@
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
 
-                <div>
-                    <label class="font-semibold">शेतकऱ्याचे नाव</label>
-                    <input type="text" name="farmer_name" required
-                        placeholder="पूर्ण नाव टाका"
-                        class="w-full border p-2 rounded focus:ring-2 focus:ring-green-400">
-                </div>
-
-                <div>
-                    <label class="font-semibold">आकारणी</label>
-                    <input type="text" id="aakarnee" name="aakarnee"
-                        placeholder="उदा. 10.1.1"
-                        class="w-full border p-2 rounded focus:ring-2 focus:ring-green-400">
+                <div class="md:col-span-2">
+                    <label class="font-semibold">शेतकऱ्यांची नावे</label>
+                    <div id="farmer-list" class="space-y-2 mt-1">
+                        <div class="flex gap-2">
+                            <input type="text" name="farmer_name[]" required
+                                placeholder="पूर्ण नाव टाका"
+                                class="w-full border p-2 rounded focus:ring-2 focus:ring-green-400">
+                            <button type="button" onclick="removeFarmer(this)"
+                                class="text-red-500 font-bold px-2 hidden">✕</button>
+                        </div>
+                    </div>
+                    <button type="button" onclick="addFarmer()"
+                        class="mt-2 text-sm text-green-700 border border-green-500 px-3 py-1 rounded hover:bg-green-50">
+                        + शेतकरी जोडा
+                    </button>
                 </div>
 
                 <div>
@@ -73,6 +76,20 @@
                     <select id="assessment_type" name="assessment_type" class="w-full border p-2 rounded focus:ring-2 focus:ring-green-400">
                         <option value="">गाव निवडल्यावर दिसेल</option>
                     </select>
+                </div>
+
+                <div>
+                    <label class="font-semibold">रेडी रेकनर वर्ष</label>
+                    <select id="rate_year_select" name="rate_year" class="w-full border p-2 rounded focus:ring-2 focus:ring-green-400">
+                        <option value="">मूल्यांकन प्रकार निवडल्यावर दिसेल</option>
+                    </select>
+                </div>
+
+                <div class="md:col-span-2">
+                    <label class="font-semibold">आकारणी</label>
+                    <input type="text" id="aakarnee" name="aakarnee"
+                        placeholder="उदा. 10.1.1"
+                        class="w-full border p-2 rounded focus:ring-2 focus:ring-green-400">
                 </div>
 
                 <div class="md:col-span-2">
@@ -136,7 +153,7 @@ document.getElementById("district").addEventListener("change", function () {
     talukaDropdown.innerHTML = '<option value="">तालुका निवडा</option>';
     villageDropdown.innerHTML = '<option value="">गाव निवडा</option>';
     gutDropdown.innerHTML = '<option value="">गट क्रमांक निवडा</option>';
-    document.getElementById("assessment_type").innerHTML = '<option value="">गाव निवडल्यावर दिसेल</option>';
+    resetAssessmentAndYear();
 
     let talukas = [...new Set(fullData.filter(v => v.district === district).map(v => v.taluka))];
     talukas.forEach(t => talukaDropdown.add(new Option(t, t)));
@@ -150,7 +167,7 @@ document.getElementById("taluka").addEventListener("change", function () {
 
     villageDropdown.innerHTML = '<option value="">गाव निवडा</option>';
     gutDropdown.innerHTML = '<option value="">गट क्रमांक निवडा</option>';
-    document.getElementById("assessment_type").innerHTML = '<option value="">गाव निवडल्यावर दिसेल</option>';
+    resetAssessmentAndYear();
 
     let uniqueVillages = [...new Set(
         fullData.filter(v => v.taluka === taluka && v.district === district).map(v => v.village_name)
@@ -161,10 +178,9 @@ document.getElementById("taluka").addEventListener("change", function () {
 document.getElementById("village").addEventListener("change", function () {
     let village = this.value;
     let gutDropdown = document.getElementById("gut");
-    let assessmentDropdown = document.getElementById("assessment_type");
 
     gutDropdown.innerHTML = '<option value="">गट क्रमांक निवडा</option>';
-    assessmentDropdown.innerHTML = '<option value="">गाव निवडल्यावर दिसेल</option>';
+    resetAssessmentAndYear();
     if (!village) return;
 
     fetch(`/api/gut-numbers/${village}/`)
@@ -176,26 +192,48 @@ document.getElementById("village").addEventListener("change", function () {
     fetch(`/api/assessment-types/${village}/`)
         .then(res => res.json())
         .then(data => {
+            let assessmentDropdown = document.getElementById("assessment_type");
+            assessmentDropdown.innerHTML = '<option value="">मूल्यांकन प्रकार निवडा</option>';
             data.assessment_types.forEach(t => assessmentDropdown.add(new Option(t, t)));
         });
 });
 
-let rateData = [];
-
 document.getElementById("assessment_type").addEventListener("change", function () {
     let village = document.getElementById("village").value;
     let assessmentType = this.value;
-    rateData = [];
-    document.getElementById("rate_applied").value = '';
+    resetYearAndRate();
     if (!village || !assessmentType) return;
 
-    fetch(`/api/rates/${village}/${encodeURIComponent(assessmentType)}/`)
+    fetch(`/api/years/${village}/${encodeURIComponent(assessmentType)}/`)
+        .then(res => res.json())
+        .then(data => {
+            let yearDropdown = document.getElementById("rate_year_select");
+            yearDropdown.innerHTML = '<option value="">वर्ष निवडा</option>';
+            data.years.forEach(y => yearDropdown.add(new Option(y, y)));
+        });
+});
+
+document.getElementById("rate_year_select").addEventListener("change", function () {
+    fetchRates();
+});
+
+let rateData = [];
+
+function fetchRates() {
+    const village = document.getElementById("village").value;
+    const assessmentType = document.getElementById("assessment_type").value;
+    const year = document.getElementById("rate_year_select").value;
+    rateData = [];
+    document.getElementById('rate_applied').value = '';
+    if (!village || !assessmentType || !year) return;
+
+    fetch(`/api/rates/${village}/${encodeURIComponent(assessmentType)}/?year=${encodeURIComponent(year)}`)
         .then(res => res.json())
         .then(data => {
             rateData = data.rates;
             applyRate();
         });
-});
+}
 
 document.getElementById("aakarnee").addEventListener("input", applyRate);
 
@@ -204,11 +242,33 @@ function applyRate() {
     let rateField = document.getElementById("rate_applied");
     rateField.value = '';
     if (isNaN(aakarnee) || rateData.length === 0) return;
-
     let match = rateData.find(r => aakarnee >= r.assessment_range_min && aakarnee <= r.assessment_range_max);
-    if (match) {
-        rateField.value = match.rate;
-    }
+    if (match) rateField.value = match.rate;
+}
+
+function resetAssessmentAndYear() {
+    document.getElementById("assessment_type").innerHTML = '<option value="">गाव निवडल्यावर दिसेल</option>';
+    resetYearAndRate();
+}
+
+function resetYearAndRate() {
+    document.getElementById("rate_year_select").innerHTML = '<option value="">मूल्यांकन प्रकार निवडल्यावर दिसेल</option>';
+    rateData = [];
+    document.getElementById('rate_applied').value = '';
+}
+
+function addFarmer() {
+    const list = document.getElementById('farmer-list');
+    const row = document.createElement('div');
+    row.className = 'flex gap-2';
+    row.innerHTML = `<input type="text" name="farmer_name[]" placeholder="पूर्ण नाव टाका" class="w-full border p-2 rounded focus:ring-2 focus:ring-green-400">
+        <button type="button" onclick="removeFarmer(this)" class="text-red-500 font-bold px-2">✕</button>`;
+    list.appendChild(row);
+}
+
+function removeFarmer(btn) {
+    const list = document.getElementById('farmer-list');
+    if (list.children.length > 1) btn.parentElement.remove();
 }
 
 </script>
