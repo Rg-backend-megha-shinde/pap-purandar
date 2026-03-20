@@ -8,7 +8,7 @@
         रेडी रेकनर दर संपादन
     </h2>
 
-    <form method="POST" class="mt-6">
+    <form method="POST" enctype="multipart/form-data" class="mt-6">
         {% csrf_token %}
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
@@ -63,6 +63,22 @@
                     </select>
                 </div>
 
+                <div class="md:col-span-2">
+                    <label class="font-semibold">दस्तऐवज अपलोड करा (Document Upload)</label>
+                    {% if obj.document %}
+                        <div class="mb-2 p-2 bg-gray-50 rounded border">
+                            <span class="text-sm text-gray-600">सध्याचा दस्तऐवज: </span>
+                            <a href="{{ obj.document.url }}" target="_blank" class="text-blue-600 hover:underline text-sm">
+                                {{ obj.document.name|slice:"28:" }}
+                            </a>
+                        </div>
+                    {% endif %}
+                    <input type="file" id="document" name="document" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                        class="w-full border p-2 rounded bg-white focus:ring-2 focus:ring-orange-400">
+                    <p class="text-xs text-gray-400 mt-1">PDF, JPG, PNG, DOC फाइल चालतील (कमाल 5MB)</p>
+                    <p id="file-error" class="text-xs text-red-500 mt-1 hidden"></p>
+                </div>
+
             </div>
         </div>
 
@@ -83,5 +99,26 @@
     </form>
 
 </div>
+
+<script>
+// File size validation (5MB max)
+document.getElementById("document").addEventListener("change", function() {
+    const fileInput = this;
+    const fileError = document.getElementById("file-error");
+    const maxSize = 5 * 1024 * 1024; // 5MB in bytes
+    
+    if (fileInput.files.length > 0) {
+        const file = fileInput.files[0];
+        
+        if (file.size > maxSize) {
+            fileError.textContent = "फाइल साइझ 5MB पेक्षा जास्त आहे. कृपया लहान फाइल निवडा.";
+            fileError.classList.remove("hidden");
+            fileInput.value = ""; // Clear the file input
+        } else {
+            fileError.classList.add("hidden");
+        }
+    }
+});
+</script>
 
 {% endblock %}

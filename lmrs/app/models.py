@@ -88,6 +88,12 @@ class ReadyReckonerRate(models.Model):
 
     unit = models.CharField(max_length=50, choices=UNIT_CHOICES)
 
+    document = models.FileField(
+        upload_to='ready_reckoner_documents/',
+        null=True,
+        blank=True
+    )
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

@@ -81,7 +81,7 @@
                 <div>
                     <label class="font-semibold">रेडी रेकनर वर्ष</label>
                     <select id="rate_year_select" name="rate_year" class="w-full border p-2 rounded focus:ring-2 focus:ring-green-400">
-                        <option value="">मूल्यांकन प्रकार निवडल्यावर दिसेल</option>
+                        <option value="20252026" selected>20252026</option>
                     </select>
                 </div>
 
@@ -201,15 +201,27 @@ document.getElementById("village").addEventListener("change", function () {
 document.getElementById("assessment_type").addEventListener("change", function () {
     let village = document.getElementById("village").value;
     let assessmentType = this.value;
-    resetYearAndRate();
+    
+    // Clear rate data and applied rate
+    rateData = [];
+    document.getElementById('rate_applied').value = '';
+    
     if (!village || !assessmentType) return;
 
     fetch(`/api/years/${village}/${encodeURIComponent(assessmentType)}/`)
         .then(res => res.json())
         .then(data => {
             let yearDropdown = document.getElementById("rate_year_select");
-            yearDropdown.innerHTML = '<option value="">वर्ष निवडा</option>';
-            data.years.forEach(y => yearDropdown.add(new Option(y, y)));
+            if (data.years && data.years.length > 0) {
+                yearDropdown.innerHTML = '';
+                // Show years exactly as they are in the database
+                data.years.forEach(y => yearDropdown.add(new Option(y, y)));
+                // Select first year by default
+                yearDropdown.selectedIndex = 0;
+            } else {
+                // Keep default year if no years found
+                yearDropdown.innerHTML = '<option value="20252026" selected>20252026</option>';
+            }
         });
 });
 
@@ -252,7 +264,7 @@ function resetAssessmentAndYear() {
 }
 
 function resetYearAndRate() {
-    document.getElementById("rate_year_select").innerHTML = '<option value="">मूल्यांकन प्रकार निवडल्यावर दिसेल</option>';
+    document.getElementById("rate_year_select").innerHTML = '<option value="20252026" selected>20252026</option>';
     rateData = [];
     document.getElementById('rate_applied').value = '';
 }
