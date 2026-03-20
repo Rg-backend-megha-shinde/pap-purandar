@@ -86,12 +86,26 @@
 
                 <tbody id="tableBody">
                     <tr>
-                        <td class="border"><input name="plot[]" class="w-full p-1 text-center"></td>
-                        <td class="border"><input name="name[]" class="w-full p-1 text-center"></td>
-                        <td class="border"><input name="length[]" class="w-full p-1 text-center"></td>
-                        <td class="border"><input name="width[]" class="w-full p-1 text-center"></td>
-                        <td class="border"><input name="girth[]" class="w-full p-1 text-center"></td>
-                        <td class="border"><input name="height[]" class="w-full p-1 text-center"></td>
+                        <td class="border">
+                            <input name="plot[]" class="w-full p-1 text-center">
+                        </td>
+                        <td class="border">
+                            <select name="name[]" class="tree-name-dropdown w-full p-1 text-center">
+                                <option value="">झाड निवडा</option>
+                            </select>
+                        </td>
+                        <td class="border">
+                            <input name="length[]" class="w-full p-1 text-center">
+                        </td>
+                        <td class="border">
+                            <input name="width[]" class="w-full p-1 text-center">
+                        </td>
+                        <td class="border">
+                            <input name="girth[]" class="w-full p-1 text-center">
+                        </td>
+                        <td class="border">
+                            <input name="height[]" class="w-full p-1 text-center">
+                        </td>
                     </tr>
                 </tbody>
 
@@ -101,49 +115,46 @@
         <!-- BUTTONS -->
         <div class="flex gap-3 mt-6">
 
-    <!-- Add Row -->
-    <button type="button" onclick="addRow()"
-        class="flex items-center gap-2 bg-gray-700 hover:bg-gray-800 text-white px-4 py-2 rounded-md shadow-sm transition duration-200">
+            <!-- Add Row -->
+            <button type="button" onclick="addRow()"
+                class="flex items-center gap-2 bg-gray-700 hover:bg-gray-800 text-white px-4 py-2 rounded-md shadow-sm transition duration-200">
 
-        <!-- Plus Icon -->
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none"
-            viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M12 4v16m8-8H4" />
-        </svg>
+                <!-- Plus Icon -->
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                    stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                </svg>
 
-        ओळ जोडा
-    </button>
+                ओळ जोडा
+            </button>
 
-    <!-- Submit -->
-    <button type="submit"
-        class="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-md shadow-sm transition duration-200">
+            <!-- Submit -->
+            <button type="submit"
+                class="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-md shadow-sm transition duration-200">
 
-        <!-- Save Icon -->
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none"
-            viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M5 13l4 4L19 7" />
-        </svg>
+                <!-- Save Icon -->
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                    stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                </svg>
 
-        सबमिट करा
-    </button>
+                सबमिट करा
+            </button>
 
-    <!-- View Records -->
-    <a href="{% url 'inspection_list' %}"
-        class="flex items-center gap-2 bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-md shadow-sm transition duration-200">
+            <!-- View Records -->
+            <a href="{% url 'inspection_list' %}"
+                class="flex items-center gap-2 bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-md shadow-sm transition duration-200">
 
-        <!-- List Icon -->
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none"
-            viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M4 6h16M4 12h16M4 18h16" />
-        </svg>
+                <!-- List Icon -->
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                    stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
 
-        नोंदी पहा
-    </a>
+                नोंदी पहा
+            </a>
 
-</div>
+        </div>
 
     </form>
 
@@ -153,7 +164,7 @@
 <script>
 
     let fullData = [];
-
+    let treeMasterList = [];
     // Load Data
     fetch('/api/location-data/')
         .then(res => res.json())
@@ -168,7 +179,13 @@
             });
         });
 
-
+    // Load Tree Master Data
+    fetch('/api/tree-master/')
+        .then(res => res.json())
+        .then(data => {
+            treeMasterList = data.trees || [];
+            populateTreeDropdowns();
+        });
     // District → Taluka
     document.getElementById("district").addEventListener("change", function () {
 
@@ -238,15 +255,47 @@
     function addRow() {
         let row = `
     <tr>
-        <td class="border"><input name="plot[]" class="w-full p-1 text-center"></td>
-        <td class="border"><input name="name[]" class="w-full p-1 text-center"></td>
-        <td class="border"><input name="length[]" class="w-full p-1 text-center"></td>
-        <td class="border"><input name="width[]" class="w-full p-1 text-center"></td>
-        <td class="border"><input name="girth[]" class="w-full p-1 text-center"></td>
-        <td class="border"><input name="height[]" class="w-full p-1 text-center"></td>
+        <td class="border">
+            <input name="plot[]" class="w-full p-1 text-center">
+        </td>
+        <td class="border">
+            <select name="name[]" class="tree-name-dropdown w-full p-1 text-center">
+                <option value="">झाड निवडा</option>
+            </select>
+        </td>
+        <td class="border">
+            <input name="length[]" class="w-full p-1 text-center">
+        </td>
+        <td class="border">
+            <input name="width[]" class="w-full p-1 text-center">
+        </td>
+        <td class="border">
+            <input name="girth[]" class="w-full p-1 text-center">
+        </td>
+        <td class="border">
+            <input name="height[]" class="w-full p-1 text-center">
+        </td>
     </tr>`;
 
         document.getElementById("tableBody").insertAdjacentHTML('beforeend', row);
+        populateTreeDropdowns();
+    }
+    function populateTreeDropdowns() {
+        const dropdowns = document.querySelectorAll('.tree-name-dropdown');
+
+        dropdowns.forEach(dropdown => {
+            const selectedValue = dropdown.value;
+            dropdown.innerHTML = '<option value="">झाड निवडा</option>';
+
+            treeMasterList.forEach(tree => {
+                const option = document.createElement("option");
+                option.value = tree.tree_name_marathi;
+                option.text = tree.tree_name_marathi;
+                dropdown.appendChild(option);
+            });
+
+            dropdown.value = selectedValue;
+        });
     }
 
 </script>

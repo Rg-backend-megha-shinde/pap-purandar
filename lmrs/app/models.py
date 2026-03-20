@@ -166,3 +166,14 @@ class FarmerNames(models.Model):
 
     def __str__(self):
         return f"{self.farmer_name} - Gut {self.land_record.gut_number}"
+    
+
+class TreeMaster(models.Model):
+    tree_name_marathi = models.CharField(max_length=200, unique=True)
+
+    class Meta:
+        db_table = "tree_master"
+        ordering = ["tree_name_marathi"]
+
+    def __str__(self):
+        return self.tree_name_marathi

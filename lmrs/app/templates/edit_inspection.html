@@ -11,51 +11,65 @@
     <form method="POST" class="mt-6">
         {% csrf_token %}
 
-        <!-- LOCATION -->
+        <!-- LOCATION SECTION -->
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
 
             <div>
-                <label>जिल्हा</label>
-                <input type="text" name="district" value="{{ inspection.district }}" class="w-full border p-2 rounded">
+                <label class="font-semibold">जिल्हा</label>
+                <select id="district" name="district" required
+                    class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-400">
+                    <option value="">जिल्हा निवडा</option>
+                </select>
             </div>
 
             <div>
-                <label>तालुका</label>
-                <input type="text" name="taluka" value="{{ inspection.taluka }}" class="w-full border p-2 rounded">
+                <label class="font-semibold">तालुका</label>
+                <select id="taluka" name="taluka" required
+                    class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-400">
+                    <option value="">तालुका निवडा</option>
+                </select>
             </div>
 
             <div>
-                <label>गाव</label>
-                <input type="text" name="village" value="{{ inspection.village }}" class="w-full border p-2 rounded">
+                <label class="font-semibold">गाव</label>
+                <select id="village" name="village" required
+                    class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-400">
+                    <option value="">गाव निवडा</option>
+                </select>
             </div>
 
             <div>
-                <label>गट क्रमांक</label>
-                <input type="text" name="survey" value="{{ inspection.gut_number }}" class="w-full border p-2 rounded">
+                <label class="font-semibold">गट क्रमांक</label>
+                <select id="gut" name="survey" required
+                    class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-400">
+                    <option value="">गट क्रमांक निवडा</option>
+                </select>
             </div>
 
         </div>
 
-        <!-- OFFICER -->
+        <!-- OFFICER + DATE -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
 
             <div>
-                <label>अधिकारी नाव</label>
-                <input type="text" name="officer" value="{{ inspection.officer }}" class="w-full border p-2 rounded">
+                <label class="font-semibold">अधिकारी नाव</label>
+                <input type="text" name="officer" value="{{ inspection.officer }}"
+                    class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-400">
             </div>
 
             <div>
-                <label>दिनांक</label>
-                <input type="date" name="date" value="{{ inspection.date|date:'Y-m-d' }}" class="w-full border p-2 rounded">
+                <label class="font-semibold">दिनांक</label>
+                <input type="date" name="date" value="{{ inspection.date|date:'Y-m-d' }}"
+                    class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-400">
             </div>
 
         </div>
 
-        <!-- TREE TABLE -->
+        <!-- TABLE -->
         <div class="overflow-x-auto mt-6">
-            <table class="w-full border text-sm text-center">
+            <table class="w-full border text-sm text-center border-collapse">
 
-                <thead class="bg-gray-200">
+                <thead class="bg-gray-200 font-semibold">
                     <tr>
                         <th class="border p-2">क्रमांक</th>
                         <th class="border p-2">नाव</th>
@@ -67,33 +81,69 @@
                 </thead>
 
                 <tbody id="tableBody">
-
                     {% for tree in tree_details %}
                     <tr>
-                        <td class="border"><input name="plot[]" value="{{ tree.plot }}" class="w-full text-center"></td>
-                        <td class="border"><input name="name[]" value="{{ tree.name }}" class="w-full text-center"></td>
-                        <td class="border"><input name="length[]" value="{{ tree.length }}" class="w-full text-center"></td>
-                        <td class="border"><input name="width[]" value="{{ tree.width }}" class="w-full text-center"></td>
-                        <td class="border"><input name="girth[]" value="{{ tree.girth }}" class="w-full text-center"></td>
-                        <td class="border"><input name="height[]" value="{{ tree.height }}" class="w-full text-center"></td>
+                        <td class="border">
+                            <input name="plot[]" value="{{ tree.plot }}" class="w-full p-1 text-center">
+                        </td>
+                        <td class="border">
+                            <select name="name[]" class="tree-name-dropdown w-full p-1 text-center"
+                                data-selected="{{ tree.name }}">
+                                <option value="">झाड निवडा</option>
+                            </select>
+                        </td>
+                        <td class="border">
+                            <input name="length[]" value="{{ tree.length }}" class="w-full p-1 text-center">
+                        </td>
+                        <td class="border">
+                            <input name="width[]" value="{{ tree.width }}" class="w-full p-1 text-center">
+                        </td>
+                        <td class="border">
+                            <input name="girth[]" value="{{ tree.girth }}" class="w-full p-1 text-center">
+                        </td>
+                        <td class="border">
+                            <input name="height[]" value="{{ tree.height }}" class="w-full p-1 text-center">
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td class="border">
+                            <input name="plot[]" class="w-full p-1 text-center">
+                        </td>
+                        <td class="border">
+                            <select name="name[]" class="tree-name-dropdown w-full p-1 text-center">
+                                <option value="">झाड निवडा</option>
+                            </select>
+                        </td>
+                        <td class="border">
+                            <input name="length[]" class="w-full p-1 text-center">
+                        </td>
+                        <td class="border">
+                            <input name="width[]" class="w-full p-1 text-center">
+                        </td>
+                        <td class="border">
+                            <input name="girth[]" class="w-full p-1 text-center">
+                        </td>
+                        <td class="border">
+                            <input name="height[]" class="w-full p-1 text-center">
+                        </td>
                     </tr>
                     {% endfor %}
-
                 </tbody>
 
             </table>
         </div>
 
         <!-- BUTTONS -->
-        <div class="flex gap-3 mt-4">
+        <div class="flex gap-3 mt-6">
 
             <button type="button" onclick="addRow()"
-                class="bg-gray-700 text-white px-4 py-2 rounded">
+                class="flex items-center gap-2 bg-gray-700 hover:bg-gray-800 text-white px-4 py-2 rounded-md shadow-sm transition duration-200">
                 + ओळ जोडा
             </button>
 
             <button type="submit"
-                class="bg-green-600 text-white px-6 py-2 rounded">
+                class="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-5 py-2 rounded-md shadow-sm transition duration-200">
                 अपडेट करा
             </button>
 
@@ -103,21 +153,172 @@
 
 </div>
 
-<!-- JS -->
 <script>
-function addRow() {
-    let row = `
-    <tr>
-        <td class="border"><input name="plot[]" class="w-full text-center"></td>
-        <td class="border"><input name="name[]" class="w-full text-center"></td>
-        <td class="border"><input name="length[]" class="w-full text-center"></td>
-        <td class="border"><input name="width[]" class="w-full text-center"></td>
-        <td class="border"><input name="girth[]" class="w-full text-center"></td>
-        <td class="border"><input name="height[]" class="w-full text-center"></td>
-    </tr>`;
-    
-    document.getElementById("tableBody").insertAdjacentHTML('beforeend', row);
-}
+    let fullData = [];
+    let treeMasterList = [];
+
+    const selectedDistrict = "{{ inspection.district|escapejs }}";
+    const selectedTaluka = "{{ inspection.taluka|escapejs }}";
+    const selectedVillage = "{{ inspection.village|escapejs }}";
+    const selectedGut = "{{ inspection.gut_number|escapejs }}";
+
+    // Load location data
+    fetch('/api/location-data/')
+        .then(res => res.json())
+        .then(data => {
+            fullData = data.villages || [];
+
+            let districtDropdown = document.getElementById("district");
+            let districts = [...new Set(fullData.map(v => v.district))];
+
+            districtDropdown.innerHTML = '<option value="">जिल्हा निवडा</option>';
+            districts.forEach(d => {
+                if (d) {
+                    districtDropdown.add(new Option(d, d));
+                }
+            });
+
+            if (selectedDistrict) {
+                districtDropdown.value = selectedDistrict;
+                loadTalukas(selectedDistrict, selectedTaluka, selectedVillage, selectedGut);
+            }
+        });
+
+    // Load tree master
+    fetch('/api/tree-master/')
+        .then(res => res.json())
+        .then(data => {
+            treeMasterList = data.trees || [];
+            populateTreeDropdowns();
+        });
+
+    function loadTalukas(district, preselectTaluka = "", preselectVillage = "", preselectGut = "") {
+        let talukaDropdown = document.getElementById("taluka");
+        let villageDropdown = document.getElementById("village");
+        let gutDropdown = document.getElementById("gut");
+
+        talukaDropdown.innerHTML = '<option value="">तालुका निवडा</option>';
+        villageDropdown.innerHTML = '<option value="">गाव निवडा</option>';
+        gutDropdown.innerHTML = '<option value="">गट क्रमांक निवडा</option>';
+
+        let talukas = [...new Set(
+            fullData.filter(v => v.district === district).map(v => v.taluka)
+        )];
+
+        talukas.forEach(t => {
+            if (t) talukaDropdown.add(new Option(t, t));
+        });
+
+        if (preselectTaluka) {
+            talukaDropdown.value = preselectTaluka;
+            loadVillages(district, preselectTaluka, preselectVillage, preselectGut);
+        }
+    }
+
+    function loadVillages(district, taluka, preselectVillage = "", preselectGut = "") {
+        let villageDropdown = document.getElementById("village");
+        let gutDropdown = document.getElementById("gut");
+
+        villageDropdown.innerHTML = '<option value="">गाव निवडा</option>';
+        gutDropdown.innerHTML = '<option value="">गट क्रमांक निवडा</option>';
+
+        let villages = fullData.filter(
+            v => v.district === district && v.taluka === taluka
+        );
+
+        let uniqueVillages = [...new Set(villages.map(v => v.village_name))];
+
+        uniqueVillages.forEach(v => {
+            if (v) villageDropdown.add(new Option(v, v));
+        });
+
+        if (preselectVillage) {
+            villageDropdown.value = preselectVillage;
+            loadGuts(preselectVillage, preselectGut);
+        }
+    }
+
+    function loadGuts(village, preselectGut = "") {
+        let gutDropdown = document.getElementById("gut");
+        gutDropdown.innerHTML = '<option value="">गट क्रमांक निवडा</option>';
+
+        if (!village) return;
+
+        fetch(`/api/gut-numbers/${village}/`)
+            .then(res => res.json())
+            .then(data => {
+                (data.gut_numbers || []).forEach(g => {
+                    gutDropdown.add(new Option(g, g));
+                });
+
+                if (preselectGut) {
+                    gutDropdown.value = preselectGut;
+                }
+            });
+    }
+
+    // district change
+    document.getElementById("district").addEventListener("change", function () {
+        loadTalukas(this.value);
+    });
+
+    // taluka change
+    document.getElementById("taluka").addEventListener("change", function () {
+        let district = document.getElementById("district").value;
+        loadVillages(district, this.value);
+    });
+
+    // village change
+    document.getElementById("village").addEventListener("change", function () {
+        loadGuts(this.value);
+    });
+
+    function addRow() {
+        let row = `
+        <tr>
+            <td class="border">
+                <input name="plot[]" class="w-full p-1 text-center">
+            </td>
+            <td class="border">
+                <select name="name[]" class="tree-name-dropdown w-full p-1 text-center">
+                    <option value="">झाड निवडा</option>
+                </select>
+            </td>
+            <td class="border">
+                <input name="length[]" class="w-full p-1 text-center">
+            </td>
+            <td class="border">
+                <input name="width[]" class="w-full p-1 text-center">
+            </td>
+            <td class="border">
+                <input name="girth[]" class="w-full p-1 text-center">
+            </td>
+            <td class="border">
+                <input name="height[]" class="w-full p-1 text-center">
+            </td>
+        </tr>`;
+
+        document.getElementById("tableBody").insertAdjacentHTML('beforeend', row);
+        populateTreeDropdowns();
+    }
+
+    function populateTreeDropdowns() {
+        const dropdowns = document.querySelectorAll('.tree-name-dropdown');
+
+        dropdowns.forEach(dropdown => {
+            const selectedValue = dropdown.getAttribute("data-selected") || dropdown.value || "";
+            dropdown.innerHTML = '<option value="">झाड निवडा</option>';
+
+            treeMasterList.forEach(tree => {
+                const option = document.createElement("option");
+                option.value = tree.tree_name_marathi;
+                option.text = tree.tree_name_marathi;
+                dropdown.appendChild(option);
+            });
+
+            dropdown.value = selectedValue;
+        });
+    }
 </script>
 
 {% endblock %}
