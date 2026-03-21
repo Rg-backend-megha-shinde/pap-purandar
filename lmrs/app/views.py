@@ -39,6 +39,7 @@ def ready_reckoner(request):
             assessment_range_max=request.POST.get('assessment_range_max'),
             rate=request.POST.get('rate'),
             unit=request.POST.get('unit'),
+            document=request.FILES.get('document'),
         )
         return redirect('ready_reckoner_list')
     return render(request, "readyreckoner.html")
@@ -61,6 +62,8 @@ def edit_ready_reckoner(request, id):
         obj.assessment_range_max = request.POST.get('assessment_range_max')
         obj.rate = request.POST.get('rate')
         obj.unit = request.POST.get('unit')
+        if request.FILES.get('document'):
+            obj.document = request.FILES.get('document')
         obj.save()
         return redirect('edit_ready_reckoner', id=obj.id)
     return render(request, 'edit_ready_reckoner.html', {'obj': obj})

@@ -12,7 +12,7 @@
         जमिनीचा बाजारभाव दर भरा
     </p>
 
-    <form method="POST" class="mt-6">
+    <form method="POST" enctype="multipart/form-data" class="mt-6">
         {% csrf_token %}
 
         <!-- LOCATION SECTION -->
@@ -85,10 +85,17 @@
                 <div>
                     <label class="font-semibold">एकक (Unit)</label>
                     <select name="unit" required class="w-full border p-2 rounded focus:ring-2 focus:ring-orange-400">
-                        <option value="">एकक निवडा</option>
-                        <option value="हेक्टर">हेक्टर</option>
+                        <option value="हेक्टर" selected>हेक्टर</option>
                         <option value="चौ. मीटर">चौ. मीटर</option>
                     </select>
+                </div>
+
+                <div class="md:col-span-2">
+                    <label class="font-semibold">दस्तऐवज अपलोड करा (Document Upload)</label>
+                    <input type="file" id="document" name="document" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                        class="w-full border p-2 rounded bg-white focus:ring-2 focus:ring-orange-400">
+                    <p class="text-xs text-gray-400 mt-1">PDF, JPG, PNG, DOC फाइल चालतील (कमाल 5MB)</p>
+                    <p id="file-error" class="text-xs text-red-500 mt-1 hidden"></p>
                 </div>
 
             </div>
@@ -152,6 +159,25 @@ document.getElementById("taluka").addEventListener("change", function () {
         fullData.filter(v => v.taluka === taluka && v.district === district).map(v => v.village_name)
     )];
     uniqueVillages.forEach(v => villageDropdown.add(new Option(v, v)));
+});
+
+// File size validation (5MB max)
+document.getElementById("document").addEventListener("change", function() {
+    const fileInput = this;
+    const fileError = document.getElementById("file-error");
+    const maxSize = 5 * 1024 * 1024; // 5MB in bytes
+    
+    if (fileInput.files.length > 0) {
+        const file = fileInput.files[0];
+        
+        if (file.size > maxSize) {
+            fileError.textContent = "फाइल साइझ 5MB पेक्षा जास्त आहे. कृपया लहान फाइल निवडा.";
+            fileError.classList.remove("hidden");
+            fileInput.value = ""; // Clear the file input
+        } else {
+            fileError.classList.add("hidden");
+        }
+    }
 });
 
 </script>

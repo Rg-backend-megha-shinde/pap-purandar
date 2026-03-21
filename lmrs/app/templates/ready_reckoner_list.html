@@ -27,6 +27,7 @@
                 <th>श्रेणी</th>
                 <th>दर ₹</th>
                 <th>एकक</th>
+                <th>दस्तऐवज</th>
                 <th>Actions</th>
             </tr>
         </thead>
@@ -42,6 +43,16 @@
                 <td>{{ item.assessment_range_min }}-{{ item.assessment_range_max }}</td>
                 <td>{{ item.rate }}</td>
                 <td>{{ item.unit }}</td>
+                <td>
+                    {% if item.document %}
+                        <a href="{{ item.document.url }}" target="_blank" 
+                           class="text-blue-600 hover:underline text-xs" title="Download Document">
+                            📄 View
+                        </a>
+                    {% else %}
+                        <span class="text-gray-400 text-xs">-</span>
+                    {% endif %}
+                </td>
                 <td class="flex gap-2">
                     <a href="{% url 'edit_ready_reckoner' item.id %}" title="Edit"
                         class="flex items-center justify-center w-8 h-8 bg-blue-600 hover:bg-blue-700 text-white rounded">✏️</a>
