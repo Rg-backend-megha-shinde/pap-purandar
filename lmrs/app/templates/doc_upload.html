@@ -501,7 +501,10 @@ function switchTab(tab) {
 }
 
 function toggleUpload(tab) {
-  document.getElementById(tab + '-upload-panel').classList.toggle('open');
+  const panel = document.getElementById(tab + '-upload-panel');
+  const explorer = document.getElementById(tab + '-explorer');
+  const isOpen = panel.classList.toggle('open');
+  explorer.style.display = isOpen ? 'none' : '';
 }
 
 // ─────────────────────────────────────────────
