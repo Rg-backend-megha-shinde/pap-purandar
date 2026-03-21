@@ -304,3 +304,79 @@ class AssetFormulaMaster(models.Model):
 
     def __str__(self):
         return f"{self.asset_type.asset_name_marathi} - {self.formula_label_marathi}"
+
+
+
+# =========================================================
+# 🔹 Unified Document Model (General + Court)
+# =========================================================
+
+class Document(models.Model):
+
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="documents"
+    )
+
+    # ---------------- Document Type ----------------
+    DOCUMENT_TYPE_CHOICES = [
+        ('general', 'General Document'),
+        ('court', 'Court Matter Document'),
+    ]
+
+    document_type = models.CharField(
+        max_length=20,
+        choices=DOCUMENT_TYPE_CHOICES
+    )
+
+    # ---------------- Location Level ----------------
+    DOCUMENT_LEVEL_CHOICES = [
+        ('district', 'District'),
+        ('taluka', 'Taluka'),
+        ('village', 'Village'),
+        ('gut', 'Gut'),
+    ]
+
+    document_level = models.CharField(
+        max_length=20,
+        choices=DOCUMENT_LEVEL_CHOICES
+    )
+
+    # ---------------- Location Fields ----------------
+    district = models.CharField(max_length=100)
+    taluka = models.CharField(max_length=100, null=True, blank=True)
+    village = models.CharField(max_length=150, null=True, blank=True)
+    gut_number = models.CharField(max_length=50, null=True, blank=True)
+
+    # ---------------- Common Fields ----------------
+    document_name = models.CharField(max_length=255)
+
+    document = models.FileField(
+        upload_to='documents/',
+        null=True,
+        blank=True
+    )
+
+    description = models.TextField(
+        null=True,
+        blank=True
+    )
+
+    # ---------------- Court Specific ----------------
+    document_date = models.DateField(
+        null=True,
+        blank=True
+    )
+
+    court_date = models.DateField(
+        null=True,
+        blank=True
+    )
+
+    # ---------------- Timestamps ----------------
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.document_name} ({self.document_type})"

@@ -31,9 +31,6 @@ urlpatterns = [
     path('api/layer-bounds/<str:layer_name>/', views.get_layer_bounds, name='layer_bounds'),
     path("api/location-data/", views.get_location_data),
     path("api/gut-numbers/<str:village>/", views.get_gut_numbers),
-    #APIS to fetch location data and Gut numbers for dropdowns
-    path("api/location-data/", views.get_location_data),
-    path("api/gut-numbers/<str:village>/", views.get_gut_numbers),
     path('inspections/', views.inspection_list, name='inspection_list'),
     path('inspection/edit/<int:id>/', views.edit_inspection, name='edit_inspection'),
     path('inspection/delete/<int:id>/', views.delete_inspection, name='delete_inspection'),
@@ -41,4 +38,9 @@ urlpatterns = [
     path('api/tree-master/', views.get_tree_master_list, name='get_tree_master_list'),
     path("tools/asset-creation/", views.asset_creation, name="asset_creation"),
     path("api/asset-fields/<str:asset_code>/", views.get_asset_fields_by_type, name="get_asset_fields_by_type"),
+    #court/general document upload Url
+    path('tools/documents/', views.doc_upload, name='doc_upload'),
+    path('tools/documents/delete/<int:id>/', views.doc_delete, name='doc_delete'),
+    path('api/documents/', views.doc_list_api, name='doc_list_api'),
+
 ]

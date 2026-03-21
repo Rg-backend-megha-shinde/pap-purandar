@@ -3,8 +3,8 @@ from django.http import JsonResponse, HttpResponse
 from django.db import connection
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import authenticate, login, logout
-from .models import Inspection, TreeDetail, ReadyReckonerRate, LandRecord712, FarmerNames,TreeMaster, Asset, AssetMeasurement, AssetTypeMaster, AssetFieldMaster, AssetFormulaMaster
-from django.shortcuts import render, redirect
+from .models import Inspection, TreeDetail, ReadyReckonerRate, LandRecord712, FarmerNames,TreeMaster, Asset, AssetMeasurement, AssetTypeMaster, AssetFieldMaster, AssetFormulaMaster, Document
+from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponseForbidden
 from django.db import connection
 import csv
@@ -24,6 +24,7 @@ def home(request):
 @login_required
 def tools(request):
     return render(request, 'tools.html')
+
 
 @login_required
 def ready_reckoner(request):
@@ -2079,3 +2080,69 @@ def get_asset_fields_by_type(request, asset_code):
             "success": False,
             "message": "Asset type not found"
         }, status=404)
+    return render(request, "asset_creation.html")
+
+@login_required
+def doc_upload(request):
+    if request.method == "POST":
+        doc_type = request.POST.get('document_type')  # 'general' or 'court'
+        Document.objects.create(
+            user=request.user,
+            document_type=doc_type,
+            document_level=request.POST.get('document_level'),
+            district=request.POST.get('district'),
+            taluka=request.POST.get('taluka') or None,
+            village=request.POST.get('village') or None,
+            gut_number=request.POST.get('gut_number') or None,
+            document_name=request.POST.get('document_name'),
+            document=request.FILES.get('document'),
+            description=request.POST.get('description') or None,
+            document_date=request.POST.get('document_date') or None,
+            court_date=request.POST.get('court_date') or None,
+        )
+        return redirect(f'/tools/documents/?tab={doc_type}')
+
+    tab = request.GET.get('tab', 'general')
+    general_docs = Document.objects.filter(document_type='general').order_by('-uploaded_at')
+    court_docs = Document.objects.filter(document_type='court').order_by('-uploaded_at')
+    return render(request, 'doc_upload.html', {
+        'general_docs': general_docs,
+        'court_docs': court_docs,
+        'active_tab': tab,
+    })
+
+
+@login_required
+def doc_delete(request, id):
+    doc = get_object_or_404(Document, id=id, user=request.user)
+    doc_type = doc.document_type
+    doc.delete()
+    return redirect(f'/tools/documents/?tab={doc_type}')
+
+
+@login_required
+def doc_list_api(request):
+    """JSON API — returns documents filtered by type"""
+    doc_type = request.GET.get('type', 'general')
+    docs = Document.objects.filter(document_type=doc_type).order_by('-uploaded_at')
+    data = []
+    for d in docs:
+        ext = ''
+        if d.document:
+            ext = d.document.name.rsplit('.', 1)[-1].lower() if '.' in d.document.name else ''
+        data.append({
+            'id': d.id,
+            'document_name': d.document_name,
+            'document_level': d.document_level,
+            'district': d.district,
+            'taluka': d.taluka or '',
+            'village': d.village or '',
+            'gut_number': d.gut_number or '',
+            'description': d.description or '',
+            'document_date': d.document_date.strftime('%d/%m/%Y') if d.document_date else '',
+            'court_date': d.court_date.strftime('%d/%m/%Y') if d.court_date else '',
+            'uploaded_at': d.uploaded_at.strftime('%d/%m/%Y'),
+            'file_url': d.document.url if d.document else '',
+            'ext': ext,
+        })
+    return JsonResponse({'documents': data})
