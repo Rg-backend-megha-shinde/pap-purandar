@@ -187,57 +187,29 @@ class TreeMaster(models.Model):
 
 
 # =========================================================
-# 🔹 General Documents Upload Tool
+# 🔹 Unified Document Model (General + Court)
 # =========================================================
 
-class GeneralDocument(models.Model):
+class Document(models.Model):
 
     user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        related_name="general_documents"
+        related_name="documents"
     )
 
-    # Location hierarchy (optional fields)
-    district = models.CharField(max_length=100)
-    taluka = models.CharField(max_length=100, null=True, blank=True)
-    village = models.CharField(max_length=150, null=True, blank=True)
-    gut_number = models.CharField(max_length=50, null=True, blank=True)
+    # ---------------- Document Type ----------------
+    DOCUMENT_TYPE_CHOICES = [
+        ('general', 'General Document'),
+        ('court', 'Court Matter Document'),
+    ]
 
-    # Document details
-    document_name = models.CharField(max_length=255)
-
-    document = models.FileField(
-        upload_to='general_documents/',
-        null=True,
-        blank=True
+    document_type = models.CharField(
+        max_length=20,
+        choices=DOCUMENT_TYPE_CHOICES
     )
 
-    description = models.TextField(
-        null=True,
-        blank=True
-    )
-
-    uploaded_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    def __str__(self):
-        return f"{self.document_name} - {self.district}"
-
-
-# =========================================================
-# 🔹 Court Matter Documents
-# =========================================================
-
-class CourtMatterDocument(models.Model):
-
-    user = models.ForeignKey(
-        User,
-        on_delete=models.CASCADE,
-        related_name="court_documents"
-    )
-
-    # Document level (where it applies)
+    # ---------------- Location Level ----------------
     DOCUMENT_LEVEL_CHOICES = [
         ('district', 'District'),
         ('taluka', 'Taluka'),
@@ -250,15 +222,27 @@ class CourtMatterDocument(models.Model):
         choices=DOCUMENT_LEVEL_CHOICES
     )
 
-    # Location hierarchy
+    # ---------------- Location Fields ----------------
     district = models.CharField(max_length=100)
     taluka = models.CharField(max_length=100, null=True, blank=True)
     village = models.CharField(max_length=150, null=True, blank=True)
     gut_number = models.CharField(max_length=50, null=True, blank=True)
 
-    # Court matter specific fields
+    # ---------------- Common Fields ----------------
     document_name = models.CharField(max_length=255)
 
+    document = models.FileField(
+        upload_to='documents/',
+        null=True,
+        blank=True
+    )
+
+    description = models.TextField(
+        null=True,
+        blank=True
+    )
+
+    # ---------------- Court Specific ----------------
     document_date = models.DateField(
         null=True,
         blank=True
@@ -269,19 +253,9 @@ class CourtMatterDocument(models.Model):
         blank=True
     )
 
-    document = models.FileField(
-        upload_to='court_documents/',
-        null=True,
-        blank=True
-    )
-
-    description = models.TextField(
-        null=True,
-        blank=True
-    )
-
+    # ---------------- Timestamps ----------------
     uploaded_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"{self.document_name} | Court Date: {self.court_date}"
+        return f"{self.document_name} ({self.document_type})"
