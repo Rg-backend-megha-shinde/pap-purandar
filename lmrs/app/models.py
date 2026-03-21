@@ -183,3 +183,105 @@ class TreeMaster(models.Model):
 
     def __str__(self):
         return self.tree_name_marathi
+
+
+
+# =========================================================
+# 🔹 General Documents Upload Tool
+# =========================================================
+
+class GeneralDocument(models.Model):
+
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="general_documents"
+    )
+
+    # Location hierarchy (optional fields)
+    district = models.CharField(max_length=100)
+    taluka = models.CharField(max_length=100, null=True, blank=True)
+    village = models.CharField(max_length=150, null=True, blank=True)
+    gut_number = models.CharField(max_length=50, null=True, blank=True)
+
+    # Document details
+    document_name = models.CharField(max_length=255)
+
+    document = models.FileField(
+        upload_to='general_documents/',
+        null=True,
+        blank=True
+    )
+
+    description = models.TextField(
+        null=True,
+        blank=True
+    )
+
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.document_name} - {self.district}"
+
+
+# =========================================================
+# 🔹 Court Matter Documents
+# =========================================================
+
+class CourtMatterDocument(models.Model):
+
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="court_documents"
+    )
+
+    # Document level (where it applies)
+    DOCUMENT_LEVEL_CHOICES = [
+        ('district', 'District'),
+        ('taluka', 'Taluka'),
+        ('village', 'Village'),
+        ('gut', 'Gut'),
+    ]
+
+    document_level = models.CharField(
+        max_length=20,
+        choices=DOCUMENT_LEVEL_CHOICES
+    )
+
+    # Location hierarchy
+    district = models.CharField(max_length=100)
+    taluka = models.CharField(max_length=100, null=True, blank=True)
+    village = models.CharField(max_length=150, null=True, blank=True)
+    gut_number = models.CharField(max_length=50, null=True, blank=True)
+
+    # Court matter specific fields
+    document_name = models.CharField(max_length=255)
+
+    document_date = models.DateField(
+        null=True,
+        blank=True
+    )
+
+    court_date = models.DateField(
+        null=True,
+        blank=True
+    )
+
+    document = models.FileField(
+        upload_to='court_documents/',
+        null=True,
+        blank=True
+    )
+
+    description = models.TextField(
+        null=True,
+        blank=True
+    )
+
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.document_name} | Court Date: {self.court_date}"
