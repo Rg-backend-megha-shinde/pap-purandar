@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Dynamic Admin Filter — GeoServer WMS</title>
+
+  <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/ol@7.4.0/ol.css">
+  <script src="https://cdn.jsdelivr.net/npm/ol@7.4.0/dist/ol.js"></script>
+
+  <style>
+    html, body, #map { margin:0; height:100%; }
+
+    .panel {
+      position:absolute;
+      top:10px;
+      left:10px;
+      background:white;
+      padding:10px;
+      border-radius:6px;
+      box-shadow:0 0 8px rgba(0,0,0,0.3);
+      z-index:1000;
+    }
+
+    select {
+      margin:4px;
+      width:180px;
+      padding:4px;
+    }
+  </style>
+</head>
+
+<body>
+
+<div id="map"></div>
+
+<div class="panel">
+  <b>Filter</b><br>
+
+  District:<br>
+  <select id="district"></select><br>
+
+  Taluka:<br>
+  <select id="taluka"></select><br>
+
+  Village:<br>
+  <select id="village"></select>
+</div>
+
+<script>
+
+// ================= BASE MAP =================
+const map = new ol.Map({
+  target: "map",
+  layers: [
+    new ol.layer.Tile({
+      source: new ol.source.OSM()
+    })
+  ],
+  view: new ol.View({
+    center: ol.proj.fromLonLat([74, 18.5]),
+    zoom: 7
+  })
+});
+
+// ================= WMS LAYER =================
+const villageLayer = new ol.layer.Image({
+  source: new ol.source.ImageWMS({
+    url: "http://localhost:8080/geoserver/monarch_lmrs/wms",
+    params: {
+      LAYERS: "monarch_lmrs:villages_all"
+    },
+    serverType: "geoserver"
+  })
+});
+
+map.addLayer(villageLayer);
+
+
+// ===================================================
+// ⭐ JSONP WFS FETCH (CORS SAFE)
+// ===================================================
+function fetchData(cql, callbackName) {
+
+  const url =
+    "http://localhost:8080/geoserver/monarch_lmrs/ows?" +
+    "service=WFS&version=1.0.0&request=GetFeature" +
+    "&typeName=monarch_lmrs:villages_all" +
+    "&outputFormat=text/javascript" +
+    "&format_options=callback:" + callbackName +
+    "&CQL_FILTER=" + encodeURIComponent(cql);
+
+  const script = document.createElement("script");
+  script.src = url;
+  document.body.appendChild(script);
+}
+
+
+// ===================================================
+// ⭐ LOAD DISTRICTS
+// ===================================================
+function loadDistricts() {
+  fetchData("INCLUDE", "handleDistricts");
+}
+
+function handleDistricts(response) {
+
+  const features = response.features;
+
+  const districts =
+    [...new Set(features.map(f => f.properties.district_name))];
+
+  const sel = document.getElementById("district");
+  sel.innerHTML = "<option>Select District</option>";
+
+  districts.forEach(d => {
+    sel.innerHTML += `<option value="${d}">${d}</option>`;
+  });
+}
+
+
+// ===================================================
+// ⭐ DISTRICT → TALUKA
+// ===================================================
+document.getElementById("district").onchange = function() {
+
+  const d = this.value;
+
+  fetchData(
+    `district_name='${d}'`,
+    "handleTalukas"
+  );
+};
+
+function handleTalukas(response) {
+
+  const features = response.features;
+
+  const talukas =
+    [...new Set(features.map(f => f.properties.taluka_name))];
+
+  const sel = document.getElementById("taluka");
+  sel.innerHTML = "<option>Select Taluka</option>";
+
+  talukas.forEach(t => {
+    sel.innerHTML += `<option value="${t}">${t}</option>`;
+  });
+}
+
+
+// ===================================================
+// ⭐ TALUKA → VILLAGE
+// ===================================================
+document.getElementById("taluka").onchange = function() {
+
+  const d = document.getElementById("district").value;
+  const t = this.value;
+
+  fetchData(
+    `district_name='${d}' AND taluka_name='${t}'`,
+    "handleVillages"
+  );
+};
+
+function handleVillages(response) {
+
+  const features = response.features;
+
+  const villages =
+    [...new Set(features.map(f => f.properties.village_name))];
+
+  const sel = document.getElementById("village");
+  sel.innerHTML = "<option>Select Village</option>";
+
+  villages.forEach(v => {
+    sel.innerHTML += `<option value="${v}">${v}</option>`;
+  });
+}
+
+
+// ===================================================
+// ⭐ VILLAGE → FILTER MAP (WMS)
+// ===================================================
+document.getElementById("village").onchange = function() {
+
+  const d = document.getElementById("district").value;
+  const t = document.getElementById("taluka").value;
+  const v = this.value;
+
+  const cql =
+    `district_name='${d}' AND taluka_name='${t}' AND village_name='${v}'`;
+
+  villageLayer.getSource().updateParams({
+    CQL_FILTER: cql
+  });
+};
+
+
+// ===================================================
+// START
+// ===================================================
+loadDistricts();
+
+</script>
+
+</body>
+</html>
