@@ -172,6 +172,49 @@ class FarmerNames(models.Model):
 
     def __str__(self):
         return f"{self.farmer_name} - Gut {self.land_record.gut_number}"
+
+class AssetTypeMaster(models.Model):
+    asset_code = models.CharField(max_length=100, unique=True)
+    asset_name_marathi = models.CharField(max_length=200)
+    asset_name_english = models.CharField(max_length=200, blank=True, null=True)
+    is_active = models.BooleanField(default=True)
+    display_order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        db_table = "asset_type_master"
+        ordering = ["display_order", "asset_name_marathi"]
+
+    def __str__(self):
+        return self.asset_name_marathi
+
+
+class AssetFieldMaster(models.Model):
+    FIELD_TYPE_CHOICES = [
+        ("number", "Number"),
+        ("text", "Text"),
+        ("select", "Select"),
+    ]
+
+    asset_type = models.ForeignKey(
+        AssetTypeMaster,
+        on_delete=models.CASCADE,
+        related_name="fields"
+    )
+    field_name = models.CharField(max_length=100)
+    field_label_marathi = models.CharField(max_length=200)
+    field_label_english = models.CharField(max_length=200, blank=True, null=True)
+    field_type = models.CharField(max_length=50, choices=FIELD_TYPE_CHOICES, default="number")
+    unit = models.CharField(max_length=50, blank=True, null=True)
+    is_required = models.BooleanField(default=True)
+    display_order = models.PositiveIntegerField(default=0)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        db_table = "asset_field_master"
+        ordering = ["display_order", "id"]
+
+    def __str__(self):
+        return f"{self.asset_type.asset_name_marathi} - {self.field_label_marathi}"
     
 
 class TreeMaster(models.Model):
@@ -183,3 +226,81 @@ class TreeMaster(models.Model):
 
     def __str__(self):
         return self.tree_name_marathi
+
+
+class Asset(models.Model):
+    ASSET_TYPE_CHOICES = [
+        ('building', 'इमारत'),
+        ('wall', 'भिंत'),
+        ('well', 'विहीर'),
+        ('tree_asset', 'झाड / वनस्पती'),
+        ('pipeline', 'पाईपलाईन'),
+        ('road', 'रस्ता'),
+        ('fencing', 'कंपाउंड / कुंपण'),
+    ]
+
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='assets'
+    )
+
+    asset_type = models.CharField(max_length=100, choices=ASSET_TYPE_CHOICES)
+    asset_name = models.CharField(max_length=255)
+
+    district = models.CharField(max_length=100, blank=True, null=True)
+    taluka = models.CharField(max_length=100, blank=True, null=True)
+    village = models.CharField(max_length=150, blank=True, null=True)
+    gut_number = models.CharField(max_length=100, blank=True, null=True)
+
+    survey_date = models.DateField(blank=True, null=True)
+    rate = models.DecimalField(max_digits=15, decimal_places=2, default=0)
+
+    formula_text = models.TextField(blank=True, null=True)
+    total_measurement = models.DecimalField(max_digits=15, decimal_places=2, blank=True, null=True)
+    final_calculation = models.TextField(blank=True, null=True)
+    final_amount = models.DecimalField(max_digits=15, decimal_places=2, blank=True, null=True)
+
+    remarks = models.TextField(blank=True, null=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-id']
+
+    def __str__(self):
+        return f"{self.asset_name} ({self.get_asset_type_display()})"
+
+
+class AssetMeasurement(models.Model):
+    asset = models.ForeignKey(
+        Asset,
+        on_delete=models.CASCADE,
+        related_name='measurements'
+    )
+
+    field_name = models.CharField(max_length=100)
+    field_label = models.CharField(max_length=255)
+    field_value = models.DecimalField(max_digits=15, decimal_places=2, blank=True, null=True)
+    unit = models.CharField(max_length=50, blank=True, null=True)
+
+    def __str__(self):
+        return f"{self.asset.asset_name} - {self.field_label}"
+
+class AssetFormulaMaster(models.Model):
+    asset_type = models.OneToOneField(
+        AssetTypeMaster,
+        on_delete=models.CASCADE,
+        related_name="formula"
+    )
+    formula_label_marathi = models.CharField(max_length=255)
+    formula_label_english = models.CharField(max_length=255, blank=True, null=True)
+    formula_expression = models.CharField(max_length=500)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        db_table = "asset_formula_master"
+
+    def __str__(self):
+        return f"{self.asset_type.asset_name_marathi} - {self.formula_label_marathi}"

@@ -1,8 +1,440 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="max-w-5xl mx-auto mt-6 bg-white p-6 rounded shadow">
-    <h2 class="text-2xl font-bold mb-4">Asset Creation Tool</h2>
-    <p class="text-gray-600">This page is under development.</p>
+
+<div class="max-w-6xl mx-auto bg-white p-6 border border-gray-300 mt-6 rounded-lg shadow">
+    <h2 class="text-center font-bold text-xl underline mb-2">
+        मालमत्ता निर्मिती साधन
+    </h2>
+
+    <p class="text-center text-sm mb-6">
+        जमीन सर्वेक्षणासाठी मालमत्ता नोंदणी व मोजमाप गणना
+    </p>
+
+    <form method="POST" id="assetForm" class="mt-6">
+        {% csrf_token %}
+
+        <div class="border rounded-lg p-4 bg-gray-50 mb-6">
+            <h3 class="font-bold text-lg mb-4">मालमत्ता मूलभूत माहिती</h3>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                    <label class="font-semibold">मालमत्ता प्रकार</label>
+                    <select id="assetType" name="asset_type" required
+                        class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-400">
+                        <option value="">मालमत्ता प्रकार निवडा</option>
+                        {% for asset_type in asset_types %}
+                            <option value="{{ asset_type.asset_code }}">
+                                {{ asset_type.asset_name_marathi }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div>
+                    <label class="font-semibold">मालमत्तेचे नाव</label>
+                    <input type="text" name="asset_name" id="assetName"
+                        class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-400"
+                        placeholder="मालमत्तेचे नाव">
+                </div>
+
+                <div>
+                    <label class="font-semibold">सर्वेक्षण दिनांक</label>
+                    <input type="date" name="survey_date" id="surveyDate"
+                        class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-400">
+                </div>
+
+                <div>
+                    <label class="font-semibold">जिल्हा</label>
+                    <select name="district" id="district"
+                        class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-400">
+                        <option value="">जिल्हा निवडा</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="font-semibold">तालुका</label>
+                    <select name="taluka" id="taluka"
+                        class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-400">
+                        <option value="">तालुका निवडा</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="font-semibold">गाव</label>
+                    <select name="village" id="village"
+                        class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-400">
+                        <option value="">गाव निवडा</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="font-semibold">गट क्रमांक</label>
+                    <select name="gut_number" id="gutNumber"
+                        class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-400">
+                        <option value="">गट क्रमांक निवडा</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="font-semibold">दर</label>
+                    <input type="number" step="0.01" min="0" name="rate" id="rate"
+                        class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-400"
+                        placeholder="दर भरा">
+                </div>
+
+                <div>
+                    <label class="font-semibold">शेरा</label>
+                    <input type="text" name="remarks" id="remarks"
+                        class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-400"
+                        placeholder="शेरा">
+                </div>
+            </div>
+        </div>
+
+        <div class="border rounded-lg p-4 bg-white mb-6">
+            <h3 class="font-bold text-lg mb-4">मोजमाप तपशील</h3>
+            <div id="dynamicFields" class="grid grid-cols-1 md:grid-cols-3 gap-4"></div>
+        </div>
+
+        <div id="measurementHiddenFields"></div>
+
+        <div class="border rounded-lg p-4 bg-gray-50 mb-6">
+            <h3 class="font-bold text-lg mb-4">गणना तपशील</h3>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="font-semibold">सूत्र</label>
+                    <input type="text" id="formulaText" name="formula_text"
+                        class="w-full border p-2 rounded bg-gray-100" readonly>
+                </div>
+
+                <div>
+                    <label class="font-semibold">एकूण मोजमाप</label>
+                    <input type="text" id="totalMeasurement" name="total_measurement"
+                        class="w-full border p-2 rounded bg-gray-100" readonly>
+                </div>
+
+                <div>
+                    <label class="font-semibold">अंतिम गणना</label>
+                    <input type="text" id="finalCalculation" name="final_calculation"
+                        class="w-full border p-2 rounded bg-gray-100" readonly>
+                </div>
+
+                <div>
+                    <label class="font-semibold">एकूण किंमत</label>
+                    <input type="text" id="finalAmount" name="final_amount"
+                        class="w-full border p-2 rounded bg-yellow-100 font-bold" readonly>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex gap-3 mt-6">
+            <button type="submit"
+                class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-md shadow-sm transition duration-200">
+                सबमिट करा
+            </button>
+
+            <button type="button" onclick="resetAssetForm()"
+                class="bg-gray-600 hover:bg-gray-700 text-white px-5 py-2 rounded-md shadow-sm transition duration-200">
+                रीसेट करा
+            </button>
+        </div>
+    </form>
 </div>
+
+<script>
+    const assetType = document.getElementById("assetType");
+    const dynamicFields = document.getElementById("dynamicFields");
+    const measurementHiddenFields = document.getElementById("measurementHiddenFields");
+    const rateInput = document.getElementById("rate");
+
+    const formulaText = document.getElementById("formulaText");
+    const totalMeasurement = document.getElementById("totalMeasurement");
+    const finalCalculation = document.getElementById("finalCalculation");
+    const finalAmount = document.getElementById("finalAmount");
+
+    const districtSelect = document.getElementById("district");
+    const talukaSelect = document.getElementById("taluka");
+    const villageSelect = document.getElementById("village");
+    const gutNumberSelect = document.getElementById("gutNumber");
+
+    let locationData = [];
+    let currentAssetFields = [];
+    let currentFormula = "";
+    let currentFormulaLabel = "";
+
+    function createField(field) {
+        const inputType = field.field_type === "number" ? "number" : "text";
+        const stepAttr = field.field_type === "number" ? 'step="0.01"' : "";
+        const minAttr = field.field_type === "number" ? 'min="0"' : "";
+
+        return `
+            <div>
+                <label class="font-semibold">
+                    ${field.field_label_marathi}${field.unit ? ` (${field.unit})` : ""}
+                </label>
+                <input
+                    type="${inputType}"
+                    ${stepAttr}
+                    ${minAttr}
+                    data-field-name="${field.field_name}"
+                    data-field-label="${field.field_label_marathi}"
+                    data-field-unit="${field.unit || ''}"
+                    id="${field.field_name}"
+                    class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-400 asset-dynamic-input"
+                    placeholder="${field.field_label_marathi}"
+                    ${field.is_required ? "required" : ""}
+                >
+            </div>
+        `;
+    }
+
+    async function renderFields() {
+        const selectedType = assetType.value;
+
+        dynamicFields.innerHTML = "";
+        measurementHiddenFields.innerHTML = "";
+        clearCalculation();
+
+        currentAssetFields = [];
+        currentFormula = "";
+        currentFormulaLabel = "";
+
+        if (!selectedType) return;
+
+        try {
+            const response = await fetch(`/api/asset-fields/${selectedType}/`);
+            const data = await response.json();
+
+            if (!data.success) return;
+
+            currentAssetFields = data.fields || [];
+            currentFormula = data.formula?.formula_expression || "";
+            currentFormulaLabel = data.formula?.formula_label_marathi || "";
+
+            formulaText.value = currentFormulaLabel;
+
+            currentAssetFields.forEach(field => {
+                dynamicFields.insertAdjacentHTML("beforeend", createField(field));
+            });
+
+            attachDynamicListeners();
+            updateHiddenMeasurementFields();
+            calculateAsset();
+        } catch (error) {
+            console.error("Error loading asset fields:", error);
+        }
+    }
+
+    function attachDynamicListeners() {
+        document.querySelectorAll(".asset-dynamic-input").forEach(input => {
+            input.addEventListener("input", () => {
+                updateHiddenMeasurementFields();
+                calculateAsset();
+            });
+        });
+    }
+
+    function updateHiddenMeasurementFields() {
+        measurementHiddenFields.innerHTML = "";
+
+        document.querySelectorAll(".asset-dynamic-input").forEach(input => {
+            const fieldName = input.dataset.fieldName || "";
+            const fieldLabel = input.dataset.fieldLabel || "";
+            const fieldUnit = input.dataset.fieldUnit || "";
+            const fieldValue = input.value || "";
+
+            measurementHiddenFields.insertAdjacentHTML("beforeend", `
+                <input type="hidden" name="measurement_field_name[]" value="${fieldName}">
+                <input type="hidden" name="measurement_field_label[]" value="${fieldLabel}">
+                <input type="hidden" name="measurement_field_value[]" value="${fieldValue}">
+                <input type="hidden" name="measurement_field_unit[]" value="${fieldUnit}">
+            `);
+        });
+    }
+
+    function calculateAsset() {
+        if (!currentFormula) {
+            totalMeasurement.value = "";
+            finalCalculation.value = "";
+            finalAmount.value = "";
+            return;
+        }
+
+        let measurementExpression = currentFormula;
+        const values = {};
+
+        currentAssetFields.forEach(field => {
+            const input = document.getElementById(field.field_name);
+            values[field.field_name] = input ? (parseFloat(input.value) || 0) : 0;
+        });
+
+        values["rate"] = parseFloat(rateInput.value) || 0;
+
+        Object.keys(values).forEach(key => {
+            const regex = new RegExp(`\\b${key}\\b`, "g");
+            measurementExpression = measurementExpression.replace(regex, values[key]);
+        });
+
+        try {
+            const finalResult = Function(`"use strict"; return (${measurementExpression})`)();
+
+            let measurementOnlyExpression = currentFormula.replace(/\brate\b/g, "1");
+            Object.keys(values).forEach(key => {
+                if (key === "rate") return;
+                const regex = new RegExp(`\\b${key}\\b`, "g");
+                measurementOnlyExpression = measurementOnlyExpression.replace(regex, values[key]);
+            });
+
+            const measurementResult = Function(`"use strict"; return (${measurementOnlyExpression})`)();
+
+            formulaText.value = currentFormulaLabel;
+            totalMeasurement.value = Number.isFinite(measurementResult) ? Number(measurementResult).toFixed(2) : "";
+            finalCalculation.value = measurementExpression;
+            finalAmount.value = Number.isFinite(finalResult) ? Number(finalResult).toFixed(2) : "";
+        } catch (error) {
+            console.error("Error evaluating formula:", error);
+            totalMeasurement.value = "";
+            finalCalculation.value = measurementExpression;
+            finalAmount.value = "";
+        }
+    }
+
+    function clearCalculation() {
+        formulaText.value = "";
+        totalMeasurement.value = "";
+        finalCalculation.value = "";
+        finalAmount.value = "";
+    }
+
+    function resetAssetForm() {
+        document.getElementById("assetForm").reset();
+
+        dynamicFields.innerHTML = "";
+        measurementHiddenFields.innerHTML = "";
+
+        currentAssetFields = [];
+        currentFormula = "";
+        currentFormulaLabel = "";
+
+        clearCalculation();
+
+        talukaSelect.innerHTML = '<option value="">तालुका निवडा</option>';
+        villageSelect.innerHTML = '<option value="">गाव निवडा</option>';
+        gutNumberSelect.innerHTML = '<option value="">गट क्रमांक निवडा</option>';
+
+        loadLocationData();
+    }
+
+    async function loadLocationData() {
+        try {
+            const response = await fetch("/api/location-data/");
+            const data = await response.json();
+
+            locationData = data.villages || [];
+
+            const districts = [...new Set(locationData.map(item => item.district).filter(Boolean))];
+
+            districtSelect.innerHTML = '<option value="">जिल्हा निवडा</option>';
+
+            districts.forEach(district => {
+                districtSelect.insertAdjacentHTML(
+                    "beforeend",
+                    `<option value="${district}">${district}</option>`
+                );
+            });
+
+            if (districts.length === 1) {
+                districtSelect.value = districts[0];
+                populateTalukas(districts[0]);
+            }
+        } catch (error) {
+            console.error("Error loading location data:", error);
+        }
+    }
+
+    function populateTalukas(selectedDistrict) {
+        talukaSelect.innerHTML = '<option value="">तालुका निवडा</option>';
+        villageSelect.innerHTML = '<option value="">गाव निवडा</option>';
+        gutNumberSelect.innerHTML = '<option value="">गट क्रमांक निवडा</option>';
+
+        const talukas = [
+            ...new Set(
+                locationData
+                    .filter(item => item.district === selectedDistrict)
+                    .map(item => item.taluka)
+                    .filter(Boolean)
+            )
+        ];
+
+        talukas.forEach(taluka => {
+            talukaSelect.insertAdjacentHTML(
+                "beforeend",
+                `<option value="${taluka}">${taluka}</option>`
+            );
+        });
+    }
+
+    function populateVillages(selectedDistrict, selectedTaluka) {
+        villageSelect.innerHTML = '<option value="">गाव निवडा</option>';
+        gutNumberSelect.innerHTML = '<option value="">गट क्रमांक निवडा</option>';
+
+        const villages = [
+            ...new Set(
+                locationData
+                    .filter(item => item.district === selectedDistrict && item.taluka === selectedTaluka)
+                    .map(item => item.village_name)
+                    .filter(Boolean)
+            )
+        ];
+
+        villages.forEach(village => {
+            villageSelect.insertAdjacentHTML(
+                "beforeend",
+                `<option value="${village}">${village}</option>`
+            );
+        });
+    }
+
+    async function loadGutNumbers(village) {
+        gutNumberSelect.innerHTML = '<option value="">गट क्रमांक निवडा</option>';
+
+        if (!village) return;
+
+        try {
+            const response = await fetch(`/api/gut-numbers/${encodeURIComponent(village)}/`);
+            const data = await response.json();
+
+            const gutNumbers = data.gut_numbers || [];
+
+            gutNumbers.forEach(gut => {
+                gutNumberSelect.insertAdjacentHTML(
+                    "beforeend",
+                    `<option value="${gut}">${gut}</option>`
+                );
+            });
+        } catch (error) {
+            console.error("Error loading gut numbers:", error);
+        }
+    }
+
+    assetType.addEventListener("change", renderFields);
+    rateInput.addEventListener("input", calculateAsset);
+
+    districtSelect.addEventListener("change", function () {
+        populateTalukas(this.value);
+    });
+
+    talukaSelect.addEventListener("change", function () {
+        populateVillages(districtSelect.value, this.value);
+    });
+
+    villageSelect.addEventListener("change", function () {
+        loadGutNumbers(this.value);
+    });
+
+    loadLocationData();
+</script>
+
 {% endblock %}
