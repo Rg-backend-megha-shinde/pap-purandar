@@ -3,12 +3,12 @@ from django.http import JsonResponse, HttpResponse
 from django.db import connection
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import authenticate, login, logout
-from .models import Inspection, TreeDetail, ReadyReckonerRate, LandRecord712, FarmerNames
+from .models import Inspection, TreeDetail, ReadyReckonerRate, LandRecord712, FarmerNames,TreeMaster, Asset, AssetMeasurement, AssetTypeMaster, AssetFieldMaster, AssetFormulaMaster
 from django.shortcuts import render, redirect
 from django.http import HttpResponseForbidden
 from django.db import connection
-from .models import Inspection, TreeDetail, ReadyReckonerRate, LandRecord712, TreeMaster
 import csv
+import re
 
 def api_login_required(view_func):
     def wrapper(request, *args, **kwargs):
@@ -1924,6 +1924,155 @@ def get_tree_master_list(request):
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
     
+
+def get_asset_fields_by_type(request, asset_code):
+    try:
+        asset_type = AssetTypeMaster.objects.get(asset_code=asset_code, is_active=True)
+
+        fields = AssetFieldMaster.objects.filter(
+            asset_type=asset_type,
+            is_active=True
+        ).order_by("display_order", "id")
+
+        data = [
+            {
+                "field_name": field.field_name,
+                "field_label_marathi": field.field_label_marathi,
+                "field_label_english": field.field_label_english,
+                "field_type": field.field_type,
+                "unit": field.unit,
+                "is_required": field.is_required,
+                "display_order": field.display_order,
+            }
+            for field in fields
+        ]
+
+        return JsonResponse({
+            "success": True,
+            "asset_code": asset_type.asset_code,
+            "asset_name_marathi": asset_type.asset_name_marathi,
+            "fields": data
+        })
+
+    except AssetTypeMaster.DoesNotExist:
+        return JsonResponse({
+            "success": False,
+            "message": "Asset type not found"
+        }, status=404)
+        
 @login_required
 def asset_creation(request):
-    return render(request, "asset_creation.html")
+    asset_types = AssetTypeMaster.objects.filter(is_active=True).order_by("display_order", "asset_name_marathi")
+
+    if request.method == "POST":
+        asset = Asset.objects.create(
+            user=request.user,
+            asset_type=request.POST.get("asset_type"),
+            asset_name=request.POST.get("asset_name"),
+            district=request.POST.get("district"),
+            taluka=request.POST.get("taluka"),
+            village=request.POST.get("village"),
+            gut_number=request.POST.get("gut_number"),
+            survey_date=request.POST.get("survey_date") or None,
+            rate=request.POST.get("rate") or 0,
+            formula_text=request.POST.get("formula_text"),
+            total_measurement=request.POST.get("total_measurement") or None,
+            final_calculation=request.POST.get("final_calculation"),
+            final_amount=request.POST.get("final_amount") or None,
+            remarks=request.POST.get("remarks"),
+        )
+
+        field_names = request.POST.getlist("measurement_field_name[]")
+        field_labels = request.POST.getlist("measurement_field_label[]")
+        field_values = request.POST.getlist("measurement_field_value[]")
+        field_units = request.POST.getlist("measurement_field_unit[]")
+
+        for i in range(len(field_names)):
+            if field_names[i] and field_values[i] != "":
+                AssetMeasurement.objects.create(
+                    asset=asset,
+                    field_name=field_names[i],
+                    field_label=field_labels[i] if i < len(field_labels) else field_names[i],
+                    field_value=field_values[i] or None,
+                    unit=field_units[i] if i < len(field_units) else "",
+                )
+
+        return redirect("asset_creation")
+
+    return render(request, "asset_creation.html", {
+        "asset_types": asset_types
+    })
+
+@login_required
+def get_asset_fields_by_type(request, asset_code):
+    try:
+        asset_type = AssetTypeMaster.objects.get(asset_code=asset_code, is_active=True)
+
+        fields = AssetFieldMaster.objects.filter(
+            asset_type=asset_type,
+            is_active=True
+        ).order_by("display_order", "id")
+
+        formula = AssetFormulaMaster.objects.filter(
+            asset_type=asset_type,
+            is_active=True
+        ).first()
+
+        field_data = [
+            {
+                "field_name": field.field_name,
+                "field_label_marathi": field.field_label_marathi,
+                "field_label_english": field.field_label_english,
+                "field_type": field.field_type,
+                "unit": field.unit,
+                "is_required": field.is_required,
+                "display_order": field.display_order,
+            }
+            for field in fields
+        ]
+
+        allowed_fields = {field.field_name for field in fields}
+        allowed_fields.add("rate")
+
+        formula_payload = {
+            "formula_label_marathi": "",
+            "formula_label_english": "",
+            "formula_expression": "",
+            "is_valid": False,
+            "invalid_fields": [],
+        }
+
+        if formula and formula.formula_expression:
+            used_variables = set(re.findall(r"[a-zA-Z_][a-zA-Z0-9_]*", formula.formula_expression))
+            invalid_fields = sorted(list(used_variables - allowed_fields))
+
+            if not invalid_fields:
+                formula_payload = {
+                    "formula_label_marathi": formula.formula_label_marathi or "",
+                    "formula_label_english": formula.formula_label_english or "",
+                    "formula_expression": formula.formula_expression or "",
+                    "is_valid": True,
+                    "invalid_fields": [],
+                }
+            else:
+                formula_payload = {
+                    "formula_label_marathi": "",
+                    "formula_label_english": "",
+                    "formula_expression": "",
+                    "is_valid": False,
+                    "invalid_fields": invalid_fields,
+                }
+
+        return JsonResponse({
+            "success": True,
+            "asset_code": asset_type.asset_code,
+            "asset_name_marathi": asset_type.asset_name_marathi,
+            "fields": field_data,
+            "formula": formula_payload,
+        })
+
+    except AssetTypeMaster.DoesNotExist:
+        return JsonResponse({
+            "success": False,
+            "message": "Asset type not found"
+        }, status=404)
