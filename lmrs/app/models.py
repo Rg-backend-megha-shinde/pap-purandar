@@ -347,6 +347,27 @@ class Document(models.Model):
         choices=DOCUMENT_TYPE_CHOICES
     )
 
+    # ---------------- Court / Matter Type ----------------
+    MATTER_TYPE_CHOICES = [
+        ('arbitration', 'Arbitration'),
+        ('civil_dispute', 'Civil Dispute'),
+    ]
+
+    matter_type = models.CharField(
+        max_length=20,
+        choices=MATTER_TYPE_CHOICES,
+        null=True,
+        blank=True
+    )
+
+    # ---------------- Owner / Farmer ----------------
+    owner_name = models.CharField(
+        max_length=200,
+        null=True,
+        blank=True,
+        help_text="Name of land owner / farmer"
+    )
+
     # ---------------- Location Level ----------------
     DOCUMENT_LEVEL_CHOICES = [
         ('district', 'District'),
