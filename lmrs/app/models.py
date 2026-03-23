@@ -168,6 +168,22 @@ class FarmerNames(models.Model):
 
     farmer_name = models.CharField(max_length=200)
 
+    # 🔹 Total Area (Mul Kshetra) in Hectare-R format
+    total_area = models.CharField(
+        max_length=20,
+        null=True,
+        blank=True,
+        help_text="Format: H-R (e.g. 1-65)"
+    )
+
+    # 🔹 Potkharaba Area in Hectare-R format
+    potkharaba = models.CharField(
+        max_length=20,
+        null=True,
+        blank=True,
+        help_text="Format: H-R (e.g. 0-53)"
+    )
+
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
