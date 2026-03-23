@@ -20,6 +20,50 @@ class ToolMaster(models.Model):
         return self.tool_name
     
 
+class DocumentMaster(models.Model):
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="document_master_entries")
+
+    tool = models.ForeignKey(ToolMaster, on_delete=models.CASCADE, related_name="all_uploaded_documents")
+
+    inspection = models.ForeignKey('Inspection', on_delete=models.SET_NULL, null=True, blank=True)
+    rr_rate = models.ForeignKey('ReadyReckonerRate', on_delete=models.SET_NULL, null=True, blank=True)
+    land_record = models.ForeignKey('LandRecord712', on_delete=models.SET_NULL, null=True, blank=True)
+    asset = models.ForeignKey('Asset', on_delete=models.SET_NULL, null=True, blank=True)
+    document_tool_record = models.ForeignKey('Document', on_delete=models.SET_NULL, null=True, blank=True)
+
+    district = models.CharField(max_length=100, null=True, blank=True)
+    taluka = models.CharField(max_length=100, null=True, blank=True)
+    village = models.CharField(max_length=150, null=True, blank=True)
+    gut_number = models.CharField(max_length=50, null=True, blank=True)
+
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.tool.tool_name} - {self.uploaded_at.date()}"
+    
+
+
+class DocumentAttachment(models.Model):
+
+    document_master = models.ForeignKey(
+        DocumentMaster,
+        on_delete=models.CASCADE,
+        related_name="attachments"
+    )
+
+    file = models.FileField(
+        upload_to='documents/files/'
+    )
+
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Attachment for {self.document_master.tool.tool_name}"
+    
+
+
 
 class Inspection(models.Model):
     user = models.ForeignKey(
@@ -32,11 +76,6 @@ class Inspection(models.Model):
     taluka = models.CharField(max_length=100)
     village = models.CharField(max_length=100)
     gut_number = models.CharField(max_length=50)
-
-    tool = models.ForeignKey(ToolMaster,
-        on_delete=models.CASCADE,
-        related_name="inspection_records"
-    )
 
     officer = models.CharField(max_length=200)
     date = models.DateField()
@@ -78,12 +117,6 @@ class ReadyReckonerRate(models.Model):
         related_name="rr_rates"
     )
 
-    tool = models.ForeignKey(
-        ToolMaster,
-        on_delete=models.CASCADE,
-        related_name="rr_records"
-    )
-
     district = models.CharField(max_length=100)
     taluka = models.CharField(max_length=100)
     village = models.CharField(max_length=100)
@@ -114,12 +147,6 @@ class ReadyReckonerRate(models.Model):
 
     unit = models.CharField(max_length=50, choices=UNIT_CHOICES)
 
-    document = models.FileField(
-        upload_to='ready_reckoner_documents/',
-        null=True,
-        blank=True
-    )
-
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -145,12 +172,6 @@ class LandRecord712(models.Model):
     taluka = models.CharField(max_length=100)
     village = models.CharField(max_length=150)
     gut_number = models.CharField(max_length=50)
-
-    tool = models.ForeignKey(
-        ToolMaster,
-        on_delete=models.CASCADE,
-        related_name="land_records"
-    )
 
     date = models.DateField(null=True, blank=True)
 
@@ -178,11 +199,6 @@ class LandRecord712(models.Model):
         blank=True
     )
 
-    document_712 = models.FileField(
-        upload_to='712_documents/',
-        null=True,
-        blank=True
-    )
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -249,6 +265,7 @@ class AssetFieldMaster(models.Model):
         on_delete=models.CASCADE,
         related_name="fields"
     )
+
     field_name = models.CharField(max_length=100)
     field_label_marathi = models.CharField(max_length=200)
     field_label_english = models.CharField(max_length=200, blank=True, null=True)
@@ -292,12 +309,6 @@ class Asset(models.Model):
         User,
         on_delete=models.CASCADE,
         related_name='assets'
-    )
-
-    tool = models.ForeignKey(
-        ToolMaster,
-        on_delete=models.CASCADE,
-        related_name="asset_records"
     )
 
     asset_type = models.CharField(max_length=100, choices=ASSET_TYPE_CHOICES)
@@ -380,11 +391,6 @@ class Document(models.Model):
         ('court', 'Court Matter Document'),
     ]
 
-    tool = models.ForeignKey(
-        ToolMaster,
-        on_delete=models.CASCADE,
-        related_name="document_records"
-    )
 
     document_type = models.CharField(
         max_length=20,
@@ -433,12 +439,6 @@ class Document(models.Model):
 
     # ---------------- Common Fields ----------------
     document_name = models.CharField(max_length=255)
-
-    document = models.FileField(
-        upload_to='documents/',
-        null=True,
-        blank=True
-    )
 
     description = models.TextField(
         null=True,
