@@ -22,6 +22,8 @@
                 <th>गाव</th>
                 <th>गट क्रमांक</th>
                 <th>शेतकरी नाव</th>
+                <th>मूळ क्षेत्र</th>
+                <th>पोटखराबा</th>
                 <th>मूल्यांकन प्रकार</th>
                 <th>आकारणी</th>
                 <th>लागू दर</th>
@@ -35,6 +37,8 @@
                 <td>{{ item.village }}</td>
                 <td>{{ item.gut_number }}</td>
                 <td>{% for f in item.farmers.all %}{{ f.farmer_name }}{% if not forloop.last %}<br>{% endif %}{% endfor %}</td>
+                <td>{% for f in item.farmers.all %}{{ f.total_area|default:"-" }}{% if not forloop.last %}<br>{% endif %}{% endfor %}</td>
+                <td>{% for f in item.farmers.all %}{{ f.potkharaba|default:"-" }}{% if not forloop.last %}<br>{% endif %}{% endfor %}</td>
                 <td>{{ item.assessment_type }}</td>
                 <td>{{ item.aakarnee }}</td>
                 <td>{{ item.rate_applied }}</td>

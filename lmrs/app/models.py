@@ -188,6 +188,7 @@ class FarmerNames(models.Model):
 
     def __str__(self):
         return f"{self.farmer_name} - Gut {self.land_record.gut_number}"
+    
 
 class AssetTypeMaster(models.Model):
     asset_code = models.CharField(max_length=100, unique=True)

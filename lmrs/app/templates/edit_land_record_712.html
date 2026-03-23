@@ -35,18 +35,31 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
 
                 <div class="md:col-span-2">
-                    <label class="font-semibold">शेतकऱ्यांची नावे</label>
-                    <div id="farmer-list" class="space-y-2 mt-1">
+                    <div class="flex gap-2 mb-1">
+                        <span class="font-semibold flex-1">शेतकऱ्यांची नावे</span>
+                        <span class="font-semibold w-36 text-center">मूळ क्षेत्र</span>
+                        <span class="font-semibold w-36 text-center">पोटखराबा</span>
+                        <span class="w-8"></span>
+                    </div>
+                    <div id="farmer-list" class="space-y-2">
                         {% for farmer in farmers %}
-                        <div class="flex gap-2">
+                        <div class="flex gap-2 items-center">
                             <input type="text" name="farmer_name[]" value="{{ farmer.farmer_name }}"
-                                class="w-full border p-2 rounded focus:ring-2 focus:ring-green-400">
+                                class="flex-1 border p-2 rounded focus:ring-2 focus:ring-green-400">
+                            <input type="text" name="total_area[]" value="{{ farmer.total_area }}" placeholder="उदा. 1-65"
+                                class="w-36 border p-2 rounded focus:ring-2 focus:ring-green-400">
+                            <input type="text" name="potkharaba[]" value="{{ farmer.potkharaba }}" placeholder="उदा. 0-53"
+                                class="w-36 border p-2 rounded focus:ring-2 focus:ring-green-400">
                             <button type="button" onclick="removeFarmer(this)" class="text-red-500 font-bold px-2">✕</button>
                         </div>
                         {% empty %}
-                        <div class="flex gap-2">
+                        <div class="flex gap-2 items-center">
                             <input type="text" name="farmer_name[]" placeholder="पूर्ण नाव टाका"
-                                class="w-full border p-2 rounded focus:ring-2 focus:ring-green-400">
+                                class="flex-1 border p-2 rounded focus:ring-2 focus:ring-green-400">
+                            <input type="text" name="total_area[]" placeholder="उदा. 1-65"
+                                class="w-36 border p-2 rounded focus:ring-2 focus:ring-green-400">
+                            <input type="text" name="potkharaba[]" placeholder="उदा. 0-53"
+                                class="w-36 border p-2 rounded focus:ring-2 focus:ring-green-400">
                             <button type="button" onclick="removeFarmer(this)" class="text-red-500 font-bold px-2 hidden">✕</button>
                         </div>
                         {% endfor %}
@@ -108,8 +121,10 @@
 function addFarmer() {
     const list = document.getElementById('farmer-list');
     const row = document.createElement('div');
-    row.className = 'flex gap-2';
-    row.innerHTML = `<input type="text" name="farmer_name[]" placeholder="पूर्ण नाव टाका" class="w-full border p-2 rounded focus:ring-2 focus:ring-green-400">
+    row.className = 'flex gap-2 items-center';
+    row.innerHTML = `<input type="text" name="farmer_name[]" placeholder="पूर्ण नाव टाका" class="flex-1 border p-2 rounded focus:ring-2 focus:ring-green-400">
+        <input type="text" name="total_area[]" placeholder="मूळ क्षेत्र (उदा. 1-65)" class="w-36 border p-2 rounded focus:ring-2 focus:ring-green-400">
+        <input type="text" name="potkharaba[]" placeholder="पोटखराबा (उदा. 0-53)" class="w-36 border p-2 rounded focus:ring-2 focus:ring-green-400">
         <button type="button" onclick="removeFarmer(this)" class="text-red-500 font-bold px-2">✕</button>`;
     list.appendChild(row);
 }

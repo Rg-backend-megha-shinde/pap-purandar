@@ -90,9 +90,18 @@ def land_record_712(request):
             rate_year=request.POST.get('rate_year'),
             document_712=request.FILES.get('document_712'),
         )
-        for name in request.POST.getlist('farmer_name[]'):
+        for name, total_area, potkharaba in zip(
+            request.POST.getlist('farmer_name[]'),
+            request.POST.getlist('total_area[]'),
+            request.POST.getlist('potkharaba[]'),
+        ):
             if name.strip():
-                FarmerNames.objects.create(land_record=obj, farmer_name=name.strip())
+                FarmerNames.objects.create(
+                    land_record=obj,
+                    farmer_name=name.strip(),
+                    total_area=total_area.strip() or None,
+                    potkharaba=potkharaba.strip() or None,
+                )
         return redirect('land_record_712_list')
     return render(request, "landrecord.html")
 
@@ -119,9 +128,18 @@ def edit_land_record_712(request, id):
             obj.document_712 = request.FILES.get('document_712')
         obj.save()
         farmers.delete()
-        for name in request.POST.getlist('farmer_name[]'):
+        for name, total_area, potkharaba in zip(
+            request.POST.getlist('farmer_name[]'),
+            request.POST.getlist('total_area[]'),
+            request.POST.getlist('potkharaba[]'),
+        ):
             if name.strip():
-                FarmerNames.objects.create(land_record=obj, farmer_name=name.strip())
+                FarmerNames.objects.create(
+                    land_record=obj,
+                    farmer_name=name.strip(),
+                    total_area=total_area.strip() or None,
+                    potkharaba=potkharaba.strip() or None,
+                )
         return redirect('edit_land_record_712', id=obj.id)
     return render(request, 'edit_land_record_712.html', {'obj': obj, 'farmers': farmers})
 
