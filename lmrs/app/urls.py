@@ -41,6 +41,7 @@ urlpatterns = [
     #court/general document upload Url
     path('tools/documents/', views.doc_upload, name='doc_upload'),
     path('tools/documents/delete/<int:id>/', views.doc_delete, name='doc_delete'),
+    path('tools/documents/edit/<int:id>/', views.doc_edit, name='doc_edit'),
     path('api/documents/', views.doc_list_api, name='doc_list_api'),
 
 ]

@@ -6,6 +6,21 @@ from django.contrib.auth.models import User
 # 🔹 Inspection Tool
 # =========================================================
 
+class ToolMaster(models.Model):
+
+    tool_id = models.AutoField(primary_key=True)
+
+    tool_name = models.CharField(max_length=200)
+
+    is_active = models.BooleanField(default=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.tool_name
+    
+
+
 class Inspection(models.Model):
     user = models.ForeignKey(
         User,
@@ -17,6 +32,11 @@ class Inspection(models.Model):
     taluka = models.CharField(max_length=100)
     village = models.CharField(max_length=100)
     gut_number = models.CharField(max_length=50)
+
+    tool = models.ForeignKey(ToolMaster,
+        on_delete=models.CASCADE,
+        related_name="inspection_records"
+    )
 
     officer = models.CharField(max_length=200)
     date = models.DateField()
@@ -56,6 +76,12 @@ class ReadyReckonerRate(models.Model):
         User,
         on_delete=models.CASCADE,
         related_name="rr_rates"
+    )
+
+    tool = models.ForeignKey(
+        ToolMaster,
+        on_delete=models.CASCADE,
+        related_name="rr_records"
     )
 
     district = models.CharField(max_length=100)
@@ -119,6 +145,12 @@ class LandRecord712(models.Model):
     taluka = models.CharField(max_length=100)
     village = models.CharField(max_length=150)
     gut_number = models.CharField(max_length=50)
+
+    tool = models.ForeignKey(
+        ToolMaster,
+        on_delete=models.CASCADE,
+        related_name="land_records"
+    )
 
     date = models.DateField(null=True, blank=True)
 
@@ -262,6 +294,12 @@ class Asset(models.Model):
         related_name='assets'
     )
 
+    tool = models.ForeignKey(
+        ToolMaster,
+        on_delete=models.CASCADE,
+        related_name="asset_records"
+    )
+
     asset_type = models.CharField(max_length=100, choices=ASSET_TYPE_CHOICES)
     asset_name = models.CharField(max_length=255)
 
@@ -341,6 +379,12 @@ class Document(models.Model):
         ('general', 'General Document'),
         ('court', 'Court Matter Document'),
     ]
+
+    tool = models.ForeignKey(
+        ToolMaster,
+        on_delete=models.CASCADE,
+        related_name="document_records"
+    )
 
     document_type = models.CharField(
         max_length=20,

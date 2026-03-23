@@ -2103,7 +2103,7 @@ def get_asset_fields_by_type(request, asset_code):
 @login_required
 def doc_upload(request):
     if request.method == "POST":
-        doc_type = request.POST.get('document_type')  # 'general' or 'court'
+        doc_type = request.POST.get('document_type')
         Document.objects.create(
             user=request.user,
             document_type=doc_type,
@@ -2117,37 +2117,71 @@ def doc_upload(request):
             description=request.POST.get('description') or None,
             document_date=request.POST.get('document_date') or None,
             court_date=request.POST.get('court_date') or None,
+            owner_name=request.POST.get('owner_name') or None,
+            matter_type=request.POST.get('matter_type') or None,
         )
         return redirect(f'/tools/documents/?tab={doc_type}')
 
     tab = request.GET.get('tab', 'general')
-    general_docs = Document.objects.filter(document_type='general').order_by('-uploaded_at')
-    court_docs = Document.objects.filter(document_type='court').order_by('-uploaded_at')
-    return render(request, 'doc_upload.html', {
-        'general_docs': general_docs,
-        'court_docs': court_docs,
-        'active_tab': tab,
-    })
+    return render(request, 'doc_upload.html', {'active_tab': tab})
 
 
 @login_required
 def doc_delete(request, id):
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
     doc = get_object_or_404(Document, id=id, user=request.user)
-    doc_type = doc.document_type
     doc.delete()
-    return redirect(f'/tools/documents/?tab={doc_type}')
+    return JsonResponse({'success': True})
+
+
+@login_required
+def doc_edit(request, id):
+    doc = get_object_or_404(Document, id=id, user=request.user)
+    if request.method == 'GET':
+        return JsonResponse({
+            'id': doc.id,
+            'document_type': doc.document_type,
+            'document_level': doc.document_level,
+            'district': doc.district,
+            'taluka': doc.taluka or '',
+            'village': doc.village or '',
+            'gut_number': doc.gut_number or '',
+            'document_name': doc.document_name,
+            'description': doc.description or '',
+            'document_date': doc.document_date.strftime('%Y-%m-%d') if doc.document_date else '',
+            'court_date': doc.court_date.strftime('%Y-%m-%d') if doc.court_date else '',
+            'owner_name': doc.owner_name or '',
+            'matter_type': doc.matter_type or '',
+            'file_url': doc.document.url if doc.document else '',
+        })
+    if request.method == 'POST':
+        doc.document_level = request.POST.get('document_level', doc.document_level)
+        doc.district = request.POST.get('district', doc.district)
+        doc.taluka = request.POST.get('taluka') or None
+        doc.village = request.POST.get('village') or None
+        doc.gut_number = request.POST.get('gut_number') or None
+        doc.document_name = request.POST.get('document_name', doc.document_name)
+        doc.description = request.POST.get('description') or None
+        doc.document_date = request.POST.get('document_date') or None
+        doc.court_date = request.POST.get('court_date') or None
+        doc.owner_name = request.POST.get('owner_name') or None
+        doc.matter_type = request.POST.get('matter_type') or None
+        if request.FILES.get('document'):
+            doc.document = request.FILES.get('document')
+        doc.save()
+        return JsonResponse({'success': True})
+    return JsonResponse({'error': 'Method not allowed'}, status=405)
 
 
 @login_required
 def doc_list_api(request):
-    """JSON API — returns documents filtered by type"""
     doc_type = request.GET.get('type', 'general')
     docs = Document.objects.filter(document_type=doc_type).order_by('-uploaded_at')
+    matter_labels = dict(Document.MATTER_TYPE_CHOICES)
     data = []
     for d in docs:
-        ext = ''
-        if d.document:
-            ext = d.document.name.rsplit('.', 1)[-1].lower() if '.' in d.document.name else ''
+        ext = d.document.name.rsplit('.', 1)[-1].lower() if d.document and '.' in d.document.name else ''
         data.append({
             'id': d.id,
             'document_name': d.document_name,
@@ -2159,6 +2193,9 @@ def doc_list_api(request):
             'description': d.description or '',
             'document_date': d.document_date.strftime('%d/%m/%Y') if d.document_date else '',
             'court_date': d.court_date.strftime('%d/%m/%Y') if d.court_date else '',
+            'owner_name': d.owner_name or '',
+            'matter_type': d.matter_type or '',
+            'matter_type_display': matter_labels.get(d.matter_type, '') if d.matter_type else '',
             'uploaded_at': d.uploaded_at.strftime('%d/%m/%Y'),
             'file_url': d.document.url if d.document else '',
             'ext': ext,
