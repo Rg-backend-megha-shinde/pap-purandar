@@ -78,7 +78,6 @@ WSGI_APPLICATION = 'lmrs.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
-
 USE_DEV_SERVER_DB = os.environ.get('USE_DEV_SERVER_DB', 'false').lower() == 'true'
 
 if USE_DEV_SERVER_DB:
@@ -88,7 +87,7 @@ if USE_DEV_SERVER_DB:
             'NAME': 'lmrs',
             'USER': 'postgres',
             'PASSWORD': os.environ.get('DB_PASSWORD'),
-            'HOST': '172.17.0.1',
+            'HOST': os.environ.get('DB_HOST', '127.0.0.1'),
             'PORT': '5432',
         }
     }
@@ -99,7 +98,7 @@ else:
             'NAME': 'lmrs_new',
             'USER': 'postgres',
             'PASSWORD': os.environ.get('DB_PASSWORD'),
-            'HOST': '127.0.0.1',
+            'HOST': os.environ.get('DB_HOST', '127.0.0.1'),
             'PORT': '5432',
         }
     }
