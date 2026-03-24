@@ -102,6 +102,10 @@
         <div class="border rounded-lg p-4 bg-gray-50 mb-6">
             <h3 class="font-bold text-lg mb-4">गणना तपशील</h3>
 
+            <div id="formulaWarning"
+                 class="hidden mb-4 p-3 rounded border border-red-300 bg-red-50 text-red-700 font-medium">
+            </div>
+
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                     <label class="font-semibold">सूत्र</label>
@@ -191,6 +195,7 @@
     const totalMeasurement = document.getElementById("totalMeasurement");
     const finalCalculation = document.getElementById("finalCalculation");
     const finalAmount = document.getElementById("finalAmount");
+    const formulaWarning = document.getElementById("formulaWarning");
 
     const districtSelect = document.getElementById("district");
     const talukaSelect = document.getElementById("taluka");
@@ -201,6 +206,16 @@
     let currentAssetFields = [];
     let currentFormula = "";
     let currentFormulaLabel = "";
+
+    function showFormulaWarning(message) {
+        formulaWarning.textContent = message;
+        formulaWarning.classList.remove("hidden");
+    }
+
+    function hideFormulaWarning() {
+        formulaWarning.textContent = "";
+        formulaWarning.classList.add("hidden");
+    }
 
     function createField(field) {
         const inputType = field.field_type === "number" ? "number" : "text";
@@ -245,13 +260,30 @@
             const response = await fetch(`/api/asset-fields/${selectedType}/`);
             const data = await response.json();
 
-            if (!data.success) return;
+            if (!data.success) {
+                showFormulaWarning("मालमत्ता प्रकाराची माहिती मिळाली नाही.");
+                return;
+            }
 
             currentAssetFields = data.fields || [];
-            currentFormula = data.formula?.formula_expression || "";
-            currentFormulaLabel = data.formula?.formula_label_marathi || "";
 
-            formulaText.value = currentFormulaLabel;
+            if (data.formula && data.formula.is_valid) {
+                currentFormula = data.formula.formula_expression || "";
+                currentFormulaLabel = data.formula.formula_label_marathi || "";
+                formulaText.value = currentFormulaLabel;
+                hideFormulaWarning();
+            } else {
+                currentFormula = "";
+                currentFormulaLabel = "";
+                formulaText.value = "";
+
+                const invalidFields = data.formula?.invalid_fields || [];
+                if (invalidFields.length > 0) {
+                    showFormulaWarning(`या मालमत्ता प्रकारासाठी सूत्र चुकीचे आहे. अवैध फील्ड: ${invalidFields.join(", ")}`);
+                } else {
+                    showFormulaWarning("या मालमत्ता प्रकारासाठी सूत्र उपलब्ध नाही.");
+                }
+            }
 
             currentAssetFields.forEach(field => {
                 dynamicFields.insertAdjacentHTML("beforeend", createField(field));
@@ -262,6 +294,7 @@
             calculateAsset();
         } catch (error) {
             console.error("Error loading asset fields:", error);
+            showFormulaWarning("फील्ड लोड करताना त्रुटी आली.");
         }
     }
 
@@ -319,6 +352,7 @@
             const finalResult = Function(`"use strict"; return (${measurementExpression})`)();
 
             let measurementOnlyExpression = currentFormula.replace(/\brate\b/g, "1");
+
             Object.keys(values).forEach(key => {
                 if (key === "rate") return;
                 const regex = new RegExp(`\\b${key}\\b`, "g");
@@ -344,6 +378,7 @@
         totalMeasurement.value = "";
         finalCalculation.value = "";
         finalAmount.value = "";
+        hideFormulaWarning();
     }
 
     function resetAssetForm() {
