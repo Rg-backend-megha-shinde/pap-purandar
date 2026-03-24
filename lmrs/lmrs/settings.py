@@ -78,16 +78,31 @@ WSGI_APPLICATION = 'lmrs.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.environ.get('DB_NAME', 'lmrs'),
-        'USER': os.environ.get('DB_USER', 'postgres'),
-        'PASSWORD': os.environ.get('DB_PASSWORD', ''),
-        'HOST': os.environ.get('DB_HOST', 'host.docker.internal'),
-        'PORT': os.environ.get('DB_PORT', '5432'),
+
+USE_DEV_SERVER_DB = os.environ.get('USE_DEV_SERVER_DB', 'false').lower() == 'true'
+
+if USE_DEV_SERVER_DB:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': 'lmrs',
+            'USER': 'postgres',
+            'PASSWORD': os.environ.get('DB_PASSWORD'),
+            'HOST': '172.17.0.1',
+            'PORT': '5432',
+        }
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': 'lmrs_new',
+            'USER': 'postgres',
+            'PASSWORD': os.environ.get('DB_PASSWORD'),
+            'HOST': '127.0.0.1',
+            'PORT': '5432',
+        }
+    }
 # Password validation
 # https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validators
 

@@ -1,0 +1,12 @@
+docker-compose.devdb.ymlservices:
+  web:
+    build: .
+    container_name: lmrs-web
+    working_dir: /app/lmrs
+    command: sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
