@@ -15,6 +15,7 @@ urlpatterns = [
     path('tools/ready-reckoner/list/', views.ready_reckoner_list, name='ready_reckoner_list'),
     path('tools/ready-reckoner/edit/<int:id>/', views.edit_ready_reckoner, name='edit_ready_reckoner'),
     path('tools/ready-reckoner/delete/<int:id>/', views.delete_ready_reckoner, name='delete_ready_reckoner'),
+    path('tools/delete-document-attachment/<int:attachment_id>/', views.delete_document_attachment, name='delete_document_attachment'),
     path('tools/712/', views.land_record_712),
     path('tools/712/list/', views.land_record_712_list, name='land_record_712_list'),
     path('tools/712/edit/<int:id>/', views.edit_land_record_712, name='edit_land_record_712'),
@@ -41,6 +42,9 @@ urlpatterns = [
     #court/general document upload Url
     path('tools/documents/', views.doc_upload, name='doc_upload'),
     path('tools/documents/delete/<int:id>/', views.doc_delete, name='doc_delete'),
+    path('tools/documents/edit/<int:id>/', views.doc_edit, name='doc_edit'),
     path('api/documents/', views.doc_list_api, name='doc_list_api'),
+    
+    
 
 ]

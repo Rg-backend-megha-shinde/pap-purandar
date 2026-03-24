@@ -6,6 +6,84 @@ from django.contrib.auth.models import User
 # 🔹 Inspection Tool
 # =========================================================
 
+class ToolMaster(models.Model):
+
+    tool_id = models.AutoField(primary_key=True)
+
+    tool_name = models.CharField(max_length=200)
+
+    is_active = models.BooleanField(default=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.tool_name
+    
+
+class DocumentMaster(models.Model):
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    tool = models.ForeignKey(ToolMaster, on_delete=models.CASCADE)
+
+    inspection = models.ForeignKey('Inspection', on_delete=models.SET_NULL, null=True, blank=True)
+    rr_rate = models.ForeignKey('ReadyReckonerRate', on_delete=models.SET_NULL, null=True, blank=True)
+    land_record = models.ForeignKey('LandRecord712', on_delete=models.SET_NULL, null=True, blank=True)
+    asset = models.ForeignKey('Asset', on_delete=models.SET_NULL, null=True, blank=True)
+    document_tool_record = models.ForeignKey('Document', on_delete=models.SET_NULL, null=True, blank=True)
+
+    # ⭐ ADD THIS
+    DOCUMENT_TYPE_CHOICES = [
+        ('general', 'General Document'),
+        ('court', 'Court Matter Document'),
+    ]
+
+    document_type = models.CharField(
+        max_length=20,
+        choices=DOCUMENT_TYPE_CHOICES,
+        default='general'
+    )
+
+    MATTER_TYPE_CHOICES = [
+        ('arbitration', 'Arbitration'),
+        ('civil_dispute', 'Civil Dispute'),
+    ]
+
+    matter_type = models.CharField(
+        max_length=20,
+        choices=MATTER_TYPE_CHOICES,
+        null=True,
+        blank=True
+    )
+
+    district = models.CharField(max_length=100, null=True, blank=True)
+    taluka = models.CharField(max_length=100, null=True, blank=True)
+    village = models.CharField(max_length=150, null=True, blank=True)
+    gut_number = models.CharField(max_length=50, null=True, blank=True)
+
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+    
+
+
+class DocumentAttachment(models.Model):
+
+    document_master = models.ForeignKey(
+        DocumentMaster,
+        on_delete=models.CASCADE,
+        related_name="attachments"
+    )
+
+    file = models.FileField(
+        upload_to='documents/files/'
+    )
+
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Attachment for {self.document_master.tool.tool_name}"
+    
+
+
+
 class Inspection(models.Model):
     user = models.ForeignKey(
         User,
@@ -26,6 +104,10 @@ class Inspection(models.Model):
 
     def __str__(self):
         return f"{self.village} - {self.gut_number}"
+    
+    def get_documents(self):
+        """Get all documents associated with this inspection"""
+        return DocumentMaster.objects.filter(inspection=self)
 
 
 class TreeDetail(models.Model):
@@ -88,12 +170,6 @@ class ReadyReckonerRate(models.Model):
 
     unit = models.CharField(max_length=50, choices=UNIT_CHOICES)
 
-    document = models.FileField(
-        upload_to='ready_reckoner_documents/',
-        null=True,
-        blank=True
-    )
-
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -102,6 +178,10 @@ class ReadyReckonerRate(models.Model):
             f"{self.village} | {self.assessment_type} | "
             f"{self.assessment_range_min}-{self.assessment_range_max} | ₹{self.rate}"
         )
+    
+    def get_documents(self):
+        """Get all documents associated with this ready reckoner record"""
+        return DocumentMaster.objects.filter(rr_rate=self)
 
 
 # =========================================================
@@ -146,17 +226,16 @@ class LandRecord712(models.Model):
         blank=True
     )
 
-    document_712 = models.FileField(
-        upload_to='712_documents/',
-        null=True,
-        blank=True
-    )
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return f"{self.village} - Gut {self.gut_number}"
+    
+    def get_documents(self):
+        """Get all documents associated with this land record"""
+        return DocumentMaster.objects.filter(land_record=self)
 
 
 class FarmerNames(models.Model):
@@ -168,10 +247,27 @@ class FarmerNames(models.Model):
 
     farmer_name = models.CharField(max_length=200)
 
+    # 🔹 Total Area (Mul Kshetra) in Hectare-R format
+    total_area = models.CharField(
+        max_length=20,
+        null=True,
+        blank=True,
+        help_text="Format: H-R (e.g. 1-65)"
+    )
+
+    # 🔹 Potkharaba Area in Hectare-R format
+    potkharaba = models.CharField(
+        max_length=20,
+        null=True,
+        blank=True,
+        help_text="Format: H-R (e.g. 0-53)"
+    )
+
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return f"{self.farmer_name} - Gut {self.land_record.gut_number}"
+    
 
 class AssetTypeMaster(models.Model):
     asset_code = models.CharField(max_length=100, unique=True)
@@ -200,6 +296,7 @@ class AssetFieldMaster(models.Model):
         on_delete=models.CASCADE,
         related_name="fields"
     )
+
     field_name = models.CharField(max_length=100)
     field_label_marathi = models.CharField(max_length=200)
     field_label_english = models.CharField(max_length=200, blank=True, null=True)
@@ -271,6 +368,10 @@ class Asset(models.Model):
 
     def __str__(self):
         return f"{self.asset_name} ({self.get_asset_type_display()})"
+    
+    def get_documents(self):
+        """Get all documents associated with this asset"""
+        return DocumentMaster.objects.filter(asset=self).prefetch_related('attachments')
 
 
 class AssetMeasurement(models.Model):
@@ -325,9 +426,31 @@ class Document(models.Model):
         ('court', 'Court Matter Document'),
     ]
 
+
     document_type = models.CharField(
         max_length=20,
         choices=DOCUMENT_TYPE_CHOICES
+    )
+
+    # ---------------- Court / Matter Type ----------------
+    MATTER_TYPE_CHOICES = [
+        ('arbitration', 'Arbitration'),
+        ('civil_dispute', 'Civil Dispute'),
+    ]
+
+    matter_type = models.CharField(
+        max_length=20,
+        choices=MATTER_TYPE_CHOICES,
+        null=True,
+        blank=True
+    )
+
+    # ---------------- Owner / Farmer ----------------
+    owner_name = models.CharField(
+        max_length=200,
+        null=True,
+        blank=True,
+        help_text="Name of land owner / farmer"
     )
 
     # ---------------- Location Level ----------------
@@ -352,12 +475,6 @@ class Document(models.Model):
     # ---------------- Common Fields ----------------
     document_name = models.CharField(max_length=255)
 
-    document = models.FileField(
-        upload_to='documents/',
-        null=True,
-        blank=True
-    )
-
     description = models.TextField(
         null=True,
         blank=True
@@ -380,3 +497,7 @@ class Document(models.Model):
 
     def __str__(self):
         return f"{self.document_name} ({self.document_type})"
+    
+    def get_documents(self):
+        """Get all documents associated with this document record"""
+        return DocumentMaster.objects.filter(document_tool_record=self).prefetch_related('attachments')

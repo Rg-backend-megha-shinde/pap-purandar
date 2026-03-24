@@ -3,12 +3,14 @@ from django.http import JsonResponse, HttpResponse
 from django.db import connection
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import authenticate, login, logout
-from .models import Inspection, TreeDetail, ReadyReckonerRate, LandRecord712, FarmerNames,TreeMaster, Asset, AssetMeasurement, AssetTypeMaster, AssetFieldMaster, AssetFormulaMaster, Document
+from .models import Inspection, TreeDetail, ReadyReckonerRate, LandRecord712, FarmerNames,TreeMaster, Asset, AssetMeasurement, AssetTypeMaster, AssetFieldMaster, AssetFormulaMaster, Document, ToolMaster, DocumentMaster, DocumentAttachment
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponseForbidden
 from django.db import connection
 import csv
 import re
+
+
 
 def api_login_required(view_func):
     def wrapper(request, *args, **kwargs):
@@ -16,6 +18,75 @@ def api_login_required(view_func):
             return JsonResponse({"error": "Unauthorized"}, status=401)
         return view_func(request, *args, **kwargs)
     return wrapper
+
+
+def handle_document_upload(user, tool_name, files, district=None, taluka=None, village=None, gut_number=None, 
+                          inspection=None, rr_rate=None, land_record=None, asset=None, document_tool_record=None):
+    """
+    Centralized document upload handler for all tools.
+    
+    Args:
+        user: The user uploading the documents
+        tool_name: Name of the tool (must match ToolMaster.tool_name)
+        files: List of uploaded files
+        district, taluka, village, gut_number: Location information
+        inspection, rr_rate, land_record, asset, document_tool_record: FK to specific tool record (only one should be set)
+    
+    Returns:
+        DocumentMaster instance
+    """
+    # Get or create the ToolMaster entry
+    tool, created = ToolMaster.objects.get_or_create(
+        tool_name=tool_name,
+        defaults={'is_active': True}
+    )
+    
+    # Get or create DocumentMaster entry for this tool record
+    doc_master_kwargs = {
+        'user': user,
+        'tool': tool,
+        'district': district,
+        'taluka': taluka,
+        'village': village,
+        'gut_number': gut_number,
+    }
+    
+    # Set the appropriate FK based on which tool record is provided
+    if inspection:
+        doc_master_kwargs['inspection'] = inspection
+    elif rr_rate:
+        doc_master_kwargs['rr_rate'] = rr_rate
+    elif land_record:
+        doc_master_kwargs['land_record'] = land_record
+    elif asset:
+        doc_master_kwargs['asset'] = asset
+    elif document_tool_record:
+        doc_master_kwargs['document_tool_record'] = document_tool_record
+    
+    # Try to get existing DocumentMaster or create new one
+    doc_master = None
+    if inspection:
+        doc_master = DocumentMaster.objects.filter(inspection=inspection).first()
+    elif rr_rate:
+        doc_master = DocumentMaster.objects.filter(rr_rate=rr_rate).first()
+    elif land_record:
+        doc_master = DocumentMaster.objects.filter(land_record=land_record).first()
+    elif asset:
+        doc_master = DocumentMaster.objects.filter(asset=asset).first()
+    elif document_tool_record:
+        doc_master = DocumentMaster.objects.filter(document_tool_record=document_tool_record).first()
+    
+    if not doc_master:
+        doc_master = DocumentMaster.objects.create(**doc_master_kwargs)
+    
+    # Create DocumentAttachment entries for each file
+    for file in files:
+        DocumentAttachment.objects.create(
+            document_master=doc_master,
+            file=file
+        )
+    
+    return doc_master
 
 @login_required
 def home(request):
@@ -40,14 +111,30 @@ def ready_reckoner(request):
             assessment_range_max=request.POST.get('assessment_range_max'),
             rate=request.POST.get('rate'),
             unit=request.POST.get('unit'),
-            document=request.FILES.get('document'),
         )
+        
+        # Handle document uploads using centralized system
+        files = request.FILES.getlist('documents')
+        if files:
+            handle_document_upload(
+                user=request.user,
+                tool_name='Ready Reckoner Rate',
+                rr_rate=obj,
+                files=files,
+                district=obj.district,
+                taluka=obj.taluka,
+                village=obj.village
+            )
+        
         return redirect('ready_reckoner_list')
     return render(request, "readyreckoner.html")
 
 @login_required
 def ready_reckoner_list(request):
     records = ReadyReckonerRate.objects.all().order_by('-id')
+    # Prefetch documents for each record
+    for record in records:
+        record.documents_list = record.get_documents()
     return render(request, 'ready_reckoner_list.html', {'records': records})
 
 @login_required
@@ -63,16 +150,49 @@ def edit_ready_reckoner(request, id):
         obj.assessment_range_max = request.POST.get('assessment_range_max')
         obj.rate = request.POST.get('rate')
         obj.unit = request.POST.get('unit')
-        if request.FILES.get('document'):
-            obj.document = request.FILES.get('document')
         obj.save()
+        
+        # Handle additional document uploads using centralized system
+        files = request.FILES.getlist('documents')
+        if files:
+            handle_document_upload(
+                user=request.user,
+                tool_name='Ready Reckoner Rate',
+                rr_rate=obj,
+                files=files,
+                district=obj.district,
+                taluka=obj.taluka,
+                village=obj.village
+            )
+        
         return redirect('edit_ready_reckoner', id=obj.id)
-    return render(request, 'edit_ready_reckoner.html', {'obj': obj})
+    
+    # Get existing documents
+    documents = obj.get_documents()
+    return render(request, 'edit_ready_reckoner.html', {'obj': obj, 'documents': documents})
 
 @login_required
 def delete_ready_reckoner(request, id):
     ReadyReckonerRate.objects.filter(id=id).delete()
     return redirect('ready_reckoner_list')
+
+@login_required
+def delete_document_attachment(request, attachment_id):
+    """Delete a document attachment"""
+    if request.method == 'POST':
+        try:
+            attachment = DocumentAttachment.objects.get(id=attachment_id)
+            # Delete the file from storage
+            if attachment.file:
+                attachment.file.delete()
+            # Delete the database record
+            attachment.delete()
+            return JsonResponse({'success': True})
+        except DocumentAttachment.DoesNotExist:
+            return JsonResponse({'success': False, 'error': 'File not found'}, status=404)
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)}, status=500)
+    return JsonResponse({'success': False, 'error': 'Invalid request method'}, status=400)
 
 @login_required
 def land_record_712(request):
@@ -88,17 +208,43 @@ def land_record_712(request):
             aakarnee=request.POST.get('aakarnee'),
             rate_applied=request.POST.get('rate_applied'),
             rate_year=request.POST.get('rate_year'),
-            document_712=request.FILES.get('document_712'),
         )
-        for name in request.POST.getlist('farmer_name[]'):
+        for name, total_area, potkharaba in zip(
+            request.POST.getlist('farmer_name[]'),
+            request.POST.getlist('total_area[]'),
+            request.POST.getlist('potkharaba[]'),
+        ):
             if name.strip():
-                FarmerNames.objects.create(land_record=obj, farmer_name=name.strip())
+                FarmerNames.objects.create(
+                    land_record=obj,
+                    farmer_name=name.strip(),
+                    total_area=total_area.strip() or None,
+                    potkharaba=potkharaba.strip() or None,
+                )
+        
+        # Handle document uploads using centralized system
+        files = request.FILES.getlist('documents')
+        if files:
+            handle_document_upload(
+                user=request.user,
+                tool_name='7/12 Land Record',
+                land_record=obj,
+                files=files,
+                district=obj.district,
+                taluka=obj.taluka,
+                village=obj.village,
+                gut_number=obj.gut_number
+            )
+        
         return redirect('land_record_712_list')
     return render(request, "landrecord.html")
 
 @login_required
 def land_record_712_list(request):
     records = LandRecord712.objects.prefetch_related('farmers').all().order_by('-id')
+    # Prefetch documents for each record
+    for record in records:
+        record.documents_list = record.get_documents()
     return render(request, 'land_record_712_list.html', {'records': records})
 
 @login_required
@@ -119,11 +265,38 @@ def edit_land_record_712(request, id):
             obj.document_712 = request.FILES.get('document_712')
         obj.save()
         farmers.delete()
-        for name in request.POST.getlist('farmer_name[]'):
+        for name, total_area, potkharaba in zip(
+            request.POST.getlist('farmer_name[]'),
+            request.POST.getlist('total_area[]'),
+            request.POST.getlist('potkharaba[]'),
+        ):
             if name.strip():
-                FarmerNames.objects.create(land_record=obj, farmer_name=name.strip())
+                FarmerNames.objects.create(
+                    land_record=obj,
+                    farmer_name=name.strip(),
+                    total_area=total_area.strip() or None,
+                    potkharaba=potkharaba.strip() or None,
+                )
+        
+        # Handle additional document uploads using centralized system
+        files = request.FILES.getlist('documents')
+        if files:
+            handle_document_upload(
+                user=request.user,
+                tool_name='7/12 Land Record',
+                land_record=obj,
+                files=files,
+                district=obj.district,
+                taluka=obj.taluka,
+                village=obj.village,
+                gut_number=obj.gut_number
+            )
+        
         return redirect('edit_land_record_712', id=obj.id)
-    return render(request, 'edit_land_record_712.html', {'obj': obj, 'farmers': farmers})
+    
+    # Get existing documents
+    documents = obj.get_documents()
+    return render(request, 'edit_land_record_712.html', {'obj': obj, 'farmers': farmers, 'documents': documents})
 
 @login_required
 def delete_land_record_712(request, id):
@@ -196,6 +369,21 @@ def inspection_form(request):
                     girth=girths[i] or None,
                     height=heights[i] or None,
                 )
+        
+        # Handle document uploads using centralized system
+        files = request.FILES.getlist('documents')
+        if files:
+            handle_document_upload(
+                user=request.user,
+                tool_name='Inspection',
+                inspection=inspection,
+                files=files,
+                district=inspection.district,
+                taluka=inspection.taluka,
+                village=inspection.village,
+                gut_number=inspection.gut_number
+            )
+        
         return redirect('inspection_list')
     return render(request, "inspection_form.html")
 
@@ -1792,7 +1980,10 @@ def get_gut_numbers(request, village):
 
 @login_required
 def inspection_list(request):
-    inspections = TreeDetail.objects.select_related('inspection', 'inspection__user').all()
+    inspections = Inspection.objects.all().order_by('-id')
+    # Prefetch documents for each inspection
+    for inspection in inspections:
+        inspection.documents_list = inspection.get_documents()
     return render(request, "inspection_list.html", {"inspections": inspections})
 
 @login_required
@@ -1843,12 +2034,29 @@ def edit_inspection(request, id):
                         girth=girths[i] or None,
                         height=heights[i] or None,
                     )
+            
+            # Handle additional document uploads using centralized system
+            files = request.FILES.getlist('documents')
+            if files:
+                handle_document_upload(
+                    user=request.user,
+                    tool_name='Inspection',
+                    inspection=inspection,
+                    files=files,
+                    district=inspection.district,
+                    taluka=inspection.taluka,
+                    village=inspection.village,
+                    gut_number=inspection.gut_number
+                )
 
             return redirect('inspection_list')
-
+        
+        # Get existing documents
+        documents = inspection.get_documents()
         return render(request, "edit_inspection.html", {
             "inspection": inspection,
-            "tree_details": tree_details
+            "tree_details": tree_details,
+            "documents": documents
         })
 
     except Inspection.DoesNotExist:
@@ -2000,6 +2208,20 @@ def asset_creation(request):
                     field_value=field_values[i] or None,
                     unit=field_units[i] if i < len(field_units) else "",
                 )
+        
+        # Handle document uploads using centralized system
+        files = request.FILES.getlist('documents')
+        if files:
+            handle_document_upload(
+                user=request.user,
+                tool_name='Asset Creation',
+                asset=asset,
+                files=files,
+                district=asset.district,
+                taluka=asset.taluka,
+                village=asset.village,
+                gut_number=asset.gut_number
+            )
 
         return redirect("asset_creation")
 
@@ -2083,10 +2305,18 @@ def get_asset_fields_by_type(request, asset_code):
     return render(request, "asset_creation.html")
 
 @login_required
+@login_required
 def doc_upload(request):
     if request.method == "POST":
-        doc_type = request.POST.get('document_type')  # 'general' or 'court'
-        Document.objects.create(
+        doc_type = request.POST.get('document_type')
+        
+        # Get or create the Document Management tool
+        tool, _ = ToolMaster.objects.get_or_create(
+            tool_name='Document Management'
+        )
+        
+        # Create Document record (for metadata)
+        doc = Document.objects.create(
             user=request.user,
             document_type=doc_type,
             document_level=request.POST.get('document_level'),
@@ -2095,41 +2325,148 @@ def doc_upload(request):
             village=request.POST.get('village') or None,
             gut_number=request.POST.get('gut_number') or None,
             document_name=request.POST.get('document_name'),
-            document=request.FILES.get('document'),
             description=request.POST.get('description') or None,
             document_date=request.POST.get('document_date') or None,
             court_date=request.POST.get('court_date') or None,
+            owner_name=request.POST.get('owner_name') or None,
+            matter_type=request.POST.get('matter_type') or None,
         )
+        
+        # Handle multiple document uploads using centralized system
+        files = request.FILES.getlist('documents')
+        if files:
+            # Create DocumentMaster with document_type and matter_type
+            doc_master = DocumentMaster.objects.create(
+                user=request.user,
+                tool=tool,
+                document_tool_record=doc,
+                document_type=doc_type,
+                matter_type=request.POST.get('matter_type') or None,
+                district=request.POST.get('district'),
+                taluka=request.POST.get('taluka') or None,
+                village=request.POST.get('village') or None,
+                gut_number=request.POST.get('gut_number') or None,
+            )
+            
+            # Create attachments for each file
+            for file in files:
+                DocumentAttachment.objects.create(
+                    document_master=doc_master,
+                    file=file
+                )
+        
         return redirect(f'/tools/documents/?tab={doc_type}')
 
     tab = request.GET.get('tab', 'general')
-    general_docs = Document.objects.filter(document_type='general').order_by('-uploaded_at')
-    court_docs = Document.objects.filter(document_type='court').order_by('-uploaded_at')
-    return render(request, 'doc_upload.html', {
-        'general_docs': general_docs,
-        'court_docs': court_docs,
-        'active_tab': tab,
-    })
+    return render(request, 'doc_upload.html', {'active_tab': tab})
 
 
 @login_required
 def doc_delete(request, id):
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
     doc = get_object_or_404(Document, id=id, user=request.user)
-    doc_type = doc.document_type
     doc.delete()
-    return redirect(f'/tools/documents/?tab={doc_type}')
+    return JsonResponse({'success': True})
+
+
+@login_required
+def doc_edit(request, id):
+    doc = get_object_or_404(Document, id=id, user=request.user)
+    if request.method == 'GET':
+        # Get file URL from centralized system
+        file_url = ''
+        doc_masters = doc.get_documents()
+        if doc_masters.exists():
+            first_doc_master = doc_masters.first()
+            if first_doc_master.attachments.exists():
+                first_attachment = first_doc_master.attachments.first()
+                if first_attachment.file:
+                    file_url = first_attachment.file.url
+        
+        return JsonResponse({
+            'id': doc.id,
+            'document_type': doc.document_type,
+            'document_level': doc.document_level,
+            'district': doc.district,
+            'taluka': doc.taluka or '',
+            'village': doc.village or '',
+            'gut_number': doc.gut_number or '',
+            'document_name': doc.document_name,
+            'description': doc.description or '',
+            'document_date': doc.document_date.strftime('%Y-%m-%d') if doc.document_date else '',
+            'court_date': doc.court_date.strftime('%Y-%m-%d') if doc.court_date else '',
+            'owner_name': doc.owner_name or '',
+            'matter_type': doc.matter_type or '',
+            'file_url': file_url,
+        })
+    if request.method == 'POST':
+        doc.document_level = request.POST.get('document_level', doc.document_level)
+        doc.district = request.POST.get('district', doc.district)
+        doc.taluka = request.POST.get('taluka') or None
+        doc.village = request.POST.get('village') or None
+        doc.gut_number = request.POST.get('gut_number') or None
+        doc.document_name = request.POST.get('document_name', doc.document_name)
+        doc.description = request.POST.get('description') or None
+        doc.document_date = request.POST.get('document_date') or None
+        doc.court_date = request.POST.get('court_date') or None
+        doc.owner_name = request.POST.get('owner_name') or None
+        doc.matter_type = request.POST.get('matter_type') or None
+        
+        # Handle new file upload
+        if request.FILES.get('document'):
+            # Get or create tool
+            tool, _ = ToolMaster.objects.get_or_create(tool_name='Document Management')
+            
+            # Get or create DocumentMaster for this document
+            doc_master = DocumentMaster.objects.filter(document_tool_record=doc).first()
+            if not doc_master:
+                doc_master = DocumentMaster.objects.create(
+                    user=request.user,
+                    tool=tool,
+                    document_tool_record=doc,
+                    document_type=doc.document_type,
+                    matter_type=doc.matter_type,
+                    district=doc.district,
+                    taluka=doc.taluka,
+                    village=doc.village,
+                    gut_number=doc.gut_number,
+                )
+            
+            # Add new attachment
+            DocumentAttachment.objects.create(
+                document_master=doc_master,
+                file=request.FILES.get('document')
+            )
+        
+        doc.save()
+        return JsonResponse({'success': True})
+    return JsonResponse({'error': 'Method not allowed'}, status=405)
 
 
 @login_required
 def doc_list_api(request):
-    """JSON API — returns documents filtered by type"""
     doc_type = request.GET.get('type', 'general')
     docs = Document.objects.filter(document_type=doc_type).order_by('-uploaded_at')
+    matter_labels = dict(Document.MATTER_TYPE_CHOICES)
     data = []
     for d in docs:
+        # Get associated documents from centralized system
+        doc_masters = d.get_documents()
+        
+        # Get the first attachment if available
+        first_attachment = None
         ext = ''
-        if d.document:
-            ext = d.document.name.rsplit('.', 1)[-1].lower() if '.' in d.document.name else ''
+        file_url = ''
+        
+        if doc_masters.exists():
+            first_doc_master = doc_masters.first()
+            if first_doc_master.attachments.exists():
+                first_attachment = first_doc_master.attachments.first()
+                if first_attachment.file:
+                    file_url = first_attachment.file.url
+                    ext = first_attachment.file.name.rsplit('.', 1)[-1].lower() if '.' in first_attachment.file.name else ''
+        
         data.append({
             'id': d.id,
             'document_name': d.document_name,
@@ -2141,8 +2478,11 @@ def doc_list_api(request):
             'description': d.description or '',
             'document_date': d.document_date.strftime('%d/%m/%Y') if d.document_date else '',
             'court_date': d.court_date.strftime('%d/%m/%Y') if d.court_date else '',
+            'owner_name': d.owner_name or '',
+            'matter_type': d.matter_type or '',
+            'matter_type_display': matter_labels.get(d.matter_type, '') if d.matter_type else '',
             'uploaded_at': d.uploaded_at.strftime('%d/%m/%Y'),
-            'file_url': d.document.url if d.document else '',
+            'file_url': file_url,
             'ext': ext,
         })
     return JsonResponse({'documents': data})
