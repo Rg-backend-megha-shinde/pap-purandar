@@ -88,7 +88,7 @@ if USE_DEV_SERVER_DB:
             'NAME': 'lmrs',
             'USER': 'postgres',
             'PASSWORD': os.environ.get('DB_PASSWORD'),
-            'HOST': '172.17.0.1',
+            'HOST': os.environ.get('DB_HOST', 'host.docker.internal'),
             'PORT': '5432',
         }
     }
@@ -99,7 +99,7 @@ else:
             'NAME': 'lmrs_new',
             'USER': 'postgres',
             'PASSWORD': os.environ.get('DB_PASSWORD'),
-            'HOST': '127.0.0.1',
+            'HOST': os.environ.get('DB_HOST', 'host.docker.internal'),
             'PORT': '5432',
         }
     }
