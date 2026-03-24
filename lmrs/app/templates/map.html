@@ -24,12 +24,13 @@
       maxZoom: 19
     }).addTo(map);
 
-    var wmsUrl = "https://geoserver.rottengrapes.tech/geoserver/wms";
+    var wmsUrl = "http://purandar-airport.rottengrapes.tech/geoserver/wms";
 
     var wmsOptions = {
       format: "image/png",
       transparent: true,
-      version: "1.1.1"
+      version: "1.1.1",
+      crossOrigin: "anonymous",
     };
 
     var USA_Population = L.tileLayer.wms(wmsUrl, { ...wmsOptions, layers: "topp:states", zIndex: 200 });

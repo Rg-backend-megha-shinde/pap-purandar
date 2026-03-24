@@ -22,9 +22,8 @@ class ToolMaster(models.Model):
 
 class DocumentMaster(models.Model):
 
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="document_master_entries")
-
-    tool = models.ForeignKey(ToolMaster, on_delete=models.CASCADE, related_name="all_uploaded_documents")
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    tool = models.ForeignKey(ToolMaster, on_delete=models.CASCADE)
 
     inspection = models.ForeignKey('Inspection', on_delete=models.SET_NULL, null=True, blank=True)
     rr_rate = models.ForeignKey('ReadyReckonerRate', on_delete=models.SET_NULL, null=True, blank=True)
@@ -32,16 +31,36 @@ class DocumentMaster(models.Model):
     asset = models.ForeignKey('Asset', on_delete=models.SET_NULL, null=True, blank=True)
     document_tool_record = models.ForeignKey('Document', on_delete=models.SET_NULL, null=True, blank=True)
 
+    # ⭐ ADD THIS
+    DOCUMENT_TYPE_CHOICES = [
+        ('general', 'General Document'),
+        ('court', 'Court Matter Document'),
+    ]
+
+    document_type = models.CharField(
+        max_length=20,
+        choices=DOCUMENT_TYPE_CHOICES,
+        default='general'
+    )
+
+    MATTER_TYPE_CHOICES = [
+        ('arbitration', 'Arbitration'),
+        ('civil_dispute', 'Civil Dispute'),
+    ]
+
+    matter_type = models.CharField(
+        max_length=20,
+        choices=MATTER_TYPE_CHOICES,
+        null=True,
+        blank=True
+    )
+
     district = models.CharField(max_length=100, null=True, blank=True)
     taluka = models.CharField(max_length=100, null=True, blank=True)
     village = models.CharField(max_length=150, null=True, blank=True)
     gut_number = models.CharField(max_length=50, null=True, blank=True)
 
     uploaded_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    def __str__(self):
-        return f"{self.tool.tool_name} - {self.uploaded_at.date()}"
     
 
 
@@ -85,6 +104,10 @@ class Inspection(models.Model):
 
     def __str__(self):
         return f"{self.village} - {self.gut_number}"
+    
+    def get_documents(self):
+        """Get all documents associated with this inspection"""
+        return DocumentMaster.objects.filter(inspection=self)
 
 
 class TreeDetail(models.Model):
@@ -155,6 +178,10 @@ class ReadyReckonerRate(models.Model):
             f"{self.village} | {self.assessment_type} | "
             f"{self.assessment_range_min}-{self.assessment_range_max} | ₹{self.rate}"
         )
+    
+    def get_documents(self):
+        """Get all documents associated with this ready reckoner record"""
+        return DocumentMaster.objects.filter(rr_rate=self)
 
 
 # =========================================================
@@ -205,6 +232,10 @@ class LandRecord712(models.Model):
 
     def __str__(self):
         return f"{self.village} - Gut {self.gut_number}"
+    
+    def get_documents(self):
+        """Get all documents associated with this land record"""
+        return DocumentMaster.objects.filter(land_record=self)
 
 
 class FarmerNames(models.Model):
@@ -337,6 +368,10 @@ class Asset(models.Model):
 
     def __str__(self):
         return f"{self.asset_name} ({self.get_asset_type_display()})"
+    
+    def get_documents(self):
+        """Get all documents associated with this asset"""
+        return DocumentMaster.objects.filter(asset=self).prefetch_related('attachments')
 
 
 class AssetMeasurement(models.Model):
@@ -462,3 +497,7 @@ class Document(models.Model):
 
     def __str__(self):
         return f"{self.document_name} ({self.document_type})"
+    
+    def get_documents(self):
+        """Get all documents associated with this document record"""
+        return DocumentMaster.objects.filter(document_tool_record=self).prefetch_related('attachments')
