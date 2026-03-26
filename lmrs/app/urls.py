@@ -44,7 +44,8 @@ urlpatterns = [
     path('tools/documents/delete/<int:id>/', views.doc_delete, name='doc_delete'),
     path('tools/documents/edit/<int:id>/', views.doc_edit, name='doc_edit'),
     path('api/documents/', views.doc_list_api, name='doc_list_api'),
-    
-    
+    path("tools/asset-list/", views.asset_list, name="asset_list"),
+    path('asset/edit/<int:id>/', views.edit_asset, name='edit_asset'),
+    path('asset/delete/<int:id>/', views.delete_asset, name='delete_asset'),
 
 ]

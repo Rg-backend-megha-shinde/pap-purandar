@@ -82,7 +82,14 @@
                         class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-400"
                         placeholder="दर भरा">
                 </div>
-
+                <div>
+    <label class="font-semibold">सरकारी अंदाजित दर</label>
+    <input type="number" step="0.01" min="0"
+        name="government_estimated_rate"
+        id="governmentEstimatedRate"
+        class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-400"
+        placeholder="सरकारी दर भरा">
+</div>
                 <div>
                     <label class="font-semibold">शेरा</label>
                     <input type="text" name="remarks" id="remarks"
@@ -130,6 +137,11 @@
                     <input type="text" id="finalAmount" name="final_amount"
                         class="w-full border p-2 rounded bg-yellow-100 font-bold" readonly>
                 </div>
+                <div>
+    <label class="font-semibold">सरकारी अंदाजित एकूण किंमत</label>
+    <input type="text" id="govtFinalAmount" name="government_final_amount"
+        class="w-full border p-2 rounded bg-green-100 font-bold" readonly>
+</div>
             </div>
         </div>
 
@@ -181,6 +193,10 @@
                 class="bg-gray-600 hover:bg-gray-700 text-white px-5 py-2 rounded-md shadow-sm transition duration-200">
                 रीसेट करा
             </button>
+            <a href="{% url 'asset_list' %}"
+   class="bg-gray-800 hover:bg-gray-900 text-white px-5 py-2 rounded-md">
+   📋 सूची पहा
+</a>
         </div>
     </form>
 </div>
@@ -190,7 +206,8 @@
     const dynamicFields = document.getElementById("dynamicFields");
     const measurementHiddenFields = document.getElementById("measurementHiddenFields");
     const rateInput = document.getElementById("rate");
-
+    const govtRateInput = document.getElementById("governmentEstimatedRate");
+    const govtFinalAmount = document.getElementById("govtFinalAmount");
     const formulaText = document.getElementById("formulaText");
     const totalMeasurement = document.getElementById("totalMeasurement");
     const finalCalculation = document.getElementById("finalCalculation");
@@ -327,12 +344,12 @@
 
     function calculateAsset() {
         if (!currentFormula) {
-            totalMeasurement.value = "";
-            finalCalculation.value = "";
-            finalAmount.value = "";
-            return;
-        }
-
+        totalMeasurement.value = "";
+        finalCalculation.value = "";
+        finalAmount.value = "";
+        govtFinalAmount.value = "";
+        return;
+    }
         let measurementExpression = currentFormula;
         const values = {};
 
@@ -342,7 +359,7 @@
         });
 
         values["rate"] = parseFloat(rateInput.value) || 0;
-
+        values["government_estimated_rate"] = parseFloat(govtRateInput.value) || 0;
         Object.keys(values).forEach(key => {
             const regex = new RegExp(`\\b${key}\\b`, "g");
             measurementExpression = measurementExpression.replace(regex, values[key]);
@@ -365,11 +382,31 @@
             totalMeasurement.value = Number.isFinite(measurementResult) ? Number(measurementResult).toFixed(2) : "";
             finalCalculation.value = measurementExpression;
             finalAmount.value = Number.isFinite(finalResult) ? Number(finalResult).toFixed(2) : "";
+            // ===== GOVT CALCULATION =====
+            let govtExpression = currentFormula.replace(/\brate\b/g, values["government_estimated_rate"]);
+
+            Object.keys(values).forEach(key => {
+                if (key === "government_estimated_rate") return;
+                const regex = new RegExp(`\\b${key}\\b`, "g");
+                govtExpression = govtExpression.replace(regex, values[key]);
+            });
+
+            let govtResult = "";
+            try {
+                govtResult = Function(`"use strict"; return (${govtExpression})`)();
+            } catch (e) {
+                govtResult = "";
+            }
+
+            govtFinalAmount.value = Number.isFinite(govtResult)
+                ? Number(govtResult).toFixed(2)
+                : "";
         } catch (error) {
             console.error("Error evaluating formula:", error);
             totalMeasurement.value = "";
             finalCalculation.value = measurementExpression;
             finalAmount.value = "";
+            govtFinalAmount.value = "";
         }
     }
 
@@ -494,7 +531,7 @@
 
     assetType.addEventListener("change", renderFields);
     rateInput.addEventListener("input", calculateAsset);
-
+    govtRateInput.addEventListener("input", calculateAsset);
     districtSelect.addEventListener("change", function () {
         populateTalukas(this.value);
     });

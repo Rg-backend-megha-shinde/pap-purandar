@@ -2187,10 +2187,12 @@ def asset_creation(request):
             gut_number=request.POST.get("gut_number"),
             survey_date=request.POST.get("survey_date") or None,
             rate=request.POST.get("rate") or 0,
+            government_estimated_rate=request.POST.get("government_estimated_rate") or None,
             formula_text=request.POST.get("formula_text"),
             total_measurement=request.POST.get("total_measurement") or None,
             final_calculation=request.POST.get("final_calculation"),
             final_amount=request.POST.get("final_amount") or None,
+            government_final_amount=request.POST.get("government_final_amount") or None,
             remarks=request.POST.get("remarks"),
         )
 
@@ -2223,7 +2225,7 @@ def asset_creation(request):
                 gut_number=asset.gut_number
             )
 
-        return redirect("asset_creation")
+        return redirect("asset_list")
 
     return render(request, "asset_creation.html", {
         "asset_types": asset_types
@@ -2486,3 +2488,30 @@ def doc_list_api(request):
             'ext': ext,
         })
     return JsonResponse({'documents': data})
+
+def asset_list(request):
+    from .models import Asset
+    assets = Asset.objects.all().order_by('-id')
+    return render(request, 'asset_list.html', {'assets': assets})
+
+def delete_asset(request, id):
+    from .models import Asset
+    asset = Asset.objects.get(id=id)
+    asset.delete()
+    return redirect('asset_list')
+
+def edit_asset(request, id):
+    from .models import Asset
+    asset = Asset.objects.get(id=id)
+
+    if request.method == "POST":
+        asset.asset_name = request.POST.get("asset_name")
+        asset.rate = request.POST.get("rate") or 0
+        asset.government_estimated_rate = request.POST.get("government_estimated_rate") or None
+        asset.final_amount = request.POST.get("final_amount") or None
+        asset.government_final_amount = request.POST.get("government_final_amount") or None
+        asset.save()
+
+        return redirect('asset_list')
+
+    return render(request, 'asset_creation.html', {'asset': asset})
