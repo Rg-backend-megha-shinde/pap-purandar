@@ -364,10 +364,10 @@ def inspection_form(request):
                     inspection=inspection,
                     plot=plots[i],
                     name=names[i],
-                    length=lengths[i] or None,
-                    width=widths[i] or None,
-                    girth=girths[i] or None,
-                    height=heights[i] or None,
+                    length=float(lengths[i]) if lengths[i] and lengths[i].strip() and lengths[i].strip() != 'None' else None,
+                    width=float(widths[i]) if widths[i] and widths[i].strip() and widths[i].strip() != 'None' else None,
+                    girth=float(girths[i]) if girths[i] and girths[i].strip() and girths[i].strip() != 'None' else None,
+                    height=float(heights[i]) if heights[i] and heights[i].strip() and heights[i].strip() != 'None' else None,
                 )
         
         # Handle document uploads using centralized system
@@ -2029,10 +2029,10 @@ def edit_inspection(request, id):
                         inspection=inspection,
                         plot=plots[i],
                         name=names[i],
-                        length=lengths[i] or None,
-                        width=widths[i] or None,
-                        girth=girths[i] or None,
-                        height=heights[i] or None,
+                        length=float(lengths[i]) if lengths[i] and lengths[i].strip() and lengths[i].strip() != 'None' else None,
+                        width=float(widths[i]) if widths[i] and widths[i].strip() and widths[i].strip() != 'None' else None,
+                        girth=float(girths[i]) if girths[i] and girths[i].strip() and girths[i].strip() != 'None' else None,
+                        height=float(heights[i]) if heights[i] and heights[i].strip() and heights[i].strip() != 'None' else None,
                     )
             
             # Handle additional document uploads using centralized system
