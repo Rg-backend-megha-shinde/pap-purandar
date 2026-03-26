@@ -165,7 +165,7 @@ def edit_ready_reckoner(request, id):
                 village=obj.village
             )
         
-        return redirect('edit_ready_reckoner', id=obj.id)
+        return redirect('ready_reckoner_list')
     
     # Get existing documents
     documents = obj.get_documents()
@@ -292,7 +292,7 @@ def edit_land_record_712(request, id):
                 gut_number=obj.gut_number
             )
         
-        return redirect('edit_land_record_712', id=obj.id)
+        return redirect('land_record_712_list')
     
     # Get existing documents
     documents = obj.get_documents()
