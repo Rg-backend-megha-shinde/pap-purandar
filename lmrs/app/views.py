@@ -2631,19 +2631,22 @@ def get_filtered_documents(request):
     print(f"✅ Final result: {len(data)} documents with attachments")
     return JsonResponse({'documents': data})
 
+@login_required
 def asset_list(request):
-    from .models import Asset
     assets = Asset.objects.all().order_by('-id')
+    # Prefetch documents for each asset
+    for asset in assets:
+        asset.documents_list = asset.get_documents()
     return render(request, 'asset_list.html', {'assets': assets})
 
+@login_required
 def delete_asset(request, id):
-    from .models import Asset
     asset = Asset.objects.get(id=id)
     asset.delete()
     return redirect('asset_list')
 
+@login_required
 def edit_asset(request, id):
-    from .models import Asset
     asset = Asset.objects.get(id=id)
 
     if request.method == "POST":
