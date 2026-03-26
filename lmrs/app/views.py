@@ -165,7 +165,7 @@ def edit_ready_reckoner(request, id):
                 village=obj.village
             )
         
-        return redirect('edit_ready_reckoner', id=obj.id)
+        return redirect('ready_reckoner_list')
     
     # Get existing documents
     documents = obj.get_documents()
@@ -292,7 +292,7 @@ def edit_land_record_712(request, id):
                 gut_number=obj.gut_number
             )
         
-        return redirect('edit_land_record_712', id=obj.id)
+        return redirect('land_record_712_list')
     
     # Get existing documents
     documents = obj.get_documents()
@@ -364,10 +364,10 @@ def inspection_form(request):
                     inspection=inspection,
                     plot=plots[i],
                     name=names[i],
-                    length=lengths[i] or None,
-                    width=widths[i] or None,
-                    girth=girths[i] or None,
-                    height=heights[i] or None,
+                    length=float(lengths[i]) if lengths[i] and lengths[i].strip() and lengths[i].strip() != 'None' else None,
+                    width=float(widths[i]) if widths[i] and widths[i].strip() and widths[i].strip() != 'None' else None,
+                    girth=float(girths[i]) if girths[i] and girths[i].strip() and girths[i].strip() != 'None' else None,
+                    height=float(heights[i]) if heights[i] and heights[i].strip() and heights[i].strip() != 'None' else None,
                 )
         
         # Handle document uploads using centralized system
@@ -2029,10 +2029,10 @@ def edit_inspection(request, id):
                         inspection=inspection,
                         plot=plots[i],
                         name=names[i],
-                        length=lengths[i] or None,
-                        width=widths[i] or None,
-                        girth=girths[i] or None,
-                        height=heights[i] or None,
+                        length=float(lengths[i]) if lengths[i] and lengths[i].strip() and lengths[i].strip() != 'None' else None,
+                        width=float(widths[i]) if widths[i] and widths[i].strip() and widths[i].strip() != 'None' else None,
+                        girth=float(girths[i]) if girths[i] and girths[i].strip() and girths[i].strip() != 'None' else None,
+                        height=float(heights[i]) if heights[i] and heights[i].strip() and heights[i].strip() != 'None' else None,
                     )
             
             # Handle additional document uploads using centralized system
@@ -2216,7 +2216,7 @@ def asset_creation(request):
         if files:
             handle_document_upload(
                 user=request.user,
-                tool_name='Asset Creation',
+                tool_name='Asset',
                 asset=asset,
                 files=files,
                 district=asset.district,
@@ -2489,29 +2489,193 @@ def doc_list_api(request):
         })
     return JsonResponse({'documents': data})
 
+
+@api_login_required
+def get_filtered_documents(request):
+    """Return documents matching the current filter — includes all levels within the selected scope"""
+    district = request.GET.get('district') or None
+    taluka   = request.GET.get('taluka')   or None
+    village  = request.GET.get('village')  or None
+    gut      = request.GET.get('gut')      or None
+
+    print(f"🔍 Document filter request: district={district}, taluka={taluka}, village={village}, gut={gut}")
+
+    if not district:
+        return JsonResponse({'documents': []})
+
+    # Debug: Show ALL documents in database first
+    all_docs = Document.objects.all()
+    print(f"📊 Total documents in database: {all_docs.count()}")
+    
+    # Show sample of all documents
+    for doc in all_docs[:10]:
+        print(f"📄 Sample doc: {doc.document_name} | {doc.district}/{doc.taluka}/{doc.village}/{doc.gut_number}")
+    
+    # Show documents specifically for Pune district
+    pune_docs = Document.objects.filter(district__iexact='Pune')
+    print(f"📊 Documents in Pune district: {pune_docs.count()}")
+    
+    # Show documents for Purandar taluka
+    purandar_docs = Document.objects.filter(district__iexact='Pune', taluka__iexact='Purandar')
+    print(f"📊 Documents in Purandar taluka: {purandar_docs.count()}")
+    
+    # Show documents for Ekhatpur village
+    ekhatpur_docs = Document.objects.filter(district__iexact='Pune', taluka__iexact='Purandar', village__iexact='Ekhatpur')
+    print(f"📊 Documents in Ekhatpur village: {ekhatpur_docs.count()}")
+    
+    # Show documents for gut 100
+    gut100_docs = Document.objects.filter(district__iexact='Pune', taluka__iexact='Purandar', village__iexact='Ekhatpur', gut_number__iexact='100')
+    print(f"📊 Documents in gut 100: {gut100_docs.count()}")
+
+    qs = Document.objects.order_by('-uploaded_at')
+    
+    if gut and village and taluka and district:
+        # Gut selected — show only this specific gut's documents
+        print(f"🎯 Filtering for specific gut: {gut} in village {village}")
+        qs = qs.filter(
+            district__iexact=district,
+            taluka__iexact=taluka,
+            village__iexact=village,
+            gut_number__iexact=gut
+        )
+        print(f"📋 Documents found for gut {gut}: {qs.count()}")
+        
+        # Debug: Show what gut numbers exist in the database
+        all_guts = Document.objects.filter(
+            district__iexact=district,
+            taluka__iexact=taluka,
+            village__iexact=village
+        ).values_list('gut_number', flat=True).distinct()
+        print(f"🗂️ Available gut numbers in {village}: {list(all_guts)}")
+        
+    elif village and taluka and district:
+        # Village selected — show village-level + gut-level docs within this village
+        print(f"🏘️ Filtering for village: {village}")
+        from django.db.models import Q
+        qs = qs.filter(
+            district__iexact=district,
+            taluka__iexact=taluka,
+            village__iexact=village
+        )
+        print(f"📋 Documents found for village {village}: {qs.count()}")
+        
+    elif taluka and district:
+        # Taluka selected — show taluka + village + gut level docs within this taluka
+        print(f"🏛️ Filtering for taluka: {taluka}")
+        qs = qs.filter(
+            district__iexact=district,
+            taluka__iexact=taluka
+        )
+        print(f"📋 Documents found for taluka {taluka}: {qs.count()}")
+        
+    else:
+        # District selected — show all docs within this district
+        print(f"🌍 Filtering for district: {district}")
+        qs = qs.filter(district__iexact=district)
+        print(f"📋 Documents found for district {district}: {qs.count()}")
+
+    # Debug: Show the actual documents found
+    for doc in qs[:5]:  # Show first 5 documents
+        print(f"📄 Document: {doc.document_name} | Level: {doc.document_level} | Location: {doc.district}/{doc.taluka}/{doc.village}/{doc.gut_number}")
+
+    data = []
+    for d in qs:
+        doc_masters = d.get_documents()
+        print(f"📄 Processing document: {d.document_name} | Has doc_masters: {doc_masters.exists()}")
+        
+        if doc_masters.exists():
+            has_attachments = False
+            for dm in doc_masters:
+                print(f"  📁 DocumentMaster ID: {dm.id} | Attachments count: {dm.attachments.count()}")
+                for att in dm.attachments.all():
+                    if att.file:
+                        has_attachments = True
+                        data.append({
+                            'id': d.id,
+                            'document_name': d.document_name,
+                            'file_url': att.file.url,
+                            'ext': att.file.name.rsplit('.', 1)[-1].lower() if '.' in att.file.name else '',
+                            'uploaded_at': d.uploaded_at.strftime('%d/%m/%Y'),
+                            'document_type': d.document_type,
+                            'document_level': d.document_level,
+                            'location': ' › '.join(filter(None, [d.district, d.taluka, d.village, d.gut_number])),
+                        })
+            
+            # If DocumentMaster exists but no attachments, still show the document
+            if not has_attachments:
+                print(f"  ⚠️ DocumentMaster exists but no file attachments found")
+                data.append({
+                    'id': d.id,
+                    'document_name': d.document_name,
+                    'file_url': '',
+                    'ext': '',
+                    'uploaded_at': d.uploaded_at.strftime('%d/%m/%Y'),
+                    'document_type': d.document_type,
+                    'document_level': d.document_level,
+                    'location': ' › '.join(filter(None, [d.district, d.taluka, d.village, d.gut_number])),
+                })
+        else:
+            # Even if no DocumentMaster, show the document record
+            print(f"  ⚠️ No DocumentMaster found for document")
+            data.append({
+                'id': d.id,
+                'document_name': d.document_name,
+                'file_url': '',
+                'ext': '',
+                'uploaded_at': d.uploaded_at.strftime('%d/%m/%Y'),
+                'document_type': d.document_type,
+                'document_level': d.document_level,
+                'location': ' › '.join(filter(None, [d.district, d.taluka, d.village, d.gut_number])),
+            })
+
+    print(f"✅ Final result: {len(data)} documents with attachments")
+    return JsonResponse({'documents': data})
+
+@login_required
 def asset_list(request):
-    from .models import Asset
     assets = Asset.objects.all().order_by('-id')
+    for asset in assets:
+        asset.documents_list = DocumentMaster.objects.filter(asset=asset).prefetch_related('attachments')
     return render(request, 'asset_list.html', {'assets': assets})
 
+@login_required
 def delete_asset(request, id):
-    from .models import Asset
     asset = Asset.objects.get(id=id)
     asset.delete()
     return redirect('asset_list')
 
+@login_required
 def edit_asset(request, id):
-    from .models import Asset
     asset = Asset.objects.get(id=id)
 
     if request.method == "POST":
         asset.asset_name = request.POST.get("asset_name")
+        asset.district = request.POST.get("district")
+        asset.taluka = request.POST.get("taluka")
+        asset.village = request.POST.get("village")
+        asset.gut_number = request.POST.get("gut_number")
+        asset.survey_date = request.POST.get("survey_date") or None
         asset.rate = request.POST.get("rate") or 0
         asset.government_estimated_rate = request.POST.get("government_estimated_rate") or None
         asset.final_amount = request.POST.get("final_amount") or None
         asset.government_final_amount = request.POST.get("government_final_amount") or None
+        asset.remarks = request.POST.get("remarks")
         asset.save()
+
+        files = request.FILES.getlist('documents')
+        if files:
+            handle_document_upload(
+                user=request.user,
+                tool_name='Asset',
+                asset=asset,
+                files=files,
+                district=asset.district,
+                taluka=asset.taluka,
+                village=asset.village,
+                gut_number=asset.gut_number
+            )
 
         return redirect('asset_list')
 
-    return render(request, 'asset_creation.html', {'asset': asset})
+    documents = DocumentMaster.objects.filter(asset=asset).prefetch_related('attachments')
+    return render(request, 'edit_asset.html', {'asset': asset, 'documents': documents})

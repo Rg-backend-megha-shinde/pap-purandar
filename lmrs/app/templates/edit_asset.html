@@ -1,0 +1,372 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="max-w-4xl mx-auto bg-white p-6 border border-gray-300 mt-6 rounded-lg shadow">
+
+    <h2 class="text-center font-bold text-xl underline">
+        मालमत्ता संपादन (Edit Asset)
+    </h2>
+
+    <form method="POST" enctype="multipart/form-data" class="mt-6">
+        {% csrf_token %}
+
+        <!-- BASIC INFO -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+
+            <div>
+                <label class="font-semibold">मालमत्तेचे नाव</label>
+                <input type="text" name="asset_name" value="{{ asset.asset_name }}" required
+                    class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-400">
+            </div>
+
+            <div>
+                <label class="font-semibold">सर्वेक्षण दिनांक</label>
+                <input type="date" name="survey_date" value="{{ asset.survey_date|date:'Y-m-d' }}"
+                    class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-400">
+            </div>
+
+            <div>
+                <label class="font-semibold">जिल्हा</label>
+                <select id="district" name="district"
+                    class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-400">
+                    <option value="">जिल्हा निवडा</option>
+                </select>
+            </div>
+
+            <div>
+                <label class="font-semibold">तालुका</label>
+                <select id="taluka" name="taluka"
+                    class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-400">
+                    <option value="">तालुका निवडा</option>
+                </select>
+            </div>
+
+            <div>
+                <label class="font-semibold">गाव</label>
+                <select id="village" name="village"
+                    class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-400">
+                    <option value="">गाव निवडा</option>
+                </select>
+            </div>
+
+            <div>
+                <label class="font-semibold">गट क्रमांक</label>
+                <select id="gut" name="gut_number"
+                    class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-400">
+                    <option value="">गट क्रमांक निवडा</option>
+                </select>
+            </div>
+
+        </div>
+
+        <!-- RATES -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 text-sm">
+
+            <div>
+                <label class="font-semibold">दर (Rate)</label>
+                <input type="number" step="0.01" name="rate" value="{{ asset.rate }}"
+                    class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-400">
+            </div>
+
+            <div>
+                <label class="font-semibold">सरकारी अंदाजित दर</label>
+                <input type="number" step="0.01" name="government_estimated_rate" value="{{ asset.government_estimated_rate }}"
+                    class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-400">
+            </div>
+
+            <div>
+                <label class="font-semibold">एकूण किंमत (Final Amount)</label>
+                <input type="number" step="0.01" name="final_amount" value="{{ asset.final_amount }}"
+                    class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-400">
+            </div>
+
+            <div>
+                <label class="font-semibold">सरकारी किंमत</label>
+                <input type="number" step="0.01" name="government_final_amount" value="{{ asset.government_final_amount }}"
+                    class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-400">
+            </div>
+
+        </div>
+
+        <!-- REMARKS -->
+        <div class="mt-4 text-sm">
+            <label class="font-semibold">शेरा (Remarks)</label>
+            <textarea name="remarks" rows="3"
+                class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-400">{{ asset.remarks }}</textarea>
+        </div>
+
+        <!-- DOCUMENT MANAGEMENT SECTION -->
+        <div class="mt-6 border-t pt-4">
+            <label class="font-semibold text-sm text-gray-700 mb-3 block">दस्तऐवज व्यवस्थापन (Document Management)</label>
+
+            {% if documents %}
+                <div class="mb-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                    <div class="flex items-center justify-between mb-3">
+                        <span class="text-sm font-semibold text-gray-700">सध्याचे दस्तऐवज</span>
+                        <span class="text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded-full font-medium">
+                            {% for doc_master in documents %}{{ doc_master.attachments.count }} फाइल्स{% endfor %}
+                        </span>
+                    </div>
+                    <div class="space-y-2">
+                        {% for doc_master in documents %}
+                            {% for attachment in doc_master.attachments.all %}
+                                <div class="flex items-center justify-between bg-white p-3 rounded-lg border border-gray-200 hover:shadow-sm transition-shadow duration-200" id="file-{{ attachment.id }}">
+                                    <div class="flex items-center gap-3 flex-1 min-w-0">
+                                        <div class="flex-shrink-0 w-10 h-10 flex items-center justify-center bg-gray-100 rounded-lg">
+                                            {% if '.pdf' in attachment.file.name|lower %}
+                                                <svg class="w-6 h-6 text-red-600" fill="currentColor" viewBox="0 0 20 20"><path d="M4 18h12V6h-4V2H4v16zm-2 1V0h12l4 4v16H2v-1z"/></svg>
+                                            {% elif '.doc' in attachment.file.name|lower %}
+                                                <svg class="w-6 h-6 text-blue-600" fill="currentColor" viewBox="0 0 20 20"><path d="M4 18h12V6h-4V2H4v16zm-2 1V0h12l4 4v16H2v-1z"/></svg>
+                                            {% else %}
+                                                <svg class="w-6 h-6 text-green-600" fill="currentColor" viewBox="0 0 20 20"><path d="M4 3h12v14H4V3zm2 2v10h8V5H6z"/></svg>
+                                            {% endif %}
+                                        </div>
+                                        <div class="flex-1 min-w-0">
+                                            <a href="{{ attachment.file.url }}" target="_blank" class="text-sm font-medium text-blue-600 hover:text-blue-800 hover:underline truncate block">
+                                                {{ attachment.file.name|slice:"17:" }}
+                                            </a>
+                                            <p class="text-xs text-gray-500">{{ attachment.uploaded_at|date:"d/m/Y, H:i" }}</p>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <a href="{{ attachment.file.url }}" download class="flex-shrink-0 text-gray-400 hover:text-orange-600 transition-colors duration-200" title="Download">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                                            </svg>
+                                        </a>
+                                        <button type="button" onclick="deleteFile({{ attachment.id }})" class="flex-shrink-0 text-gray-400 hover:text-red-600 transition-colors duration-200" title="Delete">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endif %}
+
+            <!-- File Upload Drop Zone -->
+            <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 bg-gray-50 hover:bg-gray-100 transition-colors duration-200" id="dropZone">
+                <div class="text-center">
+                    <div class="mx-auto w-16 h-16 mb-4 flex items-center justify-center bg-orange-100 rounded-full">
+                        <svg class="w-8 h-8 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-base font-semibold text-gray-700 mb-2">अधिक फाइल्स जोडा</h3>
+                    <p class="text-sm text-gray-500 mb-4">PDF, JPG, PNG, DOC, DOCX (प्रत्येक कमाल 5MB)</p>
+                    <input type="file" id="documents" name="documents" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" multiple class="hidden">
+                    <button type="button" onclick="document.getElementById('documents').click()"
+                        class="px-6 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-medium transition-colors duration-200">
+                        फाइल निवडा
+                    </button>
+                </div>
+            </div>
+
+            <p id="file-error" class="text-sm text-red-600 mt-2 hidden"></p>
+
+            <div id="filesList" class="mt-4 space-y-2 hidden">
+                <h4 class="text-sm font-semibold text-gray-700 mb-2">नवीन फाइल्स:</h4>
+                <div id="filesContainer" class="space-y-2"></div>
+            </div>
+        </div>
+
+        <!-- BUTTONS -->
+        <div class="flex gap-3 mt-6">
+            <a href="{% url 'asset_list' %}"
+                class="bg-gray-500 hover:bg-gray-600 text-white px-5 py-2 rounded-md shadow-sm transition duration-200">
+                रद्द करा
+            </a>
+            <button type="submit"
+                class="bg-green-600 hover:bg-green-700 text-white px-5 py-2 rounded-md shadow-sm transition duration-200">
+                अपडेट करा
+            </button>
+        </div>
+
+    </form>
+</div>
+
+<script>
+    let fullData = [];
+
+    const selectedDistrict = "{{ asset.district|escapejs }}";
+    const selectedTaluka = "{{ asset.taluka|escapejs }}";
+    const selectedVillage = "{{ asset.village|escapejs }}";
+    const selectedGut = "{{ asset.gut_number|escapejs }}";
+
+    fetch('/api/location-data/')
+        .then(res => res.json())
+        .then(data => {
+            fullData = data.villages || [];
+            const districtDropdown = document.getElementById("district");
+            const districts = [...new Set(fullData.map(v => v.district))];
+            districtDropdown.innerHTML = '<option value="">जिल्हा निवडा</option>';
+            districts.forEach(d => { if (d) districtDropdown.add(new Option(d, d)); });
+            if (selectedDistrict) {
+                districtDropdown.value = selectedDistrict;
+                loadTalukas(selectedDistrict, selectedTaluka, selectedVillage, selectedGut);
+            }
+        });
+
+    function loadTalukas(district, preselectTaluka = "", preselectVillage = "", preselectGut = "") {
+        const talukaDropdown = document.getElementById("taluka");
+        const villageDropdown = document.getElementById("village");
+        const gutDropdown = document.getElementById("gut");
+        talukaDropdown.innerHTML = '<option value="">तालुका निवडा</option>';
+        villageDropdown.innerHTML = '<option value="">गाव निवडा</option>';
+        gutDropdown.innerHTML = '<option value="">गट क्रमांक निवडा</option>';
+        const talukas = [...new Set(fullData.filter(v => v.district === district).map(v => v.taluka))];
+        talukas.forEach(t => { if (t) talukaDropdown.add(new Option(t, t)); });
+        if (preselectTaluka) {
+            talukaDropdown.value = preselectTaluka;
+            loadVillages(district, preselectTaluka, preselectVillage, preselectGut);
+        }
+    }
+
+    function loadVillages(district, taluka, preselectVillage = "", preselectGut = "") {
+        const villageDropdown = document.getElementById("village");
+        const gutDropdown = document.getElementById("gut");
+        villageDropdown.innerHTML = '<option value="">गाव निवडा</option>';
+        gutDropdown.innerHTML = '<option value="">गट क्रमांक निवडा</option>';
+        const uniqueVillages = [...new Set(fullData.filter(v => v.district === district && v.taluka === taluka).map(v => v.village_name))];
+        uniqueVillages.forEach(v => { if (v) villageDropdown.add(new Option(v, v)); });
+        if (preselectVillage) {
+            villageDropdown.value = preselectVillage;
+            loadGuts(preselectVillage, preselectGut);
+        }
+    }
+
+    function loadGuts(village, preselectGut = "") {
+        const gutDropdown = document.getElementById("gut");
+        gutDropdown.innerHTML = '<option value="">गट क्रमांक निवडा</option>';
+        if (!village) return;
+        fetch(`/api/gut-numbers/${village}/`)
+            .then(res => res.json())
+            .then(data => {
+                (data.gut_numbers || []).forEach(g => gutDropdown.add(new Option(g, g)));
+                if (preselectGut) gutDropdown.value = preselectGut;
+            });
+    }
+
+    document.getElementById("district").addEventListener("change", function () { loadTalukas(this.value); });
+    document.getElementById("taluka").addEventListener("change", function () { loadVillages(document.getElementById("district").value, this.value); });
+    document.getElementById("village").addEventListener("change", function () { loadGuts(this.value); });
+
+    // Delete File
+    function deleteFile(attachmentId) {
+        if (!confirm('तुम्हाला ही फाइल हटवायची आहे का?')) return;
+        const fileElement = document.getElementById('file-' + attachmentId);
+        fileElement.style.opacity = '0.5';
+        fileElement.style.pointerEvents = 'none';
+        fetch(`/tools/delete-document-attachment/${attachmentId}/`, {
+            method: 'POST',
+            headers: { 'X-CSRFToken': '{{ csrf_token }}', 'Content-Type': 'application/json' },
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                fileElement.style.transition = 'all 0.3s ease';
+                fileElement.style.transform = 'translateX(100%)';
+                fileElement.style.opacity = '0';
+                setTimeout(() => {
+                    fileElement.remove();
+                    const parent = document.querySelector('.space-y-2');
+                    if (parent && parent.children.length === 0) {
+                        parent.closest('.mb-4')?.remove();
+                    }
+                }, 300);
+            } else {
+                alert('फाइल हटवताना त्रुटी आली: ' + (data.error || 'Unknown error'));
+                fileElement.style.opacity = '1';
+                fileElement.style.pointerEvents = 'auto';
+            }
+        })
+        .catch(() => {
+            alert('फाइल हटवताना त्रुटी आली. कृपया पुन्हा प्रयत्न करा.');
+            fileElement.style.opacity = '1';
+            fileElement.style.pointerEvents = 'auto';
+        });
+    }
+
+    // File Upload with Drag & Drop
+    (function () {
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('documents');
+        const fileError = document.getElementById('file-error');
+        const filesList = document.getElementById('filesList');
+        const filesContainer = document.getElementById('filesContainer');
+        const maxSize = 5 * 1024 * 1024;
+        let selectedFiles = [];
+
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(e => {
+            dropZone.addEventListener(e, ev => { ev.preventDefault(); ev.stopPropagation(); }, false);
+        });
+        ['dragenter', 'dragover'].forEach(e => dropZone.addEventListener(e, () => dropZone.classList.add('border-orange-500', 'bg-orange-50'), false));
+        ['dragleave', 'drop'].forEach(e => dropZone.addEventListener(e, () => dropZone.classList.remove('border-orange-500', 'bg-orange-50'), false));
+
+        dropZone.addEventListener('drop', e => handleFiles(e.dataTransfer.files), false);
+        fileInput.addEventListener('change', e => handleFiles(e.target.files));
+
+        function handleFiles(files) {
+            fileError.classList.add('hidden');
+            selectedFiles = [];
+            for (let i = 0; i < files.length; i++) {
+                if (files[i].size > maxSize) {
+                    fileError.textContent = `"${files[i].name}" फाइल साइझ 5MB पेक्षा जास्त आहे.`;
+                    fileError.classList.remove('hidden');
+                    continue;
+                }
+                selectedFiles.push(files[i]);
+            }
+            if (selectedFiles.length > 0) { displayFiles(); filesList.classList.remove('hidden'); }
+            else filesList.classList.add('hidden');
+        }
+
+        function displayFiles() {
+            filesContainer.innerHTML = '';
+            selectedFiles.forEach((file, i) => filesContainer.appendChild(createFileItem(file, i)));
+        }
+
+        function createFileItem(file, index) {
+            const div = document.createElement('div');
+            div.className = 'bg-white border border-gray-200 rounded-lg p-3 hover:shadow-md transition-shadow duration-200';
+            const ext = file.name.split('.').pop().toLowerCase();
+            const iconMap = {
+                'pdf': '<svg class="w-6 h-6 text-red-600" fill="currentColor" viewBox="0 0 20 20"><path d="M4 18h12V6h-4V2H4v16zm-2 1V0h12l4 4v16H2v-1z"/></svg>',
+                'doc': '<svg class="w-6 h-6 text-blue-600" fill="currentColor" viewBox="0 0 20 20"><path d="M4 18h12V6h-4V2H4v16zm-2 1V0h12l4 4v16H2v-1z"/></svg>',
+                'docx': '<svg class="w-6 h-6 text-blue-600" fill="currentColor" viewBox="0 0 20 20"><path d="M4 18h12V6h-4V2H4v16zm-2 1V0h12l4 4v16H2v-1z"/></svg>',
+            };
+            const icon = iconMap[ext] || '<svg class="w-6 h-6 text-green-600" fill="currentColor" viewBox="0 0 20 20"><path d="M4 3h12v14H4V3zm2 2v10h8V5H6z"/></svg>';
+            const size = file.size > 1048576 ? (file.size / 1048576).toFixed(2) + ' MB' : (file.size / 1024).toFixed(1) + ' KB';
+            div.innerHTML = `
+                <div class="flex items-center gap-3">
+                    <div class="flex-shrink-0 w-10 h-10 flex items-center justify-center bg-gray-100 rounded-lg">${icon}</div>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-sm font-medium text-gray-900 truncate">${file.name}</p>
+                        <p class="text-xs text-gray-500">${size}</p>
+                    </div>
+                    <button type="button" onclick="removeFile(${index})"
+                        class="flex-shrink-0 w-8 h-8 flex items-center justify-center text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors duration-200">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>`;
+            return div;
+        }
+
+        window.removeFile = function (index) {
+            selectedFiles.splice(index, 1);
+            const dt = new DataTransfer();
+            selectedFiles.forEach(f => dt.items.add(f));
+            fileInput.files = dt.files;
+            if (selectedFiles.length > 0) displayFiles();
+            else filesList.classList.add('hidden');
+        };
+    })();
+</script>
+
+{% endblock %}
