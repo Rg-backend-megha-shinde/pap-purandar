@@ -353,10 +353,22 @@ class Asset(models.Model):
     survey_date = models.DateField(blank=True, null=True)
     rate = models.DecimalField(max_digits=15, decimal_places=2, default=0)
 
+    government_estimated_rate = models.DecimalField(
+    max_digits=15,
+    decimal_places=2,
+    null=True,
+    blank=True
+   )
     formula_text = models.TextField(blank=True, null=True)
     total_measurement = models.DecimalField(max_digits=15, decimal_places=2, blank=True, null=True)
     final_calculation = models.TextField(blank=True, null=True)
     final_amount = models.DecimalField(max_digits=15, decimal_places=2, blank=True, null=True)
+    government_final_amount = models.DecimalField(
+    max_digits=15,
+    decimal_places=2,
+    null=True,
+    blank=True
+)
 
     remarks = models.TextField(blank=True, null=True)
 

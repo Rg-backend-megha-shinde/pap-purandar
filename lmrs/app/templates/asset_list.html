@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="max-w-7xl mx-auto bg-white p-6 mt-6 rounded shadow">
+
+    <div class="flex justify-between items-center mb-4">
+        <h2 class="text-xl font-bold">
+            मालमत्ता नोंदी
+        </h2>
+
+        <a href="{% url 'asset_creation' %}"
+            class="bg-gray-800 hover:bg-gray-900 text-white px-4 py-2 rounded flex items-center gap-2">
+            <span class="text-lg">+</span> नवीन नोंद
+        </a>
+    </div>
+
+    <div class="overflow-x-auto">
+        <table id="assetTable" class="display w-full text-sm text-left" style="width:100%;">
+
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>मालमत्ता नाव</th>
+                    <th>गाव</th>
+                    <th>गट क्रमांक</th>
+                    <th>दर</th>
+                    <th>सरकारी दर</th>
+                    <th>एकूण किंमत</th>
+                    <th>सरकारी किंमत</th>
+                    <th>दिनांक</th>
+                    <th>कृती</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for asset in assets %}
+                <tr>
+                    <td>{{ asset.id }}</td>
+                    <td>{{ asset.asset_name }}</td>
+                    <td>{{ asset.village }}</td>
+                    <td>{{ asset.gut_number }}</td>
+                    <td>{{ asset.rate }}</td>
+                    <td>{{ asset.government_estimated_rate }}</td>
+                    <td>{{ asset.final_amount }}</td>
+                    <td>{{ asset.government_final_amount }}</td>
+                    <td>{{ asset.created_at|date:"d/m/Y" }}</td>
+                    <td style="white-space: nowrap;">
+
+                        <!-- EDIT -->
+                        <a href="{% url 'edit_asset' asset.id %}" title="Edit" style="display:inline-flex; align-items:center; justify-content:center;
+              width:32px; height:32px; background:#2563eb; color:white;
+              border-radius:6px; margin-right:6px; text-decoration:none;">
+                            ✏️
+                        </a>
+
+                        <!-- DELETE -->
+                        <a href="{% url 'delete_asset' asset.id %}" title="Delete" style="display:inline-flex; align-items:center; justify-content:center;
+              width:32px; height:32px; background:#dc2626; color:white;
+              border-radius:6px; text-decoration:none;" onclick="return confirm('तुम्हाला ही नोंद हटवायची आहे का?');">
+                            🗑️
+                        </a>
+
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+
+        </table>
+    </div>
+</div>
+
+<script>
+    $(document).ready(function () {
+        $('#assetTable').DataTable({
+            pageLength: 5,
+            lengthMenu: [5, 10, 25, 50],
+            ordering: true,
+            searching: true,
+            autoWidth: false,
+            columnDefs: [
+                { targets: -1, orderable: false, searchable: false }
+            ],
+            language: {
+                emptyTable: "कोणतीही नोंद उपलब्ध नाही.",
+                zeroRecords: "जुळणारी नोंद सापडली नाही.",
+                search: "Search:",
+                lengthMenu: "Show _MENU_ entries",
+                info: "Showing _START_ to _END_ of _TOTAL_ entries",
+                paginate: {
+                    previous: "Previous",
+                    next: "Next"
+                }
+            }
+        });
+    });
+</script>
+
+{% endblock %}
