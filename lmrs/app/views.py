@@ -2496,52 +2496,135 @@ def get_filtered_documents(request):
     village  = request.GET.get('village')  or None
     gut      = request.GET.get('gut')      or None
 
+    print(f"🔍 Document filter request: district={district}, taluka={taluka}, village={village}, gut={gut}")
+
     if not district:
         return JsonResponse({'documents': []})
 
-    qs = Document.objects.order_by('-uploaded_at')
+    # Debug: Show ALL documents in database first
+    all_docs = Document.objects.all()
+    print(f"📊 Total documents in database: {all_docs.count()}")
+    
+    # Show sample of all documents
+    for doc in all_docs[:10]:
+        print(f"📄 Sample doc: {doc.document_name} | {doc.district}/{doc.taluka}/{doc.village}/{doc.gut_number}")
+    
+    # Show documents specifically for Pune district
+    pune_docs = Document.objects.filter(district__iexact='Pune')
+    print(f"📊 Documents in Pune district: {pune_docs.count()}")
+    
+    # Show documents for Purandar taluka
+    purandar_docs = Document.objects.filter(district__iexact='Pune', taluka__iexact='Purandar')
+    print(f"📊 Documents in Purandar taluka: {purandar_docs.count()}")
+    
+    # Show documents for Ekhatpur village
+    ekhatpur_docs = Document.objects.filter(district__iexact='Pune', taluka__iexact='Purandar', village__iexact='Ekhatpur')
+    print(f"📊 Documents in Ekhatpur village: {ekhatpur_docs.count()}")
+    
+    # Show documents for gut 100
+    gut100_docs = Document.objects.filter(district__iexact='Pune', taluka__iexact='Purandar', village__iexact='Ekhatpur', gut_number__iexact='100')
+    print(f"📊 Documents in gut 100: {gut100_docs.count()}")
 
+    qs = Document.objects.order_by('-uploaded_at')
+    
     if gut and village and taluka and district:
         # Gut selected — show only this specific gut's documents
+        print(f"🎯 Filtering for specific gut: {gut} in village {village}")
         qs = qs.filter(
             district__iexact=district,
             taluka__iexact=taluka,
             village__iexact=village,
             gut_number__iexact=gut
         )
+        print(f"📋 Documents found for gut {gut}: {qs.count()}")
+        
+        # Debug: Show what gut numbers exist in the database
+        all_guts = Document.objects.filter(
+            district__iexact=district,
+            taluka__iexact=taluka,
+            village__iexact=village
+        ).values_list('gut_number', flat=True).distinct()
+        print(f"🗂️ Available gut numbers in {village}: {list(all_guts)}")
+        
     elif village and taluka and district:
         # Village selected — show village-level + gut-level docs within this village
+        print(f"🏘️ Filtering for village: {village}")
         from django.db.models import Q
         qs = qs.filter(
-            Q(document_level='village', district__iexact=district, taluka__iexact=taluka, village__iexact=village) |
-            Q(document_level='gut',     district__iexact=district, taluka__iexact=taluka, village__iexact=village)
+            district__iexact=district,
+            taluka__iexact=taluka,
+            village__iexact=village
         )
+        print(f"📋 Documents found for village {village}: {qs.count()}")
+        
     elif taluka and district:
         # Taluka selected — show taluka + village + gut level docs within this taluka
-        from django.db.models import Q
+        print(f"🏛️ Filtering for taluka: {taluka}")
         qs = qs.filter(
-            Q(document_level='taluka',  district__iexact=district, taluka__iexact=taluka) |
-            Q(document_level='village', district__iexact=district, taluka__iexact=taluka) |
-            Q(document_level='gut',     district__iexact=district, taluka__iexact=taluka)
+            district__iexact=district,
+            taluka__iexact=taluka
         )
+        print(f"📋 Documents found for taluka {taluka}: {qs.count()}")
+        
     else:
         # District selected — show all docs within this district
+        print(f"🌍 Filtering for district: {district}")
         qs = qs.filter(district__iexact=district)
+        print(f"📋 Documents found for district {district}: {qs.count()}")
+
+    # Debug: Show the actual documents found
+    for doc in qs[:5]:  # Show first 5 documents
+        print(f"📄 Document: {doc.document_name} | Level: {doc.document_level} | Location: {doc.district}/{doc.taluka}/{doc.village}/{doc.gut_number}")
 
     data = []
     for d in qs:
-        for dm in d.get_documents():
-            for att in dm.attachments.all():
-                if att.file:
-                    data.append({
-                        'id': d.id,
-                        'document_name': d.document_name,
-                        'file_url': att.file.url,
-                        'ext': att.file.name.rsplit('.', 1)[-1].lower() if '.' in att.file.name else '',
-                        'uploaded_at': d.uploaded_at.strftime('%d/%m/%Y'),
-                        'document_type': d.document_type,
-                        'document_level': d.document_level,
-                        'location': ' › '.join(filter(None, [d.district, d.taluka, d.village, d.gut_number])),
-                    })
+        doc_masters = d.get_documents()
+        print(f"📄 Processing document: {d.document_name} | Has doc_masters: {doc_masters.exists()}")
+        
+        if doc_masters.exists():
+            has_attachments = False
+            for dm in doc_masters:
+                print(f"  📁 DocumentMaster ID: {dm.id} | Attachments count: {dm.attachments.count()}")
+                for att in dm.attachments.all():
+                    if att.file:
+                        has_attachments = True
+                        data.append({
+                            'id': d.id,
+                            'document_name': d.document_name,
+                            'file_url': att.file.url,
+                            'ext': att.file.name.rsplit('.', 1)[-1].lower() if '.' in att.file.name else '',
+                            'uploaded_at': d.uploaded_at.strftime('%d/%m/%Y'),
+                            'document_type': d.document_type,
+                            'document_level': d.document_level,
+                            'location': ' › '.join(filter(None, [d.district, d.taluka, d.village, d.gut_number])),
+                        })
+            
+            # If DocumentMaster exists but no attachments, still show the document
+            if not has_attachments:
+                print(f"  ⚠️ DocumentMaster exists but no file attachments found")
+                data.append({
+                    'id': d.id,
+                    'document_name': d.document_name,
+                    'file_url': '',
+                    'ext': '',
+                    'uploaded_at': d.uploaded_at.strftime('%d/%m/%Y'),
+                    'document_type': d.document_type,
+                    'document_level': d.document_level,
+                    'location': ' › '.join(filter(None, [d.district, d.taluka, d.village, d.gut_number])),
+                })
+        else:
+            # Even if no DocumentMaster, show the document record
+            print(f"  ⚠️ No DocumentMaster found for document")
+            data.append({
+                'id': d.id,
+                'document_name': d.document_name,
+                'file_url': '',
+                'ext': '',
+                'uploaded_at': d.uploaded_at.strftime('%d/%m/%Y'),
+                'document_type': d.document_type,
+                'document_level': d.document_level,
+                'location': ' › '.join(filter(None, [d.district, d.taluka, d.village, d.gut_number])),
+            })
 
+    print(f"✅ Final result: {len(data)} documents with attachments")
     return JsonResponse({'documents': data})
