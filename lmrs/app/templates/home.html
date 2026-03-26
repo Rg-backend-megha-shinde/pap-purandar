@@ -87,7 +87,8 @@
                     <!-- <a class="text-primary text-sm font-semibold leading-normal" href="#">Dashboard</a> -->
                     <div class="relative">
                         <!-- Dropdown Button -->
-                        <button id="menuBtn" class="text-primary text-sm font-semibold flex items-center gap-1 focus:outline-none">
+                        <button id="menuBtn"
+                            class="text-primary text-sm font-semibold flex items-center gap-1 focus:outline-none">
                             {% if request.user.is_staff and not request.user.is_superuser %}
                             Tools
                             {% else %}
@@ -95,32 +96,32 @@
                             {% endif %}
                             <span class="material-symbols-outlined text-sm">expand_more</span>
                         </button>
-                    
+
                         <!-- Dropdown Menu -->
                         <div id="menuDropdown"
                             class="hidden absolute right-0 mt-2 w-40 bg-white border border-gray-200 rounded-lg shadow-lg z-[9999]">
-                    
+
                             {% if request.user.is_superuser %}
                             <!-- Admin -->
                             <a href="/" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                                 Dashboard
                             </a>
-                    
+
                             <a href="/tools/" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                                 Tools
                             </a>
-                    
+
                             <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                                 Settings
                             </a>
-                    
+
                             {% elif request.user.is_staff %}
                             <!-- Staff ONLY -->
                             <a href="/tools/" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                                 Tools
                             </a>
                             {% endif %}
-                    
+
                         </div>
                     </div>
                 </nav>
@@ -139,28 +140,28 @@
                     </div>
                 </div> -->
                 <div class="flex items-center gap-5">
-                
+
                     <!-- Dashboard Link -->
                     <!-- <a class="text-primary text-sm font-semibold">Dashboard</a> -->
-                
+
                     <!-- Icons -->
                     <button class="flex size-10 items-center justify-center rounded-lg bg-slate-100">
                         <span class="material-symbols-outlined">notifications</span>
                     </button>
-                
+
                     <button class="flex size-10 items-center justify-center rounded-lg bg-slate-100">
                         <span class="material-symbols-outlined">settings</span>
                     </button>
-                
+
                     <!-- User Section -->
                     <div class="flex items-center gap-3">
-                
+
                         <!-- Text -->
                         <div class="flex flex-col items-end leading-tight">
                             <span class="text-sm font-semibold text-slate-700">
                                 {{ request.user.username }}
                             </span>
-                
+
                             {% if request.user.is_superuser %}
                             <span class="text-[11px] bg-green-100 text-green-700 px-2 py-[2px] rounded-full">
                                 Admin
@@ -171,25 +172,26 @@
                             </span>
                             {% endif %}
                         </div>
-                
+
                         <!-- Avatar -->
-                        <div class="h-10 w-10 rounded-full bg-blue-500 text-white flex items-center justify-center font-bold">
+                        <div
+                            class="h-10 w-10 rounded-full bg-blue-500 text-white flex items-center justify-center font-bold">
                             {{ request.user.username|first|upper }}
                         </div>
-                
+
                         <!-- Logout -->
                         <a href="/logout/" class="text-red-500 text-sm font-medium hover:underline">
                             Logout
                         </a>
-                
+
                     </div>
-                
+
                 </div>
             </div>
         </header>
         <main class="flex flex-1 overflow-hidden p-4 gap-4">
             {% block content %}
-            
+
             {% endblock %}
         </main>
     </div>
@@ -256,7 +258,9 @@
         }
 
         @keyframes spin {
-            to { transform: rotate(360deg); }
+            to {
+                transform: rotate(360deg);
+            }
         }
 
         .ol-control {
@@ -285,7 +289,7 @@
         .ol-viewport {
             cursor: default;
         }
-        
+
         .ol-viewport.clickable {
             cursor: pointer !important;
         }
@@ -1018,7 +1022,7 @@
                                     'EPSG:4326',
                                     'EPSG:3857'
                                 );
-                                map.getView().fit(extent, { 
+                                map.getView().fit(extent, {
                                     padding: [80, 80, 80, 80],
                                     maxZoom: 18
                                 });
@@ -1113,7 +1117,7 @@
                                                     'EPSG:4326',
                                                     'EPSG:3857'
                                                 );
-                                                map.getView().fit(extent, { 
+                                                map.getView().fit(extent, {
                                                     padding: [80, 80, 80, 80],
                                                     maxZoom: 18
                                                 });
@@ -1311,6 +1315,57 @@
 
                 // Fetch village farmers data - always show all villages
                 fetchVillageFarmers();
+
+                // Fetch and display documents filtered by current selection
+                function fetchFilteredDocuments() {
+                    const container = document.getElementById('filterDocsList');
+                    if (!container) return;
+
+                    if (!currentDistrict) {
+                        container.innerHTML = '<p class="text-[10px] text-slate-400 text-center py-3">Select a filter to view documents</p>';
+                        return;
+                    }
+
+                    const params = new URLSearchParams();
+                    if (currentDistrict) params.append('district', currentDistrict);
+                    if (currentTaluka) params.append('taluka', currentTaluka);
+                    if (currentVillage) params.append('village', currentVillage);
+                    if (currentGutNumber) params.append('gut', currentGutNumber);
+
+                    container.innerHTML = '<p class="text-[10px] text-slate-400 text-center py-3">Loading...</p>';
+
+                    fetch(`/api/filter-documents/?${params}`)
+                        .then(r => r.json())
+                        .then(data => {
+                            if (!data.documents || data.documents.length === 0) {
+                                container.innerHTML = '<p class="text-[10px] text-slate-400 text-center py-3">No documents found</p>';
+                                return;
+                            }
+                            container.innerHTML = data.documents.map(doc => {
+                                const typeColor = doc.document_type === 'court' ? 'text-purple-500' : 'text-indigo-500';
+                                const extColors = {
+                                    pdf: 'bg-red-100 text-red-700', doc: 'bg-blue-100 text-blue-700',
+                                    docx: 'bg-blue-100 text-blue-700', jpg: 'bg-green-100 text-green-700',
+                                    jpeg: 'bg-green-100 text-green-700', png: 'bg-green-100 text-green-700'
+                                };
+                                const extClass = extColors[doc.ext] || 'bg-slate-100 text-slate-600';
+                                return `
+                                <div class="flex items-center justify-between gap-2 py-1.5 border-b border-slate-100 dark:border-slate-800 last:border-0">
+                                    <div class="flex items-center gap-1.5 min-w-0">
+                                        <span class="text-[9px] font-semibold px-1.5 py-0.5 rounded ${extClass} shrink-0">${(doc.ext || 'FILE').toUpperCase()}</span>
+                                        <div class="min-w-0">
+                                            <div class="text-[10px] text-slate-700 dark:text-slate-300 truncate font-medium" title="${doc.document_name}">${doc.document_name}</div>
+                                            <div class="text-[9px] text-slate-400 truncate">${doc.location || ''}</div>
+                                        </div>
+                                    </div>
+                                    ${doc.file_url ? `<a href="${doc.file_url}" target="_blank" class="text-[9px] font-semibold text-primary hover:underline shrink-0">View</a>` : '<span class="text-[9px] text-slate-400 shrink-0">No file</span>'}
+                                </div>`;
+                            }).join('');
+                        })
+                        .catch(() => {
+                            container.innerHTML = '<p class="text-[10px] text-slate-400 text-center py-3">Error loading documents</p>';
+                        });
+                }
             }
 
             // Fetch and display village farmers pie chart - always show all villages
@@ -1886,20 +1941,20 @@
                 }, 4000);
             }
         });
-    // for toggle between dashbard and tools role according roles defined staff/admin
-     const menuBtn = document.getElementById("menuBtn");
-    const dropdown = document.getElementById("menuDropdown");
+        // for toggle between dashbard and tools role according roles defined staff/admin
+        const menuBtn = document.getElementById("menuBtn");
+        const dropdown = document.getElementById("menuDropdown");
 
-    menuBtn.addEventListener("click", () => {
-        dropdown.classList.toggle("hidden");
-    });
+        menuBtn.addEventListener("click", () => {
+            dropdown.classList.toggle("hidden");
+        });
 
-    // Close when clicking outside
-    document.addEventListener("click", (e) => {
-        if (!menuBtn.contains(e.target) && !dropdown.contains(e.target)) {
-            dropdown.classList.add("hidden");
-        }
-    });
+        // Close when clicking outside
+        document.addEventListener("click", (e) => {
+            if (!menuBtn.contains(e.target) && !dropdown.contains(e.target)) {
+                dropdown.classList.add("hidden");
+            }
+        });
     </script>
 </body>
 

@@ -2486,3 +2486,62 @@ def doc_list_api(request):
             'ext': ext,
         })
     return JsonResponse({'documents': data})
+
+
+@api_login_required
+def get_filtered_documents(request):
+    """Return documents matching the current filter — includes all levels within the selected scope"""
+    district = request.GET.get('district') or None
+    taluka   = request.GET.get('taluka')   or None
+    village  = request.GET.get('village')  or None
+    gut      = request.GET.get('gut')      or None
+
+    if not district:
+        return JsonResponse({'documents': []})
+
+    qs = Document.objects.order_by('-uploaded_at')
+
+    if gut and village and taluka and district:
+        # Gut selected — show only this specific gut's documents
+        qs = qs.filter(
+            district__iexact=district,
+            taluka__iexact=taluka,
+            village__iexact=village,
+            gut_number__iexact=gut
+        )
+    elif village and taluka and district:
+        # Village selected — show village-level + gut-level docs within this village
+        from django.db.models import Q
+        qs = qs.filter(
+            Q(document_level='village', district__iexact=district, taluka__iexact=taluka, village__iexact=village) |
+            Q(document_level='gut',     district__iexact=district, taluka__iexact=taluka, village__iexact=village)
+        )
+    elif taluka and district:
+        # Taluka selected — show taluka + village + gut level docs within this taluka
+        from django.db.models import Q
+        qs = qs.filter(
+            Q(document_level='taluka',  district__iexact=district, taluka__iexact=taluka) |
+            Q(document_level='village', district__iexact=district, taluka__iexact=taluka) |
+            Q(document_level='gut',     district__iexact=district, taluka__iexact=taluka)
+        )
+    else:
+        # District selected — show all docs within this district
+        qs = qs.filter(district__iexact=district)
+
+    data = []
+    for d in qs:
+        for dm in d.get_documents():
+            for att in dm.attachments.all():
+                if att.file:
+                    data.append({
+                        'id': d.id,
+                        'document_name': d.document_name,
+                        'file_url': att.file.url,
+                        'ext': att.file.name.rsplit('.', 1)[-1].lower() if '.' in att.file.name else '',
+                        'uploaded_at': d.uploaded_at.strftime('%d/%m/%Y'),
+                        'document_type': d.document_type,
+                        'document_level': d.document_level,
+                        'location': ' › '.join(filter(None, [d.district, d.taluka, d.village, d.gut_number])),
+                    })
+
+    return JsonResponse({'documents': data})
