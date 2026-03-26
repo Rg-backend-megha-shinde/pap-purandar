@@ -1821,10 +1821,8 @@
                                 console.log(`🔄 Loading ${assetName} tiles...`);
                             });
 
-                            assetLayers[assetName].getSource().on('tileloadend', function () {
-                                console.log(`✅ ${assetName} layer loaded successfully`);
-                                showNotification(`Loaded ${assetName} in ${filterInfo}`, 'success');
-                            });
+                            // Show success notification only once when layer is added
+                            showNotification(`Loaded ${assetName} in ${filterInfo}`, 'success');
 
                             assetLayers[assetName].getSource().on('tileloaderror', function (error) {
                                 console.error(`❌ Failed to load ${assetName} tiles:`, error);
