@@ -2216,7 +2216,7 @@ def asset_creation(request):
         if files:
             handle_document_upload(
                 user=request.user,
-                tool_name='Asset Creation',
+                tool_name='Asset',
                 asset=asset,
                 files=files,
                 district=asset.district,
@@ -2634,9 +2634,8 @@ def get_filtered_documents(request):
 @login_required
 def asset_list(request):
     assets = Asset.objects.all().order_by('-id')
-    # Prefetch documents for each asset
     for asset in assets:
-        asset.documents_list = asset.get_documents()
+        asset.documents_list = DocumentMaster.objects.filter(asset=asset).prefetch_related('attachments')
     return render(request, 'asset_list.html', {'assets': assets})
 
 @login_required
@@ -2651,12 +2650,32 @@ def edit_asset(request, id):
 
     if request.method == "POST":
         asset.asset_name = request.POST.get("asset_name")
+        asset.district = request.POST.get("district")
+        asset.taluka = request.POST.get("taluka")
+        asset.village = request.POST.get("village")
+        asset.gut_number = request.POST.get("gut_number")
+        asset.survey_date = request.POST.get("survey_date") or None
         asset.rate = request.POST.get("rate") or 0
         asset.government_estimated_rate = request.POST.get("government_estimated_rate") or None
         asset.final_amount = request.POST.get("final_amount") or None
         asset.government_final_amount = request.POST.get("government_final_amount") or None
+        asset.remarks = request.POST.get("remarks")
         asset.save()
+
+        files = request.FILES.getlist('documents')
+        if files:
+            handle_document_upload(
+                user=request.user,
+                tool_name='Asset',
+                asset=asset,
+                files=files,
+                district=asset.district,
+                taluka=asset.taluka,
+                village=asset.village,
+                gut_number=asset.gut_number
+            )
 
         return redirect('asset_list')
 
-    return render(request, 'asset_creation.html', {'asset': asset})
+    documents = DocumentMaster.objects.filter(asset=asset).prefetch_related('attachments')
+    return render(request, 'edit_asset.html', {'asset': asset, 'documents': documents})
