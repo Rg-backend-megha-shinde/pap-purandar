@@ -405,8 +405,8 @@
 
             satelliteLayer = new ol.layer.Tile({
                 source: new ol.source.XYZ({
-                    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-                    attributions: 'Esri',
+                    url: 'http://mt0.google.com/vt/lyrs=y&hl=en&x={x}&y={y}&z={z}',
+                    attributions: 'Google',
                     preload: 3
                 }),
                 preload: Infinity
