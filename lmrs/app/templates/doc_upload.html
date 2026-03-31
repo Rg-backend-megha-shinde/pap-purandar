@@ -8,6 +8,9 @@
 .file-item .file-icon{width:52px;height:52px;flex-shrink:0;}
 .file-item .file-name{font-size:12px;color:#1a1a1a;text-align:center;line-height:1.3;word-break:break-word;max-width:100%;display:-webkit-box;-webkit-line-clamp:2;line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
 .file-item .file-date{font-size:10px;color:#666;text-align:center;}
+.file-item.folder-item{justify-content:center;min-height:118px;}
+.folder-icon{width:52px;height:52px;flex-shrink:0;}
+.folder-meta{font-size:10px;color:#666;text-align:center;}
 .file-list-view{display:none;width:100%;}
 .file-list-view table{width:100%;border-collapse:collapse;font-size:13px;}
 .file-list-view thead tr{background:#f0f0f0;border-bottom:1px solid #ddd;}
@@ -19,6 +22,8 @@
 .file-list-view td{padding:6px 10px;vertical-align:middle;}
 .path-bar{display:flex;align-items:center;gap:6px;background:#fff;border:1px solid #ccc;border-radius:3px;padding:4px 10px;font-size:13px;color:#333;}
 .path-sep{color:#999;}
+.path-link{cursor:pointer;color:#2563eb;}
+.path-link:hover{text-decoration:underline;}
 .status-bar{font-size:12px;color:#555;padding:4px 12px;background:#f0f0f0;border-top:1px solid #ddd;}
 .explorer-toolbar{display:flex;align-items:center;gap:6px;padding:6px 8px;background:#f5f5f5;border-bottom:1px solid #ddd;flex-wrap:wrap;}
 .toolbar-btn{display:inline-flex;align-items:center;gap:5px;padding:4px 12px;font-size:12.5px;background:transparent;border:1px solid transparent;border-radius:3px;cursor:pointer;color:#222;white-space:nowrap;transition:background .1s,border-color .1s;}
@@ -163,6 +168,7 @@ select:disabled{background:#f3f4f6;color:#9ca3af;cursor:not-allowed;}
       <!-- Explorer -->
       <div id="general-explorer" style="border:1px solid #c8c8c8;margin:12px;border-radius:4px;overflow:hidden;background:#fff;">
         <div class="explorer-toolbar">
+          <button class="toolbar-btn" id="general-back-btn" onclick="navigateToRoot('general')" style="display:none;">← मागे</button>
           <div class="view-toggle">
             <button class="view-btn active" id="general-grid-btn" onclick="setView('general','grid')" title="Grid view">⊞</button>
             <button class="view-btn" id="general-list-btn" onclick="setView('general','list')" title="List view">☰</button>
@@ -172,10 +178,7 @@ select:disabled{background:#f3f4f6;color:#9ca3af;cursor:not-allowed;}
           <button class="toolbar-btn primary" onclick="toggleUpload('general')">📄 नवीन दस्तऐवज</button>
         </div>
         <div style="padding:5px 10px;background:#fafafa;border-bottom:1px solid #ddd;">
-          <div class="path-bar">
-            <span>🏠</span><span class="path-sep">›</span><span>कागदपत्रे</span><span class="path-sep">›</span>
-            <span style="font-weight:600;">सामान्य</span>
-          </div>
+          <div class="path-bar" id="general-path-bar"></div>
         </div>
         <div id="general-grid-view" class="file-grid" onclick="handleGridClick(event,'general')" oncontextmenu="showCtxMenu(event,'general')"></div>
         <div id="general-list-view" class="file-list-view" onclick="handleListClick(event,'general')" oncontextmenu="showCtxMenu(event,'general')">
@@ -314,6 +317,7 @@ select:disabled{background:#f3f4f6;color:#9ca3af;cursor:not-allowed;}
       <!-- Explorer -->
       <div id="court-explorer" style="border:1px solid #c8c8c8;margin:12px;border-radius:4px;overflow:hidden;background:#fff;">
         <div class="explorer-toolbar">
+          <button class="toolbar-btn" id="court-back-btn" onclick="navigateToRoot('court')" style="display:none;">← मागे</button>
           <div class="view-toggle">
             <button class="view-btn active" id="court-grid-btn" onclick="setView('court','grid')" title="Grid view">⊞</button>
             <button class="view-btn" id="court-list-btn" onclick="setView('court','list')" title="List view">☰</button>
@@ -323,10 +327,7 @@ select:disabled{background:#f3f4f6;color:#9ca3af;cursor:not-allowed;}
           <button class="toolbar-btn court-primary" onclick="toggleUpload('court')">⚖️ नवीन दस्तऐवज</button>
         </div>
         <div style="padding:5px 10px;background:#fafafa;border-bottom:1px solid #ddd;">
-          <div class="path-bar">
-            <span>🏠</span><span class="path-sep">›</span><span>कागदपत्रे</span><span class="path-sep">›</span>
-            <span style="font-weight:600;">न्यायालयीन</span>
-          </div>
+          <div class="path-bar" id="court-path-bar"></div>
         </div>
         <div id="court-grid-view" class="file-grid" onclick="handleGridClick(event,'court')" oncontextmenu="showCtxMenu(event,'court')"></div>
         <div id="court-list-view" class="file-list-view" onclick="handleListClick(event,'court')" oncontextmenu="showCtxMenu(event,'court')">
@@ -458,8 +459,8 @@ let locationData = [];
 
 // ── Explorer state ──
 const state = {
-  general: { selected: null, view: 'grid', docs: [], sortKey: 'uploaded_at', sortAsc: false },
-  court:   { selected: null, view: 'grid', docs: [], sortKey: 'uploaded_at', sortAsc: false }
+  general: { selected: null, view: 'grid', docs: [], sortKey: 'uploaded_at', sortAsc: false, currentFolder: null },
+  court:   { selected: null, view: 'grid', docs: [], sortKey: 'uploaded_at', sortAsc: false, currentFolder: null }
 };
 let ctxTab = null;
 const activeTab = '{{ active_tab }}';
@@ -624,16 +625,11 @@ function loadDocs(tab) {
 }
 
 function renderDocs(tab) {
-  const docs = [...state[tab].docs];
-  const { sortKey, sortAsc } = state[tab];
-  docs.sort((a, b) => {
-    const va = (a[sortKey] || '').toString().toLowerCase();
-    const vb = (b[sortKey] || '').toString().toLowerCase();
-    return sortAsc ? va.localeCompare(vb) : vb.localeCompare(va);
-  });
+  const docs = getVisibleDocs(tab);
+  renderPathBar(tab);
   renderGrid(tab, docs);
   renderList(tab, docs);
-  document.getElementById(tab + '-status').textContent = docs.length + ' दस्तऐवज';
+  updateExplorerUi(tab, docs);
 }
 
 function fileIcon(ext) {
@@ -671,22 +667,95 @@ function levelLabel(l) {
   return {district:'जिल्हा',taluka:'तालुका',village:'गाव',gut:'गट'}[l] || l;
 }
 
+function folderIcon() {
+  return `<svg class="folder-icon" viewBox="0 0 64 52" fill="none" aria-hidden="true">
+      <path d="M6 15a5 5 0 0 1 5-5h14l5 5h23a5 5 0 0 1 5 5v19a7 7 0 0 1-7 7H11a7 7 0 0 1-7-7V15h2Z" fill="#f5c542" stroke="#cc9a0e" stroke-width="1.5"/>
+      <path d="M4 18a5 5 0 0 1 5-5h14l5 5h27a5 5 0 0 1 5 5v2H4v-7Z" fill="#f8d56a" stroke="#cc9a0e" stroke-width="1.5"/>
+    </svg>`;
+}
+
 function locationLabel(d) {
   return [d.district, d.taluka, d.village, d.gut_number].filter(Boolean).join(' › ');
+}
+
+function tabLabel(tab) {
+  return tab === 'court' ? 'न्यायालयीन' : 'सामान्य';
+}
+
+function getFolderEntries(tab) {
+  const grouped = new Map();
+  state[tab].docs.forEach(doc => {
+    if (!grouped.has(doc.document_level)) {
+      grouped.set(doc.document_level, {
+        id: doc.document_level,
+        kind: 'folder',
+        name: levelLabel(doc.document_level) + ' स्तर',
+        level: doc.document_level,
+        count: 0,
+      });
+    }
+    grouped.get(doc.document_level).count += 1;
+  });
+  const levelOrder = ['district', 'taluka', 'village', 'gut'];
+  return [...grouped.values()].sort((a, b) => levelOrder.indexOf(a.level) - levelOrder.indexOf(b.level));
+}
+
+function getSortedDocs(tab, docs) {
+  const { sortKey, sortAsc } = state[tab];
+  return [...docs].sort((a, b) => {
+    const va = (a[sortKey] || '').toString().toLowerCase();
+    const vb = (b[sortKey] || '').toString().toLowerCase();
+    return sortAsc ? va.localeCompare(vb) : vb.localeCompare(va);
+  });
+}
+
+function getVisibleDocs(tab) {
+  if (!state[tab].currentFolder) return getFolderEntries(tab);
+  const filtered = state[tab].docs.filter(d => d.document_level === state[tab].currentFolder);
+  return getSortedDocs(tab, filtered);
+}
+
+function renderPathBar(tab) {
+  const pathBar = document.getElementById(tab + '-path-bar');
+  const folder = state[tab].currentFolder;
+  pathBar.innerHTML = folder
+    ? `<span>🏠</span><span class="path-sep">›</span><span class="path-link" onclick="navigateToRoot('${tab}')">कागदपत्रे</span><span class="path-sep">›</span><span>${tabLabel(tab)}</span><span class="path-sep">›</span><span style="font-weight:600;">${levelLabel(folder)} स्तर</span>`
+    : `<span>🏠</span><span class="path-sep">›</span><span>कागदपत्रे</span><span class="path-sep">›</span><span style="font-weight:600;">${tabLabel(tab)}</span>`;
+}
+
+function updateExplorerUi(tab, visibleDocs) {
+  const inFolder = !!state[tab].currentFolder;
+  document.getElementById(tab + '-back-btn').style.display = inFolder ? '' : 'none';
+  document.getElementById(tab + '-delete-btn').style.display = inFolder && state[tab].selected ? '' : 'none';
+  document.getElementById(tab + '-status').textContent = inFolder
+    ? `${visibleDocs.length} दस्तऐवज`
+    : `${visibleDocs.length} स्तर फोल्डर`;
+}
+
+function openFolder(tab, level) {
+  state[tab].currentFolder = level;
+  state[tab].selected = null;
+  renderDocs(tab);
+}
+
+function navigateToRoot(tab) {
+  state[tab].currentFolder = null;
+  state[tab].selected = null;
+  renderDocs(tab);
 }
 
 function renderGrid(tab, docs) {
   const grid = document.getElementById(tab + '-grid-view');
   if (!docs.length) {
-    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;color:#999;font-size:13px;">कोणतेही दस्तऐवज नाहीत</div>';
+    grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:40px;color:#999;font-size:13px;">${state[tab].currentFolder ? 'कोणतेही दस्तऐवज नाहीत' : 'कोणतेही स्तर फोल्डर नाहीत'}</div>`;
     return;
   }
   grid.innerHTML = docs.map(d => `
-    <div class="file-item${state[tab].selected===d.id?' selected':''}"
-      data-id="${d.id}" data-name="${d.document_name}" data-url="${d.file_url}" data-ext="${d.ext}">
-      ${fileIcon(d.ext)}
-      <span class="file-name">${d.document_name}</span>
-      <span class="file-date">${d.uploaded_at}</span>
+    <div class="file-item${d.kind === 'folder' ? ' folder-item' : ''}${state[tab].selected===d.id?' selected':''}"
+      data-kind="${d.kind || 'document'}" data-id="${d.id || ''}" data-name="${d.document_name || d.name || ''}" data-url="${d.file_url || ''}" data-ext="${d.ext || ''}" data-level="${d.level || ''}">
+      ${d.kind === 'folder' ? folderIcon() : fileIcon(d.ext)}
+      <span class="file-name">${d.kind === 'folder' ? d.name : d.document_name}</span>
+      <span class="${d.kind === 'folder' ? 'folder-meta' : 'file-date'}">${d.kind === 'folder' ? `${d.count} दस्तऐवज` : d.uploaded_at}</span>
     </div>`).join('');
 }
 
@@ -694,19 +763,19 @@ function renderList(tab, docs) {
   const tbody = document.getElementById(tab + '-list-tbody');
   const isCourt = tab === 'court';
   if (!docs.length) {
-    tbody.innerHTML = `<tr><td colspan="${isCourt?9:6}" style="text-align:center;padding:30px;color:#999;">कोणतेही दस्तऐवज नाहीत</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="${isCourt ? 9 : 6}" style="text-align:center;padding:30px;color:#999;">${state[tab].currentFolder ? 'कोणतेही दस्तऐवज नाहीत' : 'कोणतेही स्तर फोल्डर नाहीत'}</td></tr>`;
     return;
   }
   tbody.innerHTML = docs.map(d => `
     <tr class="${state[tab].selected===d.id?'selected':''}"
-      data-id="${d.id}" data-name="${d.document_name}" data-url="${d.file_url}" data-ext="${d.ext}">
-      <td><span style="font-size:16px;">${['jpg','jpeg','png'].includes(d.ext)?'🖼':'📄'}</span></td>
-      <td>${d.document_name}</td>
-      <td>${d.uploaded_at}</td>
-      <td>${extBadge(d.ext)}</td>
-      <td><span style="font-size:11px;background:#f3f4f6;padding:2px 6px;border-radius:3px;">${levelLabel(d.document_level)}</span></td>
-      <td style="font-size:12px;color:#555;">${locationLabel(d)}</td>
-      ${isCourt?`<td style="font-size:12px;color:#555;">${d.owner_name||'—'}</td><td style="font-size:12px;color:#555;">${d.matter_type_display||'—'}</td><td style="font-size:12px;color:#555;">${d.court_date||'—'}</td>`:''}
+      data-kind="${d.kind || 'document'}" data-id="${d.id || ''}" data-name="${d.document_name || d.name || ''}" data-url="${d.file_url || ''}" data-ext="${d.ext || ''}" data-level="${d.level || ''}">
+      <td><span style="font-size:16px;">${d.kind === 'folder' ? '📁' : ['jpg','jpeg','png'].includes(d.ext)?'🖼':'📄'}</span></td>
+      <td>${d.kind === 'folder' ? d.name : d.document_name}</td>
+      <td>${d.kind === 'folder' ? `${d.count} दस्तऐवज` : d.uploaded_at}</td>
+      <td>${d.kind === 'folder' ? '<span style="font-size:11px;background:#fef3c7;color:#92400e;padding:2px 7px;border-radius:3px;font-weight:600;">FOLDER</span>' : extBadge(d.ext)}</td>
+      <td><span style="font-size:11px;background:#f3f4f6;padding:2px 6px;border-radius:3px;">${d.kind === 'folder' ? levelLabel(d.level) : levelLabel(d.document_level)}</span></td>
+      <td style="font-size:12px;color:#555;">${d.kind === 'folder' ? `${levelLabel(d.level)} स्तरातील दस्तऐवज` : locationLabel(d)}</td>
+      ${isCourt ? `<td style="font-size:12px;color:#555;">${d.kind === 'folder' ? '—' : d.owner_name || '—'}</td><td style="font-size:12px;color:#555;">${d.kind === 'folder' ? '—' : d.matter_type_display || '—'}</td><td style="font-size:12px;color:#555;">${d.kind === 'folder' ? '—' : d.court_date || '—'}</td>` : ''}
     </tr>`).join('');
 }
 
@@ -721,13 +790,16 @@ function setView(tab, view) {
 function selectItem(tab, id) {
   state[tab].selected = state[tab].selected === id ? null : id;
   renderDocs(tab);
-  document.getElementById(tab+'-delete-btn').style.display = state[tab].selected ? '' : 'none';
 }
 
 function handleGridClick(e, tab) {
   const item = e.target.closest('.file-item');
-  if (!item) { state[tab].selected=null; renderDocs(tab); document.getElementById(tab+'-delete-btn').style.display='none'; return; }
-  if (e.detail === 2) { 
+  if (!item) { state[tab].selected=null; renderDocs(tab); return; }
+  if (item.dataset.kind === 'folder') {
+    openFolder(tab, item.dataset.level);
+    return;
+  }
+  if (e.detail === 2) {
     const doc = state[tab].docs.find(d => d.id === parseInt(item.dataset.id));
     if (doc) openPreviewModal(doc);
     return; 
@@ -738,7 +810,11 @@ function handleGridClick(e, tab) {
 function handleListClick(e, tab) {
   const row = e.target.closest('tr[data-id]');
   if (!row) return;
-  if (e.detail === 2) { 
+  if (row.dataset.kind === 'folder') {
+    openFolder(tab, row.dataset.level);
+    return;
+  }
+  if (e.detail === 2) {
     const doc = state[tab].docs.find(d => d.id === parseInt(row.dataset.id));
     if (doc) openPreviewModal(doc);
     return; 
@@ -840,6 +916,7 @@ function showCtxMenu(e, tab) {
   e.preventDefault();
   const item = e.target.closest('.file-item, tr[data-id]');
   if (!item) return;
+  if (item.dataset.kind === 'folder') return;
   selectItem(tab, parseInt(item.dataset.id));
   ctxTab = tab;
   const menu = document.getElementById('ctx-menu');
