@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load asset_display %}
 
 {% block content %}
 
@@ -84,25 +85,25 @@
                     {% for tree in tree_details %}
                     <tr>
                         <td class="border">
-                            <input name="plot[]" value="{{ tree.plot }}" class="w-full p-1 text-center">
+                            <input name="plot[]" value="{{ tree.plot|default_if_none:'' }}" class="w-full p-1 text-center">
                         </td>
                         <td class="border">
                             <select name="name[]" class="tree-name-dropdown w-full p-1 text-center"
-                                data-selected="{{ tree.name }}">
+                                data-selected="{{ tree.name|default_if_none:'' }}">
                                 <option value="">झाड निवडा</option>
                             </select>
                         </td>
                         <td class="border">
-                            <input name="length[]" value="{{ tree.length }}" class="w-full p-1 text-center">
+                            <input name="length[]" value="{{ tree.length|default_if_none:'' }}" class="w-full p-1 text-center">
                         </td>
                         <td class="border">
-                            <input name="width[]" value="{{ tree.width }}" class="w-full p-1 text-center">
+                            <input name="width[]" value="{{ tree.width|default_if_none:'' }}" class="w-full p-1 text-center">
                         </td>
                         <td class="border">
-                            <input name="girth[]" value="{{ tree.girth }}" class="w-full p-1 text-center">
+                            <input name="girth[]" value="{{ tree.girth|default_if_none:'' }}" class="w-full p-1 text-center">
                         </td>
                         <td class="border">
-                            <input name="height[]" value="{{ tree.height }}" class="w-full p-1 text-center">
+                            <input name="height[]" value="{{ tree.height|default_if_none:'' }}" class="w-full p-1 text-center">
                         </td>
                     </tr>
                     {% empty %}
@@ -164,7 +165,7 @@
                                         </div>
                                         <div class="flex-1 min-w-0">
                                             <a href="{{ attachment.file.url }}" target="_blank" class="text-sm font-medium text-blue-600 hover:text-blue-800 hover:underline truncate block">
-                                                {{ attachment.file.name|slice:"17:" }}
+                                                {{ attachment.file.name|display_filename }}
                                             </a>
                                             <p class="text-xs text-gray-500">{{ attachment.uploaded_at|date:"d/m/Y, H:i" }}</p>
                                         </div>
@@ -250,6 +251,57 @@
     const selectedVillage = "{{ inspection.village|escapejs }}";
     const selectedGut = "{{ inspection.gut_number|escapejs }}";
 
+    function normalizeText(value) {
+        return (value || "").toString().trim().toLowerCase();
+    }
+
+    function sameText(left, right) {
+        return normalizeText(left) === normalizeText(right);
+    }
+
+    function setSelectValue(selectElement, desiredValue) {
+        if (!desiredValue) {
+            return false;
+        }
+
+        const exactMatch = Array.from(selectElement.options).find(
+            option => option.value === desiredValue
+        );
+        if (exactMatch) {
+            selectElement.value = exactMatch.value;
+            return true;
+        }
+
+        const normalizedDesired = normalizeText(desiredValue);
+        const normalizedMatch = Array.from(selectElement.options).find(
+            option => normalizeText(option.value) === normalizedDesired
+        );
+
+        if (normalizedMatch) {
+            selectElement.value = normalizedMatch.value;
+            return true;
+        }
+
+        return false;
+    }
+
+    function ensureOption(selectElement, desiredValue) {
+        if (!desiredValue) {
+            return;
+        }
+
+        const exists = Array.from(selectElement.options).some(
+            option => normalizeText(option.value) === normalizeText(desiredValue)
+        );
+
+        if (!exists) {
+            selectElement.add(new Option(desiredValue, desiredValue, true, true));
+            return;
+        }
+
+        setSelectValue(selectElement, desiredValue);
+    }
+
     // Load location data
     fetch('/api/location-data/')
         .then(res => res.json())
@@ -261,14 +313,14 @@
 
             districtDropdown.innerHTML = '<option value="">जिल्हा निवडा</option>';
             districts.forEach(d => {
-                if (d) {
-                    districtDropdown.add(new Option(d, d));
-                }
-            });
+            if (d) {
+                districtDropdown.add(new Option(d, d));
+            }
+        });
 
             if (selectedDistrict) {
-                districtDropdown.value = selectedDistrict;
-                loadTalukas(selectedDistrict, selectedTaluka, selectedVillage, selectedGut);
+                ensureOption(districtDropdown, selectedDistrict);
+                loadTalukas(districtDropdown.value || selectedDistrict, selectedTaluka, selectedVillage, selectedGut);
             }
         });
 
@@ -290,7 +342,7 @@
         gutDropdown.innerHTML = '<option value="">गट क्रमांक निवडा</option>';
 
         let talukas = [...new Set(
-            fullData.filter(v => v.district === district).map(v => v.taluka)
+            fullData.filter(v => sameText(v.district, district)).map(v => v.taluka)
         )];
 
         talukas.forEach(t => {
@@ -298,8 +350,8 @@
         });
 
         if (preselectTaluka) {
-            talukaDropdown.value = preselectTaluka;
-            loadVillages(district, preselectTaluka, preselectVillage, preselectGut);
+            ensureOption(talukaDropdown, preselectTaluka);
+            loadVillages(district, talukaDropdown.value || preselectTaluka, preselectVillage, preselectGut);
         }
     }
 
@@ -311,7 +363,7 @@
         gutDropdown.innerHTML = '<option value="">गट क्रमांक निवडा</option>';
 
         let villages = fullData.filter(
-            v => v.district === district && v.taluka === taluka
+            v => sameText(v.district, district) && sameText(v.taluka, taluka)
         );
 
         let uniqueVillages = [...new Set(villages.map(v => v.village_name))];
@@ -321,8 +373,8 @@
         });
 
         if (preselectVillage) {
-            villageDropdown.value = preselectVillage;
-            loadGuts(preselectVillage, preselectGut);
+            ensureOption(villageDropdown, preselectVillage);
+            loadGuts(villageDropdown.value || preselectVillage, preselectGut);
         }
     }
 
@@ -332,7 +384,7 @@
 
         if (!village) return;
 
-        fetch(`/api/gut-numbers/${village}/`)
+        fetch(`/api/gut-numbers/${encodeURIComponent((village || "").trim())}/`)
             .then(res => res.json())
             .then(data => {
                 (data.gut_numbers || []).forEach(g => {
@@ -340,7 +392,7 @@
                 });
 
                 if (preselectGut) {
-                    gutDropdown.value = preselectGut;
+                    ensureOption(gutDropdown, preselectGut);
                 }
             });
     }

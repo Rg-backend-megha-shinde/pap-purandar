@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load asset_display %}
 
 {% block content %}
 
@@ -124,7 +125,7 @@
                                         </div>
                                         <div class="flex-1 min-w-0">
                                             <a href="{{ attachment.file.url }}" target="_blank" class="text-sm font-medium text-blue-600 hover:text-blue-800 hover:underline truncate block">
-                                                {{ attachment.file.name|slice:"17:" }}
+                                                {{ attachment.file.name|display_filename }}
                                             </a>
                                             <p class="text-xs text-gray-500">{{ attachment.uploaded_at|date:"d/m/Y, H:i" }}</p>
                                         </div>
@@ -135,7 +136,7 @@
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
                                             </svg>
                                         </a>
-                                        <button type="button" onclick="deleteFile({{ attachment.id }})" class="flex-shrink-0 text-gray-400 hover:text-red-600 transition-colors duration-200" title="Delete">
+                                        <button type="button" data-attachment-id="{{ attachment.id }}" class="delete-attachment-btn flex-shrink-0 text-gray-400 hover:text-red-600 transition-colors duration-200" title="Delete">
                                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
                                             </svg>
@@ -159,7 +160,7 @@
                     <h3 class="text-base font-semibold text-gray-700 mb-2">अधिक फाइल्स जोडा</h3>
                     <p class="text-sm text-gray-500 mb-4">PDF, JPG, PNG, DOC, DOCX (प्रत्येक कमाल 5MB)</p>
                     <input type="file" id="documents" name="documents" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" multiple class="hidden">
-                    <button type="button" onclick="document.getElementById('documents').click()"
+                    <button type="button" id="documents-browse-btn"
                         class="px-6 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-medium transition-colors duration-200">
                         फाइल निवडा
                     </button>
@@ -189,13 +190,21 @@
     </form>
 </div>
 
+<div id="asset-location-data"
+     data-district="{{ asset.district|default_if_none:''|escape }}"
+     data-taluka="{{ asset.taluka|default_if_none:''|escape }}"
+     data-village="{{ asset.village|default_if_none:''|escape }}"
+     data-gut="{{ asset.gut_number|default_if_none:''|escape }}"
+     class="hidden"></div>
+
 <script>
     let fullData = [];
 
-    const selectedDistrict = "{{ asset.district|escapejs }}";
-    const selectedTaluka = "{{ asset.taluka|escapejs }}";
-    const selectedVillage = "{{ asset.village|escapejs }}";
-    const selectedGut = "{{ asset.gut_number|escapejs }}";
+    const assetLocationData = document.getElementById("asset-location-data");
+    const selectedDistrict = assetLocationData?.dataset.district || "";
+    const selectedTaluka = assetLocationData?.dataset.taluka || "";
+    const selectedVillage = assetLocationData?.dataset.village || "";
+    const selectedGut = assetLocationData?.dataset.gut || "";
 
     fetch('/api/location-data/')
         .then(res => res.json())
@@ -254,6 +263,28 @@
     document.getElementById("district").addEventListener("change", function () { loadTalukas(this.value); });
     document.getElementById("taluka").addEventListener("change", function () { loadVillages(document.getElementById("district").value, this.value); });
     document.getElementById("village").addEventListener("change", function () { loadGuts(this.value); });
+    document.getElementById("documents-browse-btn").addEventListener("click", function () {
+        document.getElementById("documents").click();
+    });
+
+    document.addEventListener("click", function (event) {
+        const deleteButton = event.target.closest(".delete-attachment-btn");
+        if (!deleteButton) return;
+
+        const attachmentId = deleteButton.dataset.attachmentId;
+        if (attachmentId) {
+            deleteFile(attachmentId);
+        }
+    });
+
+    document.addEventListener("click", function (event) {
+        const removeButton = event.target.closest(".remove-selected-file-btn");
+        if (!removeButton) return;
+
+        const fileIndex = Number(removeButton.dataset.fileIndex);
+        if (Number.isNaN(fileIndex)) return;
+        removeFile(fileIndex);
+    });
 
     // Delete File
     function deleteFile(attachmentId) {
@@ -348,8 +379,7 @@
                         <p class="text-sm font-medium text-gray-900 truncate">${file.name}</p>
                         <p class="text-xs text-gray-500">${size}</p>
                     </div>
-                    <button type="button" onclick="removeFile(${index})"
-                        class="flex-shrink-0 w-8 h-8 flex items-center justify-center text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors duration-200">
+                    <button type="button" class="remove-selected-file-btn flex-shrink-0 w-8 h-8 flex items-center justify-center text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors duration-200" data-file-index="${index}">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                         </svg>

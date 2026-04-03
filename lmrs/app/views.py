@@ -3,12 +3,16 @@ from django.http import JsonResponse, HttpResponse
 from django.db import connection
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import authenticate, login, logout
-from .models import Inspection, TreeDetail, ReadyReckonerRate, LandRecord712, FarmerNames,TreeMaster, Asset, AssetMeasurement, AssetTypeMaster, AssetFieldMaster, AssetFormulaMaster, Document, ToolMaster, DocumentMaster, DocumentAttachment
+from .models import Inspection, TreeDetail, ReadyReckonerInfo, ReadyReckonerRate, LandRecord712, FarmerNames,TreeMaster, Asset, AssetMeasurement, AssetTypeMaster, AssetFieldMaster, AssetFormulaMaster, Document, ToolMaster, DocumentMaster, DocumentAttachment, Entry
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponseForbidden
 from django.db import connection
 import csv
 import re
+import json
+from decimal import Decimal
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_http_methods
 
 
 
@@ -20,42 +24,14 @@ def api_login_required(view_func):
     return wrapper
 
 
-def handle_document_upload(user, tool_name, files, district=None, taluka=None, village=None, gut_number=None, 
-                          inspection=None, rr_rate=None, land_record=None, asset=None, document_tool_record=None):
-    """
-    Centralized document upload handler for all tools.
-    
-    Args:
-        user: The user uploading the documents
-        tool_name: Name of the tool (must match ToolMaster.tool_name)
-        files: List of uploaded files
-        district, taluka, village, gut_number: Location information
-        inspection, rr_rate, land_record, asset, document_tool_record: FK to specific tool record (only one should be set)
-    
-    Returns:
-        DocumentMaster instance
-    """
-    # Get or create the ToolMaster entry
-    tool, created = ToolMaster.objects.get_or_create(
-        tool_name=tool_name,
-        defaults={'is_active': True}
-    )
-    
-    # Get or create DocumentMaster entry for this tool record
-    doc_master_kwargs = {
-        'user': user,
-        'tool': tool,
-        'district': district,
-        'taluka': taluka,
-        'village': village,
-        'gut_number': gut_number,
-    }
-    
-    # Set the appropriate FK based on which tool record is provided
+def handle_document_upload(user, tool_name, files, district=None, taluka=None, village=None, gut_number=None,
+                          inspection=None, rr_info=None, land_record=None, asset=None, document_tool_record=None):
+    tool, created = ToolMaster.objects.get_or_create(tool_name=tool_name, defaults={'is_active': True})
+    doc_master_kwargs = {'user': user, 'tool': tool, 'district': district, 'taluka': taluka, 'village': village, 'gut_number': gut_number}
     if inspection:
         doc_master_kwargs['inspection'] = inspection
-    elif rr_rate:
-        doc_master_kwargs['rr_rate'] = rr_rate
+    elif rr_info:
+        doc_master_kwargs['rr_info'] = rr_info
     elif land_record:
         doc_master_kwargs['land_record'] = land_record
     elif asset:
@@ -67,8 +43,8 @@ def handle_document_upload(user, tool_name, files, district=None, taluka=None, v
     doc_master = None
     if inspection:
         doc_master = DocumentMaster.objects.filter(inspection=inspection).first()
-    elif rr_rate:
-        doc_master = DocumentMaster.objects.filter(rr_rate=rr_rate).first()
+    elif rr_info:
+        doc_master = DocumentMaster.objects.filter(rr_info=rr_info).first()
     elif land_record:
         doc_master = DocumentMaster.objects.filter(land_record=land_record).first()
     elif asset:
@@ -81,11 +57,7 @@ def handle_document_upload(user, tool_name, files, district=None, taluka=None, v
     
     # Create DocumentAttachment entries for each file
     for file in files:
-        DocumentAttachment.objects.create(
-            document_master=doc_master,
-            file=file
-        )
-    
+        DocumentAttachment.objects.create(document_master=doc_master, file=file)
     return doc_master
 
 @login_required
@@ -100,80 +72,156 @@ def tools(request):
 @login_required
 def ready_reckoner(request):
     if request.method == "POST":
-        obj = ReadyReckonerRate.objects.create(
-            user=request.user,
-            district=request.POST.get('district'),
-            taluka=request.POST.get('taluka'),
-            village=request.POST.get('village'),
-            year=request.POST.get('year'),
-            assessment_type=request.POST.get('assessment_type'),
-            assessment_range_min=request.POST.get('assessment_range_min'),
-            assessment_range_max=request.POST.get('assessment_range_max'),
-            rate=request.POST.get('rate'),
-            unit=request.POST.get('unit'),
-        )
-        
-        # Handle document uploads using centralized system
+        district = request.POST.get('district')
+        taluka = request.POST.get('taluka')
+        village = request.POST.get('village')
+        year = request.POST.get('year')
+        block_count = int(request.POST.get('block_count', 0))
         files = request.FILES.getlist('documents')
-        if files:
-            handle_document_upload(
-                user=request.user,
-                tool_name='Ready Reckoner Rate',
-                rr_rate=obj,
-                files=files,
-                district=obj.district,
-                taluka=obj.taluka,
-                village=obj.village
+        first_info = None
+        for bi in range(block_count):
+            assessment_type = request.POST.get(f'assessment_type[{bi}]')
+            unit = request.POST.get(f'unit[{bi}]')
+            if not assessment_type:
+                continue
+            info = ReadyReckonerInfo.objects.create(
+                user=request.user, district=district, taluka=taluka,
+                village=village, year=year, assessment_type=assessment_type, unit=unit
             )
-        
+            if first_info is None:
+                first_info = info
+            ri = 0
+            while True:
+                mn = request.POST.get(f'assessment_range_min[{bi}][{ri}]')
+                mx = request.POST.get(f'assessment_range_max[{bi}][{ri}]')
+                rt = request.POST.get(f'rate[{bi}][{ri}]')
+                if mn is None:
+                    break
+                if mn and mx and rt:
+                    ReadyReckonerRate.objects.create(rr=info, assessment_range_min=mn, assessment_range_max=mx, rate=rt)
+                ri += 1
+        if files and first_info:
+            handle_document_upload(user=request.user, tool_name='Ready Reckoner Rate', rr_info=first_info,
+                files=files, district=district, taluka=taluka, village=village)
         return redirect('ready_reckoner_list')
     return render(request, "readyreckoner.html")
 
 @login_required
 def ready_reckoner_list(request):
-    records = ReadyReckonerRate.objects.all().order_by('-id')
-    # Prefetch documents for each record
-    for record in records:
-        record.documents_list = record.get_documents()
-    return render(request, 'ready_reckoner_list.html', {'records': records})
+    all_records = ReadyReckonerInfo.objects.prefetch_related('rates').all().order_by('district', 'taluka', 'village', 'year', 'id')
+
+    # Group by village+year — one entry per village
+    from itertools import groupby
+    groups = []
+    keyfunc = lambda r: (r.district, r.taluka, r.village, r.year)
+    for key, items in groupby(all_records, key=keyfunc):
+        item_list = list(items)
+        anchor = item_list[0]  # first record = anchor for edit/docs
+        # Collect all documents across all records in this village+year group
+        all_docs = []
+        for rec in item_list:
+            all_docs.extend(rec.get_documents())
+        groups.append({
+            'anchor': anchor,
+            'records': item_list,
+            'all_docs': all_docs,
+            'has_docs': any(dm.attachments.exists() for dm in all_docs),
+            'district': key[0],
+            'taluka': key[1],
+            'village': key[2],
+            'year': key[3],
+        })
+    return render(request, 'ready_reckoner_list.html', {'groups': groups})
 
 @login_required
 def edit_ready_reckoner(request, id):
-    obj = ReadyReckonerRate.objects.get(id=id)
+    # Use the clicked record to identify the village+year group
+    anchor = ReadyReckonerInfo.objects.get(id=id)
+    village_records = ReadyReckonerInfo.objects.prefetch_related('rates').filter(
+        village=anchor.village, year=anchor.year
+    ).order_by('id')
+
     if request.method == "POST":
-        obj.district = request.POST.get('district')
-        obj.taluka = request.POST.get('taluka')
-        obj.village = request.POST.get('village')
-        obj.year = request.POST.get('year')
-        obj.assessment_type = request.POST.get('assessment_type')
-        obj.assessment_range_min = request.POST.get('assessment_range_min')
-        obj.assessment_range_max = request.POST.get('assessment_range_max')
-        obj.rate = request.POST.get('rate')
-        obj.unit = request.POST.get('unit')
-        obj.save()
-        
-        # Handle additional document uploads using centralized system
+        district = request.POST.get('district')
+        taluka = request.POST.get('taluka')
+        village = request.POST.get('village')
+        year = request.POST.get('year')
+        block_count = int(request.POST.get('block_count', 0))
+
+        # Collect submitted block IDs (existing) and new blocks
+        existing_ids_submitted = []
+        for bi in range(block_count):
+            rec_id = request.POST.get(f'record_id[{bi}]')
+            assessment_type = request.POST.get(f'assessment_type[{bi}]')
+            unit = request.POST.get(f'unit[{bi}]')
+            if not assessment_type:
+                continue
+
+            if rec_id:
+                # Update existing record
+                try:
+                    info = ReadyReckonerInfo.objects.get(id=int(rec_id))
+                    info.district = district
+                    info.taluka = taluka
+                    info.village = village
+                    info.year = year
+                    info.assessment_type = assessment_type
+                    info.unit = unit
+                    info.save()
+                    info.rates.all().delete()
+                    existing_ids_submitted.append(info.id)
+                except ReadyReckonerInfo.DoesNotExist:
+                    info = ReadyReckonerInfo.objects.create(
+                        user=request.user, district=district, taluka=taluka,
+                        village=village, year=year, assessment_type=assessment_type, unit=unit
+                    )
+                    existing_ids_submitted.append(info.id)
+            else:
+                # New block
+                info = ReadyReckonerInfo.objects.create(
+                    user=request.user, district=district, taluka=taluka,
+                    village=village, year=year, assessment_type=assessment_type, unit=unit
+                )
+                existing_ids_submitted.append(info.id)
+
+            ri = 0
+            while True:
+                mn = request.POST.get(f'assessment_range_min[{bi}][{ri}]')
+                mx = request.POST.get(f'assessment_range_max[{bi}][{ri}]')
+                rt = request.POST.get(f'rate[{bi}][{ri}]')
+                if mn is None:
+                    break
+                if mn and mx and rt:
+                    ReadyReckonerRate.objects.create(rr=info, assessment_range_min=mn, assessment_range_max=mx, rate=rt)
+                ri += 1
+
+        # Delete records that were removed in the form
+        ReadyReckonerInfo.objects.filter(
+            village=village, year=year
+        ).exclude(id__in=existing_ids_submitted).delete()
+
         files = request.FILES.getlist('documents')
         if files:
-            handle_document_upload(
-                user=request.user,
-                tool_name='Ready Reckoner Rate',
-                rr_rate=obj,
-                files=files,
-                district=obj.district,
-                taluka=obj.taluka,
-                village=obj.village
-            )
-        
+            handle_document_upload(user=request.user, tool_name='Ready Reckoner Rate', rr_info=anchor,
+                files=files, district=district, taluka=taluka, village=village)
         return redirect('ready_reckoner_list')
-    
-    # Get existing documents
-    documents = obj.get_documents()
-    return render(request, 'edit_ready_reckoner.html', {'obj': obj, 'documents': documents})
+
+    # Collect all documents across all village records
+    all_documents = []
+    for rec in village_records:
+        all_documents.extend(rec.get_documents())
+
+    return render(request, 'edit_ready_reckoner.html', {
+        'anchor': anchor,
+        'village_records': village_records,
+        'all_documents': all_documents,
+    })
 
 @login_required
 def delete_ready_reckoner(request, id):
-    ReadyReckonerRate.objects.filter(id=id).delete()
+    anchor = ReadyReckonerInfo.objects.filter(id=id).first()
+    if anchor:
+        ReadyReckonerInfo.objects.filter(village=anchor.village, year=anchor.year).delete()
     return redirect('ready_reckoner_list')
 
 @login_required
@@ -305,39 +353,28 @@ def delete_land_record_712(request, id):
 
 @api_login_required
 def get_assessment_types_by_village(request, village):
-    types = list(
-        ReadyReckonerRate.objects.filter(village=village)
-        .values_list('assessment_type', flat=True)
-        .distinct()
-    )
+    types = list(ReadyReckonerInfo.objects.filter(village=village).values_list('assessment_type', flat=True).distinct())
     return JsonResponse({'assessment_types': types})
 
 @api_login_required
 def get_years_by_village_assessment(request, village, assessment_type):
-    years = list(
-        ReadyReckonerRate.objects.filter(village=village, assessment_type=assessment_type)
-        .order_by('-year').values_list('year', flat=True).distinct()
-    )
+    years = list(ReadyReckonerInfo.objects.filter(village=village, assessment_type=assessment_type)
+        .order_by('-year').values_list('year', flat=True).distinct())
     return JsonResponse({'years': years})
 
 @api_login_required
 def get_rates_by_village_assessment(request, village, assessment_type):
     requested_year = request.GET.get('year')
-    qs = ReadyReckonerRate.objects.filter(village=village, assessment_type=assessment_type)
-    if requested_year:
-        year = requested_year if qs.filter(year=requested_year).exists() else (
-            qs.order_by('-year').values_list('year', flat=True).first()
-        )
-    else:
-        year = qs.order_by('-year').values_list('year', flat=True).first()
-    records = list(
-        qs.filter(year=year)
-        .values('assessment_range_min', 'assessment_range_max', 'rate', 'unit', 'year')
-    )
-    for r in records:
-        r['assessment_range_min'] = float(r['assessment_range_min'])
-        r['assessment_range_max'] = float(r['assessment_range_max'])
-        r['rate'] = float(r['rate'])
+    qs = ReadyReckonerInfo.objects.filter(village=village, assessment_type=assessment_type)
+    year = requested_year if requested_year and qs.filter(year=requested_year).exists() else \
+        qs.order_by('-year').values_list('year', flat=True).first()
+    info = qs.filter(year=year).first()
+    records = []
+    if info:
+        for r in info.rates.all():
+            records.append({'assessment_range_min': float(r.assessment_range_min),
+                'assessment_range_max': float(r.assessment_range_max), 'rate': float(r.rate),
+                'unit': info.unit, 'year': info.year})
     return JsonResponse({'rates': records, 'year': year})
 
 @login_required
@@ -1929,6 +1966,21 @@ def logout_view(request):
 
 
 
+@api_login_required
+def get_guts_by_village(request, district, taluka, village):
+    """Fetch list of gut numbers for a specific village from pune_ring_road schema"""
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("""
+                SELECT DISTINCT gut_no
+                FROM pune_ring_road.prj_gut_bd
+                WHERE district = %s AND taluka = %s AND village = %s AND gut_no IS NOT NULL
+                ORDER BY gut_no;
+            """, [district, taluka, village])
+            guts = [row[0] for row in cursor.fetchall()]
+            return JsonResponse({'guts': guts})
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
 def get_location_data(request):
     try:
         with connection.cursor() as cursor:
@@ -2001,9 +2053,30 @@ def edit_inspection(request, id):
         inspection = Inspection.objects.get(id=id)
         tree_details = TreeDetail.objects.filter(inspection=inspection)
 
+        def clean_optional_char(value):
+            if value is None:
+                return ""
+            value = str(value).strip()
+            if value == "" or value.lower() in {"none", "null"}:
+                return ""
+            return value
+
+        def clean_optional_float(value):
+            if value is None:
+                return None
+            value = str(value).strip()
+            if value == "" or value.lower() in {"none", "null"}:
+                return None
+            if value is None:
+                return None
+            try:
+                return float(value)
+            except (TypeError, ValueError):
+                return None
+
         if request.method == "POST":
 
-            # ✅ Update main inspection
+            # âœ… Update main inspection
             inspection.district = request.POST.get("district")
             inspection.taluka = request.POST.get("taluka")
             inspection.village = request.POST.get("village")
@@ -2012,10 +2085,10 @@ def edit_inspection(request, id):
             inspection.date = request.POST.get("date")
             inspection.save()
 
-            # ✅ Delete old tree data
+            # âœ… Delete old tree data
             tree_details.delete()
 
-            # ✅ Save new rows
+            # âœ… Save new rows
             plots = request.POST.getlist("plot[]")
             names = request.POST.getlist("name[]")
             lengths = request.POST.getlist("length[]")
@@ -2027,12 +2100,12 @@ def edit_inspection(request, id):
                 if names[i]:
                     TreeDetail.objects.create(
                         inspection=inspection,
-                        plot=plots[i],
-                        name=names[i],
-                        length=float(lengths[i]) if lengths[i] and lengths[i].strip() and lengths[i].strip() != 'None' else None,
-                        width=float(widths[i]) if widths[i] and widths[i].strip() and widths[i].strip() != 'None' else None,
-                        girth=float(girths[i]) if girths[i] and girths[i].strip() and girths[i].strip() != 'None' else None,
-                        height=float(heights[i]) if heights[i] and heights[i].strip() and heights[i].strip() != 'None' else None,
+                        plot=clean_optional_char(plots[i]),
+                        name=clean_optional_char(names[i]),
+                        length=clean_optional_float(lengths[i]),
+                        width=clean_optional_float(widths[i]),
+                        girth=clean_optional_float(girths[i]),
+                        height=clean_optional_float(heights[i]),
                     )
             
             # Handle additional document uploads using centralized system
@@ -2474,10 +2547,10 @@ def doc_list_api(request):
                     file_url = first_attachment.file.url
                     ext = first_attachment.file.name.rsplit('.', 1)[-1].lower() if '.' in first_attachment.file.name else ''
 
-        # Skip documents that do not have any uploaded attachment files.
+        # Skip orphaned document records with no backing attachment.
         if not file_url:
             continue
-
+        
         data.append({
             'id': d.id,
             'document_name': d.document_name,
@@ -2501,70 +2574,73 @@ def doc_list_api(request):
 
 @api_login_required
 def get_filtered_documents(request):
-    """Return documents matching the exact selected document level."""
+    """Return documents for the exact selected location level with real uploaded files only."""
+    import re as _re
     district = request.GET.get('district') or None
-    taluka = request.GET.get('taluka') or None
-    village = request.GET.get('village') or None
-    gut = request.GET.get('gut') or None
-
-    print(f"?? Document filter request: district={district}, taluka={taluka}, village={village}, gut={gut}")
+    taluka   = request.GET.get('taluka')   or None
+    village  = request.GET.get('village')  or None
+    gut      = request.GET.get('gut')      or None
 
     if not district:
         return JsonResponse({'documents': []})
 
-    qs = Document.objects.order_by('-uploaded_at')
-    target_level = 'district'
-
     if gut and village and taluka and district:
-        target_level = 'gut'
-        qs = qs.filter(
-            district__iexact=district,
-            taluka__iexact=taluka,
-            village__iexact=village,
-            gut_number__iexact=gut,
-        )
-    elif village and taluka and district:
-        target_level = 'village'
-        qs = qs.filter(
-            district__iexact=district,
-            taluka__iexact=taluka,
-            village__iexact=village,
-        )
-    elif taluka and district:
-        target_level = 'taluka'
-        qs = qs.filter(
-            district__iexact=district,
-            taluka__iexact=taluka,
-        )
-    else:
-        target_level = 'district'
-        qs = qs.filter(district__iexact=district)
+        numeric = _re.search(r'\d+', gut)
+        if numeric:
+            num = numeric.group()
+            qs = Document.objects.filter(
+                document_level='gut',
+                district__iexact=district,
+                taluka__iexact=taluka,
+                village__iexact=village,
+                gut_number__iregex=r'(^|[^0-9])' + num + r'([^0-9]|$)'
+            ).order_by('-uploaded_at')
+        else:
+            qs = Document.objects.filter(
+                document_level='gut',
+                district__iexact=district, taluka__iexact=taluka,
+                village__iexact=village, gut_number__iexact=gut
+            ).order_by('-uploaded_at')
 
-    qs = qs.filter(document_level=target_level)
-    print(f"?? Exact level filter applied: {target_level} | Remaining documents: {qs.count()}")
+    elif village and taluka and district:
+        qs = Document.objects.filter(
+            document_level='village',
+            district__iexact=district,
+            taluka__iexact=taluka,
+            village__iexact=village
+        ).order_by('-uploaded_at')
+
+    elif taluka and district:
+        qs = Document.objects.filter(
+            document_level='taluka',
+            district__iexact=district,
+            taluka__iexact=taluka
+        ).order_by('-uploaded_at')
+
+    else:
+        qs = Document.objects.filter(
+            document_level='district',
+            district__iexact=district
+        ).order_by('-uploaded_at')
 
     data = []
     for d in qs:
-        doc_masters = d.get_documents()
-        if not doc_masters.exists():
-            continue
-
-        for dm in doc_masters:
+        for dm in d.get_documents():
             for att in dm.attachments.all():
-                if not att.file:
-                    continue
-                data.append({
-                    'id': d.id,
-                    'document_name': d.document_name,
-                    'file_url': att.file.url,
-                    'ext': att.file.name.rsplit('.', 1)[-1].lower() if '.' in att.file.name else '',
-                    'uploaded_at': d.uploaded_at.strftime('%d/%m/%Y'),
-                    'document_type': d.document_type,
-                    'document_level': d.document_level,
-                    'location': ' ? '.join(filter(None, [d.district, d.taluka, d.village, d.gut_number])),
-                })
+                if att.file:
+                    data.append({
+                        'id': d.id,
+                        'document_name': d.document_name,
+                        'file_url': att.file.url,
+                        'ext': att.file.name.rsplit('.', 1)[-1].lower() if '.' in att.file.name else '',
+                        'uploaded_at': d.uploaded_at.strftime('%d/%m/%Y'),
+                        'document_type': d.document_type,
+                        'document_level': d.document_level,
+                        'uploaded_by': d.user.username if d.user else '',
+                        'uploaded_by_id': d.user_id,
+                        'location': ' â€º '.join(filter(None, [d.district, d.taluka, d.village, d.gut_number])),
+                    })
 
-    print(f"? Final result: {len(data)} documents with attachments")
     return JsonResponse({'documents': data})
 @login_required
 def asset_list(request):
@@ -2614,3 +2690,255 @@ def edit_asset(request, id):
 
     documents = DocumentMaster.objects.filter(asset=asset).prefetch_related('attachments')
     return render(request, 'edit_asset.html', {'asset': asset, 'documents': documents})
+
+
+
+
+
+@login_required
+@csrf_exempt
+@require_http_methods(["POST", "PUT", "GET"])
+def add_entry(request):
+    def _to_decimal(payload, key, default=None):
+        value = payload.get(key)
+        if value is None or value == "":
+            return default
+        try:
+            return Decimal(str(value))
+        except Exception:
+            return default
+
+    def _round0(value):
+        return value.quantize(Decimal('1'), rounding='ROUND_HALF_UP')
+
+    if request.method == "GET":
+        entry_id = request.GET.get('id')
+        if not entry_id:
+            return render(request, 'add_entries.html')
+
+        entry = get_object_or_404(Entry, id=entry_id)
+        entry_data = {
+            'id': entry.id,
+            'district': entry.district,
+            'taluka': entry.taluka,
+            'village': entry.village,
+            'sr_no_02': entry.sr_no_02,
+            'owner_name_03': entry.owner_name_03,
+            'land_class_04': entry.land_class_04,
+            'total_area_05': float(entry.total_area_05) if entry.total_area_05 is not None else None,
+            'total_assessment_06': float(entry.total_assessment_06) if entry.total_assessment_06 is not None else None,
+            'per_hectare_assessment_07': float(entry.per_hectare_assessment_07) if entry.per_hectare_assessment_07 is not None else None,
+            'land_group_08': entry.land_group_08,
+            'to_create_09': float(entry.to_create_09) if entry.to_create_09 is not None else None,
+            'shighrasiddha_number_10': entry.shighrasiddha_number_10,
+            'committee_market_rate_12': float(entry.committee_market_rate_12) if entry.committee_market_rate_12 is not None else None,
+            'land_type_13': entry.land_type_13,
+            'considered_market_rate_14': float(entry.considered_market_rate_14) if entry.considered_market_rate_14 is not None else None,
+            'market_value_15a': float(entry.market_value_15a) if entry.market_value_15a is not None else None,
+            'zone_15b': entry.zone_15b,
+            'coefficient_15c': float(entry.coefficient_15c) if entry.coefficient_15c is not None else None,
+            'total_market_value_15d': float(entry.total_market_value_15d) if entry.total_market_value_15d is not None else None,
+            'fruit_trees_16a': float(entry.fruit_trees_16a) if entry.fruit_trees_16a is not None else None,
+            'forest_trees_16b': float(entry.forest_trees_16b) if entry.forest_trees_16b is not None else None,
+            'construction_16c': float(entry.construction_16c) if entry.construction_16c is not None else None,
+            'other_assets_16d': float(entry.other_assets_16d) if entry.other_assets_16d is not None else None,
+            'total_assets_16e': float(entry.total_assets_16e) if entry.total_assets_16e is not None else None,
+            'determined_compensation_17': float(entry.determined_compensation_17) if entry.determined_compensation_17 is not None else None,
+            'solatium_amount_18': float(entry.solatium_amount_18) if entry.solatium_amount_18 is not None else None,
+            'notification_date': entry.notification_date.strftime('%Y-%m-%d') if entry.notification_date else None,
+            'award_date': entry.award_date.strftime('%Y-%m-%d') if entry.award_date else None,
+            'days_difference': entry.days_difference,
+            'additional_12_percent_19': float(entry.additional_12_percent_19) if entry.additional_12_percent_19 is not None else None,
+            'non_consent_compensation_20': float(entry.non_consent_compensation_20) if entry.non_consent_compensation_20 is not None else None,
+            'class2_deduction_21': float(entry.class2_deduction_21) if entry.class2_deduction_21 is not None else None,
+            'payable_non_consent_22': float(entry.payable_non_consent_22) if entry.payable_non_consent_22 is not None else None,
+            'consent_bonus_23': float(entry.consent_bonus_23) if entry.consent_bonus_23 is not None else None,
+            'consent_total_24': float(entry.consent_total_24) if entry.consent_total_24 is not None else None,
+            'class2_deduction_consent_25': float(entry.class2_deduction_consent_25) if entry.class2_deduction_consent_25 is not None else None,
+            'payable_consent_26': float(entry.payable_consent_26) if entry.payable_consent_26 is not None else None,
+            'establishment_expense_percent': float(entry.establishment_expense_percent) if entry.establishment_expense_percent is not None else None,
+            'facility_amount_percent': float(entry.facility_amount_percent) if entry.facility_amount_percent is not None else None,
+            'is_with_consent': entry.is_with_consent,
+        }
+        return JsonResponse({'success': True, 'entry': entry_data})
+
+    is_json_request = (request.content_type == 'application/json') or (request.method == 'PUT')
+
+    try:
+        data = json.loads(request.body or '{}') if is_json_request else request.POST
+
+        entry_id = data.get('entry_id')
+        entry = get_object_or_404(Entry, id=entry_id) if entry_id else Entry()
+
+        entry.district = data.get('district') or ''
+        entry.taluka = data.get('taluka') or None
+        entry.village = data.get('village') or None
+        entry.sr_no_02 = data.get('sr_no_02') or None
+        entry.owner_name_03 = data.get('owner_name_03') or None
+        entry.land_class_04 = data.get('land_class_04') or None
+
+        entry.total_area_05 = _to_decimal(data, 'total_area_05')
+        entry.total_assessment_06 = _to_decimal(data, 'total_assessment_06')
+
+        if entry.total_area_05 and entry.total_assessment_06 and entry.total_area_05 != 0:
+            entry.per_hectare_assessment_07 = entry.total_assessment_06 / entry.total_area_05
+            per_hectare = float(entry.per_hectare_assessment_07)
+            if per_hectare <= 1.25:
+                entry.land_group_08 = "I"
+            elif per_hectare <= 2.5:
+                entry.land_group_08 = "II"
+            elif per_hectare <= 5:
+                entry.land_group_08 = "III"
+            elif per_hectare <= 7.5:
+                entry.land_group_08 = "IV"
+            elif per_hectare <= 10:
+                entry.land_group_08 = "V"
+            elif per_hectare <= 12.5:
+                entry.land_group_08 = "VI"
+            else:
+                entry.land_group_08 = "VII"
+        else:
+            entry.per_hectare_assessment_07 = None
+            entry.land_group_08 = None
+
+        entry.to_create_09 = _to_decimal(data, 'to_create_09')
+        entry.shighrasiddha_number_10 = data.get('shighrasiddha_number_10') or None
+        entry.committee_market_rate_12 = _to_decimal(data, 'committee_market_rate_12')
+        entry.land_type_13 = data.get('land_type_13') or None
+        entry.zone_15b = data.get('zone_15b') or None
+        entry.coefficient_15c = _to_decimal(data, 'coefficient_15c', Decimal('0'))
+
+        entry.fruit_trees_16a = _to_decimal(data, 'fruit_trees_16a', Decimal('0'))
+        entry.forest_trees_16b = _to_decimal(data, 'forest_trees_16b', Decimal('0'))
+        entry.construction_16c = _to_decimal(data, 'construction_16c', Decimal('0'))
+        entry.other_assets_16d = _to_decimal(data, 'other_assets_16d', Decimal('0'))
+
+        entry.establishment_expense_percent = _to_decimal(data, 'establishment_expense_percent', Decimal('0'))
+        entry.facility_amount_percent = _to_decimal(data, 'facility_amount_percent', Decimal('0'))
+        entry.is_with_consent = str(data.get('is_with_consent', '')).lower() in ('1', 'true', 'on', 'yes')
+
+        if entry.committee_market_rate_12 is not None:
+            multiplier = Decimal('1')
+            if entry.land_type_13 == "?????? ??????":
+                multiplier = Decimal('1.5')
+            elif entry.land_type_13 == "??????":
+                multiplier = Decimal('2')
+            entry.considered_market_rate_14 = entry.committee_market_rate_12 * multiplier
+        else:
+            entry.considered_market_rate_14 = None
+
+        if entry.considered_market_rate_14 is not None and entry.to_create_09 is not None:
+            entry.market_value_15a = _round0(entry.considered_market_rate_14 * entry.to_create_09)
+        else:
+            entry.market_value_15a = None
+
+        if entry.market_value_15a is not None and entry.coefficient_15c is not None:
+            entry.total_market_value_15d = _round0(entry.market_value_15a * entry.coefficient_15c)
+        else:
+            entry.total_market_value_15d = None
+
+        entry.total_assets_16e = _round0(
+            (entry.fruit_trees_16a or Decimal('0')) +
+            (entry.forest_trees_16b or Decimal('0')) +
+            (entry.construction_16c or Decimal('0')) +
+            (entry.other_assets_16d or Decimal('0'))
+        )
+
+        if entry.total_market_value_15d is not None:
+            entry.determined_compensation_17 = _round0(entry.total_market_value_15d + entry.total_assets_16e)
+            entry.solatium_amount_18 = _round0(entry.determined_compensation_17)
+        else:
+            entry.determined_compensation_17 = None
+            entry.solatium_amount_18 = None
+
+        entry.notification_date = data.get('notification_date') or None
+        entry.award_date = data.get('award_date') or None
+        entry.days_difference = int(data.get('days_difference') or 0)
+
+        if entry.solatium_amount_18 is not None:
+            entry.consent_bonus_23 = _round0(entry.solatium_amount_18 * Decimal('0.25'))
+            entry.additional_12_percent_19 = _round0(
+                ((entry.solatium_amount_18 + entry.consent_bonus_23) * Decimal('0.12') / Decimal('365')) * Decimal(str(entry.days_difference or 0))
+            )
+            entry.non_consent_compensation_20 = _round0(
+                entry.determined_compensation_17 + entry.solatium_amount_18 + entry.additional_12_percent_19
+            )
+        else:
+            entry.consent_bonus_23 = None
+            entry.additional_12_percent_19 = None
+            entry.non_consent_compensation_20 = None
+
+        if entry.non_consent_compensation_20 is not None:
+            entry.class2_deduction_21 = _round0(entry.non_consent_compensation_20 * Decimal('0.10')) if entry.land_class_04 == "2" else Decimal('0')
+            base_non_consent = entry.non_consent_compensation_20 - entry.class2_deduction_21
+            est_add_nc = base_non_consent * (entry.establishment_expense_percent or Decimal('0')) / Decimal('100')
+            fac_add_nc = base_non_consent * (entry.facility_amount_percent or Decimal('0')) / Decimal('100')
+            entry.payable_non_consent_22 = _round0(base_non_consent + est_add_nc + fac_add_nc)
+
+            entry.consent_total_24 = _round0(entry.non_consent_compensation_20 + (entry.consent_bonus_23 or Decimal('0')))
+            entry.class2_deduction_consent_25 = _round0(entry.consent_total_24 * Decimal('0.10')) if entry.land_class_04 == "2" else Decimal('0')
+
+            base_consent = entry.consent_total_24 - entry.class2_deduction_consent_25
+            est_add_c = base_consent * (entry.establishment_expense_percent or Decimal('0')) / Decimal('100')
+            fac_add_c = base_consent * (entry.facility_amount_percent or Decimal('0')) / Decimal('100')
+            entry.payable_consent_26 = _round0(base_consent + est_add_c + fac_add_c)
+        else:
+            entry.class2_deduction_21 = None
+            entry.payable_non_consent_22 = None
+            entry.consent_total_24 = None
+            entry.class2_deduction_consent_25 = None
+            entry.payable_consent_26 = None
+
+        entry.save()
+
+        calculations = {
+            'per_hectare_assessment_07': float(entry.per_hectare_assessment_07) if entry.per_hectare_assessment_07 is not None else None,
+            'land_group_08': entry.land_group_08,
+            'considered_market_rate_14': float(entry.considered_market_rate_14) if entry.considered_market_rate_14 is not None else None,
+            'market_value_15a': float(entry.market_value_15a) if entry.market_value_15a is not None else None,
+            'total_market_value_15d': float(entry.total_market_value_15d) if entry.total_market_value_15d is not None else None,
+            'total_assets_16e': float(entry.total_assets_16e) if entry.total_assets_16e is not None else None,
+            'determined_compensation_17': float(entry.determined_compensation_17) if entry.determined_compensation_17 is not None else None,
+            'solatium_amount_18': float(entry.solatium_amount_18) if entry.solatium_amount_18 is not None else None,
+            'additional_12_percent_19': float(entry.additional_12_percent_19) if entry.additional_12_percent_19 is not None else None,
+            'non_consent_compensation_20': float(entry.non_consent_compensation_20) if entry.non_consent_compensation_20 is not None else None,
+            'class2_deduction_21': float(entry.class2_deduction_21) if entry.class2_deduction_21 is not None else None,
+            'payable_non_consent_22': float(entry.payable_non_consent_22) if entry.payable_non_consent_22 is not None else None,
+            'consent_bonus_23': float(entry.consent_bonus_23) if entry.consent_bonus_23 is not None else None,
+            'consent_total_24': float(entry.consent_total_24) if entry.consent_total_24 is not None else None,
+            'class2_deduction_consent_25': float(entry.class2_deduction_consent_25) if entry.class2_deduction_consent_25 is not None else None,
+            'payable_consent_26': float(entry.payable_consent_26) if entry.payable_consent_26 is not None else None,
+            'establishment_expense_percent': float(entry.establishment_expense_percent) if entry.establishment_expense_percent is not None else None,
+            'facility_amount_percent': float(entry.facility_amount_percent) if entry.facility_amount_percent is not None else None,
+        }
+        message = '???? ???????????? ????? ????!' if entry_id else '???? ???????????? ??? ????!'
+
+        if is_json_request:
+            return JsonResponse({
+                'success': True,
+                'entry_id': entry.id,
+                'message': message,
+                'calculations': calculations,
+            })
+
+        return render(request, 'add_entries.html', {'success': True, 'entry_id': entry.id})
+    except Exception as e:
+        if is_json_request:
+            return JsonResponse({'success': False, 'error': str(e)}, status=400)
+        return render(request, 'add_entries.html', {'error': str(e)})
+
+
+@api_login_required
+def get_rr_rate_by_village(request, village):
+    """Return all 2025-2026 ready reckoner assessment types and rates for a village."""
+    qs = ReadyReckonerInfo.objects.filter(village__iexact=village, year='2025-2026').prefetch_related('rates').order_by('assessment_type')
+    if not qs.exists():
+        return JsonResponse({'found': False, 'assessment_types': []})
+    types = []
+    for info in qs:
+        # Use the highest rate from child rates for display
+        top_rate = info.rates.order_by('-rate').first()
+        if top_rate:
+            types.append({'assessment_type': info.assessment_type, 'rate': float(top_rate.rate),
+                'unit': info.unit, 'year': info.year})
+    return JsonResponse({'found': bool(types), 'assessment_types': types})

@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load asset_display %}
 
 {% block content %}
 
@@ -63,7 +64,7 @@
                             
                             <!-- Hidden data for modal -->
                             <script type="application/json" id="docs-data-{{ asset.id }}" class="hidden">
-                            [{% for doc_master in asset.documents_list %}{% for attachment in doc_master.attachments.all %}{"url":"{{ attachment.file.url }}","name":"{{ attachment.file.name|escapejs }}","date":"{{ attachment.uploaded_at|date:'d/m/Y H:i' }}","size":{{ attachment.file.size }}}{% if not forloop.last or not forloop.parentloop.last %},{% endif %}{% endfor %}{% endfor %}]
+                            [{% for doc_master in asset.documents_list %}{% for attachment in doc_master.attachments.all %}{"url":"{{ attachment.file.url }}","name":"{{ attachment.file.name|display_filename|escapejs }}","date":"{{ attachment.uploaded_at|date:'d/m/Y H:i' }}","size":{{ attachment.file|safe_file_size }}}{% if not forloop.last or not forloop.parentloop.last %},{% endif %}{% endfor %}{% endfor %}]
                             </script>
                         {% else %}
                             <span class="text-gray-400 text-xs">-</span>
