@@ -81,13 +81,16 @@
                         <th class="border p-2">रुंदी (मीटर)</th>
                         <th class="border p-2">घेर (मीटर)</th>
                         <th class="border p-2">उंची (मीटर)</th>
+                        <th class="border p-2">मूल्यांकन</th>
                     </tr>
                 </thead>
 
                 <tbody id="tableBody">
                     <tr>
                         <td class="border">
-                            <input name="plot[]" class="w-full p-1 text-center">
+                            <select name="plot[]" class="tree-plot-dropdown w-full p-1 text-center">
+                                <option value="">क्रमांक निवडा</option>
+                            </select>
                         </td>
                         <td class="border">
                             <select name="name[]" class="tree-name-dropdown w-full p-1 text-center">
@@ -109,6 +112,10 @@
                         <td class="border">
                             <input type="number" step="0.01" min="0" name="height[]" value="{{ tree.height }}"
                                 class="w-full p-1 text-center" placeholder="मीटरमध्ये">
+                        </td>
+                        <td class="border">
+                            <input type="number" step="0.01" min="0" name="valuation[]" value="{{ tree.valuation }}"
+                                class="w-full p-1 text-center bg-gray-50" placeholder="रक्कम" readonly>
                         </td>
                     </tr>
                 </tbody>
@@ -202,11 +209,22 @@
 
 </div>
 
+<div id="validationToast" class="hidden fixed top-4 right-4 z-50 max-w-md rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 shadow-lg">
+    <div class="flex items-start justify-between gap-3">
+        <div>
+            <p class="font-semibold">फॉर्ममध्ये काही त्रुटी आहेत</p>
+            <ul id="validationToastList" class="mt-2 list-disc pl-5 space-y-1"></ul>
+        </div>
+        <button type="button" id="validationToastClose" class="text-red-500 hover:text-red-700">✕</button>
+    </div>
+</div>
+
 <!-- JS -->
 <script>
 
     let fullData = [];
     let treeMasterList = [];
+    let treePlotList = [];
     // Load Data
     fetch('/api/location-data/')
         .then(res => res.json())
@@ -236,6 +254,8 @@
         let talukaDropdown = document.getElementById("taluka");
         let villageDropdown = document.getElementById("village");
         let gutDropdown = document.getElementById("gut");
+        treePlotList = [];
+        populatePlotDropdowns();
 
         talukaDropdown.innerHTML = '<option value="">तालुका निवडा</option>';
         villageDropdown.innerHTML = '<option value="">गाव निवडा</option>';
@@ -277,6 +297,8 @@
     document.getElementById("village").addEventListener("change", function () {
 
         let village = this.value;
+        treePlotList = [];
+        populatePlotDropdowns();
 
         let gutDropdown = document.getElementById("gut");
         gutDropdown.innerHTML = '<option value="">गट क्रमांक निवडा</option>';
@@ -293,12 +315,123 @@
     });
 
 
+    document.getElementById("gut").addEventListener("change", function () {
+        const village = document.getElementById("village").value;
+        const gut = this.value;
+
+        clearPlotSelections();
+        treePlotList = [];
+        populatePlotDropdowns();
+
+        if (!village || !gut) return;
+
+        fetch(`/api/tree-plots/${encodeURIComponent(village)}/${encodeURIComponent(gut)}/`)
+            .then(res => res.json())
+            .then(data => {
+                treePlotList = data.plots || [];
+                populatePlotDropdowns();
+                refreshAllTreeValuations();
+            });
+    });
+
+    function clearPlotSelections() {
+        document.querySelectorAll('.tree-plot-dropdown').forEach(dropdown => {
+            dropdown.removeAttribute('data-selected');
+            dropdown.value = '';
+        });
+    }
+
+    function populatePlotDropdowns() {
+        const dropdowns = document.querySelectorAll('.tree-plot-dropdown');
+
+        dropdowns.forEach(dropdown => {
+            const selectedValue = dropdown.getAttribute("data-selected") || dropdown.value || "";
+            dropdown.innerHTML = '<option value="">क्रमांक निवडा</option>';
+
+            treePlotList.forEach(item => {
+                const option = document.createElement("option");
+                option.value = item.plot;
+                option.text = item.plot;
+                dropdown.appendChild(option);
+            });
+
+            if (selectedValue) {
+                const exists = Array.from(dropdown.options).some(option => option.value === selectedValue);
+                if (!exists) {
+                    dropdown.add(new Option(selectedValue, selectedValue));
+                }
+                dropdown.value = selectedValue;
+            }
+        });
+    }
+
+    function fetchValuationForRow(row) {
+        const nameField = row.querySelector('[name="name[]"]');
+        const girthField = row.querySelector('[name="girth[]"]');
+        const valuationField = row.querySelector('[name="valuation[]"]');
+
+        if (!nameField || !girthField || !valuationField) return;
+
+        const treeName = `${nameField.value || ''}`.trim();
+        const girth = `${girthField.value || ''}`.trim();
+        const district = document.getElementById("district").value;
+        const taluka = document.getElementById("taluka").value;
+        const village = document.getElementById("village").value;
+        const gutNumber = document.getElementById("gut").value;
+
+        if (!treeName || !girth || !district || !taluka || !village || !gutNumber) {
+            valuationField.value = '';
+            return;
+        }
+
+        const params = new URLSearchParams({
+            tree_name: treeName,
+            girth: girth,
+            district: district,
+            taluka: taluka,
+            village: village,
+            gut_number: gutNumber,
+        });
+
+        fetch(`/api/tree-asset-valuation/?${params.toString()}`)
+            .then(res => res.json())
+            .then(data => {
+                valuationField.value = data.found && data.rate !== null && data.rate !== undefined ? data.rate : '';
+            })
+            .catch(() => {
+                valuationField.value = '';
+            });
+    }
+
+    function attachTreeValuationListeners() {
+        document.querySelectorAll('#tableBody tr').forEach(row => {
+            const nameField = row.querySelector('[name="name[]"]');
+            const girthField = row.querySelector('[name="girth[]"]');
+
+            if (nameField && !nameField.dataset.valuationBound) {
+                nameField.addEventListener('change', () => fetchValuationForRow(row));
+                nameField.dataset.valuationBound = '1';
+            }
+
+            if (girthField && !girthField.dataset.valuationBound) {
+                girthField.addEventListener('input', () => fetchValuationForRow(row));
+                girthField.dataset.valuationBound = '1';
+            }
+        });
+    }
+
+    function refreshAllTreeValuations() {
+        document.querySelectorAll('#tableBody tr').forEach(fetchValuationForRow);
+    }
+
     // Add Row
     function addRow() {
         let row = `
     <tr>
         <td class="border">
-            <input name="plot[]" class="w-full p-1 text-center">
+            <select name="plot[]" class="tree-plot-dropdown w-full p-1 text-center">
+                <option value="">क्रमांक निवडा</option>
+            </select>
         </td>
         <td class="border">
             <select name="name[]" class="tree-name-dropdown w-full p-1 text-center">
@@ -317,12 +450,18 @@
         <td class="border">
             <input type="number" step="0.01" min="0" name="height[]" class="w-full p-1 text-center" placeholder="मीटरमध्ये">
         </td>
+        <td class="border">
+            <input type="number" step="0.01" min="0" name="valuation[]" class="w-full p-1 text-center bg-gray-50" placeholder="रक्कम" readonly>
+        </td>
     </tr>`;
 
         document.getElementById("tableBody").insertAdjacentHTML('beforeend', row);
+        populatePlotDropdowns();
         populateTreeDropdowns();
+        attachTreeValuationListeners();
     }
     function populateTreeDropdowns() {
+
         const dropdowns = document.querySelectorAll('.tree-name-dropdown');
 
         dropdowns.forEach(dropdown => {
@@ -338,6 +477,99 @@
 
             dropdown.value = selectedValue;
         });
+    }
+
+    function clearValidationState() {
+        document.querySelectorAll('.border-red-500, .focus\\:ring-red-400').forEach(field => {
+            field.classList.remove('border-red-500', 'focus:ring-red-400');
+        });
+    }
+
+    function markInvalid(field) {
+        field.classList.add('border-red-500', 'focus:ring-red-400');
+    }
+
+    function showValidationToast(messages) {
+        const toast = document.getElementById('validationToast');
+        const list = document.getElementById('validationToastList');
+        list.innerHTML = messages.map(message => `<li>${message}</li>`).join('');
+        toast.classList.remove('hidden');
+    }
+
+    function hideValidationToast() {
+        document.getElementById('validationToast').classList.add('hidden');
+    }
+
+    function validateInspectionForm() {
+        clearValidationState();
+        hideValidationToast();
+
+        const errors = [];
+        const form = document.querySelector('form');
+        const requiredFields = [
+            { field: document.getElementById('district'), label: 'जिल्हा' },
+            { field: document.getElementById('taluka'), label: 'तालुका' },
+            { field: document.getElementById('village'), label: 'गाव' },
+            { field: document.getElementById('gut'), label: 'गट क्रमांक' },
+            { field: form.querySelector('input[name="officer"]'), label: 'अधिकारी नाव' },
+            { field: form.querySelector('input[name="date"]'), label: 'दिनांक' },
+        ];
+
+        requiredFields.forEach(({ field, label }) => {
+            if (!field || `${field.value || ''}`.trim()) return;
+            markInvalid(field);
+            errors.push(`${label} भरणे आवश्यक आहे.`);
+        });
+
+        const rows = document.querySelectorAll('#tableBody tr');
+        let activeRows = 0;
+
+        rows.forEach((row, index) => {
+            const fields = {
+                plot: row.querySelector('[name="plot[]"]'),
+                name: row.querySelector('[name="name[]"]'),
+                length: row.querySelector('[name="length[]"]'),
+                width: row.querySelector('[name="width[]"]'),
+                girth: row.querySelector('[name="girth[]"]'),
+                height: row.querySelector('[name="height[]"]'),
+                valuation: row.querySelector('[name="valuation[]"]'),
+            };
+
+            const values = Object.values(fields).map(field => `${field?.value || ''}`.trim());
+            const hasAnyValue = values.some(Boolean);
+            if (!hasAnyValue) return;
+
+            activeRows += 1;
+
+            const labels = {
+                plot: 'क्रमांक',
+                name: 'नाव',
+                length: 'लांबी',
+                width: 'रुंदी',
+                girth: 'घेर',
+                height: 'उंची',
+                valuation: 'मूल्यांकन',
+            };
+
+            Object.entries(fields).forEach(([key, field]) => {
+                if (`${field.value || ''}`.trim()) return;
+                markInvalid(field);
+                errors.push(`ओळ ${index + 1}: ${labels[key]} भरणे आवश्यक आहे.`);
+            });
+        });
+
+        if (activeRows === 0) {
+            errors.push('किमान एक झाडाची नोंद भरणे आवश्यक आहे.');
+        }
+
+        if (errors.length) {
+            showValidationToast(errors);
+            const firstInvalid = document.querySelector('.border-red-500');
+            if (firstInvalid) firstInvalid.focus();
+            return false;
+        }
+
+        return true;
     }
 
     // File Upload Handler with Drag & Drop and Progress
@@ -506,6 +738,11 @@
         // Simulate upload progress on form submit
         const form = document.querySelector('form');
         form.addEventListener('submit', function(e) {
+            if (!validateInspectionForm()) {
+                e.preventDefault();
+                return;
+            }
+
             if (selectedFiles.length > 0) {
                 // Show progress bars
                 selectedFiles.forEach((file, index) => {
@@ -538,6 +775,10 @@
             }, 200);
         }
     })();
+
+    document.getElementById('validationToastClose').addEventListener('click', hideValidationToast);
+    attachTreeValuationListeners();
+    refreshAllTreeValuations();
 
 
 </script>

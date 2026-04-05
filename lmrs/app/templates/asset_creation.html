@@ -29,11 +29,16 @@
                             </option>
                         {% endfor %}
                     </select>
+                    <select name="asset_name" id="assetNameSelect"
+                        class="hidden w-full border p-2 rounded focus:ring-2 focus:ring-blue-400"
+                        disabled>
+                        <option value="">\u091d\u093e\u0921 \u0928\u093f\u0935\u0921\u093e</option>
+                    </select>
                 </div>
 
                 <div>
                     <label class="font-semibold">मालमत्तेचे नाव</label>
-                    <input type="text" name="asset_name" id="assetName"
+                    <input type="text" name="asset_name" id="assetNameText"
                         class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-400"
                         placeholder="मालमत्तेचे नाव">
                 </div>
@@ -195,7 +200,7 @@
             </button>
             <a href="{% url 'asset_list' %}"
    class="bg-gray-800 hover:bg-gray-900 text-white px-5 py-2 rounded-md">
-   📋 सूची पहा
+   📋 नोंदी पहा
 </a>
         </div>
     </form>
@@ -205,6 +210,8 @@
     const assetType = document.getElementById("assetType");
     const dynamicFields = document.getElementById("dynamicFields");
     const measurementHiddenFields = document.getElementById("measurementHiddenFields");
+    const assetNameText = document.getElementById("assetNameText");
+    const assetNameSelect = document.getElementById("assetNameSelect");
     const rateInput = document.getElementById("rate");
     const govtRateInput = document.getElementById("governmentEstimatedRate");
     const govtFinalAmount = document.getElementById("govtFinalAmount");
@@ -223,6 +230,82 @@
     let currentAssetFields = [];
     let currentFormula = "";
     let currentFormulaLabel = "";
+    let treeMasterLoaded = false;
+
+    function positionAssetNameSelect() {
+        if (!assetNameText || !assetNameSelect) return;
+
+        if (assetNameSelect.previousElementSibling !== assetNameText) {
+            assetNameText.insertAdjacentElement("afterend", assetNameSelect);
+        }
+
+        if (assetNameSelect.options.length > 0) {
+            assetNameSelect.options[0].text = "\u091d\u093e\u0921 \u0928\u093f\u0935\u0921\u093e";
+        }
+    }
+
+    async function loadTreeMasterOptions() {
+        positionAssetNameSelect();
+
+        if (treeMasterLoaded) return;
+
+        try {
+            const response = await fetch("/api/tree-master/");
+            const data = await response.json();
+            const trees = data.trees || [];
+
+            assetNameSelect.innerHTML = '<option value="">\u091d\u093e\u0921 \u0928\u093f\u0935\u0921\u093e</option>';
+
+            trees.forEach(tree => {
+                const treeName = (tree.tree_name_marathi || "").trim();
+                if (!treeName) return;
+
+                assetNameSelect.insertAdjacentHTML(
+                    "beforeend",
+                    `<option value="${treeName}">${treeName}</option>`
+                );
+            });
+
+            treeMasterLoaded = true;
+        } catch (error) {
+            console.error("Error loading tree master:", error);
+        }
+    }
+
+    async function syncAssetNameField() {
+        positionAssetNameSelect();
+
+        const isTreeAsset = assetType.value === "tree_asset";
+
+        if (isTreeAsset) {
+            await loadTreeMasterOptions();
+
+            if (assetNameText.value && !assetNameSelect.value) {
+                assetNameSelect.value = assetNameText.value;
+            }
+
+            assetNameText.disabled = true;
+            assetNameText.required = false;
+            assetNameText.classList.add("hidden");
+
+            assetNameSelect.disabled = false;
+            assetNameSelect.required = true;
+            assetNameSelect.classList.remove("hidden");
+            return;
+        }
+
+        if (assetNameSelect.value && !assetNameText.value) {
+            assetNameText.value = assetNameSelect.value;
+        }
+
+        assetNameSelect.disabled = true;
+        assetNameSelect.required = false;
+        assetNameSelect.classList.add("hidden");
+
+        assetNameText.disabled = false;
+        assetNameText.required = false;
+        assetNameText.classList.remove("hidden");
+    }
 
     function showFormulaWarning(message) {
         formulaWarning.textContent = message;
@@ -270,6 +353,7 @@
         currentAssetFields = [];
         currentFormula = "";
         currentFormulaLabel = "";
+        await syncAssetNameField();
 
         if (!selectedType) return;
 
@@ -435,6 +519,7 @@
         gutNumberSelect.innerHTML = '<option value="">गट क्रमांक निवडा</option>';
 
         loadLocationData();
+        syncAssetNameField();
     }
 
     async function loadLocationData() {
@@ -545,6 +630,8 @@
     });
 
     loadLocationData();
+    syncAssetNameField();
+    positionAssetNameSelect();
 
     // File Upload Handler with Drag & Drop and Progress
     (function() {

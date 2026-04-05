@@ -20,6 +20,7 @@ urlpatterns = [
     path('tools/712/list/', views.land_record_712_list, name='land_record_712_list'),
     path('tools/712/edit/<int:id>/', views.edit_land_record_712, name='edit_land_record_712'),
     path('tools/712/delete/<int:id>/', views.delete_land_record_712, name='delete_land_record_712'),
+    
     path('api/assessment-types/<str:village>/', views.get_assessment_types_by_village),
     path('api/years/<str:village>/<str:assessment_type>/', views.get_years_by_village_assessment),
     path('api/rates/<str:village>/<str:assessment_type>/', views.get_rates_by_village_assessment),
@@ -28,15 +29,18 @@ urlpatterns = [
     path('api/all-villages-farmers/', views.get_all_villages_farmers, name='all_villages_farmers'),
     path('api/project-stats/', views.get_project_stats, name='project_stats'),
     path('api/gut-numbers/<str:village_name>/', views.get_gut_numbers_by_village, name='gut_numbers'),
+    path('api/tree-plots/<str:village>/<str:gut_number>/', views.get_tree_plot_numbers, name='tree_plot_numbers'),
     path('api/gut-stats/<str:village_name>/<str:gut_number>/', views.get_gut_stats, name='gut_stats'),
     path('api/layer-bounds/<str:layer_name>/', views.get_layer_bounds, name='layer_bounds'),
     path("api/location-data/", views.get_location_data),
     path("api/gut-numbers/<str:village>/", views.get_gut_numbers),
+	path('api/guts/<str:district>/<str:taluka>/<str:village>/', views.get_guts_by_village, name='get_guts_by_village'),
     path('inspections/', views.inspection_list, name='inspection_list'),
     path('inspection/edit/<int:id>/', views.edit_inspection, name='edit_inspection'),
     path('inspection/delete/<int:id>/', views.delete_inspection, name='delete_inspection'),
     path('inspections/download-all/', views.download_all_inspections_csv, name='download_all_inspections_csv'),
     path('api/tree-master/', views.get_tree_master_list, name='get_tree_master_list'),
+    path('api/tree-asset-valuation/', views.get_tree_asset_valuation, name='get_tree_asset_valuation'),
     path("tools/asset-creation/", views.asset_creation, name="asset_creation"),
     path("api/asset-fields/<str:asset_code>/", views.get_asset_fields_by_type, name="get_asset_fields_by_type"),
     #court/general document upload Url
@@ -48,5 +52,8 @@ urlpatterns = [
     path("tools/asset-list/", views.asset_list, name="asset_list"),
     path('asset/edit/<int:id>/', views.edit_asset, name='edit_asset'),
     path('asset/delete/<int:id>/', views.delete_asset, name='delete_asset'),
+    path('tools/add-entry/', views.add_entry, name='add_entry'),
+    path('tools/rate-calculator/', views.add_entry, name='rate_calculator'),
+    path('api/rr-rate-by-village/<str:village>/', views.get_rr_rate_by_village, name='rr_rate_by_village'),
 
 ]

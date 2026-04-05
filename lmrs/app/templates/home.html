@@ -3,6 +3,7 @@
 <html lang="en">
 
 <head>
+    {% load static %}
     <meta charset="utf-8" />
     <meta content="width=device-width, initial-scale=1.0" name="viewport" />
     <title>Project Overview Dashboard - Purandar Airport Project</title>
@@ -50,8 +51,8 @@
             class="flex items-center justify-between whitespace-nowrap border-b border-solid border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-6 py-3 sticky top-0 z-[9999] relative">
             <div class="flex items-center gap-8">
                 <div class="flex items-center gap-4 text-primary">
-                    <div class="size-8 flex items-center justify-center bg-primary/10 rounded-lg">
-                        <span class="material-symbols-outlined">flight_takeoff</span>
+                    <div class="h-10 w-10 rounded-lg bg-white border border-slate-200 overflow-hidden flex items-center justify-center">
+                        <img src="{% static 'logo/purandar_airport.png' %}" alt="Purandar Airport logo" class="h-full w-full object-contain p-1">
                     </div>
                     <h2 class="text-slate-900 dark:text-white text-lg font-bold leading-tight tracking-tight">Purandar
                         Airport CMS</h2>
@@ -327,6 +328,8 @@
         let currentGutNumber = null; // Track current selected gut number
         let currentDistrict = null; // Track current selected district
         let currentTaluka = null; // Track current selected taluka
+        let enabledAssetLayers = new Set(); // Track enabled asset layer keys for URL sync
+        let isApplyingUrlState = false; // Prevent noisy URL updates during URL-state restore
 
         let loadingTiles = 0;
 
@@ -360,7 +363,33 @@
             }
         }
 
+        function syncUrlState() {
+            if (isApplyingUrlState) return;
+
+            const params = new URLSearchParams();
+            if (currentDistrict) params.set('dist', currentDistrict);
+            if (currentTaluka) params.set('taluka', currentTaluka);
+            if (currentVillage) params.set('village', currentVillage);
+            if (currentGutNumber) params.set('gut', currentGutNumber);
+
+            const enabled = Array.from(enabledAssetLayers).filter(Boolean).sort();
+            if (enabled.length > 0) {
+                params.set('layers', enabled.join(','));
+            }
+
+            const nextQuery = params.toString();
+            const nextUrl = nextQuery ? `${window.location.pathname}?${nextQuery}` : window.location.pathname;
+            window.history.replaceState({}, '', nextUrl);
+        }
+
         document.addEventListener('DOMContentLoaded', function () {
+            const urlParams = new URLSearchParams(window.location.search);
+            const initialLayers = (urlParams.get('layers') || '')
+                .split(',')
+                .map(v => v.trim())
+                .filter(Boolean);
+            enabledAssetLayers = new Set(initialLayers);
+
             // Fetch project statistics
             fetchProjectStats();
 
@@ -405,8 +434,8 @@
 
             satelliteLayer = new ol.layer.Tile({
                 source: new ol.source.XYZ({
-                    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-                    attributions: 'Esri',
+                    url: 'http://mt0.google.com/vt/lyrs=y&hl=en&x={x}&y={y}&z={z}',
+                    attributions: 'Google',
                     preload: 3
                 }),
                 preload: Infinity
@@ -500,6 +529,76 @@
             const villageSelect = document.getElementById('villageSelect');
             const gutSelect = document.getElementById('gutSelect');
 
+            function sleep(ms) {
+                return new Promise(resolve => setTimeout(resolve, ms));
+            }
+
+            function findMatchingOptionValue(selectElement, targetValue) {
+                const normalizedTarget = String(targetValue || '').trim().toLowerCase();
+                if (!normalizedTarget) return null;
+                const options = Array.from(selectElement.options || []);
+                const match = options.find(opt => String(opt.value).trim().toLowerCase() === normalizedTarget);
+                return match ? match.value : null;
+            }
+
+            async function waitForOptionValue(selectElement, targetValue, timeoutMs = 8000) {
+                const startedAt = Date.now();
+                while (Date.now() - startedAt < timeoutMs) {
+                    const matchValue = findMatchingOptionValue(selectElement, targetValue);
+                    if (matchValue !== null) return matchValue;
+                    await sleep(120);
+                }
+                return null;
+            }
+
+            async function applyUrlState() {
+                const params = new URLSearchParams(window.location.search);
+                const distParam = (params.get('dist') || params.get('district') || '').trim();
+                const talukaParam = (params.get('taluka') || '').trim();
+                const villageParam = (params.get('village') || '').trim();
+                const gutParam = (params.get('gut') || params.get('gut_number') || '').trim();
+
+                if (!distParam && !talukaParam && !villageParam && !gutParam) {
+                    syncUrlState();
+                    return;
+                }
+
+                isApplyingUrlState = true;
+                try {
+                    if (distParam && distParam.toLowerCase() === 'pune') {
+                        districtSelect.value = 'district';
+                        districtSelect.dispatchEvent(new Event('change'));
+                        await sleep(150);
+                    }
+
+                    if (talukaParam && talukaParam.toLowerCase() === 'purandar') {
+                        talukaSelect.value = 'taluka';
+                        talukaSelect.dispatchEvent(new Event('change'));
+                        await sleep(150);
+                    }
+
+                    if (villageParam) {
+                        const matchedVillage = await waitForOptionValue(villageSelect, villageParam);
+                        if (matchedVillage) {
+                            villageSelect.value = matchedVillage;
+                            villageSelect.dispatchEvent(new Event('change'));
+                            await sleep(150);
+                        }
+                    }
+
+                    if (gutParam) {
+                        const matchedGut = await waitForOptionValue(gutSelect, gutParam);
+                        if (matchedGut) {
+                            gutSelect.value = matchedGut;
+                            gutSelect.dispatchEvent(new Event('change'));
+                        }
+                    }
+                } finally {
+                    isApplyingUrlState = false;
+                    syncUrlState();
+                }
+            }
+
             // District selection
             districtSelect.addEventListener('change', function () {
                 clearAllLayers();
@@ -539,6 +638,7 @@
                 }
                 // Update documents when district changes
                 fetchFilteredDocuments();
+                syncUrlState();
             });
 
             // Taluka selection
@@ -575,6 +675,7 @@
                 }
                 // Update documents when taluka changes
                 fetchFilteredDocuments();
+                syncUrlState();
             });
 
             // Village selection
@@ -627,6 +728,7 @@
                 }
                 // Update documents when village changes
                 fetchFilteredDocuments();
+                syncUrlState();
             });
 
             gutSelect.addEventListener('change', function () {
@@ -660,6 +762,7 @@
                 }
                 // Update documents when gut changes
                 fetchFilteredDocuments();
+                syncUrlState();
             });
 
             // Function to clear all GeoServer layers
@@ -886,10 +989,10 @@
 
             // Reload active asset layers with current filters
             function reloadActiveAssetLayers() {
-                document.querySelectorAll('.asset-layer-toggle:checked').forEach(toggle => {
-                    const assetName = toggle.getAttribute('data-asset');
+                Array.from(enabledAssetLayers).forEach(assetName => {
                     loadAssetLayerFromGeoServer(assetName);
                 });
+                syncUrlState();
             }
 
             // Load Villages List - Simple Django API approach
@@ -1119,6 +1222,7 @@
 
                                     // Reload any active asset layers with gut filter
                                     reloadActiveAssetLayers();
+                                    syncUrlState();
 
                                     // Show notification
                                     showNotification(`Selected Gut ${gutNumber} in ${currentVillage}`, 'success');
@@ -1386,7 +1490,6 @@
                                     <span class="text-[9px] font-semibold px-1.5 py-0.5 rounded ${extClass} shrink-0">${(doc.ext || 'FILE').toUpperCase()}</span>
                                     <div class="min-w-0">
                                         <div class="text-[10px] text-slate-700 dark:text-slate-300 truncate font-medium" title="${doc.document_name}">${doc.document_name}</div>
-                                        <div class="text-[9px] text-slate-400 truncate">${doc.location || ''}</div>
                                     </div>
                                 </div>
                                 ${doc.file_url ? `<a href="${doc.file_url}" target="_blank" class="text-[9px] font-semibold text-primary hover:underline shrink-0">View</a>` : '<span class="text-[9px] text-slate-400 shrink-0">No file</span>'}
@@ -1790,7 +1893,19 @@
                             <div class="w-11 h-6 bg-slate-200 dark:bg-slate-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
                         </label>
                     `;
+                    const toggleInput = assetItem.querySelector('.asset-layer-toggle');
+                    if (toggleInput && enabledAssetLayers.has(assetKey)) {
+                        toggleInput.checked = true;
+                    }
                     assetLayersList.appendChild(assetItem);
+                });
+
+                const availableKeys = new Set(Object.keys(assets));
+                Array.from(enabledAssetLayers).forEach(assetKey => {
+                    if (!availableKeys.has(assetKey)) {
+                        enabledAssetLayers.delete(assetKey);
+                        removeAssetLayer(assetKey);
+                    }
                 });
 
                 // Add event listeners to toggles
@@ -1799,11 +1914,20 @@
                         const assetName = this.getAttribute('data-asset');
 
                         if (this.checked) {
+                            enabledAssetLayers.add(assetName);
                             loadAssetLayerFromGeoServer(assetName);
                         } else {
+                            enabledAssetLayers.delete(assetName);
                             removeAssetLayer(assetName);
                         }
+                        syncUrlState();
                     });
+                });
+
+                Array.from(enabledAssetLayers).forEach(assetName => {
+                    if (!assetLayers[assetName]) {
+                        loadAssetLayerFromGeoServer(assetName);
+                    }
                 });
             }
 
@@ -1863,6 +1987,8 @@
                             // Uncheck the toggle
                             const toggle = document.querySelector(`.asset-layer-toggle[data-asset="${assetName}"]`);
                             if (toggle) toggle.checked = false;
+                            enabledAssetLayers.delete(assetName);
+                            syncUrlState();
                             return;
                         }
 
@@ -1906,10 +2032,12 @@
 
                                 const toggle = document.querySelector(`.asset-layer-toggle[data-asset="${assetName}"]`);
                                 if (toggle) toggle.checked = false;
+                                enabledAssetLayers.delete(assetName);
                                 if (assetLayers[assetName]) {
                                     map.removeLayer(assetLayers[assetName]);
                                     delete assetLayers[assetName];
                                 }
+                                syncUrlState();
                             });
 
                             map.addLayer(assetLayers[assetName]);
@@ -1919,6 +2047,8 @@
                             showNotification(`Error loading ${assetName}: ${error.message}`, 'error');
                             const toggle = document.querySelector(`.asset-layer-toggle[data-asset="${assetName}"]`);
                             if (toggle) toggle.checked = false;
+                            enabledAssetLayers.delete(assetName);
+                            syncUrlState();
                         }
                     })
                     .catch(error => {
@@ -1926,6 +2056,8 @@
                         showNotification(`Error checking ${assetName} data: ${error.message}`, 'error');
                         const toggle = document.querySelector(`.asset-layer-toggle[data-asset="${assetName}"]`);
                         if (toggle) toggle.checked = false;
+                        enabledAssetLayers.delete(assetName);
+                        syncUrlState();
                     });
             }
 
@@ -1935,7 +2067,12 @@
                     map.removeLayer(assetLayers[assetName]);
                     delete assetLayers[assetName];
                 }
+                enabledAssetLayers.delete(assetName);
+                syncUrlState();
             }
+
+            // Restore filter and layer state from URL query params on initial load
+            applyUrlState();
 
             // Show notification toast with enhanced styling
             function showNotification(message, type = 'info') {

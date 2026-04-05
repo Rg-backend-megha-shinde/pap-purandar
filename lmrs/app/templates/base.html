@@ -1,7 +1,9 @@
 <!DOCTYPE html>
+{% load static %}
 <html lang="en">
 
 <head>
+    {% load static %}
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Purandar CMS</title>
@@ -25,9 +27,14 @@
     <!-- ✅ NAVBAR -->
     <header class="flex justify-between items-center bg-white px-6 py-3 shadow">
 
-        <h2 class="font-bold text-lg text-blue-600">
-            Purandar Airport CMS
-        </h2>
+        <div class="flex items-center gap-3">
+            <div class="h-9 w-9 rounded-lg bg-white border border-slate-200 shadow-sm overflow-hidden flex items-center justify-center">
+                <img src="{% static 'logo/purandar_airport.png' %}" alt="Purandar Airport logo" class="h-full w-full object-contain p-1">
+            </div>
+            <h2 class="font-bold text-lg text-blue-600">
+                Purandar Airport CMS
+            </h2>
+        </div>
 
         <div class="flex items-center gap-5">
 

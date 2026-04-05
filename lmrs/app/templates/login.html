@@ -1,5 +1,7 @@
 <!DOCTYPE html>
 
+{% load static %}
+
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -29,9 +31,9 @@
     <!-- Header -->
     <div class="text-center mb-8">
         <div class="flex justify-center mb-3">
-            <!-- <div class="w-12 h-12 bg-blue-100 text-blue-600 flex items-center justify-center rounded-xl shadow-sm">
-                
-            </div> -->
+            <div class="h-14 w-14 rounded-xl bg-white border border-slate-200 shadow-sm overflow-hidden flex items-center justify-center">
+                <img src="{% static 'logo/purandar_airport.png' %}" alt="Purandar Airport logo" class="h-full w-full object-contain p-1">
+            </div>
         </div>
         <h1 class="text-2xl font-bold text-blue-600">LMRS purandar</h1>
         <p class="text-sm text-gray-500">GIS Dashboard Access</p>

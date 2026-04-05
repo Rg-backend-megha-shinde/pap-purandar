@@ -118,7 +118,7 @@
                                         </div>
                                         <div class="flex-1 min-w-0">
                                             <a href="{{ attachment.file.url }}" target="_blank" class="text-sm font-medium text-blue-600 hover:text-blue-800 hover:underline truncate block">
-                                                {{ attachment.file.name|slice:"17:" }}
+                                                {{ attachment.file.name|cut:"documents/files/" }}
                                             </a>
                                             <p class="text-xs text-gray-500">{{ attachment.uploaded_at|date:"d/m/Y, H:i" }}</p>
                                         </div>

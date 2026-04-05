@@ -1,13 +1,11 @@
 {% extends "base.html" %}
+{% load asset_display %}
 
 {% block content %}
-
 <div class="max-w-6xl mx-auto bg-white p-6 mt-6 rounded shadow">
-
     <div class="flex justify-between items-center mb-4">
         <h2 class="text-xl font-bold">रेडी रेकनर दर नोंदी</h2>
-        <a href="/tools/ready-reckoner/"
-            class="flex items-center gap-2 bg-gray-800 hover:bg-gray-900 text-white px-4 py-2 rounded-md shadow-sm transition duration-200">
+        <a href="/tools/ready-reckoner/" class="flex items-center gap-2 bg-gray-800 hover:bg-gray-900 text-white px-4 py-2 rounded-md shadow-sm transition duration-200">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
             </svg>
@@ -18,244 +16,220 @@
     <table id="rrTable" class="display w-full text-sm">
         <thead>
             <tr>
-                <th>ID</th>
                 <th>जिल्हा</th>
                 <th>तालुका</th>
                 <th>गाव</th>
                 <th>वर्ष</th>
-                <th>मूल्यांकन प्रकार</th>
-                <th>श्रेणी</th>
-                <th>दर ₹</th>
-                <th>एकक</th>
+                <th>मूल्यांकन प्रकार व दर</th>
                 <th>दस्तऐवज</th>
                 <th>Actions</th>
             </tr>
         </thead>
         <tbody>
-            {% for item in records %}
+            {% for group in groups %}
             <tr>
-                <td>{{ item.id }}</td>
-                <td>{{ item.district }}</td>
-                <td>{{ item.taluka }}</td>
-                <td>{{ item.village }}</td>
-                <td>{{ item.year }}</td>
-                <td>{{ item.assessment_type }}</td>
-                <td>{{ item.assessment_range_min }}-{{ item.assessment_range_max }}</td>
-                <td>{{ item.rate }}</td>
-                <td>{{ item.unit }}</td>
+                <td>{{ group.district }}</td>
+                <td>{{ group.taluka }}</td>
+                <td>{{ group.village }}</td>
+                <td>{{ group.year }}</td>
+
+                <!-- Assessment types summary + view button -->
                 <td>
-                    {% if item.documents_list %}
-                        <button data-record-id="{{ item.id }}" class="view-docs-btn text-blue-600 hover:text-blue-800 hover:underline text-xs font-medium flex items-center gap-1">
+                    <div class="text-xs text-gray-600 mb-1">
+                        {% for rec in group.records %}
+                            <span class="inline-block bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded mr-1 mb-1">{{ rec.assessment_type }}</span>
+                        {% endfor %}
+                    </div>
+                    <button onclick="openRatesModal('rates-{{ group.anchor.id }}')"
+                        class="text-xs text-blue-600 hover:underline flex items-center gap-1 mt-1">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                        </svg>
+                        सर्व दर पहा
+                    </button>
+
+                    <!-- Embedded rates data -->
+                    <script type="application/json" id="rates-{{ group.anchor.id }}" class="hidden">
+                    {
+                        "village": "{{ group.village|escapejs }}",
+                        "year": "{{ group.year|escapejs }}",
+                        "types": [
+                            {% for rec in group.records %}
+                            {
+                                "assessment_type": "{{ rec.assessment_type|escapejs }}",
+                                "unit": "{{ rec.unit|escapejs }}",
+                                "rates": [
+                                    {% for rate in rec.rates.all %}
+                                    {"min": "{{ rate.assessment_range_min }}", "max": "{{ rate.assessment_range_max }}", "rate": "{{ rate.rate }}"}{% if not forloop.last %},{% endif %}
+                                    {% endfor %}
+                                ]
+                            }{% if not forloop.last %},{% endif %}
+                            {% endfor %}
+                        ]
+                    }
+                    </script>
+                </td>
+
+                <!-- Village-level documents -->
+                <td>
+                    {% if group.has_docs %}
+                        <button onclick="openDocsModal('docs-{{ group.anchor.id }}')"
+                            class="view-docs-btn text-blue-600 hover:text-blue-800 hover:underline text-xs font-medium flex items-center gap-1">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
                             </svg>
                             View
-                            <span class="ml-1 bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded-full text-[10px]">
-                                {% for doc_master in item.documents_list %}
-                                    {{ doc_master.attachments.count }}
-                                {% endfor %}
-                            </span>
                         </button>
-                        
-                        <!-- Hidden data for modal -->
-                        <script type="application/json" id="docs-data-{{ item.id }}" class="hidden">
-                        [{% for doc_master in item.documents_list %}{% for attachment in doc_master.attachments.all %}{"url":"{{ attachment.file.url }}","name":"{{ attachment.file.name|escapejs }}","date":"{{ attachment.uploaded_at|date:'d/m/Y H:i' }}","size":{{ attachment.file.size }}}{% if not forloop.last or not forloop.parentloop.last %},{% endif %}{% endfor %}{% endfor %}]
+                        <script type="application/json" id="docs-{{ group.anchor.id }}" class="hidden">
+                        [{% for doc_master in group.all_docs %}{% for attachment in doc_master.attachments.all %}{"url":"{{ attachment.file.url }}","name":"{{ attachment.file.name|display_filename|escapejs }}","date":"{{ attachment.uploaded_at|date:'d/m/Y H:i' }}","size":{{ attachment.file|safe_file_size }}}{% if not forloop.last or not forloop.parentloop.last %},{% endif %}{% endfor %}{% endfor %}]
                         </script>
                     {% else %}
                         <span class="text-gray-400 text-xs">-</span>
                     {% endif %}
                 </td>
+
+                <!-- Actions: edit uses anchor id, delete deletes whole village group -->
                 <td class="flex gap-2">
-                    <a href="{% url 'edit_ready_reckoner' item.id %}" title="Edit"
+                    <a href="{% url 'edit_ready_reckoner' group.anchor.id %}" title="Edit"
                         class="flex items-center justify-center w-8 h-8 bg-blue-600 hover:bg-blue-700 text-white rounded">✏️</a>
-                    <a href="{% url 'delete_ready_reckoner' item.id %}" title="Delete"
+                    <a href="{% url 'delete_ready_reckoner' group.anchor.id %}" title="Delete"
                         class="flex items-center justify-center w-8 h-8 bg-red-600 hover:bg-red-700 text-white rounded"
-                        onclick="return confirm('तुम्हाला ही नोंद हटवायची आहे का?');">🗑</a>
+                        onclick="return confirm('{{ group.village }} ({{ group.year }}) च्या सर्व नोंदी हटवायच्या आहेत का?');">🗑</a>
                 </td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
+</div>
 
+<!-- Rates Modal -->
+<div id="ratesModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[85vh] flex flex-col">
+        <div class="flex items-center justify-between p-4 border-b">
+            <div>
+                <h3 class="text-lg font-bold text-gray-900">मूल्यांकन प्रकार व दर</h3>
+                <p class="text-sm text-gray-500" id="ratesModalSubtitle"></p>
+            </div>
+            <button onclick="closeRatesModal()" class="text-gray-400 hover:text-gray-600">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+        </div>
+        <div class="flex-1 overflow-y-auto p-4" id="ratesModalBody"></div>
+        <div class="p-4 border-t bg-gray-50 flex justify-end">
+            <button onclick="closeRatesModal()" class="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded text-sm">बंद करा</button>
+        </div>
+    </div>
 </div>
 
 <!-- Documents Modal -->
 <div id="documentsModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
     <div class="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] flex flex-col">
-        <!-- Modal Header -->
         <div class="flex items-center justify-between p-4 border-b border-gray-200">
-            <div>
-                <h3 class="text-lg font-bold text-gray-900">दस्तऐवज (Documents)</h3>
-                <p class="text-sm text-gray-500 mt-1" id="modalSubtitle">Ready Reckoner Rate Documents</p>
-            </div>
-            <button onclick="closeDocumentsModal()" class="text-gray-400 hover:text-gray-600 transition-colors">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                </svg>
+            <h3 class="text-lg font-bold text-gray-900">दस्तऐवज (Documents)</h3>
+            <button onclick="closeDocumentsModal()" class="text-gray-400 hover:text-gray-600">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
             </button>
         </div>
-        
-        <!-- Modal Body -->
         <div class="flex-1 overflow-y-auto p-6">
-            <div id="documentsGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                <!-- Documents will be loaded here -->
-            </div>
+            <div id="documentsGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4"></div>
         </div>
-        
-        <!-- Modal Footer -->
-        <div class="p-4 border-t border-gray-200 bg-gray-50">
-            <div class="flex items-center justify-between">
-                <span class="text-sm text-gray-600" id="documentCount">0 documents</span>
-                <button onclick="closeDocumentsModal()" 
-                    class="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg text-sm font-medium transition-colors">
-                    बंद करा
-                </button>
-            </div>
+        <div class="p-4 border-t bg-gray-50 flex justify-between items-center">
+            <span class="text-sm text-gray-600" id="documentCount"></span>
+            <button onclick="closeDocumentsModal()" class="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded text-sm">बंद करा</button>
         </div>
     </div>
 </div>
 
 <script>
-    $(document).ready(function () {
-        setTimeout(() => {
-            let table = $('#rrTable');
-            if ($.fn.DataTable.isDataTable(table)) table.DataTable().destroy();
-            table.DataTable({ pageLength: 10 });
-        }, 100);
-        
-        // Add event listeners for view document buttons
-        $(document).on('click', '.view-docs-btn', function() {
-            const recordId = $(this).data('record-id');
-            openDocumentsModal(recordId);
-        });
-    });
-    
-    function openDocumentsModal(recordId) {
-        const modal = document.getElementById('documentsModal');
-        const grid = document.getElementById('documentsGrid');
-        const countSpan = document.getElementById('documentCount');
-        const dataContainer = document.getElementById('docs-data-' + recordId);
-        
-        if (!dataContainer) return;
-        
-        // Clear previous content
-        grid.innerHTML = '';
-        
-        // Parse JSON data from script tag
-        let documents = [];
-        try {
-            const jsonData = dataContainer.textContent || dataContainer.innerText;
-            documents = JSON.parse(jsonData);
-        } catch (e) {
-            console.error('Error parsing documents:', e);
-            grid.innerHTML = '<p class="col-span-full text-center text-gray-500">Error loading documents</p>';
-            return;
-        }
-        
-        if (documents.length === 0) {
-            grid.innerHTML = '<p class="col-span-full text-center text-gray-500">No documents found</p>';
-            return;
-        }
-        
-        // Update count
-        countSpan.textContent = documents.length + ' document' + (documents.length !== 1 ? 's' : '');
-        
-        // Create tile for each document
-        documents.forEach((doc, index) => {
-            const tile = createDocumentTile(doc.url, doc.name, doc.date, doc.size, index + 1);
-            grid.appendChild(tile);
-        });
-        
-        // Show modal
-        modal.classList.remove('hidden');
-        document.body.style.overflow = 'hidden';
-    }
-    
-    function closeDocumentsModal() {
-        const modal = document.getElementById('documentsModal');
-        modal.classList.add('hidden');
-        document.body.style.overflow = 'auto';
-    }
-    
-    function createDocumentTile(url, filename, date, size, index) {
-        const div = document.createElement('div');
-        div.className = 'bg-white border-2 border-gray-200 rounded-lg p-4 hover:border-orange-500 hover:shadow-lg transition-all duration-200 cursor-pointer group';
-        
-        const ext = filename.split('.').pop().toLowerCase();
-        const icon = getFileIconForModal(ext);
-        const displayName = filename.split('/').pop();
-        const formattedSize = formatFileSize(size);
-        
-        div.innerHTML = `
-            <a href="${url}" target="_blank" class="block">
-                <div class="flex flex-col items-center text-center">
-                    <!-- File Icon -->
-                    <div class="w-16 h-16 mb-3 flex items-center justify-center bg-gray-100 rounded-lg group-hover:bg-orange-50 transition-colors">
-                        ${icon}
-                    </div>
-                    
-                    <!-- File Name -->
-                    <p class="text-sm font-medium text-gray-900 truncate w-full mb-1" title="${displayName}">
-                        ${displayName.length > 20 ? displayName.substring(0, 20) + '...' : displayName}
-                    </p>
-                    
-                    <!-- File Info -->
-                    <div class="text-xs text-gray-500 space-y-0.5">
-                        <p>${formattedSize}</p>
-                        <p>${date}</p>
-                    </div>
-                    
-                    <!-- View Button -->
-                    <div class="mt-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <span class="inline-flex items-center gap-1 text-xs text-orange-600 font-medium">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
-                            </svg>
-                            Open
-                        </span>
-                    </div>
-                </div>
-            </a>
-        `;
-        
-        return div;
-    }
-    
-    function getFileIconForModal(ext) {
-        const icons = {
-            'pdf': '<svg class="w-10 h-10 text-red-600" fill="currentColor" viewBox="0 0 20 20"><path d="M4 18h12V6h-4V2H4v16zm-2 1V0h12l4 4v16H2v-1z"/><text x="4" y="14" font-size="6" fill="currentColor" font-weight="bold">PDF</text></svg>',
-            'doc': '<svg class="w-10 h-10 text-blue-600" fill="currentColor" viewBox="0 0 20 20"><path d="M4 18h12V6h-4V2H4v16zm-2 1V0h12l4 4v16H2v-1z"/><text x="3" y="14" font-size="6" fill="currentColor" font-weight="bold">DOC</text></svg>',
-            'docx': '<svg class="w-10 h-10 text-blue-600" fill="currentColor" viewBox="0 0 20 20"><path d="M4 18h12V6h-4V2H4v16zm-2 1V0h12l4 4v16H2v-1z"/><text x="3" y="14" font-size="6" fill="currentColor" font-weight="bold">DOC</text></svg>',
-            'jpg': '<svg class="w-10 h-10 text-green-600" fill="currentColor" viewBox="0 0 20 20"><path d="M4 3h12v14H4V3zm2 2v10h8V5H6z"/><circle cx="10" cy="10" r="2" fill="currentColor"/></svg>',
-            'jpeg': '<svg class="w-10 h-10 text-green-600" fill="currentColor" viewBox="0 0 20 20"><path d="M4 3h12v14H4V3zm2 2v10h8V5H6z"/><circle cx="10" cy="10" r="2" fill="currentColor"/></svg>',
-            'png': '<svg class="w-10 h-10 text-green-600" fill="currentColor" viewBox="0 0 20 20"><path d="M4 3h12v14H4V3zm2 2v10h8V5H6z"/><circle cx="10" cy="10" r="2" fill="currentColor"/></svg>',
-        };
-        
-        return icons[ext] || '<svg class="w-10 h-10 text-gray-600" fill="currentColor" viewBox="0 0 20 20"><path d="M4 18h12V6h-4V2H4v16zm-2 1V0h12l4 4v16H2v-1z"/></svg>';
-    }
-    
-    function formatFileSize(bytes) {
-        if (!bytes || bytes === 0) return '0 Bytes';
-        const k = 1024;
-        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-        const i = Math.floor(Math.log(bytes) / Math.log(k));
-        return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
-    }
-    
-    // Close modal on escape key
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape') {
-            closeDocumentsModal();
-        }
-    });
-    
-    // Close modal on backdrop click
-    document.getElementById('documentsModal')?.addEventListener('click', function(e) {
-        if (e.target === this) {
-            closeDocumentsModal();
-        }
-    });
-</script>
+$(document).ready(function () {
+    setTimeout(() => {
+        let table = $('#rrTable');
+        if ($.fn.DataTable.isDataTable(table)) table.DataTable().destroy();
+        table.DataTable({ pageLength: 10 });
+    }, 100);
+});
 
+// ── Rates Modal ────────────────────────────────────────────────────────────
+function openRatesModal(dataId) {
+    const el = document.getElementById(dataId);
+    if (!el) return;
+    let data;
+    try { data = JSON.parse(el.textContent); } catch(e) { return; }
+
+    document.getElementById('ratesModalSubtitle').textContent = data.village + ' — ' + data.year;
+
+    const body = document.getElementById('ratesModalBody');
+    body.innerHTML = data.types.map(t => `
+        <div class="mb-4 border border-orange-200 rounded-lg overflow-hidden">
+            <div class="bg-orange-50 px-4 py-2 flex justify-between items-center">
+                <span class="font-semibold text-orange-800">${t.assessment_type}</span>
+                <span class="text-xs text-gray-500">${t.unit}</span>
+            </div>
+            <table class="w-full text-sm">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-4 py-2 text-left text-xs text-gray-500">किमान</th>
+                        <th class="px-4 py-2 text-left text-xs text-gray-500">कमाल</th>
+                        <th class="px-4 py-2 text-left text-xs text-gray-500">दर ₹</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${t.rates.length ? t.rates.map(r => `
+                        <tr class="border-t">
+                            <td class="px-4 py-2">${r.min}</td>
+                            <td class="px-4 py-2">${r.max}</td>
+                            <td class="px-4 py-2 font-semibold text-green-700">₹${parseFloat(r.rate).toLocaleString('en-IN')}</td>
+                        </tr>`).join('') : '<tr><td colspan="3" class="px-4 py-2 text-gray-400 text-center">दर नाही</td></tr>'}
+                </tbody>
+            </table>
+        </div>`).join('');
+
+    document.getElementById('ratesModal').classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+}
+function closeRatesModal() {
+    document.getElementById('ratesModal').classList.add('hidden');
+    document.body.style.overflow = 'auto';
+}
+
+// ── Documents Modal ────────────────────────────────────────────────────────
+function openDocsModal(dataId) {
+    const el = document.getElementById(dataId);
+    if (!el) return;
+    let documents;
+    try { documents = JSON.parse(el.textContent); } catch(e) { return; }
+
+    const grid = document.getElementById('documentsGrid');
+    grid.innerHTML = '';
+    document.getElementById('documentCount').textContent = documents.length + ' document' + (documents.length !== 1 ? 's' : '');
+    documents.forEach((doc, i) => grid.appendChild(createDocumentTile(doc.url, doc.name, doc.date)));
+    document.getElementById('documentsModal').classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+}
+function closeDocumentsModal() {
+    document.getElementById('documentsModal').classList.add('hidden');
+    document.body.style.overflow = 'auto';
+}
+function createDocumentTile(url, filename, date) {
+    const div = document.createElement('div');
+    div.className = 'bg-white border-2 border-gray-200 rounded-lg p-4 hover:border-orange-500 hover:shadow-lg transition-all cursor-pointer group';
+    const displayName = filename.split('/').pop();
+    div.innerHTML = `<a href="${url}" target="_blank" class="block">
+        <div class="flex flex-col items-center text-center">
+            <div class="w-14 h-14 mb-2 flex items-center justify-center bg-gray-100 rounded-lg group-hover:bg-orange-50">
+                <svg class="w-7 h-7 text-gray-500" fill="currentColor" viewBox="0 0 20 20"><path d="M4 18h12V6h-4V2H4v16zm-2 1V0h12l4 4v16H2v-1z"/></svg>
+            </div>
+            <p class="text-xs font-medium text-gray-900 truncate w-full" title="${displayName}">${displayName.length > 18 ? displayName.substring(0,18)+'...' : displayName}</p>
+            <p class="text-xs text-gray-400 mt-0.5">${date}</p>
+        </div>
+    </a>`;
+    return div;
+}
+
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeRatesModal(); closeDocumentsModal(); } });
+document.getElementById('ratesModal')?.addEventListener('click', function(e) { if (e.target === this) closeRatesModal(); });
+document.getElementById('documentsModal')?.addEventListener('click', function(e) { if (e.target === this) closeDocumentsModal(); });
+</script>
 {% endblock %}
