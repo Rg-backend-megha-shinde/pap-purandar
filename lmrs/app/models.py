@@ -124,6 +124,7 @@ class TreeDetail(models.Model):
     width = models.FloatField(null=True, blank=True)
     girth = models.FloatField(null=True, blank=True)
     height = models.FloatField(null=True, blank=True)
+    valuation = models.FloatField(null=True, blank=True)
 
     def __str__(self):
         return self.name or "Tree"

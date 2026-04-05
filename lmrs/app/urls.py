@@ -29,6 +29,7 @@ urlpatterns = [
     path('api/all-villages-farmers/', views.get_all_villages_farmers, name='all_villages_farmers'),
     path('api/project-stats/', views.get_project_stats, name='project_stats'),
     path('api/gut-numbers/<str:village_name>/', views.get_gut_numbers_by_village, name='gut_numbers'),
+    path('api/tree-plots/<str:village>/<str:gut_number>/', views.get_tree_plot_numbers, name='tree_plot_numbers'),
     path('api/gut-stats/<str:village_name>/<str:gut_number>/', views.get_gut_stats, name='gut_stats'),
     path('api/layer-bounds/<str:layer_name>/', views.get_layer_bounds, name='layer_bounds'),
     path("api/location-data/", views.get_location_data),
@@ -39,6 +40,7 @@ urlpatterns = [
     path('inspection/delete/<int:id>/', views.delete_inspection, name='delete_inspection'),
     path('inspections/download-all/', views.download_all_inspections_csv, name='download_all_inspections_csv'),
     path('api/tree-master/', views.get_tree_master_list, name='get_tree_master_list'),
+    path('api/tree-asset-valuation/', views.get_tree_asset_valuation, name='get_tree_asset_valuation'),
     path("tools/asset-creation/", views.asset_creation, name="asset_creation"),
     path("api/asset-fields/<str:asset_code>/", views.get_asset_fields_by_type, name="get_asset_fields_by_type"),
     #court/general document upload Url

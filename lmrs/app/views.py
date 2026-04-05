@@ -395,6 +395,7 @@ def inspection_form(request):
         widths = request.POST.getlist("width[]")
         girths = request.POST.getlist("girth[]")
         heights = request.POST.getlist("height[]")
+        valuations = request.POST.getlist("valuation[]")
         for i in range(len(names)):
             if names[i]:
                 TreeDetail.objects.create(
@@ -405,6 +406,7 @@ def inspection_form(request):
                     width=float(widths[i]) if widths[i] and widths[i].strip() and widths[i].strip() != 'None' else None,
                     girth=float(girths[i]) if girths[i] and girths[i].strip() and girths[i].strip() != 'None' else None,
                     height=float(heights[i]) if heights[i] and heights[i].strip() and heights[i].strip() != 'None' else None,
+                    valuation=float(valuations[i]) if i < len(valuations) and valuations[i] and valuations[i].strip() and valuations[i].strip() != 'None' else None,
                 )
         
         # Handle document uploads using centralized system
@@ -2030,6 +2032,36 @@ def get_gut_numbers(request, village):
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
 
+
+def get_tree_plot_numbers(request, village, gut_number):
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                SELECT DISTINCT "STRING", valuation
+                FROM public.tree
+                WHERE village = %s
+                  AND gut_no::text = %s
+                  AND "STRING" IS NOT NULL
+                  AND TRIM("STRING") <> ''
+                ORDER BY "STRING";
+                """,
+                [village, gut_number],
+            )
+            rows = cursor.fetchall()
+
+        data = [
+            {
+                "plot": row[0],
+                "valuation": float(row[1]) if row[1] is not None else None,
+            }
+            for row in rows
+        ]
+        return JsonResponse({"plots": data})
+
+    except Exception as e:
+        return JsonResponse({"error": str(e), "plots": []}, status=500)
+
 @login_required
 def inspection_list(request):
     inspections = Inspection.objects.all().order_by('-id')
@@ -2095,6 +2127,7 @@ def edit_inspection(request, id):
             widths = request.POST.getlist("width[]")
             girths = request.POST.getlist("girth[]")
             heights = request.POST.getlist("height[]")
+            valuations = request.POST.getlist("valuation[]")
 
             for i in range(len(names)):
                 if names[i]:
@@ -2106,6 +2139,7 @@ def edit_inspection(request, id):
                         width=clean_optional_float(widths[i]),
                         girth=clean_optional_float(girths[i]),
                         height=clean_optional_float(heights[i]),
+                        valuation=clean_optional_float(valuations[i]) if i < len(valuations) else None,
                     )
             
             # Handle additional document uploads using centralized system
@@ -2159,7 +2193,8 @@ def download_all_inspections_csv(request):
         'Length',
         'Width',
         'Girth',
-        'Height'
+        'Height',
+        'Valuation'
     ])
 
     for inspection in inspections:
@@ -2180,7 +2215,8 @@ def download_all_inspections_csv(request):
                     tree.length,
                     tree.width,
                     tree.girth,
-                    tree.height
+                    tree.height,
+                    tree.valuation
                 ])
         else:
             writer.writerow([
@@ -2191,6 +2227,7 @@ def download_all_inspections_csv(request):
                 inspection.gut_number,
                 inspection.officer,
                 inspection.date,
+                '',
                 '',
                 '',
                 '',
@@ -2208,6 +2245,112 @@ def get_tree_master_list(request):
         return JsonResponse({"trees": list(trees)})
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
+    
+
+@api_login_required
+def get_tree_asset_valuation(request):
+    tree_name = (request.GET.get("tree_name") or "").strip()
+    girth_raw = (request.GET.get("girth") or "").strip()
+
+    if not tree_name or not girth_raw:
+        return JsonResponse({"found": False})
+
+    try:
+        girth_value = Decimal(girth_raw)
+    except Exception:
+        return JsonResponse({"found": False, "error": "Invalid girth"}, status=400)
+
+    district = (request.GET.get("district") or "").strip()
+    taluka = (request.GET.get("taluka") or "").strip()
+    village = (request.GET.get("village") or "").strip()
+    gut_number = (request.GET.get("gut_number") or "").strip()
+
+    assets = Asset.objects.filter(
+        asset_type="tree_asset",
+        asset_name__iexact=tree_name,
+    ).prefetch_related("measurements")
+
+    aliases = {
+        "min_girth": {"min_girth", "min_ghera", "minimum_girth"},
+        "max_girth": {"max_girth", "max_ghera", "maximum_girth"},
+    }
+
+    def normalize(value):
+        return (value or "").strip().lower()
+
+    def parse_decimal(value):
+        if value in (None, ""):
+            return None
+        try:
+            return Decimal(str(value))
+        except Exception:
+            return None
+
+    def location_matches(asset_value, requested_value):
+        asset_norm = normalize(asset_value)
+        request_norm = normalize(requested_value)
+        if not asset_norm:
+            return True
+        if not request_norm:
+            return False
+        return asset_norm == request_norm
+
+    best_match = None
+    best_score = -1
+
+    for asset in assets:
+        if not location_matches(asset.district, district):
+            continue
+        if not location_matches(asset.taluka, taluka):
+            continue
+        if not location_matches(asset.village, village):
+            continue
+        if not location_matches(asset.gut_number, gut_number):
+            continue
+
+        measurement_map = {}
+        for measurement in asset.measurements.all():
+            measurement_map[normalize(measurement.field_name)] = measurement.field_value
+
+        min_girth = None
+        max_girth = None
+
+        for alias in aliases["min_girth"]:
+            if alias in measurement_map:
+                min_girth = parse_decimal(measurement_map[alias])
+                break
+
+        for alias in aliases["max_girth"]:
+            if alias in measurement_map:
+                max_girth = parse_decimal(measurement_map[alias])
+                break
+
+        if min_girth is None or max_girth is None:
+            continue
+
+        if not (min_girth <= girth_value <= max_girth):
+            continue
+
+        specificity = sum(
+            1
+            for value in [asset.district, asset.taluka, asset.village, asset.gut_number]
+            if normalize(value)
+        )
+
+        if specificity > best_score:
+            best_score = specificity
+            best_match = {
+                "asset_id": asset.id,
+                "rate": float(asset.rate) if asset.rate is not None else None,
+                "government_estimated_rate": float(asset.government_estimated_rate) if asset.government_estimated_rate is not None else None,
+                "min_girth": float(min_girth),
+                "max_girth": float(max_girth),
+            }
+
+    if not best_match:
+        return JsonResponse({"found": False})
+
+    return JsonResponse({"found": True, **best_match})
     
 
 def get_asset_fields_by_type(request, asset_code):
@@ -2332,8 +2475,36 @@ def get_asset_fields_by_type(request, asset_code):
             for field in fields
         ]
 
+        if asset_code == "tree_asset":
+            existing_field_names = {field["field_name"] for field in field_data}
+            tree_range_fields = [
+                {
+                    "field_name": "min_girth",
+                    "field_label_marathi": "किमान घेर",
+                    "field_label_english": "Minimum Girth",
+                    "field_type": "number",
+                    "unit": "मीटर",
+                    "is_required": True,
+                    "display_order": 1000,
+                },
+                {
+                    "field_name": "max_girth",
+                    "field_label_marathi": "कमाल घेर",
+                    "field_label_english": "Maximum Girth",
+                    "field_type": "number",
+                    "unit": "मीटर",
+                    "is_required": True,
+                    "display_order": 1001,
+                },
+            ]
+            for field in tree_range_fields:
+                if field["field_name"] not in existing_field_names:
+                    field_data.append(field)
+
         allowed_fields = {field.field_name for field in fields}
         allowed_fields.add("rate")
+        if asset_code == "tree_asset":
+            allowed_fields.update({"min_girth", "max_girth"})
 
         formula_payload = {
             "formula_label_marathi": "",
