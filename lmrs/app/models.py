@@ -42,6 +42,7 @@ class DocumentMaster(models.Model):
 
     inspection = models.ForeignKey('Inspection', on_delete=models.SET_NULL, null=True, blank=True)
     rr_info = models.ForeignKey('ReadyReckonerInfo',on_delete=models.SET_NULL,null=True,blank=True,related_name="documents")
+    land_record = models.ForeignKey('LandRecord712', on_delete=models.SET_NULL, null=True, blank=True)
     asset = models.ForeignKey('Asset', on_delete=models.SET_NULL, null=True, blank=True)
     entry = models.ForeignKey('Entry', on_delete=models.SET_NULL, null=True, blank=True, related_name="documents")
     document_tool_record = models.ForeignKey('Document', on_delete=models.SET_NULL, null=True, blank=True)

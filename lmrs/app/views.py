@@ -1265,6 +1265,8 @@ def edit_land_record_712(request, id):
 
 @login_required
 def delete_land_record_712(request, id):
+    # Clear dependent document links first to satisfy DB foreign key constraints.
+    DocumentMaster.objects.filter(land_record_id=id).update(land_record=None)
     LandRecord712.objects.filter(id=id).delete()
     return redirect('land_record_712_list')
 
