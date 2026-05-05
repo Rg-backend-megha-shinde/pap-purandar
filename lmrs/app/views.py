@@ -739,10 +739,10 @@ def delete_ready_reckoner(request, id):
             year=anchor.year
         )
         
-        # Delete VillageDataSec15Rate records that reference ReadyReckonerRate records
-        # that belong to ReadyReckonerInfo records we're about to delete
-        for record in village_records:
-            VillageDataSec15Rate.objects.filter(rr_rate__rr=record).delete()
+        # Delete dependent sec15 rows only when that table exists (schema may be partial).
+        if 'app_villagedatasec15rate' in connection.introspection.table_names():
+            for record in village_records:
+                VillageDataSec15Rate.objects.filter(rr_rate__rr=record).delete()
         
         # Now we can safely delete the ReadyReckonerInfo records
         # (ReadyReckonerRate records will be cascade deleted automatically)
