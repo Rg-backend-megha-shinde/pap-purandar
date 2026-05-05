@@ -342,10 +342,10 @@ def build_location_aliases(district, taluka, village):
                     COALESCE(NULLIF(tm.taluka_name_m, ''), ''),
                     d.village,
                     COALESCE(NULLIF(vm.village_name_m, ''), '')
-                FROM pune_ring_road.prj_district a
-                JOIN pune_ring_road.prj_taluka c
+                FROM purandar_airport.prj_district a
+                JOIN purandar_airport.prj_taluka c
                     ON a.district_id = c.district_id
-                JOIN pune_ring_road.prj_village d
+                JOIN purandar_airport.prj_village d
                     ON c.taluka_id = d.taluka_id
                 LEFT JOIN public.district_master dm
                     ON a.district_id = dm.id
@@ -553,7 +553,7 @@ def get_marathi_name(level, district=None, taluka=None, village=None):
             if level == 'district' and district:
                 cursor.execute("""
                     SELECT DISTINCT COALESCE(NULLIF(dm.district_name_m, ''), a.name)
-                    FROM pune_ring_road.prj_district a
+                    FROM purandar_airport.prj_district a
                     LEFT JOIN public.district_master dm ON a.district_id = dm.id
                     WHERE UPPER(TRIM(a.name)) = UPPER(TRIM(%s))
                     LIMIT 1;
@@ -563,8 +563,8 @@ def get_marathi_name(level, district=None, taluka=None, village=None):
             elif level == 'taluka' and district and taluka:
                 cursor.execute("""
                     SELECT DISTINCT COALESCE(NULLIF(tm.taluka_name_m, ''), c.taluka)
-                    FROM pune_ring_road.prj_district a
-                    JOIN pune_ring_road.prj_taluka c ON a.district_id = c.district_id
+                    FROM purandar_airport.prj_district a
+                    JOIN purandar_airport.prj_taluka c ON a.district_id = c.district_id
                     LEFT JOIN public.taluka_master tm ON c.taluka_id = tm.id
                     WHERE UPPER(TRIM(a.name)) = UPPER(TRIM(%s))
                       AND UPPER(TRIM(c.taluka)) = UPPER(TRIM(%s))
@@ -575,9 +575,9 @@ def get_marathi_name(level, district=None, taluka=None, village=None):
             elif level == 'village' and district and taluka and village:
                 cursor.execute("""
                     SELECT DISTINCT COALESCE(NULLIF(vm.village_name_m, ''), d.village)
-                    FROM pune_ring_road.prj_district a
-                    JOIN pune_ring_road.prj_taluka c ON a.district_id = c.district_id
-                    JOIN pune_ring_road.prj_village d ON c.taluka_id = d.taluka_id
+                    FROM purandar_airport.prj_district a
+                    JOIN purandar_airport.prj_taluka c ON a.district_id = c.district_id
+                    JOIN purandar_airport.prj_village d ON c.taluka_id = d.taluka_id
                     LEFT JOIN public.village_master vm ON d.village_id = vm.id
                     WHERE UPPER(TRIM(a.name)) = UPPER(TRIM(%s))
                       AND UPPER(TRIM(c.taluka)) = UPPER(TRIM(%s))
@@ -1375,7 +1375,7 @@ def get_all_villages_farmers(request):
                     SELECT 
                         gut_no,
                         COUNT(*) as farmers_count
-                    FROM pune_ring_road.prj_farmer
+                    FROM purandar_airport.prj_farmer
                     WHERE UPPER(TRIM(district)) = UPPER(TRIM(%s))
                     AND UPPER(TRIM(taluka)) = UPPER(TRIM(%s))
                     AND UPPER(TRIM(village)) = UPPER(TRIM(%s))
@@ -1397,7 +1397,7 @@ def get_all_villages_farmers(request):
                     SELECT 
                         village,
                         COUNT(*) as farmers_count
-                    FROM pune_ring_road.prj_farmer
+                    FROM purandar_airport.prj_farmer
                     WHERE UPPER(TRIM(district)) = UPPER(TRIM(%s))
                     AND UPPER(TRIM(taluka)) = UPPER(TRIM(%s))
                     GROUP BY village
@@ -1418,7 +1418,7 @@ def get_all_villages_farmers(request):
                     SELECT 
                         taluka,
                         COUNT(*) as farmers_count
-                    FROM pune_ring_road.prj_farmer
+                    FROM purandar_airport.prj_farmer
                     WHERE UPPER(TRIM(district)) = UPPER(TRIM(%s))
                     GROUP BY taluka
                     ORDER BY farmers_count DESC;
@@ -1438,7 +1438,7 @@ def get_all_villages_farmers(request):
                     SELECT 
                         district,
                         COUNT(*) as farmers_count
-                    FROM pune_ring_road.prj_farmer
+                    FROM purandar_airport.prj_farmer
                     GROUP BY district
                     ORDER BY farmers_count DESC;
                 """)
@@ -1478,7 +1478,7 @@ def get_project_stats(request):
                 cursor.execute("""
                     SELECT 1
                     FROM information_schema.columns
-                    WHERE table_schema = 'pune_ring_road'
+                    WHERE table_schema = 'purandar_airport'
                       AND table_name = %s
                       AND column_name = %s
                     LIMIT 1;
@@ -1548,7 +1548,7 @@ def get_project_stats(request):
             if village_id is None and district_id and taluka_id:
                 cursor.execute("""
                     SELECT village_id
-                    FROM pune_ring_road.prj_village
+                    FROM purandar_airport.prj_village
                     WHERE district_id = %s
                       AND taluka_id = %s
                       AND UPPER(TRIM(village)) = UPPER(TRIM(%s))
@@ -1721,7 +1721,7 @@ def get_project_stats(request):
                 gut_where = " WHERE " + " AND ".join(gut_conditions)
                 cursor.execute(f"""
                     SELECT COUNT(DISTINCT COALESCE(village_id::text, NULLIF(TRIM(village_m), ''), NULLIF(TRIM(village), '')))
-                    FROM pune_ring_road.prj_gut_bd
+                    FROM purandar_airport.prj_gut_bd
                     {gut_where}
                 """, gut_params)
                 affected_villages = cursor.fetchone()[0] or 0
@@ -1731,8 +1731,8 @@ def get_project_stats(request):
                 else:
                     cursor.execute(f"""
                         SELECT COUNT(DISTINCT v.village_id)
-                        FROM pune_ring_road.prj_vlg_bd v
-                        CROSS JOIN pune_ring_road.prj_bd p
+                        FROM purandar_airport.prj_vlg_bd v
+                        CROSS JOIN purandar_airport.prj_bd p
                         WHERE ST_Intersects(v.geom, p.geom)
                         {where_clause}
                     """, params)
@@ -1747,7 +1747,7 @@ def get_project_stats(request):
         try:
             query = f"""
                 SELECT COUNT(*)
-                FROM pune_ring_road.prj_farmer
+                FROM purandar_airport.prj_farmer
                 WHERE 1=1
                 {where_clause}
             """
@@ -1814,7 +1814,7 @@ def get_project_stats(request):
                 gut_where = " WHERE " + " AND ".join(gut_conditions)
                 cursor.execute(f"""
                     SELECT COALESCE(SUM(COALESCE("Shape_Area", area, 0)), 0)
-                    FROM pune_ring_road.prj_gut_bd
+                    FROM purandar_airport.prj_gut_bd
                     {gut_where}
                 """, gut_params)
                 total_area_sq_m = float(cursor.fetchone()[0] or 0)
@@ -1822,8 +1822,8 @@ def get_project_stats(request):
             else:
                 cursor.execute(f"""
                     SELECT COALESCE(SUM(v.area), 0)
-                    FROM pune_ring_road.prj_vlg_bd v
-                    CROSS JOIN pune_ring_road.prj_bd p
+                    FROM purandar_airport.prj_vlg_bd v
+                    CROSS JOIN purandar_airport.prj_bd p
                     WHERE ST_Intersects(v.geom, p.geom)
                     {where_clause}
                 """, params)
@@ -1856,7 +1856,7 @@ def get_project_stats(request):
                 table_where, table_params = build_asset_filters(table)
                 query = f"""
                     SELECT {val_expr}
-                    FROM pune_ring_road.{table}
+                    FROM purandar_airport.{table}
                     WHERE 1=1
                     {table_where}
                 """
@@ -1912,7 +1912,7 @@ def get_project_stats(request):
                                 ELSE 0 
                             END
                         ), 0)
-                    FROM pune_ring_road.{table}
+                    FROM purandar_airport.{table}
                     WHERE 1=1
                     {table_where}
                 """
@@ -1985,7 +1985,7 @@ def get_gut_numbers_by_village(request, village_name):
         try:
             cursor.execute("""
                 SELECT DISTINCT gut_no
-                FROM pune_ring_road.prj_ass_bund_poly
+                FROM purandar_airport.prj_ass_bund_poly
                 WHERE UPPER(TRIM(village)) = UPPER(TRIM(%s))
                 AND gut_no IS NOT NULL
                 ORDER BY gut_no;
@@ -2058,7 +2058,7 @@ def get_layer_bounds(request, layer_name):
                     FROM (
                         SELECT ST_Extent(ST_Transform(vm.geom, 4326)) AS extent
                         FROM public.village_master vm
-                        JOIN pune_ring_road.prj_village pv
+                        JOIN purandar_airport.prj_village pv
                             ON pv.village_id = vm.id
                         JOIN public.taluka_master tm
                             ON tm.id = pv.taluka_id
@@ -2101,7 +2101,7 @@ def get_layer_bounds(request, layer_name):
                         ST_YMax(extent)
                     FROM (
                         SELECT ST_Extent(ST_Transform(pg.geom, 4326)) AS extent
-                        FROM pune_ring_road.prj_gut_bd pg
+                        FROM purandar_airport.prj_gut_bd pg
                         JOIN public.village_master vm
                             ON vm.id = pg.village_id
                         JOIN public.taluka_master tm
@@ -2197,10 +2197,10 @@ def get_locations(request):
             if village_id or (district and taluka and village):
                 cursor.execute("""
                     SELECT DISTINCT e.gut_no
-                    FROM pune_ring_road.prj_district a
-                    JOIN pune_ring_road.prj_taluka c ON a.district_id = c.district_id
-                    JOIN pune_ring_road.prj_village d ON c.taluka_id = d.taluka_id
-                    JOIN pune_ring_road.prj_gut_bd e ON d.village_id = e.village_id
+                    FROM purandar_airport.prj_district a
+                    JOIN purandar_airport.prj_taluka c ON a.district_id = c.district_id
+                    JOIN purandar_airport.prj_village d ON c.taluka_id = d.taluka_id
+                    JOIN purandar_airport.prj_gut_bd e ON d.village_id = e.village_id
                     WHERE (
                             (%s <> '' AND d.village_id::text = %s)
                             OR (
@@ -2224,10 +2224,10 @@ def get_locations(request):
                             d.village_id AS id,
                             d.village AS value,
                             COALESCE(NULLIF(vm.village_name_m, ''), d.village) AS label
-                        FROM pune_ring_road.prj_district a
-                        JOIN pune_ring_road.prj_taluka c ON a.district_id = c.district_id
-                        JOIN pune_ring_road.prj_village d ON c.taluka_id = d.taluka_id
-                        JOIN pune_ring_road.prj_gut_bd e ON d.village_id = e.village_id
+                        FROM purandar_airport.prj_district a
+                        JOIN purandar_airport.prj_taluka c ON a.district_id = c.district_id
+                        JOIN purandar_airport.prj_village d ON c.taluka_id = d.taluka_id
+                        JOIN purandar_airport.prj_gut_bd e ON d.village_id = e.village_id
                         LEFT JOIN public.village_master vm ON d.village_id = vm.id
                         WHERE (
                                 (%s <> '' AND c.taluka_id::text = %s)
@@ -2244,10 +2244,10 @@ def get_locations(request):
                 else:
                     cursor.execute("""
                         SELECT DISTINCT d.village_id, d.village
-                        FROM pune_ring_road.prj_district a
-                        JOIN pune_ring_road.prj_taluka c ON a.district_id = c.district_id
-                        JOIN pune_ring_road.prj_village d ON c.taluka_id = d.taluka_id
-                        JOIN pune_ring_road.prj_gut_bd e ON d.village_id = e.village_id
+                        FROM purandar_airport.prj_district a
+                        JOIN purandar_airport.prj_taluka c ON a.district_id = c.district_id
+                        JOIN purandar_airport.prj_village d ON c.taluka_id = d.taluka_id
+                        JOIN purandar_airport.prj_gut_bd e ON d.village_id = e.village_id
                         WHERE (
                                 (%s <> '' AND c.taluka_id::text = %s)
                                 OR (
@@ -2270,10 +2270,10 @@ def get_locations(request):
                             c.taluka_id AS id,
                             c.taluka AS value,
                             COALESCE(NULLIF(tm.taluka_name_m, ''), c.taluka) AS label
-                        FROM pune_ring_road.prj_district a
-                        JOIN pune_ring_road.prj_taluka c ON a.district_id = c.district_id
-                        JOIN pune_ring_road.prj_village d ON c.taluka_id = d.taluka_id
-                        JOIN pune_ring_road.prj_gut_bd e ON d.village_id = e.village_id
+                        FROM purandar_airport.prj_district a
+                        JOIN purandar_airport.prj_taluka c ON a.district_id = c.district_id
+                        JOIN purandar_airport.prj_village d ON c.taluka_id = d.taluka_id
+                        JOIN purandar_airport.prj_gut_bd e ON d.village_id = e.village_id
                         LEFT JOIN public.taluka_master tm ON c.taluka_id = tm.id
                         WHERE (
                                 (%s <> '' AND a.district_id::text = %s)
@@ -2286,10 +2286,10 @@ def get_locations(request):
                 else:
                     cursor.execute("""
                         SELECT DISTINCT c.taluka_id, c.taluka
-                        FROM pune_ring_road.prj_district a
-                        JOIN pune_ring_road.prj_taluka c ON a.district_id = c.district_id
-                        JOIN pune_ring_road.prj_village d ON c.taluka_id = d.taluka_id
-                        JOIN pune_ring_road.prj_gut_bd e ON d.village_id = e.village_id
+                        FROM purandar_airport.prj_district a
+                        JOIN purandar_airport.prj_taluka c ON a.district_id = c.district_id
+                        JOIN purandar_airport.prj_village d ON c.taluka_id = d.taluka_id
+                        JOIN purandar_airport.prj_gut_bd e ON d.village_id = e.village_id
                         WHERE (
                                 (%s <> '' AND a.district_id::text = %s)
                                 OR (%s = '' AND UPPER(TRIM(a.name)) = UPPER(TRIM(%s)))
@@ -2308,10 +2308,10 @@ def get_locations(request):
                             a.district_id AS id,
                             a.name AS value,
                             COALESCE(NULLIF(dm.district_name_m, ''), a.name) AS label
-                        FROM pune_ring_road.prj_district a
-                        JOIN pune_ring_road.prj_taluka c ON a.district_id = c.district_id
-                        JOIN pune_ring_road.prj_village d ON c.taluka_id = d.taluka_id
-                        JOIN pune_ring_road.prj_gut_bd e ON d.village_id = e.village_id
+                        FROM purandar_airport.prj_district a
+                        JOIN purandar_airport.prj_taluka c ON a.district_id = c.district_id
+                        JOIN purandar_airport.prj_village d ON c.taluka_id = d.taluka_id
+                        JOIN purandar_airport.prj_gut_bd e ON d.village_id = e.village_id
                         LEFT JOIN public.district_master dm ON a.district_id = dm.id
                         WHERE a.name IS NOT NULL
                         ORDER BY value;
@@ -2320,10 +2320,10 @@ def get_locations(request):
                 else:
                     cursor.execute("""
                         SELECT DISTINCT a.district_id, a.name
-                        FROM pune_ring_road.prj_district a
-                        JOIN pune_ring_road.prj_taluka c ON a.district_id = c.district_id
-                        JOIN pune_ring_road.prj_village d ON c.taluka_id = d.taluka_id
-                        JOIN pune_ring_road.prj_gut_bd e ON d.village_id = e.village_id
+                        FROM purandar_airport.prj_district a
+                        JOIN purandar_airport.prj_taluka c ON a.district_id = c.district_id
+                        JOIN purandar_airport.prj_village d ON c.taluka_id = d.taluka_id
+                        JOIN purandar_airport.prj_gut_bd e ON d.village_id = e.village_id
                         WHERE a.name IS NOT NULL
                         ORDER BY a.name;
                     """)
@@ -2341,7 +2341,7 @@ def get_locations(request):
 #                     district,
 #                     taluka,
 #                     village
-#                 FROM pune_ring_road.prj_ass_bund_poly
+#                 FROM purandar_airport.prj_ass_bund_poly
 #                 WHERE district IS NOT NULL 
 #                 AND taluka IS NOT NULL 
 #                 AND village IS NOT NULL
@@ -2373,12 +2373,12 @@ def get_location_data(request):
                     a.name AS district,
                     c.taluka AS taluka,
                     d.village AS village_name
-                FROM pune_ring_road.prj_district a
-                JOIN pune_ring_road.prj_taluka c 
+                FROM purandar_airport.prj_district a
+                JOIN purandar_airport.prj_taluka c 
                     ON a.district_id = c.district_id
-                JOIN pune_ring_road.prj_village d 
+                JOIN purandar_airport.prj_village d 
                     ON c.taluka_id = d.taluka_id
-                JOIN pune_ring_road.prj_gut_bd e 
+                JOIN purandar_airport.prj_gut_bd e 
                     ON d.village_id = e.village_id
                 WHERE 
                     a.name IS NOT NULL
@@ -4132,3 +4132,4 @@ def get_village_sec15_rates(request):
         'rates': rates_payload,
         'message': '' if rates_payload else 'No ready reckoner rates found for selected village'
     })
+
