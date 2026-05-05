@@ -306,7 +306,7 @@
   }
 </style>
 
-<div class="max-w-7xl mx-auto mt-6 px-4">
+<div class="w-full px-4 mt-6">
   <div class="flex items-center justify-between mb-4">
     <div>
       <h2 class="text-2xl font-bold text-gray-800">कागदपत्रे व्यवस्थापन</h2>
@@ -401,19 +401,10 @@
             </div>
           </div>
 
-          <!-- Doc name -->
-          <div>
-            <label class="block text-xs font-semibold text-gray-700 mb-1">दस्तऐवज नाव <span
-                class="text-red-500">*</span></label>
-            <input type="text" name="document_name" required placeholder="दस्तऐवजाचे नाव टाका"
-              class="w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-2 focus:ring-indigo-400">
-          </div>
-
           <!-- Multiple File Upload -->
           <div>
-            <label class="block text-xs font-semibold text-gray-700 mb-1">दस्तऐवज अपलोड करा (एकाधिक) <span
-                class="text-red-500">*</span></label>
-            <input type="file" name="documents" id="g-docs" required accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" multiple
+            <label class="block text-xs font-semibold text-gray-700 mb-1">दस्तऐवज अपलोड करा (एकाधिक)</label>
+            <input type="file" name="documents" id="g-docs" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" multiple
               class="w-full border border-gray-300 rounded-md p-2 text-sm bg-white">
             <p class="text-xs text-gray-500 mt-1">एकाधिक फाइल्स निवडा (प्रत्येक कमाल 5MB)</p>
           </div>
@@ -431,10 +422,59 @@
               class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-5 py-2 rounded-md text-sm font-semibold">रीसेट
               करा</button>
             <button type="button" onclick="toggleUpload('general')"
-              class="border border-gray-300 text-gray-600 hover:bg-gray-50 px-5 py-2 rounded-md text-sm font-semibold">रद्द
-              करा</button>
+              class="border border-gray-300 text-gray-600 hover:bg-gray-50 px-5 py-2 rounded-md text-sm font-semibold">फाईल एक्सप्लोररकडे
+              जा</button>
           </div>
         </form>
+      </div>
+
+      <div id="general-search-panel" class="px-3 pt-3">
+        <div class="rounded-md border border-indigo-200 bg-indigo-50 p-3">
+          <div class="flex flex-col gap-3 lg:flex-row lg:items-end">
+            <div class="grid flex-1 grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-5">
+              <div>
+                <label class="mb-1 block text-xs font-semibold text-gray-700">जिल्हा</label>
+                <select id="general-search-district" onchange="onSearchDistrictChange('general')"
+                  class="w-full rounded-md border border-gray-300 p-2 text-sm focus:ring-2 focus:ring-indigo-400">
+                  <option value="">जिल्हा निवडा</option>
+                </select>
+              </div>
+              <div>
+                <label class="mb-1 block text-xs font-semibold text-gray-700">तालुका</label>
+                <select id="general-search-taluka" onchange="onSearchTalukaChange('general')"
+                  class="w-full rounded-md border border-gray-300 p-2 text-sm focus:ring-2 focus:ring-indigo-400" disabled>
+                  <option value="">तालुका निवडा</option>
+                </select>
+              </div>
+              <div>
+                <label class="mb-1 block text-xs font-semibold text-gray-700">गाव</label>
+                <select id="general-search-village" onchange="onSearchVillageChange('general')"
+                  class="w-full rounded-md border border-gray-300 p-2 text-sm focus:ring-2 focus:ring-indigo-400" disabled>
+                  <option value="">गाव निवडा</option>
+                </select>
+              </div>
+              <div>
+                <label class="mb-1 block text-xs font-semibold text-gray-700">गट</label>
+                <select id="general-search-gut"
+                  class="w-full rounded-md border border-gray-300 p-2 text-sm focus:ring-2 focus:ring-indigo-400" disabled>
+                  <option value="">गट क्रमांक निवडा</option>
+                </select>
+              </div>
+              <div>
+                <label class="mb-1 block text-xs font-semibold text-gray-700">फाईल नाव</label>
+                <input id="general-search-file_name" type="text" placeholder="फाईल नाव शोधा"
+                  class="w-full rounded-md border border-gray-300 p-2 text-sm focus:ring-2 focus:ring-indigo-400"
+                  oninput="onFileNameInput('general')" />
+              </div>
+            </div>
+            <div class="flex gap-2">
+              <button type="button" onclick="applySearch('general')"
+                class="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700">शोधा</button>
+              <button type="button" onclick="clearSearch('general')"
+                class="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50">रीसेट</button>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- Explorer -->
@@ -563,14 +603,8 @@
             </div>
           </div>
 
-          <!-- Doc name + dates -->
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <label class="block text-xs font-semibold text-gray-700 mb-1">दस्तऐवज नाव <span
-                  class="text-red-500">*</span></label>
-              <input type="text" name="document_name" required placeholder="दस्तऐवजाचे नाव टाका"
-                class="w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-2 focus:ring-purple-400">
-            </div>
+          <!-- Dates -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label class="block text-xs font-semibold text-gray-700 mb-1">दस्तऐवज दिनांक</label>
               <input type="date" name="document_date"
@@ -585,9 +619,8 @@
 
           <!-- Multiple File Upload -->
           <div>
-            <label class="block text-xs font-semibold text-gray-700 mb-1">दस्तऐवज अपलोड करा (एकाधिक) <span
-                class="text-red-500">*</span></label>
-            <input type="file" name="documents" id="c-docs" required accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" multiple
+            <label class="block text-xs font-semibold text-gray-700 mb-1">दस्तऐवज अपलोड करा (एकाधिक)</label>
+            <input type="file" name="documents" id="c-docs" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" multiple
               class="w-full border border-gray-300 rounded-md p-2 text-sm bg-white">
             <p class="text-xs text-gray-500 mt-1">एकाधिक फाइल्स निवडा (प्रत्येक कमाल 5MB)</p>
           </div>
@@ -605,10 +638,59 @@
               class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-5 py-2 rounded-md text-sm font-semibold">रीसेट
               करा</button>
             <button type="button" onclick="toggleUpload('court')"
-              class="border border-gray-300 text-gray-600 hover:bg-gray-50 px-5 py-2 rounded-md text-sm font-semibold">रद्द
-              करा</button>
+              class="border border-gray-300 text-gray-600 hover:bg-gray-50 px-5 py-2 rounded-md text-sm font-semibold">फाईल एक्सप्लोररकडे
+              जा</button>
           </div>
         </form>
+      </div>
+
+      <div id="court-search-panel" class="px-3 pt-3">
+        <div class="rounded-md border border-purple-200 bg-purple-50 p-3">
+          <div class="flex flex-col gap-3 lg:flex-row lg:items-end">
+            <div class="grid flex-1 grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-5">
+              <div>
+                <label class="mb-1 block text-xs font-semibold text-gray-700">जिल्हा</label>
+                <select id="court-search-district" onchange="onSearchDistrictChange('court')"
+                  class="w-full rounded-md border border-gray-300 p-2 text-sm focus:ring-2 focus:ring-purple-400">
+                  <option value="">जिल्हा निवडा</option>
+                </select>
+              </div>
+              <div>
+                <label class="mb-1 block text-xs font-semibold text-gray-700">तालुका</label>
+                <select id="court-search-taluka" onchange="onSearchTalukaChange('court')"
+                  class="w-full rounded-md border border-gray-300 p-2 text-sm focus:ring-2 focus:ring-purple-400" disabled>
+                  <option value="">तालुका निवडा</option>
+                </select>
+              </div>
+              <div>
+                <label class="mb-1 block text-xs font-semibold text-gray-700">गाव</label>
+                <select id="court-search-village" onchange="onSearchVillageChange('court')"
+                  class="w-full rounded-md border border-gray-300 p-2 text-sm focus:ring-2 focus:ring-purple-400" disabled>
+                  <option value="">गाव निवडा</option>
+                </select>
+              </div>
+              <div>
+                <label class="mb-1 block text-xs font-semibold text-gray-700">गट</label>
+                <select id="court-search-gut"
+                  class="w-full rounded-md border border-gray-300 p-2 text-sm focus:ring-2 focus:ring-purple-400" disabled>
+                  <option value="">गट क्रमांक निवडा</option>
+                </select>
+              </div>
+              <div>
+                <label class="mb-1 block text-xs font-semibold text-gray-700">फाईल नाव</label>
+                <input id="court-search-file_name" type="text" placeholder="फाईल नाव शोधा"
+                  class="w-full rounded-md border border-gray-300 p-2 text-sm focus:ring-2 focus:ring-purple-400"
+                  oninput="onFileNameInput('court')" />
+              </div>
+            </div>
+            <div class="flex gap-2">
+              <button type="button" onclick="applySearch('court')"
+                class="rounded-md bg-purple-600 px-4 py-2 text-sm font-semibold text-white hover:bg-purple-700">शोधा</button>
+              <button type="button" onclick="clearSearch('court')"
+                class="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50">रीसेट</button>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- Explorer -->
@@ -698,13 +780,6 @@
       <input type="hidden" id="edit-doc-id">
       <input type="hidden" id="edit-doc-type">
 
-      <div>
-        <label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:4px;">दस्तऐवज नाव <span
-            style="color:red;">*</span></label>
-        <input type="text" id="edit-document-name" required
-          style="width:100%;border:1px solid #d1d5db;border-radius:6px;padding:8px;font-size:13px;">
-      </div>
-
       <div id="edit-court-fields" style="display:none;">
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
           <div>
@@ -767,9 +842,9 @@
 <div id="preview-modal"
   style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:10001;align-items:center;justify-content:center;">
   <div
-    style="background:#fff;border-radius:8px;max-width:90vw;max-height:90vh;width:auto;height:auto;box-shadow:0 8px 32px rgba(0,0,0,.3);overflow:hidden;display:flex;flex-direction:column;">
+    style="background:#fff;border-radius:8px;width:90vw;height:90vh;max-width:1400px;max-height:900px;box-shadow:0 8px 32px rgba(0,0,0,.3);overflow:hidden;display:flex;flex-direction:column;">
     <div
-      style="display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid #e5e7eb;background:#f9fafb;">
+      style="display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid #e5e7eb;background:#f9fafb;flex-shrink:0;">
       <div>
         <h3 id="preview-title" style="font-size:16px;font-weight:700;margin:0;color:#111827;">दस्तऐवज पूर्वावलोकन</h3>
         <p id="preview-subtitle" style="font-size:13px;color:#6b7280;margin:4px 0 0 0;"></p>
@@ -783,27 +858,43 @@
       </div>
     </div>
     <div id="preview-content"
-      style="flex:1;overflow:auto;min-height:400px;display:flex;align-items:center;justify-content:center;">
+      style="flex:1;overflow:auto;display:flex;align-items:center;justify-content:center;width:100%;">
       <!-- Content will be loaded here -->
     </div>
   </div>
 </div>
 
 <script>
-  // ── Location data cache ──
-  let locationData = [];
-
   // ── Explorer state ──
   const state = {
-    general: { selected: null, view: 'grid', docs: [], sortKey: 'uploaded_at', sortAsc: false, currentFolder: null },
-    court: { selected: null, view: 'grid', docs: [], sortKey: 'uploaded_at', sortAsc: false, currentFolder: null }
+    general: { selected: null, view: 'grid', docs: [], allDocs: [], sortKey: 'uploaded_at', sortAsc: false, currentFolder: null, filtersActive: false },
+    court: { selected: null, view: 'grid', docs: [], allDocs: [], sortKey: 'uploaded_at', sortAsc: false, currentFolder: null, filtersActive: false }
   };
+  const fileNameSearchTimers = { general: null, court: null };
   let ctxTab = null;
   const activeTab = '{{ active_tab }}';
 
+  function addSelectOptions(selectEl, items) {
+    if (!selectEl || !Array.isArray(items)) return;
+    items.forEach(item => {
+      if (item == null) return;
+      if (typeof item === 'object') {
+        const value = item.value ?? item.label ?? '';
+        const label = item.label ?? item.value ?? '';
+        if (value) selectEl.add(new Option(label, value));
+      } else if (String(item).trim()) {
+        selectEl.add(new Option(item, item));
+      }
+    });
+  }
+
   // ── Boot ──
   document.addEventListener('DOMContentLoaded', () => {
-    switchTab(activeTab);
+    switchTab(activeTab, false);
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('mode') === 'upload') {
+      setUploadVisible(activeTab, true, false);
+    }
     loadDocs('general');
     loadDocs('court');
     document.addEventListener('click', () => hideCtxMenu());
@@ -813,17 +904,185 @@
   // Location — same pattern as landrecord.html
   // ─────────────────────────────────────────────
 
-  // Load once, populate both forms
-  fetch('/api/location-data/')
+  // Load once, populate both forms and search filters using the same API as other tools.
+  fetch('/api/locations/?lang=mr')
     .then(res => res.json())
     .then(data => {
-      locationData = data.villages || [];
+      const districts = data.data || [];
       ['g', 'c'].forEach(p => {
         const sel = document.getElementById(p + '-district');
-        const districts = [...new Set(locationData.map(v => v.district))];
-        districts.forEach(d => { if (d) sel.add(new Option(d, d)); });
+        if (!sel) return;
+        sel.innerHTML = '<option value="">जिल्हा निवडा</option>';
+        addSelectOptions(sel, districts);
       });
-    });
+      ['general', 'court'].forEach(tab => populateSearchDistricts(tab, districts));
+    })
+    .catch(error => console.error('Error loading districts:', error));
+
+  function searchSelectId(tab, field) {
+    return `${tab}-search-${field}`;
+  }
+
+  function populateSearchDistricts(tab, districts = []) {
+    const sel = document.getElementById(searchSelectId(tab, 'district'));
+    if (!sel) return;
+    sel.innerHTML = '<option value="">जिल्हा निवडा</option>';
+    addSelectOptions(sel, districts);
+  }
+
+  function resetSearchSelect(tab, field, placeholder) {
+    const sel = document.getElementById(searchSelectId(tab, field));
+    if (!sel) return;
+    sel.innerHTML = `<option value="">${placeholder}</option>`;
+    sel.disabled = field !== 'district';
+  }
+
+  function onSearchDistrictChange(tab) {
+    const district = document.getElementById(searchSelectId(tab, 'district')).value;
+    resetSearchSelect(tab, 'taluka', 'तालुका निवडा');
+    resetSearchSelect(tab, 'village', 'गाव निवडा');
+    resetSearchSelect(tab, 'gut', 'गट क्रमांक निवडा');
+    if (!district) return;
+
+    const talukaSel = document.getElementById(searchSelectId(tab, 'taluka'));
+    fetch(`/api/locations/?district=${encodeURIComponent(district)}&lang=mr`)
+      .then(res => res.json())
+      .then(data => {
+        addSelectOptions(talukaSel, data.data || []);
+        talukaSel.disabled = false;
+      })
+      .catch(error => console.error('Error loading search talukas:', error));
+  }
+
+  function onSearchTalukaChange(tab) {
+    const district = document.getElementById(searchSelectId(tab, 'district')).value;
+    const taluka = document.getElementById(searchSelectId(tab, 'taluka')).value;
+    resetSearchSelect(tab, 'village', 'गाव निवडा');
+    resetSearchSelect(tab, 'gut', 'गट क्रमांक निवडा');
+    if (!district || !taluka) return;
+
+    const villageSel = document.getElementById(searchSelectId(tab, 'village'));
+    fetch(`/api/locations/?district=${encodeURIComponent(district)}&taluka=${encodeURIComponent(taluka)}&lang=mr`)
+      .then(res => res.json())
+      .then(data => {
+        addSelectOptions(villageSel, data.data || []);
+        villageSel.disabled = false;
+      })
+      .catch(error => console.error('Error loading search villages:', error));
+  }
+
+  function onSearchVillageChange(tab) {
+    const district = document.getElementById(searchSelectId(tab, 'district')).value;
+    const taluka = document.getElementById(searchSelectId(tab, 'taluka')).value;
+    const village = document.getElementById(searchSelectId(tab, 'village')).value;
+    resetSearchSelect(tab, 'gut', 'गट क्रमांक निवडा');
+    if (!district || !taluka || !village) return;
+
+    const gutSel = document.getElementById(searchSelectId(tab, 'gut'));
+    gutSel.innerHTML = '<option value="">लोड होत आहे...</option>';
+    gutSel.disabled = true;
+
+    fetch(`/api/locations/?district=${encodeURIComponent(district)}&taluka=${encodeURIComponent(taluka)}&village=${encodeURIComponent(village)}`)
+      .then(res => res.json())
+      .then(data => {
+        gutSel.innerHTML = '<option value="">गट क्रमांक निवडा</option>';
+        (data.data || []).forEach(g => gutSel.add(new Option(g, g)));
+        gutSel.disabled = false;
+      })
+      .catch(() => {
+        gutSel.innerHTML = '<option value="">त्रुटी - पुन्हा प्रयत्न करा</option>';
+      });
+  }
+
+  function activeSearchFilters(tab) {
+    return {
+      district: document.getElementById(searchSelectId(tab, 'district')).value,
+      taluka: document.getElementById(searchSelectId(tab, 'taluka')).value,
+      village: document.getElementById(searchSelectId(tab, 'village')).value,
+      gut: document.getElementById(searchSelectId(tab, 'gut')).value,
+      file_name: document.getElementById(searchSelectId(tab, 'file_name')).value.trim(),
+    };
+  }
+
+  function onFileNameInput(tab) {
+    const input = document.getElementById(searchSelectId(tab, 'file_name'));
+    if (!input) return;
+    const query = input.value.trim();
+
+    if (fileNameSearchTimers[tab]) {
+      clearTimeout(fileNameSearchTimers[tab]);
+    }
+
+    fileNameSearchTimers[tab] = setTimeout(() => {
+      if (!query) {
+        clearSearch(tab);
+        return;
+      }
+
+      const filters = activeSearchFilters(tab);
+      const params = new URLSearchParams({ type: tab, file_name: query });
+      if (filters.district) params.set('district', filters.district);
+      if (filters.taluka) params.set('taluka', filters.taluka);
+      if (filters.village) params.set('village', filters.village);
+      if (filters.gut) params.set('gut', filters.gut);
+
+      fetch('/api/filter-documents/?' + params.toString())
+        .then(r => r.json())
+        .then(data => {
+          state[tab].docs = data.documents || [];
+          state[tab].filtersActive = true;
+          state[tab].selected = null;
+          state[tab].currentFolder = null;
+          renderDocs(tab);
+        })
+        .catch(() => {
+          document.getElementById(tab + '-status').textContent = 'शोध करताना त्रुटी आली';
+        });
+    }, 250);
+  }
+
+  function applySearch(tab) {
+    const filters = activeSearchFilters(tab);
+    if (!filters.district && !filters.file_name) {
+      alert('कृपया जिल्हा किंवा फाईल नाव निवडा');
+      return;
+    }
+
+    const params = new URLSearchParams({ type: tab });
+    if (filters.district) params.set('district', filters.district);
+    if (filters.taluka) params.set('taluka', filters.taluka);
+    if (filters.village) params.set('village', filters.village);
+    if (filters.gut) params.set('gut', filters.gut);
+    if (filters.file_name) params.set('file_name', filters.file_name);
+
+    fetch('/api/filter-documents/?' + params.toString())
+      .then(r => r.json())
+      .then(data => {
+        state[tab].docs = data.documents || [];
+        state[tab].filtersActive = true;
+        state[tab].selected = null;
+        state[tab].currentFolder = null;
+        renderDocs(tab);
+      })
+      .catch(() => {
+        document.getElementById(tab + '-status').textContent = 'शोध करताना त्रुटी आली';
+      });
+  }
+
+  function clearSearch(tab) {
+    const districtSel = document.getElementById(searchSelectId(tab, 'district'));
+    if (districtSel) districtSel.value = '';
+    resetSearchSelect(tab, 'taluka', 'तालुका निवडा');
+    resetSearchSelect(tab, 'village', 'गाव निवडा');
+    resetSearchSelect(tab, 'gut', 'गट क्रमांक निवडा');
+    const fileNameInput = document.getElementById(searchSelectId(tab, 'file_name'));
+    if (fileNameInput) fileNameInput.value = '';
+    state[tab].filtersActive = false;
+    state[tab].selected = null;
+    state[tab].currentFolder = null;
+    state[tab].docs = [...state[tab].allDocs];
+    renderDocs(tab);
+  }
 
   function onLevelChange(p) {
     const level = document.getElementById(p + '-level').value;
@@ -852,10 +1111,14 @@
 
     if (!district || !['taluka', 'village', 'gut'].includes(level)) return;
 
-    const talukas = [...new Set(locationData.filter(v => v.district === district).map(v => v.taluka))];
     const sel = document.getElementById(p + '-taluka');
-    talukas.forEach(t => sel.add(new Option(t, t)));
-    sel.disabled = false;
+    fetch(`/api/locations/?district=${encodeURIComponent(district)}&lang=mr`)
+      .then(res => res.json())
+      .then(data => {
+        addSelectOptions(sel, data.data || []);
+        sel.disabled = false;
+      })
+      .catch(error => console.error('Error loading talukas:', error));
   }
 
   function onTalukaChange(p) {
@@ -868,12 +1131,14 @@
 
     if (!taluka || !['village', 'gut'].includes(level)) return;
 
-    const villages = [...new Set(
-      locationData.filter(v => v.district === district && v.taluka === taluka).map(v => v.village_name)
-    )];
     const sel = document.getElementById(p + '-village');
-    villages.forEach(v => sel.add(new Option(v, v)));
-    sel.disabled = false;
+    fetch(`/api/locations/?district=${encodeURIComponent(district)}&taluka=${encodeURIComponent(taluka)}&lang=mr`)
+      .then(res => res.json())
+      .then(data => {
+        addSelectOptions(sel, data.data || []);
+        sel.disabled = false;
+      })
+      .catch(error => console.error('Error loading villages:', error));
   }
 
   function onVillageChange(p) {
@@ -890,11 +1155,11 @@
     gutSel.innerHTML = '<option value="">लोड होत आहे...</option>';
     gutSel.disabled = true;
 
-  fetch('/api/gut-numbers/' + encodeURIComponent(village) + '/')
+    fetch(`/api/locations/?district=${encodeURIComponent(district)}&taluka=${encodeURIComponent(taluka)}&village=${encodeURIComponent(village)}`)
       .then(res => res.json())
       .then(data => {
         gutSel.innerHTML = '<option value="">गट क्रमांक निवडा</option>';
-      (data.gut_numbers || []).forEach(g => gutSel.add(new Option(g, g)));
+        (data.data || []).forEach(g => gutSel.add(new Option(g, g)));
         gutSel.disabled = false;
       })
       .catch(() => {
@@ -928,7 +1193,7 @@
   // ─────────────────────────────────────────────
   // Tab switching
   // ─────────────────────────────────────────────
-  function switchTab(tab) {
+  function switchTab(tab, updateUrl = true) {
     document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
     document.getElementById('content-' + tab).classList.add('active');
     const gBtn = document.getElementById('tab-general');
@@ -937,13 +1202,39 @@
       (tab === 'general' ? 'border-indigo-600 text-indigo-600 bg-indigo-50' : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50');
     cBtn.className = 'flex-1 px-6 py-3 font-semibold text-sm border-b-2 ' +
       (tab === 'court' ? 'border-purple-600 text-purple-600 bg-purple-50' : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50');
+    if (!updateUrl) return;
+
+    const url = new URL(window.location.href);
+    url.searchParams.set('tab', tab);
+    const panel = document.getElementById(tab + '-upload-panel');
+    if (!panel || !panel.classList.contains('open')) {
+      url.searchParams.delete('mode');
+    }
+    window.history.replaceState({}, '', url);
+  }
+
+  function setUploadVisible(tab, isOpen, updateUrl = true) {
+    const panel = document.getElementById(tab + '-upload-panel');
+    const explorer = document.getElementById(tab + '-explorer');
+    const searchPanel = document.getElementById(tab + '-search-panel');
+    panel.classList.toggle('open', isOpen);
+    explorer.style.display = isOpen ? 'none' : '';
+    if (searchPanel) searchPanel.style.display = isOpen ? 'none' : '';
+    if (!updateUrl) return;
+
+    const url = new URL(window.location.href);
+    url.searchParams.set('tab', tab);
+    if (isOpen) {
+      url.searchParams.set('mode', 'upload');
+    } else {
+      url.searchParams.delete('mode');
+    }
+    window.history.replaceState({}, '', url);
   }
 
   function toggleUpload(tab) {
     const panel = document.getElementById(tab + '-upload-panel');
-    const explorer = document.getElementById(tab + '-explorer');
-    const isOpen = panel.classList.toggle('open');
-    explorer.style.display = isOpen ? 'none' : '';
+    setUploadVisible(tab, !panel.classList.contains('open'));
   }
 
   // ─────────────────────────────────────────────
@@ -953,7 +1244,8 @@
     fetch('/api/documents/?type=' + tab)
       .then(r => r.json())
       .then(data => {
-        state[tab].docs = data.documents || [];
+        state[tab].allDocs = data.documents || [];
+        if (!state[tab].filtersActive) state[tab].docs = [...state[tab].allDocs];
         state[tab].selected = null;
         renderDocs(tab);
       })
@@ -1050,6 +1342,7 @@
   }
 
   function getVisibleDocs(tab) {
+    if (state[tab].filtersActive) return getSortedDocs(tab, state[tab].docs);
     if (!state[tab].currentFolder) return getFolderEntries(tab);
     const filtered = state[tab].docs.filter(d => d.document_level === state[tab].currentFolder);
     return getSortedDocs(tab, filtered);
@@ -1058,6 +1351,15 @@
   function renderPathBar(tab) {
     const pathBar = document.getElementById(tab + '-path-bar');
     const folder = state[tab].currentFolder;
+    if (state[tab].filtersActive) {
+      const filters = activeSearchFilters(tab);
+      const bits = [filters.district, filters.taluka, filters.village, filters.gut].filter(Boolean);
+      pathBar.innerHTML = `<span>🏠</span><span class="path-sep">›</span><span class="path-link" onclick="clearSearch('${tab}')">कागदपत्रे</span><span class="path-sep">›</span><span>${tabLabel(tab)}</span><span class="path-sep">›</span><span style="font-weight:600;">शोध निकाल</span>${bits.length ? `<span class="path-sep">›</span><span>${bits.join(' › ')}</span>` : ''}`;
+      if (filters.file_name) {
+        pathBar.innerHTML += `<span class="path-sep">›</span><span>नाव: ${filters.file_name}</span>`;
+      }
+      return;
+    }
     pathBar.innerHTML = folder
       ? `<span>🏠</span><span class="path-sep">›</span><span class="path-link" onclick="navigateToRoot('${tab}')">कागदपत्रे</span><span class="path-sep">›</span><span>${tabLabel(tab)}</span><span class="path-sep">›</span><span style="font-weight:600;">${levelLabel(folder)} स्तर</span>`
       : `<span>🏠</span><span class="path-sep">›</span><span>कागदपत्रे</span><span class="path-sep">›</span><span style="font-weight:600;">${tabLabel(tab)}</span>`;
@@ -1065,9 +1367,10 @@
 
   function updateExplorerUi(tab, visibleDocs) {
     const inFolder = !!state[tab].currentFolder;
+    const filtered = state[tab].filtersActive;
     document.getElementById(tab + '-back-btn').style.display = inFolder ? '' : 'none';
-    document.getElementById(tab + '-delete-btn').style.display = inFolder && state[tab].selected ? '' : 'none';
-    document.getElementById(tab + '-status').textContent = inFolder
+    document.getElementById(tab + '-delete-btn').style.display = (inFolder || filtered) && state[tab].selected ? '' : 'none';
+    document.getElementById(tab + '-status').textContent = filtered || inFolder
       ? `${visibleDocs.length} दस्तऐवज`
       : `${visibleDocs.length} स्तर फोल्डर`;
   }
@@ -1079,6 +1382,10 @@
   }
 
   function navigateToRoot(tab) {
+    if (state[tab].filtersActive) {
+      clearSearch(tab);
+      return;
+    }
     state[tab].currentFolder = null;
     state[tab].selected = null;
     renderDocs(tab);
@@ -1139,9 +1446,19 @@
       openFolder(tab, item.dataset.level);
       return;
     }
+    console.log('Click detected. Detail:', e.detail, 'Item ID:', item.dataset.id);
     if (e.detail === 2) {
-      const doc = state[tab].docs.find(d => d.id === parseInt(item.dataset.id));
-      if (doc) openPreviewModal(doc);
+      const docId = parseInt(item.dataset.id);
+      console.log('Double-click. Looking for doc with ID:', docId);
+      console.log('Available docs:', state[tab].docs);
+      const doc = state[tab].docs.find(d => d.id === docId);
+      console.log('Found doc:', doc);
+      if (doc) {
+        console.log('Opening preview for:', doc.document_name);
+        openPreviewModal(doc);
+      } else {
+        console.warn('Doc not found in state');
+      }
       return;
     }
     selectItem(tab, parseInt(item.dataset.id));
@@ -1169,28 +1486,49 @@
   }
 
   function openPreviewModal(doc) {
+    console.log('openPreviewModal called with:', doc);
+    
     if (!doc.file_url) {
       alert('फाईल उपलब्ध नाही');
       return;
     }
 
+    // Extract just the path component (remove protocol and domain if present)
+    let fileUrl = doc.file_url;
+    console.log('Original file_url:', fileUrl);
+    
+    try {
+      if (fileUrl.startsWith('http://') || fileUrl.startsWith('https://')) {
+        // Parse URL and extract pathname
+        const url = new URL(fileUrl);
+        fileUrl = url.pathname;
+      }
+    } catch (e) {
+      // If URL parsing fails, use as-is
+      console.error('URL parsing error:', e);
+    }
+    
+    console.log('Final fileUrl:', fileUrl);
+
     document.getElementById('preview-title').textContent = doc.document_name;
     document.getElementById('preview-subtitle').textContent = `${doc.ext.toUpperCase()} • ${doc.uploaded_at}`;
-    document.getElementById('preview-download').href = doc.file_url;
+    document.getElementById('preview-download').href = fileUrl;
     document.getElementById('preview-download').download = doc.document_name;
 
     const content = document.getElementById('preview-content');
     const ext = doc.ext.toLowerCase();
+    console.log('Setting up preview for ext:', ext);
 
     if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext)) {
       // Image preview
-      content.innerHTML = `<img src="${doc.file_url}" style="max-width:100%;max-height:100%;object-fit:contain;" alt="${doc.document_name}">`;
+      content.innerHTML = `<img src="${fileUrl}" style="max-width:100%;max-height:100%;object-fit:contain;" alt="${doc.document_name}">`;
     } else if (ext === 'pdf') {
-      // PDF preview
-      content.innerHTML = `<iframe src="${doc.file_url}" style="width:100%;height:70vh;border:none;" title="${doc.document_name}"></iframe>`;
+      // PDF preview - expand to fill the container
+      console.log('Setting up PDF iframe with src:', fileUrl);
+      content.innerHTML = `<iframe src="${fileUrl}" style="width:100%;height:100%;border:none;" title="${doc.document_name}"></iframe>`;
     } else if (['doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx'].includes(ext)) {
       // Office documents - use Google Docs Viewer
-      content.innerHTML = `<iframe src="https://docs.google.com/viewer?url=${encodeURIComponent(doc.file_url)}&embedded=true" style="width:100%;height:70vh;border:none;" title="${doc.document_name}"></iframe>`;
+      content.innerHTML = `<iframe src="https://docs.google.com/viewer?url=${encodeURIComponent(fileUrl)}&embedded=true" style="width:100%;height:100%;border:none;" title="${doc.document_name}"></iframe>`;
     } else {
       // Unsupported file type
       content.innerHTML = `
@@ -1198,12 +1536,15 @@
         <div style="font-size:48px;margin-bottom:16px;">📄</div>
         <h4 style="font-size:16px;font-weight:600;margin-bottom:8px;color:#374151;">${doc.document_name}</h4>
         <p style="font-size:14px;margin-bottom:16px;">या फाईल प्रकाराचे पूर्वावलोकन समर्थित नाही</p>
-        <a href="${doc.file_url}" target="_blank" style="display:inline-block;padding:8px 16px;background:#4f46e5;color:#fff;text-decoration:none;border-radius:4px;font-size:13px;font-weight:600;">नवीन टॅबमध्ये उघडा</a>
+        <a href="${fileUrl}" target="_blank" style="display:inline-block;padding:8px 16px;background:#4f46e5;color:#fff;text-decoration:none;border-radius:4px;font-size:13px;font-weight:600;">नवीन टॅबमध्ये उघडा</a>
       </div>
     `;
     }
 
-    document.getElementById('preview-modal').style.display = 'flex';
+    const modal = document.getElementById('preview-modal');
+    console.log('Modal element:', modal);
+    modal.style.display = 'flex';
+    console.log('Modal displayed');
   }
 
   function closePreviewModal() {
@@ -1299,7 +1640,6 @@
       .then(d => {
         document.getElementById('edit-doc-id').value = d.id;
         document.getElementById('edit-doc-type').value = d.document_type;
-        document.getElementById('edit-document-name').value = d.document_name;
         document.getElementById('edit-description').value = d.description;
         document.getElementById('edit-document-file').value = '';
         const isCourt = d.document_type === 'court';
@@ -1324,7 +1664,6 @@
     const docType = document.getElementById('edit-doc-type').value;
     const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
     const fd = new FormData();
-    fd.append('document_name', document.getElementById('edit-document-name').value);
     fd.append('description', document.getElementById('edit-description').value);
     if (docType === 'court') {
       fd.append('owner_name', document.getElementById('edit-owner-name').value);

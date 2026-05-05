@@ -2,260 +2,353 @@
 
 {% block content %}
 
-<div class="max-w-6xl mx-auto bg-white p-6 mt-6 rounded shadow">
+<style>
+    .tool-tabs-shell {
+        border: 1px solid #d8e4f2;
+        background: #f8fbff;
+        border-radius: 0.65rem;
+        padding: 0.4rem 0.55rem 0;
+    }
+    .tool-tabs {
+        display: flex;
+        align-items: flex-end;
+        gap: 0.4rem;
+        flex-wrap: wrap;
+    }
+    .tool-tab-link {
+        display: inline-block;
+        margin-bottom: -1px;
+        padding: 0.7rem 1.1rem;
+        border: 1px solid transparent;
+        border-radius: 0.5rem 0.5rem 0 0;
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: #6b7d99;
+        line-height: 1;
+        transition: all 120ms ease;
+    }
+    .tool-tab-link:hover { color: #213a63; }
+    .tool-tab-link.is-active {
+        background: #ffffff;
+        color: #125fcb;
+        border-color: #cad8ea;
+        box-shadow: 0 1px 3px rgba(18, 95, 203, 0.15);
+    }
+    @media (max-width: 640px) {
+        .tool-tab-link {
+            padding: 0.6rem 0.85rem;
+            font-size: 0.85rem;
+        }
+        #lr712Table_wrapper .dataTables_filter,
+        #lr712Table_wrapper .dataTables_length {
+            width: 100%;
+        }
+        #lr712Table_wrapper .dataTables_filter input,
+        #lr712Table_wrapper .dataTables_length select {
+            width: 100%;
+        }
+    }
+</style>
 
-    <div class="flex justify-between items-center mb-4">
-        <h2 class="text-xl font-bold">७/१२ उतारा नोंदी</h2>
-        <a href="/tools/712/"
-            class="flex items-center gap-2 bg-gray-800 hover:bg-gray-900 text-white px-4 py-2 rounded-md shadow-sm transition duration-200">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-            </svg>
-            नवीन ७/१२ नोंद
-        </a>
+<div class="w-full px-2 sm:px-3 md:px-4 py-4">
+    <div class="overflow-hidden rounded-lg border border-slate-300 bg-white shadow-sm">
+    <div class="px-3 py-4 md:px-5 lg:px-6">
+    <div class="tool-tabs-shell mb-6">
+        <nav class="tool-tabs" aria-label="Tool views">
+            <a href="{% url 'land_record_712_list' %}" class="tool-tab-link is-active">७/१२ उतार नोंद</a>
+            <a href="{% url 'ready_reckoner_list' %}" class="tool-tab-link">रेडी रेकनर दर</a>
+            <a href="{% url 'village_info' %}" class="tool-tab-link">गावाची माहिती</a>
+            <a href="{% url 'add_entry' %}" class="tool-tab-link">नुकसान भरपाई नोंद</a>
+            <a href="{% url 'process_chart_form' %}" class="tool-tab-link">भूसंपादन प्रक्रिया</a>
+        </nav>
     </div>
 
-    <table id="lr712Table" class="display w-full text-sm">
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>गाव</th>
-                <th>गट क्रमांक</th>
-                <th>शेतकरी नाव</th>
-                <th>मूळ क्षेत्र</th>
-                <th>पोटखराबा</th>
-                <th>मूल्यांकन प्रकार</th>
-                <th>आकारणी</th>
-                <th>लागू दर</th>
-                <th>दस्तऐवज</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for item in records %}
-            <tr>
-                <td>{{ item.id }}</td>
-                <td>{{ item.village }}</td>
-                <td>{{ item.gut_number }}</td>
-                <td>{% for f in item.farmers.all %}{{ f.farmer_name }}{% if not forloop.last %}<br>{% endif %}{% endfor %}</td>
-                <td>{% for f in item.farmers.all %}{{ f.total_area|default:"-" }}{% if not forloop.last %}<br>{% endif %}{% endfor %}</td>
-                <td>{% for f in item.farmers.all %}{{ f.potkharaba|default:"-" }}{% if not forloop.last %}<br>{% endif %}{% endfor %}</td>
-                <td>{{ item.assessment_type }}</td>
-                <td>{{ item.aakarnee }}</td>
-                <td>{{ item.rate_applied }}</td>
-                <td>
-                    {% if item.documents_list %}
-                        <button data-record-id="{{ item.id }}" class="view-docs-btn text-blue-600 hover:text-blue-800 hover:underline text-xs font-medium flex items-center gap-1">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
-                            </svg>
-                            View
-                            <span class="ml-1 bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded-full text-[10px]">
-                                {% for doc_master in item.documents_list %}
-                                    {{ doc_master.attachments.count }}
-                                {% endfor %}
-                            </span>
-                        </button>
-                        
-                        <!-- Hidden data for modal -->
-                        <script type="application/json" id="docs-data-{{ item.id }}" class="hidden">
-                        [{% for doc_master in item.documents_list %}{% for attachment in doc_master.attachments.all %}{"url":"{{ attachment.file.url }}","name":"{{ attachment.file.name|escapejs }}","date":"{{ attachment.uploaded_at|date:'d/m/Y H:i' }}","size":{{ attachment.file|safe_file_size }}}{% if not forloop.last or not forloop.parentloop.last %},{% endif %}{% endfor %}{% endfor %}]
-                        </script>
-                    {% else %}
-                        <span class="text-gray-400 text-xs">-</span>
-                    {% endif %}
-                </td>
-                <td class="flex gap-2">
-                    <a href="{% url 'edit_land_record_712' item.id %}" title="Edit"
-                        class="flex items-center justify-center w-8 h-8 bg-blue-600 hover:bg-blue-700 text-white rounded">✏️</a>
-                    <a href="{% url 'delete_land_record_712' item.id %}" title="Delete"
-                        class="flex items-center justify-center w-8 h-8 bg-red-600 hover:bg-red-700 text-white rounded"
-                        onclick="return confirm('तुम्हाला ही नोंद हटवायची आहे का?');">🗑</a>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+    <div class="rounded-2xl border border-[#d7e5f6] bg-[#fbfdff] p-3 sm:p-4 md:p-5">
+    <div class="flex flex-col md:flex-row justify-between md:items-center mb-4 gap-3">
+        <h2 class="text-xl font-bold">
+            ७/१२ उतारा नोंदी
+        </h2>
+        
+        <div class="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
+            <a href="{% url 'download_all_land_record_712_csv' %}"
+               class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded flex items-center justify-center gap-2">
+                <span class="text-lg">⬇</span> CSV डाउनलोड
+            </a>
+            
+            <a href="/tools/712/" class="bg-gray-800 hover:bg-gray-900 text-white px-4 py-2 rounded flex items-center justify-center gap-2">
+                <span class="text-lg">+</span> नवीन ७/१२ नोंद
+            </a>
+        </div>
+    </div>
 
+    <div class="overflow-x-auto">
+        <table id="lr712Table" class="display w-full text-sm text-left" style="width:100%;">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>जिल्हा</th>
+                    <th>तालुका</th>
+                    <th>गाव</th>
+                    <th>गट क्रमांक</th>
+                    <th>खाता नं</th>
+                    <th>PUID/ULIP नं</th>
+                    <th>जिरायत</th>
+                    <th>बागायत</th>
+                    <th>पोटखराब</th>
+                    <th>एकूण क्षेत्र</th>
+                    <th>आकारणी</th>
+                    <th>खाता क्षेत्र</th>
+                    <th>आकार</th>
+                    <th>भोगवटादारांचे नांव</th>
+                    <th>कुळ, खंड व इतर अधिकार</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in records %}
+                <tr>
+                    <td>{{ item.id }}</td>
+                    <td>{{ item.district_mr|default:"उपलब्ध नाही" }}</td>
+                    <td>{{ item.taluka_mr|default:"उपलब्ध नाही" }}</td>
+                    <td>{{ item.village_mr|default:"उपलब्ध नाही" }}</td>
+                    <td>{{ item.gut_number|default:"उपलब्ध नाही" }}</td>
+                    <td>{{ item.khata_number|default:"उपलब्ध नाही" }}</td>
+                    <td>{{ item.puid_ulip_no|default:"उपलब्ध नाही" }}</td>
+                    <td>{{ item.jirayit|default:"उपलब्ध नाही" }}</td>
+                    <td>{{ item.bagayat|default:"उपलब्ध नाही" }}</td>
+                    <td>{{ item.potkharaba|default:"उपलब्ध नाही" }}</td>
+                    <td>{{ item.total_area|default:"उपलब्ध नाही" }}</td>
+                    <td>{{ item.aakarni|default:"उपलब्ध नाही" }}</td>
+                    <td>{{ item.khata_area|default:"उपलब्ध नाही" }}</td>
+                    <td>{{ item.aakar|default:"उपलब्ध नाही" }}</td>
+                    <td>
+                        {% if item.holder_name %}
+                            {% if item.holder_name|length > 45 %}
+                                <button
+                                    type="button"
+                                    class="owner-info-btn inline-flex items-center px-2 py-1 text-xs font-semibold bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
+                                    data-owner-name="{{ item.holder_name|escapejs }}">
+                                    Info
+                                </button>
+                            {% else %}
+                                {{ item.holder_name }}
+                            {% endif %}
+                        {% else %}
+                            उपलब्ध नाही
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if item.kul_khand_other_rights %}
+                            <button
+                                type="button"
+                                class="kul-khand-btn inline-flex items-center px-2 py-1 text-xs font-semibold bg-green-100 text-green-700 rounded hover:bg-green-200"
+                                data-kul-khand-info="{{ item.kul_khand_other_rights|escapejs }}">
+                                View
+                            </button>
+                        {% else %}
+                            उपलब्ध नाही
+                        {% endif %}
+                    </td>
+                    <td style="white-space: nowrap;">
+                        <a href="{% url 'edit_land_record_712' item.id %}" title="Edit" style="display:inline-flex; align-items:center; justify-content:center;
+              width:32px; height:32px; background:#2563eb; color:white;
+              border-radius:6px; margin-right:6px; text-decoration:none;">
+                            ✏️
+                        </a>
+                        <a href="{% url 'delete_land_record_712' item.id %}" title="Delete" style="display:inline-flex; align-items:center; justify-content:center;
+              width:32px; height:32px; background:#dc2626; color:white;
+              border-radius:6px; text-decoration:none;" onclick="return confirm('तुम्हाला ही नोंद हटवायची आहे का?');">
+                            🗑️
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+</div>
+</div>
 </div>
 
-<!-- Documents Modal -->
-<div id="documentsModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-    <div class="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] flex flex-col">
-        <!-- Modal Header -->
-        <div class="flex items-center justify-between p-4 border-b border-gray-200">
-            <div>
-                <h3 class="text-lg font-bold text-gray-900">दस्तऐवज (Documents)</h3>
-                <p class="text-sm text-gray-500 mt-1" id="modalSubtitle">७/१२ Land Record Documents</p>
-            </div>
-            <button onclick="closeDocumentsModal()" class="text-gray-400 hover:text-gray-600 transition-colors">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                </svg>
-            </button>
+<div id="ownerModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 p-4">
+    <div class="bg-white w-full max-w-2xl rounded-lg shadow-xl">
+        <div class="flex items-center justify-between border-b px-4 py-3">
+            <h3 class="text-base font-semibold">भोगवटादारांची माहिती</h3>
+            <button type="button" id="closeOwnerModalBtn" class="text-gray-500 hover:text-gray-700 text-lg leading-none">&times;</button>
         </div>
-        
-        <!-- Modal Body -->
-        <div class="flex-1 overflow-y-auto p-6">
-            <div id="documentsGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                <!-- Documents will be loaded here -->
+        <div class="px-4 py-4">
+            <div id="ownerNamesContent" class="text-sm text-gray-800 whitespace-pre-line break-words max-h-[50vh] overflow-y-auto"></div>
+        </div>
+        <div class="border-t px-4 py-3 flex justify-end">
+            <button type="button" id="closeOwnerModalFooterBtn" class="px-3 py-1.5 bg-gray-700 hover:bg-gray-800 text-white rounded text-sm">बंद करा</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal for कुळ, खंड व इतर अधिकार -->
+<div id="kulKhandModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 p-4">
+    <div class="bg-white w-full max-w-4xl rounded-lg shadow-xl">
+        <div class="flex items-center justify-between border-b px-4 py-3">
+            <h3 class="text-base font-semibold">कुळ, खंड व इतर अधिकार</h3>
+            <button type="button" id="closeKulKhandModalBtn" class="text-gray-500 hover:text-gray-700 text-lg leading-none">&times;</button>
+        </div>
+        <div class="px-4 py-4">
+            <div class="mb-4">
+            </div>
+            <div class="bg-gray-50 p-4 rounded border">
+                <div id="kulKhandInfoContent" class="text-sm text-gray-800 whitespace-pre-line break-words max-h-[50vh] overflow-y-auto"></div>
             </div>
         </div>
-        
-        <!-- Modal Footer -->
-        <div class="p-4 border-t border-gray-200 bg-gray-50">
-            <div class="flex items-center justify-between">
-                <span class="text-sm text-gray-600" id="documentCount">0 documents</span>
-                <button onclick="closeDocumentsModal()" 
-                    class="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg text-sm font-medium transition-colors">
-                    बंद करा
-                </button>
-            </div>
+        <div class="border-t px-4 py-3 flex justify-end">
+            <button type="button" id="closeKulKhandModalFooterBtn" class="px-3 py-1.5 bg-gray-700 hover:bg-gray-800 text-white rounded text-sm">बंद करा</button>
         </div>
     </div>
 </div>
 
 <script>
-    $(document).ready(function () {
-        setTimeout(() => {
-            let table = $('#lr712Table');
-            if ($.fn.DataTable.isDataTable(table)) table.DataTable().destroy();
-            table.DataTable({ pageLength: 10 });
-        }, 100);
-        
-        // Add event listeners for view document buttons
-        $(document).on('click', '.view-docs-btn', function() {
-            const recordId = $(this).data('record-id');
-            openDocumentsModal(recordId);
-        });
+$(document).ready(function () {
+    // Destroy existing DataTable if it exists
+    if ($.fn.DataTable.isDataTable('#lr712Table')) {
+        $('#lr712Table').DataTable().destroy();
+    }
+
+    // Initialize DataTable with proper configuration
+    const table = $('#lr712Table').DataTable({
+        pageLength: 10,
+        lengthMenu: [[5, 10, 25, 50, -1], [5, 10, 25, 50, "All"]],
+        ordering: true,
+        searching: true,
+        autoWidth: false,
+        responsive: true,
+        scrollX: true, // Enable horizontal scrolling for wide table
+        order: [[0, 'desc']], // Sort by ID descending by default
+        columnDefs: [
+            { targets: 0, width: '50px' }, // ID column
+            { targets: 14, orderable: false, searchable: false }, // Owner info column
+            { targets: 15, orderable: false, searchable: false }, // Kul Khand column
+            { targets: 16, orderable: false, searchable: false, width: '100px' } // Actions column
+        ],
+        language: {
+            emptyTable: "कोणतीही नोंद उपलब्ध नाही.",
+            zeroRecords: "जुळणारी नोंद सापडली नाही.",
+            search: "शोधा:",
+            searchPlaceholder: "Type to search...",
+            lengthMenu: "दाखवा _MENU_ नोंदी",
+            info: "_TOTAL_ पैकी _START_ ते _END_ नोंदी दाखवत आहे",
+            infoEmpty: "0 पैकी 0 ते 0 नोंदी दाखवत आहे",
+            infoFiltered: "(एकूण _MAX_ नोंदींमधून फिल्टर केले)",
+            paginate: {
+                first: "पहिला",
+                last: "शेवटचा",
+                previous: "मागील",
+                next: "पुढील"
+            },
+            loadingRecords: "लोड होत आहे...",
+            processing: "प्रक्रिया करत आहे..."
+        },
+        dom: '<"flex flex-col sm:flex-row justify-between items-center mb-4 gap-3"<"flex items-center gap-2"l><"flex-1"f>>rtip',
+        initComplete: function() {
+            // Style the search input
+            $('.dataTables_filter input').addClass('border border-gray-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-400 focus:border-blue-400');
+            $('.dataTables_filter input').attr('placeholder', 'Search ७/१२ उतार नोंद records...');
+            
+            // Style the length select
+            $('.dataTables_length select').addClass('border border-gray-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-400');
+            
+            // Style pagination
+            $('.dataTables_paginate').addClass('mt-4');
+        }
     });
     
-    function openDocumentsModal(recordId) {
-        const modal = document.getElementById('documentsModal');
-        const grid = document.getElementById('documentsGrid');
-        const countSpan = document.getElementById('documentCount');
-        const dataContainer = document.getElementById('docs-data-' + recordId);
-        
-        if (!dataContainer) return;
-        
-        // Clear previous content
-        grid.innerHTML = '';
-        
-        // Parse JSON data from script tag
-        let documents = [];
-        try {
-            const jsonData = dataContainer.textContent || dataContainer.innerText;
-            documents = JSON.parse(jsonData);
-        } catch (e) {
-            console.error('Error parsing documents:', e);
-            grid.innerHTML = '<p class="col-span-full text-center text-gray-500">Error loading documents</p>';
-            return;
-        }
-        
-        if (documents.length === 0) {
-            grid.innerHTML = '<p class="col-span-full text-center text-gray-500">No documents found</p>';
-            return;
-        }
-        
-        // Update count
-        countSpan.textContent = documents.length + ' document' + (documents.length !== 1 ? 's' : '');
-        
-        // Create tile for each document
-        documents.forEach((doc, index) => {
-            const tile = createDocumentTile(doc.url, doc.name, doc.date, doc.size, index + 1);
-            grid.appendChild(tile);
-        });
-        
-        // Show modal
-        modal.classList.remove('hidden');
+    // Redraw table on window resize for responsiveness
+    $(window).on('resize', function() {
+        table.columns.adjust().draw();
+    });
+
+    const ownerModal = document.getElementById('ownerModal');
+    const ownerNamesContent = document.getElementById('ownerNamesContent');
+
+    function decodeUnicodeEscapes(text) {
+        if (!text) return '';
+        return String(text)
+            .replace(/\\u([0-9a-fA-F]{4})/g, function (_, code) {
+                return String.fromCharCode(parseInt(code, 16));
+            })
+            .replace(/\\\\/g, '\\');
+    }
+
+    function openOwnerModal(ownerText) {
+        const decodedText = decodeUnicodeEscapes(ownerText || '');
+        ownerNamesContent.textContent = decodedText || 'उपलब्ध नाही';
+        ownerModal.classList.remove('hidden');
         document.body.style.overflow = 'hidden';
     }
-    
-    function closeDocumentsModal() {
-        const modal = document.getElementById('documentsModal');
-        modal.classList.add('hidden');
-        document.body.style.overflow = 'auto';
+
+    function closeOwnerModal() {
+        ownerModal.classList.add('hidden');
+        document.body.style.overflow = '';
     }
-    
-    function createDocumentTile(url, filename, date, size, index) {
-        const div = document.createElement('div');
-        div.className = 'bg-white border-2 border-gray-200 rounded-lg p-4 hover:border-green-500 hover:shadow-lg transition-all duration-200 cursor-pointer group';
-        
-        const ext = filename.split('.').pop().toLowerCase();
-        const icon = getFileIconForModal(ext);
-        const displayName = filename.split('/').pop();
-        const formattedSize = formatFileSize(size);
-        
-        div.innerHTML = `
-            <a href="${url}" target="_blank" class="block">
-                <div class="flex flex-col items-center text-center">
-                    <!-- File Icon -->
-                    <div class="w-16 h-16 mb-3 flex items-center justify-center bg-gray-100 rounded-lg group-hover:bg-green-50 transition-colors">
-                        ${icon}
-                    </div>
-                    
-                    <!-- File Name -->
-                    <p class="text-sm font-medium text-gray-900 truncate w-full mb-1" title="${displayName}">
-                        ${displayName.length > 20 ? displayName.substring(0, 20) + '...' : displayName}
-                    </p>
-                    
-                    <!-- File Info -->
-                    <div class="text-xs text-gray-500 space-y-0.5">
-                        <p>${formattedSize}</p>
-                        <p>${date}</p>
-                    </div>
-                    
-                    <!-- View Button -->
-                    <div class="mt-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <span class="inline-flex items-center gap-1 text-xs text-green-600 font-medium">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
-                            </svg>
-                            Open
-                        </span>
-                    </div>
-                </div>
-            </a>
-        `;
-        
-        return div;
-    }
-    
-    function getFileIconForModal(ext) {
-        const icons = {
-            'pdf': '<svg class="w-10 h-10 text-red-600" fill="currentColor" viewBox="0 0 20 20"><path d="M4 18h12V6h-4V2H4v16zm-2 1V0h12l4 4v16H2v-1z"/><text x="4" y="14" font-size="6" fill="currentColor" font-weight="bold">PDF</text></svg>',
-            'doc': '<svg class="w-10 h-10 text-blue-600" fill="currentColor" viewBox="0 0 20 20"><path d="M4 18h12V6h-4V2H4v16zm-2 1V0h12l4 4v16H2v-1z"/><text x="3" y="14" font-size="6" fill="currentColor" font-weight="bold">DOC</text></svg>',
-            'docx': '<svg class="w-10 h-10 text-blue-600" fill="currentColor" viewBox="0 0 20 20"><path d="M4 18h12V6h-4V2H4v16zm-2 1V0h12l4 4v16H2v-1z"/><text x="3" y="14" font-size="6" fill="currentColor" font-weight="bold">DOC</text></svg>',
-            'jpg': '<svg class="w-10 h-10 text-green-600" fill="currentColor" viewBox="0 0 20 20"><path d="M4 3h12v14H4V3zm2 2v10h8V5H6z"/><circle cx="10" cy="10" r="2" fill="currentColor"/></svg>',
-            'jpeg': '<svg class="w-10 h-10 text-green-600" fill="currentColor" viewBox="0 0 20 20"><path d="M4 3h12v14H4V3zm2 2v10h8V5H6z"/><circle cx="10" cy="10" r="2" fill="currentColor"/></svg>',
-            'png': '<svg class="w-10 h-10 text-green-600" fill="currentColor" viewBox="0 0 20 20"><path d="M4 3h12v14H4V3zm2 2v10h8V5H6z"/><circle cx="10" cy="10" r="2" fill="currentColor"/></svg>',
-        };
-        
-        return icons[ext] || '<svg class="w-10 h-10 text-gray-600" fill="currentColor" viewBox="0 0 20 20"><path d="M4 18h12V6h-4V2H4v16zm-2 1V0h12l4 4v16H2v-1z"/></svg>';
-    }
-    
-    function formatFileSize(bytes) {
-        if (!bytes || bytes === 0) return '0 Bytes';
-        const k = 1024;
-        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-        const i = Math.floor(Math.log(bytes) / Math.log(k));
-        return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
-    }
-    
-    // Close modal on escape key
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape') {
-            closeDocumentsModal();
+
+    $(document).on('click', '.owner-info-btn', function () {
+        openOwnerModal($(this).data('owner-name'));
+    });
+
+    document.getElementById('closeOwnerModalBtn').addEventListener('click', closeOwnerModal);
+    document.getElementById('closeOwnerModalFooterBtn').addEventListener('click', closeOwnerModal);
+
+    ownerModal.addEventListener('click', function (e) {
+        if (e.target === ownerModal) closeOwnerModal();
+    });
+
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && !ownerModal.classList.contains('hidden')) {
+            closeOwnerModal();
         }
     });
-    
-    // Close modal on backdrop click
-    document.getElementById('documentsModal')?.addEventListener('click', function(e) {
-        if (e.target === this) {
-            closeDocumentsModal();
+
+    // Kul Khand modal functionality
+    const kulKhandModal = document.getElementById('kulKhandModal');
+    const kulKhandInfoContent = document.getElementById('kulKhandInfoContent');
+
+    function openKulKhandModal(kulKhandInfo) {
+        kulKhandInfoContent.textContent = kulKhandInfo || 'Not available';
+        kulKhandModal.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeKulKhandModal() {
+        kulKhandModal.classList.add('hidden');
+        document.body.style.overflow = '';
+    }
+
+    $(document).on('click', '.kul-khand-btn', function () {
+        const kulKhandInfo = $(this).data('kul-khand-info');
+        openKulKhandModal(kulKhandInfo);
+    });
+
+    document.getElementById('closeKulKhandModalBtn').addEventListener('click', closeKulKhandModal);
+    document.getElementById('closeKulKhandModalFooterBtn').addEventListener('click', closeKulKhandModal);
+
+    kulKhandModal.addEventListener('click', function (e) {
+        if (e.target === kulKhandModal) closeKulKhandModal();
+    });
+
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && !kulKhandModal.classList.contains('hidden')) {
+            closeKulKhandModal();
         }
     });
+});
 </script>
 
 {% endblock %}
+
+
+
+
+
+
+
+
+

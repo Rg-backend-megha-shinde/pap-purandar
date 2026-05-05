@@ -2,7 +2,7 @@
 
 {% block content %}
 
-<div class="max-w-6xl mx-auto bg-white p-6 border border-gray-300 mt-6 rounded-lg shadow">
+<div class="w-full bg-white p-6 border border-gray-300 mt-6 rounded-lg shadow">
     <h2 class="text-center font-bold text-xl underline mb-2">
         मालमत्ता निर्मिती साधन
     </h2>
@@ -29,16 +29,11 @@
                             </option>
                         {% endfor %}
                     </select>
-                    <select name="asset_name" id="assetNameSelect"
-                        class="hidden w-full border p-2 rounded focus:ring-2 focus:ring-blue-400"
-                        disabled>
-                        <option value="">\u091d\u093e\u0921 \u0928\u093f\u0935\u0921\u093e</option>
-                    </select>
                 </div>
 
                 <div>
                     <label class="font-semibold">मालमत्तेचे नाव</label>
-                    <input type="text" name="asset_name" id="assetNameText"
+                    <input type="text" name="asset_name" id="assetName"
                         class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-400"
                         placeholder="मालमत्तेचे नाव">
                 </div>
@@ -210,8 +205,6 @@
     const assetType = document.getElementById("assetType");
     const dynamicFields = document.getElementById("dynamicFields");
     const measurementHiddenFields = document.getElementById("measurementHiddenFields");
-    const assetNameText = document.getElementById("assetNameText");
-    const assetNameSelect = document.getElementById("assetNameSelect");
     const rateInput = document.getElementById("rate");
     const govtRateInput = document.getElementById("governmentEstimatedRate");
     const govtFinalAmount = document.getElementById("govtFinalAmount");
@@ -226,86 +219,9 @@
     const villageSelect = document.getElementById("village");
     const gutNumberSelect = document.getElementById("gutNumber");
 
-    let locationData = [];
     let currentAssetFields = [];
     let currentFormula = "";
     let currentFormulaLabel = "";
-    let treeMasterLoaded = false;
-
-    function positionAssetNameSelect() {
-        if (!assetNameText || !assetNameSelect) return;
-
-        if (assetNameSelect.previousElementSibling !== assetNameText) {
-            assetNameText.insertAdjacentElement("afterend", assetNameSelect);
-        }
-
-        if (assetNameSelect.options.length > 0) {
-            assetNameSelect.options[0].text = "\u091d\u093e\u0921 \u0928\u093f\u0935\u0921\u093e";
-        }
-    }
-
-    async function loadTreeMasterOptions() {
-        positionAssetNameSelect();
-
-        if (treeMasterLoaded) return;
-
-        try {
-            const response = await fetch("/api/tree-master/");
-            const data = await response.json();
-            const trees = data.trees || [];
-
-            assetNameSelect.innerHTML = '<option value="">\u091d\u093e\u0921 \u0928\u093f\u0935\u0921\u093e</option>';
-
-            trees.forEach(tree => {
-                const treeName = (tree.tree_name_marathi || "").trim();
-                if (!treeName) return;
-
-                assetNameSelect.insertAdjacentHTML(
-                    "beforeend",
-                    `<option value="${treeName}">${treeName}</option>`
-                );
-            });
-
-            treeMasterLoaded = true;
-        } catch (error) {
-            console.error("Error loading tree master:", error);
-        }
-    }
-
-    async function syncAssetNameField() {
-        positionAssetNameSelect();
-
-        const isTreeAsset = assetType.value === "tree_asset";
-
-        if (isTreeAsset) {
-            await loadTreeMasterOptions();
-
-            if (assetNameText.value && !assetNameSelect.value) {
-                assetNameSelect.value = assetNameText.value;
-            }
-
-            assetNameText.disabled = true;
-            assetNameText.required = false;
-            assetNameText.classList.add("hidden");
-
-            assetNameSelect.disabled = false;
-            assetNameSelect.required = true;
-            assetNameSelect.classList.remove("hidden");
-            return;
-        }
-
-        if (assetNameSelect.value && !assetNameText.value) {
-            assetNameText.value = assetNameSelect.value;
-        }
-
-        assetNameSelect.disabled = true;
-        assetNameSelect.required = false;
-        assetNameSelect.classList.add("hidden");
-
-        assetNameText.disabled = false;
-        assetNameText.required = false;
-        assetNameText.classList.remove("hidden");
-    }
 
     function showFormulaWarning(message) {
         formulaWarning.textContent = message;
@@ -353,7 +269,6 @@
         currentAssetFields = [];
         currentFormula = "";
         currentFormulaLabel = "";
-        await syncAssetNameField();
 
         if (!selectedType) return;
 
@@ -519,33 +434,29 @@
         gutNumberSelect.innerHTML = '<option value="">गट क्रमांक निवडा</option>';
 
         loadLocationData();
-        syncAssetNameField();
+    }
+
+    function addSelectOptions(selectEl, items = []) {
+        items.forEach(item => {
+            const value = typeof item === "string" ? item : (item.value || "");
+            const label = typeof item === "string" ? item : (item.label || item.value || "");
+            if (!value) return;
+            selectEl.insertAdjacentHTML("beforeend", `<option value="${value}">${label}</option>`);
+        });
     }
 
     async function loadLocationData() {
         try {
-            const response = await fetch("/api/location-data/");
-            const data = await response.json();
-
-            locationData = data.villages || [];
-
-            const districts = [...new Set(locationData.map(item => item.district).filter(Boolean))];
-
             districtSelect.innerHTML = '<option value="">जिल्हा निवडा</option>';
+            talukaSelect.innerHTML = '<option value="">तालुका निवडा</option>';
+            villageSelect.innerHTML = '<option value="">गाव निवडा</option>';
+            gutNumberSelect.innerHTML = '<option value="">गट क्रमांक निवडा</option>';
 
-            districts.forEach(district => {
-                districtSelect.insertAdjacentHTML(
-                    "beforeend",
-                    `<option value="${district}">${district}</option>`
-                );
-            });
-
-            if (districts.length === 1) {
-                districtSelect.value = districts[0];
-                populateTalukas(districts[0]);
-            }
+            const response = await fetch('/api/locations/?lang=mr');
+            const data = await response.json();
+            addSelectOptions(districtSelect, data.data || []);
         } catch (error) {
-            console.error("Error loading location data:", error);
+            console.error("Error loading districts:", error);
         }
     }
 
@@ -554,54 +465,35 @@
         villageSelect.innerHTML = '<option value="">गाव निवडा</option>';
         gutNumberSelect.innerHTML = '<option value="">गट क्रमांक निवडा</option>';
 
-        const talukas = [
-            ...new Set(
-                locationData
-                    .filter(item => item.district === selectedDistrict)
-                    .map(item => item.taluka)
-                    .filter(Boolean)
-            )
-        ];
-
-        talukas.forEach(taluka => {
-            talukaSelect.insertAdjacentHTML(
-                "beforeend",
-                `<option value="${taluka}">${taluka}</option>`
-            );
-        });
+        if (!selectedDistrict) return;
+        fetch(`/api/locations/?district=${encodeURIComponent(selectedDistrict)}&lang=mr`)
+            .then(response => response.json())
+            .then(data => addSelectOptions(talukaSelect, data.data || []))
+            .catch(error => console.error("Error loading talukas:", error));
     }
 
     function populateVillages(selectedDistrict, selectedTaluka) {
         villageSelect.innerHTML = '<option value="">गाव निवडा</option>';
         gutNumberSelect.innerHTML = '<option value="">गट क्रमांक निवडा</option>';
 
-        const villages = [
-            ...new Set(
-                locationData
-                    .filter(item => item.district === selectedDistrict && item.taluka === selectedTaluka)
-                    .map(item => item.village_name)
-                    .filter(Boolean)
-            )
-        ];
-
-        villages.forEach(village => {
-            villageSelect.insertAdjacentHTML(
-                "beforeend",
-                `<option value="${village}">${village}</option>`
-            );
-        });
+        if (!selectedDistrict || !selectedTaluka) return;
+        fetch(`/api/locations/?district=${encodeURIComponent(selectedDistrict)}&taluka=${encodeURIComponent(selectedTaluka)}&lang=mr`)
+            .then(response => response.json())
+            .then(data => addSelectOptions(villageSelect, data.data || []))
+            .catch(error => console.error("Error loading villages:", error));
     }
 
     async function loadGutNumbers(village) {
         gutNumberSelect.innerHTML = '<option value="">गट क्रमांक निवडा</option>';
 
-        if (!village) return;
+        const district = districtSelect.value;
+        const taluka = talukaSelect.value;
+        if (!district || !taluka || !village) return;
 
         try {
-            const response = await fetch(`/api/gut-numbers/${encodeURIComponent(village)}/`);
+            const response = await fetch(`/api/locations/?district=${encodeURIComponent(district)}&taluka=${encodeURIComponent(taluka)}&village=${encodeURIComponent(village)}`);
             const data = await response.json();
-
-            const gutNumbers = data.gut_numbers || [];
+            const gutNumbers = data.data || [];
 
             gutNumbers.forEach(gut => {
                 gutNumberSelect.insertAdjacentHTML(
@@ -630,8 +522,6 @@
     });
 
     loadLocationData();
-    syncAssetNameField();
-    positionAssetNameSelect();
 
     // File Upload Handler with Drag & Drop and Progress
     (function() {
@@ -830,7 +720,8 @@
                 }
             }, 200);
         }
-    })();
+
+            })();
 </script>
 
 {% endblock %}

@@ -1,5 +1,20 @@
+from django.core.exceptions import SuspiciousFileOperation
 from django.db import models
 from django.contrib.auth.models import User
+from django.utils.text import get_valid_filename
+
+
+class ActiveUserSession(models.Model):
+    user = models.OneToOneField(
+        User,
+        on_delete=models.CASCADE,
+        related_name="active_session",
+    )
+    session_key = models.CharField(max_length=40, unique=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.user.username} -> {self.session_key}"
 
 
 # =========================================================
@@ -27,8 +42,8 @@ class DocumentMaster(models.Model):
 
     inspection = models.ForeignKey('Inspection', on_delete=models.SET_NULL, null=True, blank=True)
     rr_info = models.ForeignKey('ReadyReckonerInfo',on_delete=models.SET_NULL,null=True,blank=True,related_name="documents")
-    land_record = models.ForeignKey('LandRecord712', on_delete=models.SET_NULL, null=True, blank=True)
     asset = models.ForeignKey('Asset', on_delete=models.SET_NULL, null=True, blank=True)
+    entry = models.ForeignKey('Entry', on_delete=models.SET_NULL, null=True, blank=True, related_name="documents")
     document_tool_record = models.ForeignKey('Document', on_delete=models.SET_NULL, null=True, blank=True)
 
     # ⭐ ADD THIS
@@ -73,13 +88,24 @@ class DocumentAttachment(models.Model):
     )
 
     file = models.FileField(
-        upload_to='documents/files/'
+        upload_to='documents/files/',
+        max_length=1000
     )
 
     uploaded_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return f"Attachment for {self.document_master.tool.tool_name}"
+
+    @property
+    def safe_file_size(self):
+        if not self.file:
+            return 0
+        try:
+            return self.file.size
+        except (FileNotFoundError, OSError, ValueError, SuspiciousFileOperation):
+            return 0
+
     
 
 
@@ -95,9 +121,13 @@ class Inspection(models.Model):
     taluka = models.CharField(max_length=100)
     village = models.CharField(max_length=100)
     gut_number = models.CharField(max_length=50)
+    inspection_asset_type = models.CharField(max_length=100, blank=True, null=True)
 
     officer = models.CharField(max_length=200)
     date = models.DateField()
+    latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
+    longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
+    remark = models.TextField(blank=True, null=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -108,26 +138,29 @@ class Inspection(models.Model):
     def get_documents(self):
         """Get all documents associated with this inspection"""
         return DocumentMaster.objects.filter(inspection=self)
+    
+    def get_total_attachment_count(self):
+        """Get total count of all attachments across all document masters"""
+        from django.db.models import Count, Sum
+        return DocumentMaster.objects.filter(inspection=self).annotate(
+            attachment_count=Count('attachments')
+        ).aggregate(total=Sum('attachment_count'))['total'] or 0
 
 
-class TreeDetail(models.Model):
+class AssetDetail(models.Model):
     inspection = models.ForeignKey(
         Inspection,
         on_delete=models.CASCADE,
-        related_name="trees"
+        related_name="details"
     )
 
     plot = models.CharField(max_length=50, blank=True)
     name = models.CharField(max_length=100, blank=True)
-
-    length = models.FloatField(null=True, blank=True)
-    width = models.FloatField(null=True, blank=True)
-    girth = models.FloatField(null=True, blank=True)
-    height = models.FloatField(null=True, blank=True)
-    valuation = models.FloatField(null=True, blank=True)
+    asset_parameter = models.JSONField(default=dict, blank=True)
+    valuation = models.DecimalField(max_digits=15, decimal_places=2, null=True, blank=True)
 
     def __str__(self):
-        return self.name or "Tree"
+        return self.name or "Asset Detail"
 
 
 # =========================================================
@@ -152,7 +185,7 @@ class ReadyReckonerInfo(models.Model):
 
     UNIT_CHOICES = [
         ('हेक्टर', 'हेक्टर'),
-        ('चौ. मीटर', 'चौ. मीटर'),
+        ('प्रति चौरस मीटर', 'प्रति चौरस मीटर'),
     ]
     unit = models.CharField(max_length=50, choices=UNIT_CHOICES)
 
@@ -176,6 +209,24 @@ class ReadyReckonerRate(models.Model):
         ReadyReckonerInfo,
         on_delete=models.CASCADE,
         related_name="rates"
+    )
+
+    shighrasiddha_vibhag = models.TextField(
+        null=True,
+        blank=True,
+        verbose_name='शिघ्रसिध्द गणकातील विभाग'
+    )
+
+    VILLAGE_TYPE_CHOICES = [
+        ('gramin', 'ग्रामीण'),
+        ('prabhav', 'प्रभाव'),
+    ]
+    village_type = models.CharField(
+        max_length=20,
+        choices=VILLAGE_TYPE_CHOICES,
+        null=True,
+        blank=True,
+        verbose_name='Village Type'
     )
 
     assessment_range_min = models.DecimalField(
@@ -205,53 +256,35 @@ class ReadyReckonerRate(models.Model):
 # =========================================================
 
 class LandRecord712(models.Model):
-    user = models.ForeignKey(
-        User,
-        on_delete=models.CASCADE,
-        related_name="land_records"
-    )
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="land_records")
 
-    district = models.CharField(max_length=100)
-    taluka = models.CharField(max_length=100)
-    village = models.CharField(max_length=150)
-    gut_number = models.CharField(max_length=50)
+    # Already existing (DO NOT TOUCH)
+    district = models.CharField(max_length=100)  # "जिल्हा"
+    taluka = models.CharField(max_length=100)    # "तालुका"
+    village = models.CharField(max_length=150)   # "गावाचे नाव"
+    gut_number = models.CharField(max_length=50, help_text="स_नं_ग_न")  # "स_नं_ग_न"
 
-    date = models.DateField(null=True, blank=True)
-
-    assessment_type = models.CharField(
-        max_length=200,
-        null=True,
-        blank=True
-    )
-
-    aakarnee = models.CharField(
-        max_length=100,
-        null=True,
-        blank=True
-    )  # आकारणी e.g. 10.1.1
-
-    rate_applied = models.CharField(
-        max_length=100,
-        null=True,
-        blank=True
-    )
-
-    rate_year = models.CharField(
-        max_length=20,
-        null=True,
-        blank=True
-    )
-
+    # JSON based fields
+    puid_ulip_no = models.CharField(max_length=100, null=True, blank=True)  # "PUID_ULIP_No"
+    hissa_number = models.CharField(max_length=50, null=True, blank=True)  # "स_नं_ग_न_हिस्सा"
+    jirayit = models.CharField(max_length=50, null=True, blank=True)  # "जिरायत"
+    bagayat = models.CharField(max_length=50, null=True, blank=True)  # "बागायत"
+    potkharaba = models.CharField(max_length=50, null=True, blank=True)  # "पोटखराब"
+    total_area = models.CharField(max_length=50, null=True, blank=True)  # "एकूण_क्षेत्र"
+    aakarni = models.CharField(max_length=50, null=True, blank=True)  # "आकारणी"
+    khata_number = models.CharField(max_length=50, null=True, blank=True)  # "खाता_नं"
+    khata_area = models.CharField(max_length=50, null=True, blank=True)  # "खाता_क्षेत्र"
+    aakar = models.CharField(max_length=50, null=True, blank=True)  # "आकार"
+    holder_name = models.TextField(null=True, blank=True)  # "भोगवटादाराचे_नांव"
+    kul_khand_other_rights = models.TextField(null=True, blank=True)  # "कुळ, खंड व इतर अधिकार"
+    area_more_than_20guntha = models.CharField(max_length=10, null=True, blank=True)  # "क्षेत्र_20_गुंठे_पेक्षा_जास्त" (Yes/No)
+    bagayat_more_than_10guntha = models.CharField(max_length=10, null=True, blank=True)  # "बागायत_10_गुंठे_पेक्षा_जास्त" (Yes/No)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return f"{self.village} - Gut {self.gut_number}"
-    
-    def get_documents(self):
-        """Get all documents associated with this land record"""
-        return DocumentMaster.objects.filter(land_record=self)
 
 
 class FarmerNames(models.Model):
@@ -761,25 +794,6 @@ class Entry(models.Model):
         blank=True
     )
 
-    # Establishment and Facility percentages
-    establishment_expense_percent = models.DecimalField(
-        max_digits=5,
-        decimal_places=2,
-        null=True,
-        blank=True,
-        default=0,
-        help_text="आस्थापना खर्च देय मोबदल्याच्या (0-100%)"
-    )
-
-    facility_amount_percent = models.DecimalField(
-        max_digits=5,
-        decimal_places=2,
-        null=True,
-        blank=True,
-        default=0,
-        help_text="सोईसुविधा रक्कम देय मोबदल्याच्या (0-100%)"
-    )
-
     # Consent field
     is_with_consent = models.BooleanField(
         default=False,
@@ -788,3 +802,355 @@ class Entry(models.Model):
 
     def __str__(self):
         return f"{self.owner_name_03} - {self.sr_no_02}"
+
+    def get_documents(self):
+        return DocumentMaster.objects.filter(entry=self).prefetch_related('attachments')
+
+
+# =========================================================
+# 🔹 Village Data (Acquisition Process - Full Form)
+# =========================================================
+
+class VillageData(models.Model):
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='village_data')
+
+    # --- मूलभूत माहिती ---
+    district = models.TextField()
+    taluka = models.TextField()
+    village = models.TextField()
+
+    # --- १. प्रशासकीय मान्यता ---
+    sec1_adesh_kramank = models.TextField(blank=True)
+    sec1_date = models.DateField(null=True, blank=True)
+    sec1_files = models.TextField(blank=True)
+
+    # --- २. कलम 3 अधिसूचना ---
+    sec2_adhisuchana_kramank = models.TextField(blank=True)
+    sec2_date = models.DateField(null=True, blank=True)
+    sec2_files = models.TextField(blank=True)
+    sec2_paper1_name = models.TextField(blank=True)
+    sec2_paper1_date = models.DateField(null=True, blank=True)
+    sec2_paper1_files = models.TextField(blank=True)
+    sec2_paper2_name = models.TextField(blank=True)
+    sec2_paper2_date = models.DateField(null=True, blank=True)
+    sec2_paper2_files = models.TextField(blank=True)
+
+    # --- ३. प्राधिकृत भूसंपादन अधिकारी नियुक्ती ---
+    sec3_adhisuchana_kramank = models.TextField(blank=True)
+    sec3_date = models.DateField(null=True, blank=True)
+    sec3_files = models.TextField(blank=True)
+
+    # --- ५. भूसंपादन प्रस्ताव ---
+    sec5_prastaav_kramank = models.TextField(blank=True)
+    sec5_date = models.DateField(null=True, blank=True)
+    sec5_files = models.TextField(blank=True)
+
+    # --- ६. संयुक्त मोजणी ---
+    sec6_register_number = models.TextField(blank=True)
+    sec6_date = models.DateField(null=True, blank=True)
+    sec6_parishisht16_files = models.TextField(blank=True)
+    sec6_nakasha_files = models.TextField(blank=True)
+
+    # --- ७. कलम 17 सुनावणी निर्णय ---
+    sec7_aakshep_details = models.TextField(blank=True)
+    sec7_files = models.TextField(blank=True)
+
+    # --- ९. कलम 19-ब जाहीर नोटीस ---
+    sec9_paper1_name = models.TextField(blank=True)
+    sec9_paper1_date = models.DateField(null=True, blank=True)
+    sec9_paper1_files = models.TextField(blank=True)
+    sec9_paper2_name = models.TextField(blank=True)
+    sec9_paper2_date = models.DateField(null=True, blank=True)
+    sec9_paper2_files = models.TextField(blank=True)
+
+    # --- १०. जमीन मूल्यांकन ---
+    sec10_prastaav_kramank = models.TextField(blank=True)
+    sec10_date = models.DateField(null=True, blank=True)
+    sec10_files = models.TextField(blank=True)
+
+    # --- ११. नगर रचना विभागाचे अभिप्राय ---
+    sec11_date = models.DateField(null=True, blank=True)
+    sec11_files = models.TextField(blank=True)
+
+    # --- १२. झोन दाखला माहिती ---
+    sec12_zone_details = models.TextField(blank=True)
+    sec12_date = models.DateField(null=True, blank=True)
+    sec12_files = models.TextField(blank=True)
+
+    # --- १३. दर निश्चितीसाठी खरेदी विक्री तपशील ---
+    sec13_kharedi_vikri_details = models.TextField(blank=True)
+    sec13_files = models.TextField(blank=True)
+
+    # --- १४. जिल्हास्तरीय समितीच्या बैठकीचा तपशील ---
+    sec14_meeting_details = models.TextField(blank=True)
+    sec14_date = models.DateField(null=True, blank=True)
+    sec14_files = models.TextField(blank=True)
+
+    # --- १६. वन विभाग ---
+    sec16_letter_details = models.TextField(blank=True)
+    sec16_date = models.DateField(null=True, blank=True)
+    sec16_files = models.TextField(blank=True)
+
+    # --- १७. पाणीपुरवठा ---
+    sec17_letter_details = models.TextField(blank=True)
+    sec17_date = models.DateField(null=True, blank=True)
+    sec17_files = models.TextField(blank=True)
+
+    # --- १८. कृषी विभाग ---
+    sec18_letter_details = models.TextField(blank=True)
+    sec18_date = models.DateField(null=True, blank=True)
+    sec18_files = models.TextField(blank=True)
+
+    # --- १९. बांधकाम विभाग ---
+    sec19_letter_details = models.TextField(blank=True)
+    sec19_date = models.DateField(null=True, blank=True)
+    sec19_files = models.TextField(blank=True)
+
+    # --- २०. इतर विभाग ---
+    sec20_letter_details = models.TextField(blank=True)
+    sec20_date = models.DateField(null=True, blank=True)
+    sec20_files = models.TextField(blank=True)
+
+    # --- २१. मोबदला निश्चिती ---
+    sec21_prastaav = models.TextField(blank=True)
+    sec21_prastaav_date = models.DateField(null=True, blank=True)
+    sec21_prastaav_files = models.TextField(blank=True)
+    sec21_karyavrutant = models.TextField(blank=True)
+    sec21_karyavrutant_date = models.DateField(null=True, blank=True)
+    sec21_karyavrutant_files = models.TextField(blank=True)
+
+
+    # --- २३. निवाडा ---
+    sec23_kramank = models.TextField(blank=True)
+    sec23_date = models.DateField(null=True, blank=True)
+    sec23_files = models.TextField(blank=True)
+
+    # --- २३. न्यायालयीन प्रकरण ---
+    sec24_court_details = models.TextField(blank=True)
+    sec24_files = models.TextField(blank=True)
+
+    # --- २४. क.जा.प ---
+    sec25_kramank = models.TextField(blank=True)
+    sec25_date = models.DateField(null=True, blank=True)
+    sec25_files = models.TextField(blank=True)
+
+    is_final_submitted = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.village} - {self.taluka} - {self.district}"
+
+    class Meta:
+        verbose_name = "Village Data"
+        verbose_name_plural = "Village Data"
+
+class VillageData8ARecord(models.Model):
+    # --- २५. संपादन संस्थेच्या नावावर झालेल्या ८ अ अभिलेखाचा तपशील ---
+    village_data = models.ForeignKey(
+        VillageData,
+        on_delete=models.CASCADE,
+        related_name='sec26_8a_records'
+    )
+    khate_kramank = models.TextField(blank=True)
+    navavar_kshetra = models.TextField(blank=True)
+    ferfar_kramank = models.TextField(blank=True)
+    ferfar_date = models.DateField(null=True, blank=True)
+    files = models.TextField(blank=True)
+
+    def __str__(self):
+        return f"{self.khate_kramank} - {self.ferfar_kramank}"
+
+    # files → via VillageData8AFile (related_name='8a_files')
+
+    class Meta:
+        verbose_name = "8A Record"
+        verbose_name_plural = "8A Records"
+
+
+class VillageData15_2Row(models.Model):
+    # --- ४. कलम 15(2) प्राथमिक अधिसूचना (repeatable rows) ---
+    village_data = models.ForeignKey(
+        VillageData,
+        on_delete=models.CASCADE,
+        related_name='sec4_rows'
+    )
+    adhisuchana_kramank = models.TextField(blank=True)
+    adhisuchana_date = models.DateField(null=True, blank=True)
+    paper1_name = models.TextField(blank=True)
+    paper1_date = models.DateField(null=True, blank=True)
+    paper2_name = models.TextField(blank=True)
+    paper2_date = models.DateField(null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.adhisuchana_kramank} ({self.adhisuchana_date or '-'})"
+
+    class Meta:
+        verbose_name = "VillageData15(2) Row"
+        verbose_name_plural = "VillageData15(2) Rows"
+
+
+class VillageData18_1Row(models.Model):
+    # --- ८. कलम 18/1 अंतिम अधिसूचना (repeatable rows) ---
+    village_data = models.ForeignKey(
+        VillageData,
+        on_delete=models.CASCADE,
+        related_name='sec8_rows'
+    )
+    adhisuchana_kramank = models.TextField(blank=True)
+    adhisuchana_date = models.DateField(null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.adhisuchana_kramank} ({self.adhisuchana_date or '-'})"
+
+    class Meta:
+        verbose_name = "VillageData18(1) Row"
+        verbose_name_plural = "VillageData18(1) Rows"
+
+
+def _safe_village_folder_name(value, fallback):
+    raw = (value or '').strip()
+    if not raw:
+        return fallback
+    # Keep path deterministic and safe across OS/filesystems.
+    raw = raw.replace('/', '-').replace('\\', '-').lower()
+    safe = get_valid_filename(raw)
+    return safe or fallback
+
+
+def village_data_file_upload_to(instance, filename):
+    village_data = instance.village_data
+    district = _safe_village_folder_name(getattr(village_data, 'district', ''), 'unknown_district')
+    taluka = _safe_village_folder_name(getattr(village_data, 'taluka', ''), 'unknown_taluka')
+    village = _safe_village_folder_name(getattr(village_data, 'village', ''), 'unknown_village')
+    field_key = _safe_village_folder_name(getattr(instance, 'field_key', ''), 'misc')
+    safe_name = get_valid_filename(filename) or 'file'
+    return f'village_documents/{district}/{taluka}/{village}/fields/{field_key}/{safe_name}'
+
+
+def village_8a_file_upload_to(instance, filename):
+    village_data = getattr(getattr(instance, 'record_8a', None), 'village_data', None)
+    district = _safe_village_folder_name(getattr(village_data, 'district', ''), 'unknown_district')
+    taluka = _safe_village_folder_name(getattr(village_data, 'taluka', ''), 'unknown_taluka')
+    village = _safe_village_folder_name(getattr(village_data, 'village', ''), 'unknown_village')
+    safe_name = get_valid_filename(filename) or 'file'
+    return f'village_documents/{district}/{taluka}/{village}/8a_records/{safe_name}'
+
+
+def village_15_2_row_file_upload_to(instance, filename):
+    village_data = getattr(getattr(instance, 'row_15_2', None), 'village_data', None)
+    district = _safe_village_folder_name(getattr(village_data, 'district', ''), 'unknown_district')
+    taluka = _safe_village_folder_name(getattr(village_data, 'taluka', ''), 'unknown_taluka')
+    village = _safe_village_folder_name(getattr(village_data, 'village', ''), 'unknown_village')
+    safe_name = get_valid_filename(filename) or 'file'
+    return f'village_documents/{district}/{taluka}/{village}/sec4_rows/{safe_name}'
+
+
+def village_18_1_row_file_upload_to(instance, filename):
+    village_data = getattr(getattr(instance, 'row_18_1', None), 'village_data', None)
+    district = _safe_village_folder_name(getattr(village_data, 'district', ''), 'unknown_district')
+    taluka = _safe_village_folder_name(getattr(village_data, 'taluka', ''), 'unknown_taluka')
+    village = _safe_village_folder_name(getattr(village_data, 'village', ''), 'unknown_village')
+    safe_name = get_valid_filename(filename) or 'file'
+    return f'village_documents/{district}/{taluka}/{village}/sec8_rows/{safe_name}'
+
+
+class VillageDataFile(models.Model):
+    """Stores multiple uploaded files for any field_key in VillageData."""
+    village_data = models.ForeignKey(
+        VillageData,
+        on_delete=models.CASCADE,
+        related_name='village_files'
+    )
+    field_key = models.CharField(max_length=100)  # e.g. 'sec1_files', 'sec6_nakasha_files'
+    file = models.FileField(upload_to=village_data_file_upload_to, max_length=1000)
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.village_data.village} | {self.field_key} | {self.file.name}"
+
+    class Meta:
+        verbose_name = "Village Data File"
+        verbose_name_plural = "Village Data Files"
+
+
+class VillageData8AFile(models.Model):
+    """Stores multiple uploaded files for a VillageData8ARecord."""
+    record_8a = models.ForeignKey(
+        VillageData8ARecord,
+        on_delete=models.CASCADE,
+        related_name='files_8a'
+    )
+    file = models.FileField(upload_to=village_8a_file_upload_to, max_length=1000)
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.record_8a} | {self.file.name}"
+
+    class Meta:
+        verbose_name = "8A File"
+        verbose_name_plural = "8A Files"
+
+
+class VillageData15_2RowFile(models.Model):
+    """Stores multiple uploaded files for a VillageData15_2Row."""
+    row_15_2 = models.ForeignKey(
+        VillageData15_2Row,
+        on_delete=models.CASCADE,
+        related_name='files_15_2'
+    )
+    field_key = models.CharField(max_length=40, default='main')
+    file = models.FileField(upload_to=village_15_2_row_file_upload_to, max_length=1000)
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.row_15_2} | {self.file.name}"
+
+    class Meta:
+        verbose_name = "VillageData15(2) Row File"
+        verbose_name_plural = "VillageData15(2) Row Files"
+
+
+class VillageData18_1RowFile(models.Model):
+    """Stores multiple uploaded files for a VillageData18_1Row."""
+    row_18_1 = models.ForeignKey(
+        VillageData18_1Row,
+        on_delete=models.CASCADE,
+        related_name='files_18_1'
+    )
+    file = models.FileField(upload_to=village_18_1_row_file_upload_to, max_length=1000)
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.row_18_1} | {self.file.name}"
+
+    class Meta:
+        verbose_name = "VillageData18(1) Row File"
+        verbose_name_plural = "VillageData18(1) Row Files"
+
+
+class VillageDataSec15Rate(models.Model):
+    # --- १५. जिल्हास्तरीय समितीने मंजूर केलेला अंतिम दर ---
+    # मूल्य विभाग प्रकार, Assessment Range, रेडी रेकनर दर, एकक → from ReadyReckonerRate
+    # जिल्हास्तरीय समितीने मंजूर केलेला दर → stored here (only new input)
+    village_data = models.ForeignKey(
+        VillageData,
+        on_delete=models.CASCADE,
+        related_name='sec15_rates'
+    )
+    rr_rate = models.ForeignKey(
+        ReadyReckonerRate,
+        on_delete=models.PROTECT,
+        related_name='sec15_entries'
+    )
+    # only field the user fills in for sec15
+    approved_rate = models.DecimalField(max_digits=15, decimal_places=2, null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.village_data.village} - {self.rr_rate}"
+
+    class Meta:
+        verbose_name = "Sec15 Approved Rate"
+        verbose_name_plural = "Sec15 Approved Rates"
+        unique_together = ('village_data', 'rr_rate')

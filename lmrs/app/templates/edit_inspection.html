@@ -78,7 +78,6 @@
                         <th class="border p-2">रुंदी</th>
                         <th class="border p-2">घेर</th>
                         <th class="border p-2">उंची</th>
-                        <th class="border p-2">मूल्यांकन</th>
                     </tr>
                 </thead>
 
@@ -86,10 +85,7 @@
                     {% for tree in tree_details %}
                     <tr>
                         <td class="border">
-                            <select name="plot[]" class="tree-plot-dropdown w-full p-1 text-center"
-                                data-selected="{{ tree.plot|default_if_none:'' }}">
-                                <option value="">क्रमांक निवडा</option>
-                            </select>
+                            <input name="plot[]" value="{{ tree.plot|default_if_none:'' }}" class="w-full p-1 text-center">
                         </td>
                         <td class="border">
                             <select name="name[]" class="tree-name-dropdown w-full p-1 text-center"
@@ -109,16 +105,11 @@
                         <td class="border">
                             <input name="height[]" value="{{ tree.height|default_if_none:'' }}" class="w-full p-1 text-center">
                         </td>
-                        <td class="border">
-                            <input name="valuation[]" value="{{ tree.valuation|default_if_none:'' }}" class="w-full p-1 text-center bg-gray-50" readonly>
-                        </td>
                     </tr>
                     {% empty %}
                     <tr>
                         <td class="border">
-                            <select name="plot[]" class="tree-plot-dropdown w-full p-1 text-center">
-                                <option value="">क्रमांक निवडा</option>
-                            </select>
+                            <input name="plot[]" class="w-full p-1 text-center">
                         </td>
                         <td class="border">
                             <select name="name[]" class="tree-name-dropdown w-full p-1 text-center">
@@ -136,9 +127,6 @@
                         </td>
                         <td class="border">
                             <input name="height[]" class="w-full p-1 text-center">
-                        </td>
-                        <td class="border">
-                            <input name="valuation[]" class="w-full p-1 text-center bg-gray-50" readonly>
                         </td>
                     </tr>
                     {% endfor %}
@@ -215,7 +203,7 @@
                     <p class="text-sm text-gray-500 mb-4">PDF, JPG, PNG, DOC, DOCX (प्रत्येक कमाल 5MB)</p>
                     
                     <!-- Hidden File Input -->
-                    <input type="file" id="documents" name="documents" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" multiple class="hidden">
+                    <input type="file" id="documents" name="documents" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" class="hidden">
                     
                     <!-- Browse Button -->
                     <button type="button" onclick="document.getElementById('documents').click()" 
@@ -254,25 +242,16 @@
 
 </div>
 
-<div id="validationToast" class="hidden fixed top-4 right-4 z-50 max-w-md rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 shadow-lg">
-    <div class="flex items-start justify-between gap-3">
-        <div>
-            <p class="font-semibold">फॉर्ममध्ये काही त्रुटी आहेत</p>
-            <ul id="validationToastList" class="mt-2 list-disc pl-5 space-y-1"></ul>
-        </div>
-        <button type="button" id="validationToastClose" class="text-red-500 hover:text-red-700">✕</button>
-    </div>
-</div>
-
-<script>
-    let fullData = [];
-    let treeMasterList = [];
-    let treePlotList = [];
+<script>    let treeMasterList = [];
 
     const selectedDistrict = "{{ inspection.district|escapejs }}";
     const selectedTaluka = "{{ inspection.taluka|escapejs }}";
     const selectedVillage = "{{ inspection.village|escapejs }}";
     const selectedGut = "{{ inspection.gut_number|escapejs }}";
+    const districtDropdown = document.getElementById("district");
+    const talukaDropdown = document.getElementById("taluka");
+    const villageDropdown = document.getElementById("village");
+    const gutDropdown = document.getElementById("gut");
 
     function normalizeText(value) {
         return (value || "").toString().trim().toLowerCase();
@@ -305,6 +284,14 @@
             return true;
         }
 
+        const textMatch = Array.from(selectElement.options).find(
+            option => normalizeText(option.text) === normalizedDesired
+        );
+        if (textMatch) {
+            selectElement.value = textMatch.value;
+            return true;
+        }
+
         return false;
     }
 
@@ -313,8 +300,9 @@
             return;
         }
 
+        const normalizedDesired = normalizeText(desiredValue);
         const exists = Array.from(selectElement.options).some(
-            option => normalizeText(option.value) === normalizeText(desiredValue)
+            option => normalizeText(option.value) === normalizedDesired || normalizeText(option.text) === normalizedDesired
         );
 
         if (!exists) {
@@ -325,27 +313,32 @@
         setSelectValue(selectElement, desiredValue);
     }
 
-    // Load location data
-    fetch('/api/location-data/')
-        .then(res => res.json())
-        .then(data => {
-            fullData = data.villages || [];
-
-            let districtDropdown = document.getElementById("district");
-            let districts = [...new Set(fullData.map(v => v.district))];
-
-            districtDropdown.innerHTML = '<option value="">जिल्हा निवडा</option>';
-            districts.forEach(d => {
-            if (d) {
-                districtDropdown.add(new Option(d, d));
-            }
+    function addSelectOptions(selectEl, items = []) {
+        items.forEach(item => {
+            const value = typeof item === 'string' ? item : (item.value || '');
+            const label = typeof item === 'string' ? item : (item.label || item.value || '');
+            if (!value) return;
+            selectEl.add(new Option(label, value));
         });
+    }
 
-            if (selectedDistrict) {
-                ensureOption(districtDropdown, selectedDistrict);
-                loadTalukas(districtDropdown.value || selectedDistrict, selectedTaluka, selectedVillage, selectedGut);
+    async function loadDistricts(preselectDistrict = "", preselectTaluka = "", preselectVillage = "", preselectGut = "") {
+        districtDropdown.innerHTML = '<option value="">जिल्हा निवडा</option>';
+        talukaDropdown.innerHTML = '<option value="">तालुका निवडा</option>';
+        villageDropdown.innerHTML = '<option value="">गाव निवडा</option>';
+        gutDropdown.innerHTML = '<option value="">गट क्रमांक निवडा</option>';
+        try {
+            const res = await fetch('/api/districts/?lang=mr');
+            const data = await res.json();
+            addSelectOptions(districtDropdown, data.districts || []);
+            if (preselectDistrict) {
+                ensureOption(districtDropdown, preselectDistrict);
+                await loadTalukas(districtDropdown.value || preselectDistrict, preselectTaluka, preselectVillage, preselectGut);
             }
-        });
+        } catch (error) {
+            console.error('Error loading districts:', error);
+        }
+    }
 
     // Load tree master
     fetch('/api/tree-master/')
@@ -355,130 +348,103 @@
             populateTreeDropdowns();
         });
 
-    function loadTalukas(district, preselectTaluka = "", preselectVillage = "", preselectGut = "") {
-        let talukaDropdown = document.getElementById("taluka");
-        let villageDropdown = document.getElementById("village");
-        let gutDropdown = document.getElementById("gut");
-        treePlotList = [];
-        populatePlotDropdowns();
-
+    async function loadTalukas(district, preselectTaluka = "", preselectVillage = "", preselectGut = "") {
         talukaDropdown.innerHTML = '<option value="">तालुका निवडा</option>';
         villageDropdown.innerHTML = '<option value="">गाव निवडा</option>';
         gutDropdown.innerHTML = '<option value="">गट क्रमांक निवडा</option>';
-
-        let talukas = [...new Set(
-            fullData.filter(v => sameText(v.district, district)).map(v => v.taluka)
-        )];
-
-        talukas.forEach(t => {
-            if (t) talukaDropdown.add(new Option(t, t));
-        });
-
-        if (preselectTaluka) {
-            ensureOption(talukaDropdown, preselectTaluka);
-            loadVillages(district, talukaDropdown.value || preselectTaluka, preselectVillage, preselectGut);
+        if (!district) return;
+        try {
+            const res = await fetch(`/api/talukas/${encodeURIComponent(district)}/?lang=mr`);
+            const data = await res.json();
+            addSelectOptions(talukaDropdown, data.talukas || []);
+            if (preselectTaluka) {
+                ensureOption(talukaDropdown, preselectTaluka);
+                await loadVillages(district, talukaDropdown.value || preselectTaluka, preselectVillage, preselectGut);
+            }
+        } catch (error) {
+            console.error('Error loading talukas:', error);
         }
     }
 
-    function loadVillages(district, taluka, preselectVillage = "", preselectGut = "") {
-        let villageDropdown = document.getElementById("village");
-        let gutDropdown = document.getElementById("gut");
-        treePlotList = [];
-        populatePlotDropdowns();
-
+    async function loadVillages(district, taluka, preselectVillage = "", preselectGut = "") {
         villageDropdown.innerHTML = '<option value="">गाव निवडा</option>';
         gutDropdown.innerHTML = '<option value="">गट क्रमांक निवडा</option>';
-
-        let villages = fullData.filter(
-            v => sameText(v.district, district) && sameText(v.taluka, taluka)
-        );
-
-        let uniqueVillages = [...new Set(villages.map(v => v.village_name))];
-
-        uniqueVillages.forEach(v => {
-            if (v) villageDropdown.add(new Option(v, v));
-        });
-
-        if (preselectVillage) {
-            ensureOption(villageDropdown, preselectVillage);
-            loadGuts(villageDropdown.value || preselectVillage, preselectGut);
+        if (!district || !taluka) return;
+        try {
+            const res = await fetch(`/api/villages/${encodeURIComponent(district)}/${encodeURIComponent(taluka)}/?lang=mr`);
+            const data = await res.json();
+            addSelectOptions(villageDropdown, data.villages || []);
+            if (preselectVillage) {
+                ensureOption(villageDropdown, preselectVillage);
+                await loadGuts(villageDropdown.value || preselectVillage, preselectGut);
+            }
+        } catch (error) {
+            console.error('Error loading villages:', error);
         }
     }
 
-    function loadGuts(village, preselectGut = "") {
-        let gutDropdown = document.getElementById("gut");
+    async function loadGuts(village, preselectGut = "") {
         gutDropdown.innerHTML = '<option value="">गट क्रमांक निवडा</option>';
+        const district = districtDropdown.value;
+        const taluka = talukaDropdown.value;
+        if (!district || !taluka || !village) return;
 
-        if (!village) return;
+        try {
+            const res = await fetch(`/api/guts/${encodeURIComponent(district)}/${encodeURIComponent(taluka)}/${encodeURIComponent(village)}/`);
+            const data = await res.json();
+            (data.guts || []).forEach(g => gutDropdown.add(new Option(g, g)));
 
-        fetch(`/api/gut-numbers/${encodeURIComponent((village || "").trim())}/`)
-            .then(res => res.json())
-            .then(data => {
-                (data.gut_numbers || []).forEach(g => {
-                    gutDropdown.add(new Option(g, g));
-                });
-
-                if (preselectGut) {
-                    ensureOption(gutDropdown, preselectGut);
-                    loadTreePlots(village, gutDropdown.value || preselectGut);
-                }
-            });
+            if (preselectGut) {
+                ensureOption(gutDropdown, preselectGut);
+            }
+        } catch (error) {
+            console.error('Error loading guts:', error);
+        }
     }
 
     // district change
-    document.getElementById("district").addEventListener("change", function () {
-        clearPlotSelections();
+    districtDropdown.addEventListener("change", function () {
         loadTalukas(this.value);
     });
 
     // taluka change
-    document.getElementById("taluka").addEventListener("change", function () {
-        clearPlotSelections();
-        let district = document.getElementById("district").value;
-        loadVillages(district, this.value);
+    talukaDropdown.addEventListener("change", function () {
+        loadVillages(districtDropdown.value, this.value);
     });
 
     // village change
-    document.getElementById("village").addEventListener("change", function () {
-        clearPlotSelections();
+    villageDropdown.addEventListener("change", function () {
         loadGuts(this.value);
     });
 
-    document.getElementById("gut").addEventListener("change", function () {
-        const village = document.getElementById("village").value;
-        clearPlotSelections();
-        loadTreePlots(village, this.value);
-    });
+    loadDistricts(selectedDistrict, selectedTaluka, selectedVillage, selectedGut);
 
-    function clearPlotSelections() {
-        document.querySelectorAll('.tree-plot-dropdown').forEach(dropdown => {
-            dropdown.removeAttribute('data-selected');
-            dropdown.value = '';
-        });
-    }
+    const inspectionFormEl = document.querySelector('form');
+    if (inspectionFormEl) {
+        inspectionFormEl.addEventListener('submit', function () {
+            ['district', 'taluka', 'village'].forEach((fieldId) => {
+                const selectEl = document.getElementById(fieldId);
+                if (!selectEl || !selectEl.name) return;
+                const selectedOption = selectEl.options[selectEl.selectedIndex];
+                const labelText = selectedOption ? selectedOption.textContent.trim() : '';
+                if (!labelText) return;
 
-    function loadTreePlots(village, gut) {
-        treePlotList = [];
-        populatePlotDropdowns();
+                const hiddenInput = document.createElement('input');
+                hiddenInput.type = 'hidden';
+                hiddenInput.name = selectEl.name;
+                hiddenInput.value = labelText;
+                inspectionFormEl.appendChild(hiddenInput);
 
-        if (!village || !gut) return;
-
-        fetch(`/api/tree-plots/${encodeURIComponent((village || "").trim())}/${encodeURIComponent((gut || "").trim())}/`)
-            .then(res => res.json())
-            .then(data => {
-                treePlotList = data.plots || [];
-                populatePlotDropdowns();
-                refreshAllTreeValuations();
+                selectEl.removeAttribute('name');
             });
+        });
     }
 
     function addRow() {
         let row = `
         <tr>
             <td class="border">
-                <select name="plot[]" class="tree-plot-dropdown w-full p-1 text-center">
-                    <option value="">क्रमांक निवडा</option>
-                </select>
+                <input name="plot[]" class="w-full p-1 text-center">
             </td>
             <td class="border">
                 <select name="name[]" class="tree-name-dropdown w-full p-1 text-center">
@@ -497,195 +463,13 @@
             <td class="border">
                 <input name="height[]" class="w-full p-1 text-center">
             </td>
-            <td class="border">
-                <input name="valuation[]" class="w-full p-1 text-center bg-gray-50" readonly>
-            </td>
         </tr>`;
 
         document.getElementById("tableBody").insertAdjacentHTML('beforeend', row);
-        populatePlotDropdowns();
         populateTreeDropdowns();
-        attachTreeValuationListeners();
-    }
-
-    function populatePlotDropdowns() {
-        const dropdowns = document.querySelectorAll('.tree-plot-dropdown');
-
-        dropdowns.forEach(dropdown => {
-            const selectedValue = dropdown.getAttribute("data-selected") || dropdown.value || "";
-            dropdown.innerHTML = '<option value="">क्रमांक निवडा</option>';
-
-            treePlotList.forEach(item => {
-                const option = document.createElement("option");
-                option.value = item.plot;
-                option.text = item.plot;
-                dropdown.appendChild(option);
-            });
-
-            if (selectedValue) {
-                const exists = Array.from(dropdown.options).some(option => option.value === selectedValue);
-                if (!exists) {
-                    dropdown.add(new Option(`${selectedValue} (जुनी नोंद)`, selectedValue));
-                }
-                dropdown.value = selectedValue;
-            }
-        });
-    }
-
-    function fetchValuationForRow(row) {
-        const nameField = row.querySelector('[name="name[]"]');
-        const girthField = row.querySelector('[name="girth[]"]');
-        const valuationField = row.querySelector('[name="valuation[]"]');
-
-        if (!nameField || !girthField || !valuationField) return;
-
-        const treeName = `${nameField.value || ''}`.trim();
-        const girth = `${girthField.value || ''}`.trim();
-        const district = document.getElementById("district").value;
-        const taluka = document.getElementById("taluka").value;
-        const village = document.getElementById("village").value;
-        const gutNumber = document.getElementById("gut").value;
-
-        if (!treeName || !girth || !district || !taluka || !village || !gutNumber) {
-            valuationField.value = '';
-            return;
-        }
-
-        const params = new URLSearchParams({
-            tree_name: treeName,
-            girth: girth,
-            district: district,
-            taluka: taluka,
-            village: village,
-            gut_number: gutNumber,
-        });
-
-        fetch(`/api/tree-asset-valuation/?${params.toString()}`)
-            .then(res => res.json())
-            .then(data => {
-                valuationField.value = data.found && data.rate !== null && data.rate !== undefined ? data.rate : '';
-            })
-            .catch(() => {
-                valuationField.value = '';
-            });
-    }
-
-    function attachTreeValuationListeners() {
-        document.querySelectorAll('#tableBody tr').forEach(row => {
-            const nameField = row.querySelector('[name="name[]"]');
-            const girthField = row.querySelector('[name="girth[]"]');
-
-            if (nameField && !nameField.dataset.valuationBound) {
-                nameField.addEventListener('change', () => fetchValuationForRow(row));
-                nameField.dataset.valuationBound = '1';
-            }
-
-            if (girthField && !girthField.dataset.valuationBound) {
-                girthField.addEventListener('input', () => fetchValuationForRow(row));
-                girthField.dataset.valuationBound = '1';
-            }
-        });
-    }
-
-    function refreshAllTreeValuations() {
-        document.querySelectorAll('#tableBody tr').forEach(fetchValuationForRow);
-    }
-
-    function clearValidationState() {
-        document.querySelectorAll('.border-red-500, .focus\\:ring-red-400').forEach(field => {
-            field.classList.remove('border-red-500', 'focus:ring-red-400');
-        });
-    }
-
-    function markInvalid(field) {
-        field.classList.add('border-red-500', 'focus:ring-red-400');
-    }
-
-    function showValidationToast(messages) {
-        const toast = document.getElementById('validationToast');
-        const list = document.getElementById('validationToastList');
-        list.innerHTML = messages.map(message => `<li>${message}</li>`).join('');
-        toast.classList.remove('hidden');
-    }
-
-    function hideValidationToast() {
-        document.getElementById('validationToast').classList.add('hidden');
-    }
-
-    function validateInspectionForm() {
-        clearValidationState();
-        hideValidationToast();
-
-        const errors = [];
-        const form = document.querySelector('form');
-        const requiredFields = [
-            { field: document.getElementById('district'), label: 'जिल्हा' },
-            { field: document.getElementById('taluka'), label: 'तालुका' },
-            { field: document.getElementById('village'), label: 'गाव' },
-            { field: document.getElementById('gut'), label: 'गट क्रमांक' },
-            { field: form.querySelector('input[name="officer"]'), label: 'अधिकारी नाव' },
-            { field: form.querySelector('input[name="date"]'), label: 'दिनांक' },
-        ];
-
-        requiredFields.forEach(({ field, label }) => {
-            if (!field || `${field.value || ''}`.trim()) return;
-            markInvalid(field);
-            errors.push(`${label} भरणे आवश्यक आहे.`);
-        });
-
-        const rows = document.querySelectorAll('#tableBody tr');
-        let activeRows = 0;
-
-        rows.forEach((row, index) => {
-            const fields = {
-                plot: row.querySelector('[name="plot[]"]'),
-                name: row.querySelector('[name="name[]"]'),
-                length: row.querySelector('[name="length[]"]'),
-                width: row.querySelector('[name="width[]"]'),
-                girth: row.querySelector('[name="girth[]"]'),
-                height: row.querySelector('[name="height[]"]'),
-                valuation: row.querySelector('[name="valuation[]"]'),
-            };
-
-            const values = Object.values(fields).map(field => `${field?.value || ''}`.trim());
-            const hasAnyValue = values.some(Boolean);
-            if (!hasAnyValue) return;
-
-            activeRows += 1;
-
-            const labels = {
-                plot: 'क्रमांक',
-                name: 'नाव',
-                length: 'लांबी',
-                width: 'रुंदी',
-                girth: 'घेर',
-                height: 'उंची',
-                valuation: 'मूल्यांकन',
-            };
-
-            Object.entries(fields).forEach(([key, field]) => {
-                if (`${field.value || ''}`.trim()) return;
-                markInvalid(field);
-                errors.push(`ओळ ${index + 1}: ${labels[key]} भरणे आवश्यक आहे.`);
-            });
-        });
-
-        if (activeRows === 0) {
-            errors.push('किमान एक झाडाची नोंद भरणे आवश्यक आहे.');
-        }
-
-        if (errors.length) {
-            showValidationToast(errors);
-            const firstInvalid = document.querySelector('.border-red-500');
-            if (firstInvalid) firstInvalid.focus();
-            return false;
-        }
-
-        return true;
     }
 
     function populateTreeDropdowns() {
-
         const dropdowns = document.querySelectorAll('.tree-name-dropdown');
 
         dropdowns.forEach(dropdown => {
@@ -808,20 +592,17 @@
             fileError.classList.add('hidden');
             selectedFiles = [];
             
-            // Validate and add files
-            for (let i = 0; i < files.length; i++) {
-                const file = files[i];
+            // Only take the first file (single file upload)
+            if (files.length > 0) {
+                const file = files[0];
                 
                 if (file.size > maxSize) {
-                    fileError.textContent = `"${file.name}" फाइल साइझ 5MB पेक्षा जास्त आहे.`;
+                    fileError.textContent = `"${file.name}" file size exceeds 5MB limit.`;
                     fileError.classList.remove('hidden');
-                    continue;
+                    return;
                 }
                 
                 selectedFiles.push(file);
-            }
-            
-            if (selectedFiles.length > 0) {
                 displayFiles();
                 filesList.classList.remove('hidden');
             } else {
@@ -924,11 +705,6 @@
         // Simulate upload progress on form submit
         const form = document.querySelector('form');
         form.addEventListener('submit', function(e) {
-            if (!validateInspectionForm()) {
-                e.preventDefault();
-                return;
-            }
-
             if (selectedFiles.length > 0) {
                 // Show progress bars
                 selectedFiles.forEach((file, index) => {
@@ -962,10 +738,8 @@
         }
     })();
 
-    document.getElementById('validationToastClose').addEventListener('click', hideValidationToast);
-    attachTreeValuationListeners();
-    refreshAllTreeValuations();
-
 </script>
 
 {% endblock %}
+
+

@@ -2,785 +2,782 @@
 
 {% block content %}
 
-<div class="max-w-6xl mx-auto bg-white p-6 border border-gray-300 mt-6 rounded-lg shadow">
-
-    <!-- HEADER -->
-    <h2 class="text-center font-bold text-xl underline">
+<div class="w-full mx-auto bg-white p-6 border border-gray-300 mt-6 rounded-lg shadow">
+    <h2 class="text-center font-bold text-xl underline mb-2">
         मौका तपासणी करताना करावयाचा पंचनामा
     </h2>
 
-    <p class="text-center text-sm mt-1">
+    <p class="text-center text-sm mb-6">
         श्री छत्रपती संभाजी राजे आंतरराष्ट्रीय विमानतळासाठी भूसंपादन
     </p>
 
-    <!-- FORM -->
-    <form method="POST" enctype="multipart/form-data" class="mt-6">
+    {% if error_message %}
+        <div class="mb-4 rounded border border-red-300 bg-red-50 p-3 text-sm font-semibold text-red-700">
+            {{ error_message }}
+        </div>
+    {% endif %}
+
+    <form method="POST" enctype="multipart/form-data" id="inspectionForm" class="mt-6">
         {% csrf_token %}
+        <input type="hidden" id="photoLatitude" name="photo_latitude" value="{{ inspection.latitude|default:'' }}">
+        <input type="hidden" id="photoLongitude" name="photo_longitude" value="{{ inspection.longitude|default:'' }}">
 
-        <!-- LOCATION SECTION -->
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
+        <div class="border rounded-lg p-4 bg-gray-50 mb-6">
+            <h3 class="font-bold text-lg mb-4">१. स्थळ आणि ठिकाण तपशील</h3>
 
-            <div>
-                <label class="font-semibold">जिल्हा</label>
-                <select id="district" name="district" required
-                    class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-400">
-                    <option value="">जिल्हा निवडा</option>
-                </select>
-            </div>
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div>
+                    <label class="font-semibold">जिल्हा</label>
+                    <select id="district" name="district" required
+                        class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-400">
+                        <option value="">जिल्हा निवडा</option>
+                    </select>
+                </div>
 
-            <div>
-                <label class="font-semibold">तालुका</label>
-                <select id="taluka" name="taluka" required
-                    class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-400">
-                    <option value="">तालुका निवडा</option>
-                </select>
-            </div>
+                <div>
+                    <label class="font-semibold">तालुका</label>
+                    <select id="taluka" name="taluka" required
+                        class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-400">
+                        <option value="">तालुका निवडा</option>
+                    </select>
+                </div>
 
-            <div>
-                <label class="font-semibold">गाव</label>
-                <select id="village" name="village" required
-                    class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-400">
-                    <option value="">गाव निवडा</option>
-                </select>
-            </div>
+                <div>
+                    <label class="font-semibold">गाव</label>
+                    <select id="village" name="village" required
+                        class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-400">
+                        <option value="">गाव निवडा</option>
+                    </select>
+                </div>
 
-            <div>
-                <label class="font-semibold">गट क्रमांक</label>
-                <select id="gut" name="survey" required
-                    class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-400">
-                    <option value="">गट क्रमांक निवडा</option>
-                </select>
-            </div>
-
-        </div>
-
-        <!-- OFFICER + DATE -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
-
-            <div>
-                <label class="font-semibold">अधिकारी नाव</label>
-                <input type="text" name="officer" class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-400">
-            </div>
-
-            <div>
-                <label class="font-semibold">दिनांक</label>
-                <input type="date" name="date" class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-400">
-            </div>
-
-        </div>
-
-        <!-- TABLE -->
-        <div class="overflow-x-auto mt-6">
-            <table class="w-full border text-sm text-center border-collapse">
-
-                <thead class="bg-gray-200 font-semibold">
-                    <tr>
-                        <th class="border p-2">क्रमांक</th>
-                        <th class="border p-2">नाव</th>
-                        <th class="border p-2">लांबी (मीटर)</th>
-                        <th class="border p-2">रुंदी (मीटर)</th>
-                        <th class="border p-2">घेर (मीटर)</th>
-                        <th class="border p-2">उंची (मीटर)</th>
-                        <th class="border p-2">मूल्यांकन</th>
-                    </tr>
-                </thead>
-
-                <tbody id="tableBody">
-                    <tr>
-                        <td class="border">
-                            <select name="plot[]" class="tree-plot-dropdown w-full p-1 text-center">
-                                <option value="">क्रमांक निवडा</option>
-                            </select>
-                        </td>
-                        <td class="border">
-                            <select name="name[]" class="tree-name-dropdown w-full p-1 text-center">
-                                <option value="">झाड निवडा</option>
-                            </select>
-                        </td>
-                        <td class="border">
-                            <input type="number" step="0.01" min="0" name="length[]" value="{{ tree.length }}"
-                                class="w-full p-1 text-center" placeholder="मीटरमध्ये">
-                        </td>
-                        <td class="border">
-                            <input type="number" step="0.01" min="0" name="width[]" value="{{ tree.width }}"
-                                class="w-full p-1 text-center" placeholder="मीटरमध्ये">
-                        </td>
-                        <td class="border">
-                            <input type="number" step="0.01" min="0" name="girth[]" value="{{ tree.girth }}"
-                                class="w-full p-1 text-center" placeholder="मीटरमध्ये">
-                        </td>
-                        <td class="border">
-                            <input type="number" step="0.01" min="0" name="height[]" value="{{ tree.height }}"
-                                class="w-full p-1 text-center" placeholder="मीटरमध्ये">
-                        </td>
-                        <td class="border">
-                            <input type="number" step="0.01" min="0" name="valuation[]" value="{{ tree.valuation }}"
-                                class="w-full p-1 text-center bg-gray-50" placeholder="रक्कम" readonly>
-                        </td>
-                    </tr>
-                </tbody>
-
-            </table>
-        </div>
-
-        <!-- DOCUMENT UPLOAD SECTION -->
-        <div class="mt-6 border-t pt-4">
-            <label class="font-semibold text-sm text-gray-700 mb-3 block">दस्तऐवज अपलोड करा (Document Upload)</label>
-            
-            <!-- File Upload Container -->
-            <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 bg-gray-50 hover:bg-gray-100 transition-colors duration-200" id="dropZone">
-                <div class="text-center">
-                    <!-- Upload Icon -->
-                    <div class="mx-auto w-16 h-16 mb-4 flex items-center justify-center bg-orange-100 rounded-full">
-                        <svg class="w-8 h-8 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
-                        </svg>
-                    </div>
-                    
-                    <h3 class="text-base font-semibold text-gray-700 mb-2">फाइल्स निवडा किंवा येथे ड्रॅग करा</h3>
-                    <p class="text-sm text-gray-500 mb-4">PDF, JPG, PNG, DOC, DOCX (प्रत्येक कमाल 5MB)</p>
-                    
-                    <!-- Hidden File Input -->
-                    <input type="file" id="documents" name="documents" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" multiple class="hidden">
-                    
-                    <!-- Browse Button -->
-                    <button type="button" onclick="document.getElementById('documents').click()" 
-                        class="px-6 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-medium transition-colors duration-200">
-                        फाइल निवडा
-                    </button>
+                <div>
+                    <label class="font-semibold">गट क्रमांक</label>
+                    <select id="gut" name="survey" required
+                        class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-400">
+                        <option value="">गट क्रमांक निवडा</option>
+                    </select>
                 </div>
             </div>
-            
-            <!-- Error Message -->
-            <p id="file-error" class="text-sm text-red-600 mt-2 hidden"></p>
-            
-            <!-- Selected Files List -->
-            <div id="filesList" class="mt-4 space-y-2 hidden">
-                <h4 class="text-sm font-semibold text-gray-700 mb-2">निवडलेल्या फाइल्स:</h4>
-                <div id="filesContainer" class="space-y-2"></div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                <div>
+                    <label class="font-semibold">अधिकारी नाव</label>
+                    <input type="text" name="officer" required
+                        class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-400"
+                        placeholder="अधिकारी नाव" value="{{ inspection.officer|default:'' }}">
+                </div>
+
+                <div>
+                    <label class="font-semibold">तपासणी दिनांक</label>
+                    <input type="date" name="date" required
+                        class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-400"
+                        max="{{ today_date|date:'Y-m-d' }}"
+                        value="{{ inspection.date|date:'Y-m-d' }}">
+                </div>
             </div>
         </div>
 
-        <!-- BUTTONS -->
-        <div class="flex gap-3 mt-6">
+        <div class="border rounded-lg p-4 bg-gray-50 mb-6">
+            <h3 class="font-bold text-lg mb-4">२. तपासणीतील मालमत्ता प्रकार</h3>
 
-            <!-- Add Row -->
-            <button type="button" onclick="addRow()"
-                class="flex items-center gap-2 bg-gray-700 hover:bg-gray-800 text-white px-4 py-2 rounded-md shadow-sm transition duration-200">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="font-semibold">मालमत्ता प्रकार</label>
+                    <select id="inspectionAssetType" name="inspection_asset_type" required 
+                        class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-400">
+                        <option value="">मालमत्ता प्रकार निवडा</option>
+                        {% for asset_type in asset_types %}
+                            <option value="{{ asset_type.asset_code }}" data-name="{{ asset_type.asset_name_marathi }}" {% if asset_type.asset_code == selected_asset_type %}selected{% endif %}>
+                                {{ asset_type.asset_name_marathi }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
 
-                <!-- Plus Icon -->
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
-                    stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                </svg>
+                <div>
+                    <label class="font-semibold">तपासणी उद्देश/माहिती</label>
+                    <div class="p-3 bg-blue-50 border border-blue-100 rounded text-sm text-blue-900 min-h-[45px]" id="inspectionPurposeText">
+                        प्रत्यक्ष पाहणीमध्ये आढळलेली स्थिती, मोजमाप आणि मूल्यांकन नोंदवा.
+                    </div>
+                </div>
+            </div>
+        </div>
 
-                ओळ जोडा
+        <div class="border rounded-lg p-4 bg-gray-50 mb-6">
+            <h3 class="font-bold text-lg mb-4">३. निरीक्षणातील तपशील</h3>
+
+            <div class="overflow-x-auto">
+                <table class="w-full border text-sm text-center border-collapse">
+                    <thead id="detailsTableHead" class="bg-gray-100 font-semibold"></thead>
+                    <tbody id="tableBody"></tbody>
+                </table>
+            </div>
+
+            
+        <div class="mt-4">
+            <button type="button" onclick="addRow()" class="flex items-center gap-2 bg-gray-600 hover:bg-gray-700 text-white px-5 py-2 rounded-md shadow-sm transition duration-200">
+                <span>➕</span> ओळ जोडा
+            </button>
+        </div>
+
+            {% if documents %}
+                <div class="mb-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                    <div class="flex items-center justify-between mb-3">
+                        <span class="text-sm font-semibold text-gray-700">सध्याचे दस्तऐवज</span>
+                    </div>
+                    <div class="space-y-2">
+                        {% for doc_master in documents %}
+                            {% for attachment in doc_master.attachments.all %}
+                                <div class="flex items-center justify-between bg-white p-3 rounded-lg border border-gray-200 hover:shadow-sm transition-shadow duration-200" id="file-{{ attachment.id }}">
+                                    <div class="flex items-center gap-3 flex-1 min-w-0">
+                                        <div class="flex-1 min-w-0">
+                                            <a href="{{ attachment.file.url }}" target="_blank" class="text-sm font-medium text-blue-600 hover:text-blue-800 hover:underline truncate block">
+                                                {{ attachment.file.name }}
+                                            </a>
+                                            <p class="text-xs text-gray-500">{{ attachment.uploaded_at|date:"d/m/Y, H:i" }}</p>
+                                        </div>
+                                    </div>
+                                    <button type="button" onclick="deleteFile({{ attachment.id }})" class="flex-shrink-0 text-gray-400 hover:text-red-600 transition-colors duration-200" title="Delete">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                        </svg>
+                                    </button>
+                                </div>
+                            {% endfor %}
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="border rounded-lg p-4 bg-gray-50 mb-6">
+            <h3 class="font-bold text-lg mb-4">४. संपूर्ण तपासणी शेरा</h3>
+            <textarea name="remark" rows="3"
+                class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-400"
+                placeholder="संपूर्ण तपासणीसाठी शेरा लिहा">{{ inspection.remark|default:'' }}</textarea>
+        </div>
+
+        <div class="flex gap-3 mt-6 border-t pt-6">
+            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-md shadow-sm transition duration-200">
+                {% if inspection %}अपडेट करा{% else %}सबमिट करा{% endif %}
             </button>
 
-            <!-- Submit -->
-            <button type="submit"
-                class="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-md shadow-sm transition duration-200">
-
-                <!-- Save Icon -->
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
-                    stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                </svg>
-
-                सबमिट करा
+            <button type="button" onclick="resetInspectionForm()" class="bg-gray-600 hover:bg-gray-700 text-white px-5 py-2 rounded-md shadow-sm transition duration-200">
+                रीसेट करा
             </button>
 
-            <!-- View Records -->
-            <a href="{% url 'inspection_list' %}"
-                class="flex items-center gap-2 bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-md shadow-sm transition duration-200">
-
-                <!-- List Icon -->
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
-                    stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
-
+            <a href="{% url 'inspection_list' %}" class="bg-gray-800 hover:bg-gray-900 text-white px-5 py-2 rounded-md">
                 नोंदी पहा
             </a>
-
         </div>
-
     </form>
-
 </div>
 
-<div id="validationToast" class="hidden fixed top-4 right-4 z-50 max-w-md rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 shadow-lg">
-    <div class="flex items-start justify-between gap-3">
-        <div>
-            <p class="font-semibold">फॉर्ममध्ये काही त्रुटी आहेत</p>
-            <ul id="validationToastList" class="mt-2 list-disc pl-5 space-y-1"></ul>
-        </div>
-        <button type="button" id="validationToastClose" class="text-red-500 hover:text-red-700">✕</button>
-    </div>
-</div>
+{{ detail_rows|json_script:"initialRowsData" }}
 
-<!-- JS -->
 <script>
-
     let fullData = [];
     let treeMasterList = [];
-    let treePlotList = [];
-    // Load Data
-    fetch('/api/location-data/')
-        .then(res => res.json())
-        .then(data => {
-            fullData = data.villages;
+    let currentFieldDefs = [];
 
-            let districtDropdown = document.getElementById("district");
-            let districts = [...new Set(fullData.map(v => v.district))];
+    const initialRows = JSON.parse(document.getElementById('initialRowsData').textContent || '[]');
+    const selectedDistrict = "{{ inspection.district|default:''|escapejs }}";
+    const selectedTaluka = "{{ inspection.taluka|default:''|escapejs }}";
+    const selectedVillage = "{{ inspection.village|default:''|escapejs }}";
+    const selectedGut = "{{ inspection.gut_number|default:''|escapejs }}";
 
-            districts.forEach(d => {
-                if (d) districtDropdown.add(new Option(d, d));
-            });
+    function normalizeText(value) {
+        return (value || "").toString().trim().toLowerCase();
+    }
+
+    function sameText(left, right) {
+        return normalizeText(left) === normalizeText(right);
+    }
+
+    function getSelectedAssetType() {
+        return document.getElementById('inspectionAssetType').value;
+    }
+
+    function getSelectedAssetTypeLabel() {
+        const selectedOption = document.getElementById('inspectionAssetType').selectedOptions[0];
+        return selectedOption ? (selectedOption.dataset.name || selectedOption.textContent.trim()) : '';
+    }
+
+    function getItemLabel() {
+        return getSelectedAssetType() === 'tree_asset' ? 'झाडाचे नाव' : 'निरीक्षणातील बाब';
+    }
+
+    function getEmptyRowState() {
+        return {
+            plot: '',
+            name: '',
+            valuation: '',
+            asset_parameter: {},
+        };
+    }
+
+    function parseJson(value, fallback) {
+        try {
+            return JSON.parse(value || '');
+        } catch (error) {
+            return fallback;
+        }
+    }
+
+    function escapeAttribute(value) {
+        return (value || '')
+            .toString()
+            .replace(/&/g, '&amp;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;');
+    }
+
+    function requestInspectionLatitude() {
+        const latitudeInput = document.getElementById('photoLatitude');
+        const longitudeInput = document.getElementById('photoLongitude');
+        if (!latitudeInput || !longitudeInput || (latitudeInput.value && longitudeInput.value) || !navigator.geolocation) {
+            return Promise.resolve();
+        }
+
+        return new Promise(resolve => {
+            navigator.geolocation.getCurrentPosition(
+                position => {
+                    latitudeInput.value = position.coords.latitude.toFixed(6);
+                    longitudeInput.value = position.coords.longitude.toFixed(6);
+                    resolve();
+                },
+                () => resolve(),
+                { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+            );
+        });
+    }
+
+    function hasCameraPhotoSelected() {
+        return Array.from(document.querySelectorAll('.row-cam-input')).some(input => input.files && input.files.length > 0);
+    }
+
+    function setSelectValue(selectElement, desiredValue) {
+        if (!desiredValue) {
+            return false;
+        }
+
+        const exactMatch = Array.from(selectElement.options).find(option => option.value === desiredValue);
+        if (exactMatch) {
+            selectElement.value = exactMatch.value;
+            return true;
+        }
+
+        const normalizedDesired = normalizeText(desiredValue);
+        const normalizedMatch = Array.from(selectElement.options).find(option => normalizeText(option.value) === normalizedDesired);
+        if (normalizedMatch) {
+            selectElement.value = normalizedMatch.value;
+            return true;
+        }
+
+        const textMatch = Array.from(selectElement.options).find(option => normalizeText(option.text) === normalizedDesired);
+        if (textMatch) {
+            selectElement.value = textMatch.value;
+            return true;
+        }
+
+        return false;
+    }
+
+    function ensureOption(selectElement, desiredValue) {
+        if (!desiredValue) {
+            return;
+        }
+
+        const normalizedDesired = normalizeText(desiredValue);
+        const exists = Array.from(selectElement.options).some(
+            option => normalizeText(option.value) === normalizedDesired || normalizeText(option.text) === normalizedDesired
+        );
+        if (!exists) {
+            selectElement.add(new Option(desiredValue, desiredValue, true, true));
+            return;
+        }
+
+        setSelectValue(selectElement, desiredValue);
+    }
+
+    function renderTableHeader() {
+        let measurementHeaders = '';
+        if (currentFieldDefs && currentFieldDefs.length > 0) {
+            measurementHeaders = currentFieldDefs.map(field => 
+                `<th class="border p-2 min-w-[120px]">${field.field_label_marathi}${field.unit ? ' (' + field.unit + ')' : ''}</th>`
+            ).join('');
+        }
+        
+        const header = document.getElementById('detailsTableHead');
+        header.innerHTML = `
+            <tr>
+                <th class="border p-2 min-w-[110px]">No. / Plot</th>
+                <th class="border p-2 min-w-[180px]" id="itemLabelHeader">${getItemLabel()}</th>
+                ${measurementHeaders}
+                <th class="border p-2 min-w-[140px]">Valuation</th>
+                <th class="border p-2 min-w-[150px]">Photo / Document</th>
+            </tr>
+        `;
+    }
+
+    function createMeasurementCell(field, rowState, rowIndex) {
+        const metadata = (rowState.asset_parameter || {})[field.field_name] || {};
+        const value = metadata.value || '';
+        const inputType = field.field_type === 'number' ? 'number' : 'text';
+        const step = field.field_type === 'number' ? 'step="0.01" min="0"' : '';
+        return `
+            <td class="border p-1">
+                <input
+                    type="${inputType}"
+                    ${step}
+                    class="dynamic-param-input w-full p-2 text-center border rounded"
+                    data-field-name="${field.field_name}"
+                    data-field-label="${field.field_label_marathi || field.field_name}"
+                    data-field-unit="${field.unit || ''}"
+                    data-field-type="${field.field_type || 'text'}"
+                    name="param_${field.field_name}_${rowIndex}"
+                    placeholder="${field.field_label_marathi}"
+                    value="${escapeAttribute(value)}"
+                    onchange="syncDynamicParameters(this.closest('tr'))"
+                />
+            </td>
+        `;
+    }
+
+    function populateTreeDropdown(dropdown, currentValue) {
+        dropdown.innerHTML = '<option value="">झाड निवडा</option>';
+
+        treeMasterList.forEach(tree => {
+            dropdown.add(new Option(tree.tree_name_marathi, tree.tree_name_marathi));
         });
 
-    // Load Tree Master Data
+        if (currentValue && !Array.from(dropdown.options).some(option => option.value === currentValue)) {
+            dropdown.add(new Option(currentValue, currentValue));
+        }
+
+        dropdown.value = currentValue || '';
+    }
+
+    function renderRow(rowState, rowIndex) {
+        const row = document.createElement('tr');
+        const measurementCells = currentFieldDefs ? currentFieldDefs.map(field => createMeasurementCell(field, rowState, rowIndex)).join('') : '';
+
+        row.innerHTML = `
+            <td class="border">
+                <input name="plot[]" class="w-full p-2 text-center plot-input" placeholder="No. / Plot" value="${escapeAttribute(rowState.plot || '')}">
+            </td>
+            <td class="border p-1">
+                <input type="hidden" name="name[]" class="item-name-value" value="${escapeAttribute(rowState.name || '')}">
+                <select class="tree-name-dropdown hidden w-full p-2 text-center border rounded">
+                    <option value="">Select Tree</option>
+                </select>
+                <input type="text" class="generic-item-input w-full p-2 text-center border rounded" placeholder="Inspection Item" value="${escapeAttribute(rowState.name || '')}">
+            </td>
+            ${measurementCells}
+            <td class="border p-1">
+                <input type="number" step="0.01" min="0" name="valuation[]" class="valuation-input w-full p-2 text-center border rounded" placeholder="Valuation" value="${escapeAttribute(rowState.valuation || '')}">
+                <input type="hidden" name="asset_parameter[]" class="asset-parameter-json" value='${escapeAttribute(JSON.stringify(rowState.asset_parameter || {}))}'>
+            </td>
+            <td class="border p-1 align-top w-[180px]">
+                <div class="row-drop-zone border border-dashed border-gray-400 rounded p-1 bg-gray-50 flex flex-col gap-1 items-center justify-center text-center hover:bg-gray-100 transition">
+                    <p class="text-[10px] text-gray-500 mb-1 hidden sm:block">येथे ड्रॅग करा</p>
+                    <input type="file" id="row_docs_${rowIndex}" name="row_doc_${rowIndex}" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" class="hidden row-file-input">
+                    <input type="file" id="row_cam_${rowIndex}" name="row_cam_${rowIndex}" accept="image/*" capture="environment" class="hidden row-cam-input">
+                    
+                    <div class="flex gap-1 justify-center w-full">
+                        <button type="button" onclick="document.getElementById('row_docs_${rowIndex}').click()" class="text-[10px] px-2 py-1 bg-orange-600 hover:bg-orange-700 text-white rounded font-medium flex-1">
+                            निवडा
+                        </button>
+                        <button type="button" onclick="document.getElementById('row_cam_${rowIndex}').click()" class="text-[10px] px-2 py-1 bg-green-600 hover:bg-green-700 text-white rounded font-medium flex-1 flex items-center justify-center gap-1">
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                            Photo
+                        </button>
+                    </div>
+                </div>
+                <input type="hidden" name="row_index[]" value="${rowIndex}">
+            </td>
+        `;
+
+        bindRowEvents(row);
+        syncRowMode(row);
+        syncDynamicParameters(row);
+        return row;
+    }
+
+    function collectRowState(row) {
+        return {
+            plot: row.querySelector('.plot-input')?.value || '',
+            name: row.querySelector('.item-name-value')?.value || '',
+            valuation: row.querySelector('.valuation-input')?.value || '',
+            asset_parameter: parseJson(row.querySelector('.asset-parameter-json')?.value, {}),
+        };
+    }
+
+    function renderRows(rows) {
+        const tableBody = document.getElementById('tableBody');
+        tableBody.innerHTML = '';
+        
+        const rowsToRender = rows.length ? rows : [getEmptyRowState()];
+        
+        rowsToRender.forEach((rowState, index) => {
+            const rowElement = renderRow(rowState, index);
+            tableBody.appendChild(rowElement);
+            syncRowMode(rowElement);
+            syncDynamicParameters(rowElement);
+        });
+    }
+
+    function syncNameValue(row) {
+        const hiddenInput = row.querySelector('.item-name-value');
+        const treeDropdown = row.querySelector('.tree-name-dropdown');
+        const genericInput = row.querySelector('.generic-item-input');
+        hiddenInput.value = getSelectedAssetType() === 'tree_asset' ? treeDropdown.value : genericInput.value;
+    }
+
+    function syncDynamicParameters(row) {
+        const dynamicInputs = row.querySelectorAll('.dynamic-param-input');
+        const rowState = collectRowState(row);
+        
+        // Only process if there are dynamic inputs
+        if (dynamicInputs.length > 0) {
+            dynamicInputs.forEach(input => {
+                const fieldName = input.dataset.fieldName;
+                const currentValue = input.value;
+                
+                if (!rowState.asset_parameter) {
+                    rowState.asset_parameter = {};
+                }
+                
+                if (!rowState.asset_parameter[fieldName]) {
+                    rowState.asset_parameter[fieldName] = {};
+                }
+                
+                rowState.asset_parameter[fieldName].value = currentValue;
+            });
+        }
+
+        // Update the hidden JSON field if it exists
+        const jsonField = row.querySelector('.asset-parameter-json');
+        if (jsonField) {
+            jsonField.value = JSON.stringify(rowState.asset_parameter || {});
+        }
+    }
+
+    function syncRowMode(row) {
+        const treeDropdown = row.querySelector('.tree-name-dropdown');
+        const genericInput = row.querySelector('.generic-item-input');
+        const isTree = getSelectedAssetType() === 'tree_asset';
+        const currentName = row.querySelector('.item-name-value').value || '';
+
+        populateTreeDropdown(treeDropdown, currentName);
+
+        if (isTree) {
+            treeDropdown.classList.remove('hidden');
+            genericInput.classList.add('hidden');
+            genericInput.value = currentName;
+        } else {
+            treeDropdown.classList.add('hidden');
+            genericInput.classList.remove('hidden');
+            genericInput.placeholder = getSelectedAssetTypeLabel() ? `${getSelectedAssetTypeLabel()} चे नाव / ओळख` : 'निरीक्षणातील बाब';
+            genericInput.value = currentName;
+        }
+
+        syncNameValue(row);
+    }
+
+    function bindRowEvents(row) {
+        row.querySelector('.tree-name-dropdown').addEventListener('change', function () {
+            syncNameValue(row);
+        });
+
+        row.querySelector('.generic-item-input').addEventListener('input', function () {
+            syncNameValue(row);
+        });
+
+        row.querySelectorAll('.dynamic-param-input').forEach(input => {
+            input.addEventListener('input', function () {
+                syncDynamicParameters(row);
+            });
+        });
+    }
+
+    function refreshTable(rowsToKeep) {
+        renderTableHeader();
+        renderRows(rowsToKeep || Array.from(document.querySelectorAll('#tableBody tr')).map(collectRowState));
+
+        const selectedAssetLabel = getSelectedAssetTypeLabel();
+        document.getElementById('inspectionPurposeText').textContent = selectedAssetLabel
+            ? `${selectedAssetLabel}  reference, measurement and valuation.`
+            : 'Direct observation status, measurement and valuation.';
+    }
+
+    async function loadAssetFields(assetCode) {
+        // Always ensure we have at least one empty row to preserve
+        let rowsToPreserve = [getEmptyRowState()];
+        
+        // Try to collect existing rows, but don't fail if we can't
+        try {
+            const existingRows = Array.from(document.querySelectorAll('#tableBody tr')).map(collectRowState);
+            if (existingRows.length > 0) {
+                rowsToPreserve = existingRows;
+            }
+        } catch (error) {
+            console.warn('Could not collect existing rows, using empty row:', error);
+        }
+        
+        if (!assetCode) {
+            currentFieldDefs = [];
+            refreshTable(rowsToPreserve);
+            return;
+        }
+
+        try {
+            const response = await fetch(`/api/asset-fields/${encodeURIComponent(assetCode)}/`);
+            if (!response.ok) {
+                currentFieldDefs = [];
+                refreshTable(rowsToPreserve);
+                return;
+            }
+            const data = await response.json();
+            currentFieldDefs = data.fields || [];
+        } catch (error) {
+            currentFieldDefs = [];
+        }
+
+        // Always refresh with preserved rows
+        refreshTable(rowsToPreserve);
+    }
+
+    function addRow() {
+        const tableBody = document.getElementById('tableBody');
+        const newIndex = tableBody.children.length;
+        tableBody.appendChild(renderRow(getEmptyRowState(), newIndex));
+    }
+
+    function resetInspectionForm() {
+        const form = document.querySelector('form');
+        if (!form) {
+            return;
+        }
+
+        form.reset();
+        document.getElementById('photoLatitude').value = '';
+        document.getElementById('photoLongitude').value = '';
+        currentFieldDefs = [];
+        document.getElementById('inspectionPurposeText').textContent = 'प्रत्यक्ष पाहणीमध्ये आढळलेली स्थिती, मोजमाप आणि मूल्यांकन नोंदवा.';
+        renderTableHeader();
+        renderRows([getEmptyRowState()]);
+        loadAssetFields(document.getElementById('inspectionAssetType')?.value || '');
+    }
+
     fetch('/api/tree-master/')
         .then(res => res.json())
         .then(data => {
             treeMasterList = data.trees || [];
-            populateTreeDropdowns();
+            refreshTable(initialRows.length ? initialRows : [getEmptyRowState()]);
         });
-    // District → Taluka
-    document.getElementById("district").addEventListener("change", function () {
 
-        let district = this.value;
+    function addSelectOptions(selectEl, items = []) {
+        items.forEach(item => {
+            const value = typeof item === 'string' ? item : (item.value || '');
+            const label = typeof item === 'string' ? item : (item.label || item.value || '');
+            if (!value) return;
+            selectEl.add(new Option(label, value));
+        });
+    }
 
-        let talukaDropdown = document.getElementById("taluka");
-        let villageDropdown = document.getElementById("village");
-        let gutDropdown = document.getElementById("gut");
-        treePlotList = [];
-        populatePlotDropdowns();
+    async function loadDistricts(preselectDistrict = "", preselectTaluka = "", preselectVillage = "", preselectGut = "") {
+        const districtDropdown = document.getElementById('district');
+        const talukaDropdown = document.getElementById('taluka');
+        const villageDropdown = document.getElementById('village');
+        const gutDropdown = document.getElementById('gut');
+
+        districtDropdown.innerHTML = '<option value="">जिल्हा निवडा</option>';
+        talukaDropdown.innerHTML = '<option value="">तालुका निवडा</option>';
+        villageDropdown.innerHTML = '<option value="">गाव निवडा</option>';
+        gutDropdown.innerHTML = '<option value="">गट क्रमांक निवडा</option>';
+
+        try {
+            const res = await fetch('/api/locations/?lang=mr');
+            const data = await res.json();
+            addSelectOptions(districtDropdown, data.data || []);
+            if (preselectDistrict) {
+                ensureOption(districtDropdown, preselectDistrict);
+                await loadTalukas(districtDropdown.value || preselectDistrict, preselectTaluka, preselectVillage, preselectGut);
+            }
+        } catch (error) {
+            console.error('Error loading districts:', error);
+        }
+    }
+
+    async function loadTalukas(district, preselectTaluka = "", preselectVillage = "", preselectGut = "") {
+        const talukaDropdown = document.getElementById('taluka');
+        const villageDropdown = document.getElementById('village');
+        const gutDropdown = document.getElementById('gut');
 
         talukaDropdown.innerHTML = '<option value="">तालुका निवडा</option>';
         villageDropdown.innerHTML = '<option value="">गाव निवडा</option>';
         gutDropdown.innerHTML = '<option value="">गट क्रमांक निवडा</option>';
 
-        let talukas = [...new Set(
-            fullData.filter(v => v.district === district).map(v => v.taluka)
-        )];
+        if (!district) return;
 
-        talukas.forEach(t => talukaDropdown.add(new Option(t, t)));
-    });
+        try {
+            const res = await fetch(`/api/locations/?district=${encodeURIComponent(district)}&lang=mr`);
+            const data = await res.json();
+            addSelectOptions(talukaDropdown, data.data || []);
+            if (preselectTaluka) {
+                ensureOption(talukaDropdown, preselectTaluka);
+                await loadVillages(district, talukaDropdown.value || preselectTaluka, preselectVillage, preselectGut);
+            }
+        } catch (error) {
+            console.error('Error loading talukas:', error);
+        }
+    }
 
-
-    // Taluka → Village (UNIQUE FIX)
-    document.getElementById("taluka").addEventListener("change", function () {
-
-        let taluka = this.value;
-        let district = document.getElementById("district").value;
-
-        let villageDropdown = document.getElementById("village");
-        let gutDropdown = document.getElementById("gut");
+    async function loadVillages(district, taluka, preselectVillage = "", preselectGut = "") {
+        const villageDropdown = document.getElementById('village');
+        const gutDropdown = document.getElementById('gut');
 
         villageDropdown.innerHTML = '<option value="">गाव निवडा</option>';
         gutDropdown.innerHTML = '<option value="">गट क्रमांक निवडा</option>';
 
-        let villages = fullData.filter(
-            v => v.taluka === taluka && v.district === district
-        );
+        if (!district || !taluka) return;
 
-        let uniqueVillages = [...new Set(villages.map(v => v.village_name))];
+        try {
+            const res = await fetch(`/api/locations/?district=${encodeURIComponent(district)}&taluka=${encodeURIComponent(taluka)}&lang=mr`);
+            const data = await res.json();
+            addSelectOptions(villageDropdown, data.data || []);
+            if (preselectVillage) {
+                ensureOption(villageDropdown, preselectVillage);
+                await loadGuts(district, taluka, villageDropdown.value || preselectVillage, preselectGut);
+            }
+        } catch (error) {
+            console.error('Error loading villages:', error);
+        }
+    }
 
-        uniqueVillages.forEach(v => {
-            villageDropdown.add(new Option(v, v));
-        });
-    });
-
-
-    // Village → Gut
-    document.getElementById("village").addEventListener("change", function () {
-
-        let village = this.value;
-        treePlotList = [];
-        populatePlotDropdowns();
-
-        let gutDropdown = document.getElementById("gut");
+    async function loadGuts(district, taluka, village, preselectGut = "") {
+        const gutDropdown = document.getElementById('gut');
         gutDropdown.innerHTML = '<option value="">गट क्रमांक निवडा</option>';
 
-        if (!village) return;
-
-        fetch(`/api/gut-numbers/${village}/`)
-            .then(res => res.json())
-            .then(data => {
-                data.gut_numbers.forEach(g => {
-                    gutDropdown.add(new Option(g, g));
-                });
-            });
-    });
-
-
-    document.getElementById("gut").addEventListener("change", function () {
-        const village = document.getElementById("village").value;
-        const gut = this.value;
-
-        clearPlotSelections();
-        treePlotList = [];
-        populatePlotDropdowns();
-
-        if (!village || !gut) return;
-
-        fetch(`/api/tree-plots/${encodeURIComponent(village)}/${encodeURIComponent(gut)}/`)
-            .then(res => res.json())
-            .then(data => {
-                treePlotList = data.plots || [];
-                populatePlotDropdowns();
-                refreshAllTreeValuations();
-            });
-    });
-
-    function clearPlotSelections() {
-        document.querySelectorAll('.tree-plot-dropdown').forEach(dropdown => {
-            dropdown.removeAttribute('data-selected');
-            dropdown.value = '';
-        });
-    }
-
-    function populatePlotDropdowns() {
-        const dropdowns = document.querySelectorAll('.tree-plot-dropdown');
-
-        dropdowns.forEach(dropdown => {
-            const selectedValue = dropdown.getAttribute("data-selected") || dropdown.value || "";
-            dropdown.innerHTML = '<option value="">क्रमांक निवडा</option>';
-
-            treePlotList.forEach(item => {
-                const option = document.createElement("option");
-                option.value = item.plot;
-                option.text = item.plot;
-                dropdown.appendChild(option);
-            });
-
-            if (selectedValue) {
-                const exists = Array.from(dropdown.options).some(option => option.value === selectedValue);
-                if (!exists) {
-                    dropdown.add(new Option(selectedValue, selectedValue));
-                }
-                dropdown.value = selectedValue;
-            }
-        });
-    }
-
-    function fetchValuationForRow(row) {
-        const nameField = row.querySelector('[name="name[]"]');
-        const girthField = row.querySelector('[name="girth[]"]');
-        const valuationField = row.querySelector('[name="valuation[]"]');
-
-        if (!nameField || !girthField || !valuationField) return;
-
-        const treeName = `${nameField.value || ''}`.trim();
-        const girth = `${girthField.value || ''}`.trim();
-        const district = document.getElementById("district").value;
-        const taluka = document.getElementById("taluka").value;
-        const village = document.getElementById("village").value;
-        const gutNumber = document.getElementById("gut").value;
-
-        if (!treeName || !girth || !district || !taluka || !village || !gutNumber) {
-            valuationField.value = '';
+        if (!district || !taluka || !village) {
             return;
         }
 
-        const params = new URLSearchParams({
-            tree_name: treeName,
-            girth: girth,
-            district: district,
-            taluka: taluka,
-            village: village,
-            gut_number: gutNumber,
-        });
-
-        fetch(`/api/tree-asset-valuation/?${params.toString()}`)
-            .then(res => res.json())
-            .then(data => {
-                valuationField.value = data.found && data.rate !== null && data.rate !== undefined ? data.rate : '';
-            })
-            .catch(() => {
-                valuationField.value = '';
-            });
-    }
-
-    function attachTreeValuationListeners() {
-        document.querySelectorAll('#tableBody tr').forEach(row => {
-            const nameField = row.querySelector('[name="name[]"]');
-            const girthField = row.querySelector('[name="girth[]"]');
-
-            if (nameField && !nameField.dataset.valuationBound) {
-                nameField.addEventListener('change', () => fetchValuationForRow(row));
-                nameField.dataset.valuationBound = '1';
+        try {
+            const res = await fetch(`/api/locations/?district=${encodeURIComponent(district)}&taluka=${encodeURIComponent(taluka)}&village=${encodeURIComponent(village)}`);
+            const data = await res.json();
+            (data.data || []).forEach(g => gutDropdown.add(new Option(g, g)));
+            if (preselectGut) {
+                ensureOption(gutDropdown, preselectGut);
             }
-
-            if (girthField && !girthField.dataset.valuationBound) {
-                girthField.addEventListener('input', () => fetchValuationForRow(row));
-                girthField.dataset.valuationBound = '1';
-            }
-        });
+        } catch (error) {
+            console.error('Error loading guts:', error);
+        }
     }
 
-    function refreshAllTreeValuations() {
-        document.querySelectorAll('#tableBody tr').forEach(fetchValuationForRow);
-    }
+    document.getElementById('district').addEventListener('change', function () {
+        loadTalukas(this.value);
+    });
 
-    // Add Row
-    function addRow() {
-        let row = `
-    <tr>
-        <td class="border">
-            <select name="plot[]" class="tree-plot-dropdown w-full p-1 text-center">
-                <option value="">क्रमांक निवडा</option>
-            </select>
-        </td>
-        <td class="border">
-            <select name="name[]" class="tree-name-dropdown w-full p-1 text-center">
-                <option value="">झाड निवडा</option>
-            </select>
-        </td>
-        <td class="border">
-            <input type="number" step="0.01" min="0" name="length[]" class="w-full p-1 text-center" placeholder="मीटरमध्ये">
-        </td>
-        <td class="border">
-            <input type="number" step="0.01" min="0" name="width[]" class="w-full p-1 text-center" placeholder="मीटरमध्ये">
-        </td>
-        <td class="border">
-            <input type="number" step="0.01" min="0" name="girth[]" class="w-full p-1 text-center" placeholder="मीटरमध्ये">
-        </td>
-        <td class="border">
-            <input type="number" step="0.01" min="0" name="height[]" class="w-full p-1 text-center" placeholder="मीटरमध्ये">
-        </td>
-        <td class="border">
-            <input type="number" step="0.01" min="0" name="valuation[]" class="w-full p-1 text-center bg-gray-50" placeholder="रक्कम" readonly>
-        </td>
-    </tr>`;
-
-        document.getElementById("tableBody").insertAdjacentHTML('beforeend', row);
-        populatePlotDropdowns();
-        populateTreeDropdowns();
-        attachTreeValuationListeners();
-    }
-    function populateTreeDropdowns() {
-
-        const dropdowns = document.querySelectorAll('.tree-name-dropdown');
-
-        dropdowns.forEach(dropdown => {
-            const selectedValue = dropdown.value;
-            dropdown.innerHTML = '<option value="">झाड निवडा</option>';
-
-            treeMasterList.forEach(tree => {
-                const option = document.createElement("option");
-                option.value = tree.tree_name_marathi;
-                option.text = tree.tree_name_marathi;
-                dropdown.appendChild(option);
-            });
-
-            dropdown.value = selectedValue;
-        });
-    }
-
-    function clearValidationState() {
-        document.querySelectorAll('.border-red-500, .focus\\:ring-red-400').forEach(field => {
-            field.classList.remove('border-red-500', 'focus:ring-red-400');
-        });
-    }
-
-    function markInvalid(field) {
-        field.classList.add('border-red-500', 'focus:ring-red-400');
-    }
-
-    function showValidationToast(messages) {
-        const toast = document.getElementById('validationToast');
-        const list = document.getElementById('validationToastList');
-        list.innerHTML = messages.map(message => `<li>${message}</li>`).join('');
-        toast.classList.remove('hidden');
-    }
-
-    function hideValidationToast() {
-        document.getElementById('validationToast').classList.add('hidden');
-    }
-
-    function validateInspectionForm() {
-        clearValidationState();
-        hideValidationToast();
-
-        const errors = [];
-        const form = document.querySelector('form');
-        const requiredFields = [
-            { field: document.getElementById('district'), label: 'जिल्हा' },
-            { field: document.getElementById('taluka'), label: 'तालुका' },
-            { field: document.getElementById('village'), label: 'गाव' },
-            { field: document.getElementById('gut'), label: 'गट क्रमांक' },
-            { field: form.querySelector('input[name="officer"]'), label: 'अधिकारी नाव' },
-            { field: form.querySelector('input[name="date"]'), label: 'दिनांक' },
-        ];
-
-        requiredFields.forEach(({ field, label }) => {
-            if (!field || `${field.value || ''}`.trim()) return;
-            markInvalid(field);
-            errors.push(`${label} भरणे आवश्यक आहे.`);
+        document.getElementById('taluka').addEventListener('change', function () {
+            loadVillages(document.getElementById('district').value, this.value);
         });
 
-        const rows = document.querySelectorAll('#tableBody tr');
-        let activeRows = 0;
+        document.getElementById('village').addEventListener('change', function () {
+            loadGuts(document.getElementById('district').value, document.getElementById('taluka').value, this.value);
+        });
 
-        rows.forEach((row, index) => {
-            const fields = {
-                plot: row.querySelector('[name="plot[]"]'),
-                name: row.querySelector('[name="name[]"]'),
-                length: row.querySelector('[name="length[]"]'),
-                width: row.querySelector('[name="width[]"]'),
-                girth: row.querySelector('[name="girth[]"]'),
-                height: row.querySelector('[name="height[]"]'),
-                valuation: row.querySelector('[name="valuation[]"]'),
-            };
+        document.getElementById('inspectionAssetType').addEventListener('change', function () {
+            loadAssetFields(this.value);
+        });
 
-            const values = Object.values(fields).map(field => `${field?.value || ''}`.trim());
-            const hasAnyValue = values.some(Boolean);
-            if (!hasAnyValue) return;
+        const inspectionFormEl = document.getElementById('inspectionForm');
+        inspectionFormEl.addEventListener('submit', function () {
+            ['district', 'taluka', 'village'].forEach((fieldId) => {
+                const selectEl = document.getElementById(fieldId);
+                if (!selectEl) return;
+                const selectedOption = selectEl.options[selectEl.selectedIndex];
+                const labelText = selectedOption ? selectedOption.textContent.trim() : '';
+                if (!labelText) return;
 
-            activeRows += 1;
+                const hiddenInput = document.createElement('input');
+                hiddenInput.type = 'hidden';
+                hiddenInput.name = selectEl.name;
+                hiddenInput.value = labelText;
+                inspectionFormEl.appendChild(hiddenInput);
 
-            const labels = {
-                plot: 'क्रमांक',
-                name: 'नाव',
-                length: 'लांबी',
-                width: 'रुंदी',
-                girth: 'घेर',
-                height: 'उंची',
-                valuation: 'मूल्यांकन',
-            };
-
-            Object.entries(fields).forEach(([key, field]) => {
-                if (`${field.value || ''}`.trim()) return;
-                markInvalid(field);
-                errors.push(`ओळ ${index + 1}: ${labels[key]} भरणे आवश्यक आहे.`);
+                selectEl.removeAttribute('name');
             });
         });
 
-        if (activeRows === 0) {
-            errors.push('किमान एक झाडाची नोंद भरणे आवश्यक आहे.');
+        loadDistricts(selectedDistrict, selectedTaluka, selectedVillage, selectedGut);
+        refreshTable(initialRows.length ? initialRows : [getEmptyRowState()]);
+        if (getSelectedAssetType()) {
+            loadAssetFields(getSelectedAssetType());
         }
 
-        if (errors.length) {
-            showValidationToast(errors);
-            const firstInvalid = document.querySelector('.border-red-500');
-            if (firstInvalid) firstInvalid.focus();
-            return false;
-        }
-
-        return true;
-    }
-
-    // File Upload Handler with Drag & Drop and Progress
-    (function() {
-        const dropZone = document.getElementById('dropZone');
-        const fileInput = document.getElementById('documents');
-        const fileError = document.getElementById('file-error');
-        const filesList = document.getElementById('filesList');
-        const filesContainer = document.getElementById('filesContainer');
-        const maxSize = 5 * 1024 * 1024; // 5MB
-        let selectedFiles = [];
-
-        // Prevent default drag behaviors
-        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-            dropZone.addEventListener(eventName, preventDefaults, false);
-            document.body.addEventListener(eventName, preventDefaults, false);
-        });
-
-        function preventDefaults(e) {
-            e.preventDefault();
-            e.stopPropagation();
-        }
-
-        // Highlight drop zone when dragging over it
-        ['dragenter', 'dragover'].forEach(eventName => {
-            dropZone.addEventListener(eventName, () => {
-                dropZone.classList.add('border-orange-500', 'bg-orange-50');
-            }, false);
-        });
-
-        ['dragleave', 'drop'].forEach(eventName => {
-            dropZone.addEventListener(eventName, () => {
-                dropZone.classList.remove('border-orange-500', 'bg-orange-50');
-            }, false);
-        });
-
-        // Handle dropped files
-        dropZone.addEventListener('drop', (e) => {
-            const dt = e.dataTransfer;
-            const files = dt.files;
-            handleFiles(files);
-        }, false);
-
-        // Handle selected files from input
-        fileInput.addEventListener('change', (e) => {
-            handleFiles(e.target.files);
-        });
-
-        function handleFiles(files) {
-            fileError.classList.add('hidden');
-            selectedFiles = [];
-            
-            // Validate and add files
-            for (let i = 0; i < files.length; i++) {
-                const file = files[i];
-                
-                if (file.size > maxSize) {
-                    fileError.textContent = `"${file.name}" फाइल साइझ 5MB पेक्षा जास्त आहे.`;
-                    fileError.classList.remove('hidden');
-                    continue;
-                }
-                
-                selectedFiles.push(file);
-            }
-            
-            if (selectedFiles.length > 0) {
-                displayFiles();
-                filesList.classList.remove('hidden');
-            } else {
-                filesList.classList.add('hidden');
-            }
-        }
-
-        function displayFiles() {
-            filesContainer.innerHTML = '';
-            
-            selectedFiles.forEach((file, index) => {
-                const fileItem = createFileItem(file, index);
-                filesContainer.appendChild(fileItem);
-            });
-        }
-
-        function createFileItem(file, index) {
-            const div = document.createElement('div');
-            div.className = 'bg-white border border-gray-200 rounded-lg p-3 hover:shadow-md transition-shadow duration-200';
-            
-            const fileSize = formatFileSize(file.size);
-            const fileIcon = getFileIcon(file.name);
-            
-            div.innerHTML = `
-                <div class="flex items-center gap-3">
-                    <!-- File Icon -->
-                    <div class="flex-shrink-0 w-10 h-10 flex items-center justify-center bg-gray-100 rounded-lg">
-                        ${fileIcon}
-                    </div>
-                    
-                    <!-- File Info -->
-                    <div class="flex-1 min-w-0">
-                        <p class="text-sm font-medium text-gray-900 truncate">${file.name}</p>
-                        <p class="text-xs text-gray-500">${fileSize}</p>
-                    </div>
-                    
-                    <!-- Remove Button -->
-                    <button type="button" onclick="removeFile(${index})" 
-                        class="flex-shrink-0 w-8 h-8 flex items-center justify-center text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors duration-200">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                        </svg>
-                    </button>
-                </div>
-                
-                <!-- Progress Bar (hidden initially) -->
-                <div class="mt-2 hidden" id="progress-${index}">
-                    <div class="flex items-center gap-2 mb-1">
-                        <span class="text-xs text-gray-600">अपलोड होत आहे...</span>
-                        <span class="text-xs font-medium text-orange-600" id="progress-percent-${index}">0%</span>
-                    </div>
-                    <div class="w-full bg-gray-200 rounded-full h-1.5">
-                        <div class="bg-orange-600 h-1.5 rounded-full transition-all duration-300" id="progress-bar-${index}" style="width: 0%"></div>
-                    </div>
-                </div>
-            `;
-            
-            return div;
-        }
-
-        function getFileIcon(filename) {
-            const ext = filename.split('.').pop().toLowerCase();
-            
-            const icons = {
-                'pdf': '<svg class="w-6 h-6 text-red-600" fill="currentColor" viewBox="0 0 20 20"><path d="M4 18h12V6h-4V2H4v16zm-2 1V0h12l4 4v16H2v-1z"/></svg>',
-                'doc': '<svg class="w-6 h-6 text-blue-600" fill="currentColor" viewBox="0 0 20 20"><path d="M4 18h12V6h-4V2H4v16zm-2 1V0h12l4 4v16H2v-1z"/></svg>',
-                'docx': '<svg class="w-6 h-6 text-blue-600" fill="currentColor" viewBox="0 0 20 20"><path d="M4 18h12V6h-4V2H4v16zm-2 1V0h12l4 4v16H2v-1z"/></svg>',
-                'jpg': '<svg class="w-6 h-6 text-green-600" fill="currentColor" viewBox="0 0 20 20"><path d="M4 3h12v14H4V3zm2 2v10h8V5H6z"/></svg>',
-                'jpeg': '<svg class="w-6 h-6 text-green-600" fill="currentColor" viewBox="0 0 20 20"><path d="M4 3h12v14H4V3zm2 2v10h8V5H6z"/></svg>',
-                'png': '<svg class="w-6 h-6 text-green-600" fill="currentColor" viewBox="0 0 20 20"><path d="M4 3h12v14H4V3zm2 2v10h8V5H6z"/></svg>',
-            };
-            
-            return icons[ext] || '<svg class="w-6 h-6 text-gray-600" fill="currentColor" viewBox="0 0 20 20"><path d="M4 18h12V6h-4V2H4v16zm-2 1V0h12l4 4v16H2v-1z"/></svg>';
-        }
-
-        function formatFileSize(bytes) {
-            if (bytes === 0) return '0 Bytes';
-            const k = 1024;
-            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-            const i = Math.floor(Math.log(bytes) / Math.log(k));
-            return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
-        }
-
-        // Make removeFile function global
-        window.removeFile = function(index) {
-            selectedFiles.splice(index, 1);
-            
-            // Update the file input
-            const dt = new DataTransfer();
-            selectedFiles.forEach(file => dt.items.add(file));
-            fileInput.files = dt.files;
-            
-            if (selectedFiles.length > 0) {
-                displayFiles();
-            } else {
-                filesList.classList.add('hidden');
-            }
-        };
-
-        // Simulate upload progress on form submit
-        const form = document.querySelector('form');
-        form.addEventListener('submit', function(e) {
-            if (!validateInspectionForm()) {
-                e.preventDefault();
+        function deleteFile(attachmentId) {
+            if (!confirm('तुम्हाला ही फाइल हटवायची आहे का?')) {
                 return;
             }
 
-            if (selectedFiles.length > 0) {
-                // Show progress bars
-                selectedFiles.forEach((file, index) => {
-                    const progressDiv = document.getElementById(`progress-${index}`);
-                    if (progressDiv) {
-                        progressDiv.classList.remove('hidden');
-                        simulateProgress(index);
-                    }
-                });
+            const fileElement = document.getElementById('file-' + attachmentId);
+
+            fetch(`/tools/delete-document-attachment/${attachmentId}/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}',
+                    'Content-Type': 'application/json',
+                },
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && fileElement) {
+                    fileElement.remove();
+                } else {
+                    alert('फाइल हटवताना त्रुटी आली.');
+                }
+            })
+            .catch(() => {
+                alert('फाइल हटवताना त्रुटी आली.');
+            });
+        }
+
+        // Global listener for row file inputs to show a counter
+        document.body.addEventListener('change', function(e) {
+            if (e.target.classList.contains('row-file-input') || e.target.classList.contains('row-cam-input')) {
+                const files = e.target.files;
+                if (!files || files.length === 0) return;
+
+                if (e.target.classList.contains('row-cam-input')) {
+                    requestInspectionLatitude();
+                }
+                
+                const container = e.target.closest('td');
+                let indicator = container.querySelector('.file-indicator');
+                if (!indicator) {
+                    indicator = document.createElement('div');
+                    indicator.className = 'file-indicator text-[10px] text-green-600 font-bold mt-1';
+                    container.appendChild(indicator);
+                }
+                indicator.textContent = files.length + " files selected";
             }
         });
 
-        function simulateProgress(index) {
-            const progressBar = document.getElementById(`progress-bar-${index}`);
-            const progressPercent = document.getElementById(`progress-percent-${index}`);
-            
-            if (!progressBar || !progressPercent) return;
-            
-            let progress = 0;
-            const interval = setInterval(() => {
-                progress += Math.random() * 30;
-                if (progress > 100) progress = 100;
-                
-                progressBar.style.width = progress + '%';
-                progressPercent.textContent = Math.round(progress) + '%';
-                
-                if (progress >= 100) {
-                    clearInterval(interval);
-                }
-            }, 200);
-        }
-    })();
+        let submittingAfterLocationCheck = false;
+        document.getElementById('inspectionForm').addEventListener('submit', async function(e) {
+            if (submittingAfterLocationCheck || !hasCameraPhotoSelected() || (document.getElementById('photoLatitude').value && document.getElementById('photoLongitude').value)) {
+                return;
+            }
 
-    document.getElementById('validationToastClose').addEventListener('click', hideValidationToast);
-    attachTreeValuationListeners();
-    refreshAllTreeValuations();
-
+            e.preventDefault();
+            await requestInspectionLatitude();
+            submittingAfterLocationCheck = true;
+            this.submit();
+        });
 
 </script>
-
 {% endblock %}

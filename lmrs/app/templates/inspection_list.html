@@ -3,7 +3,7 @@
 
 {% block content %}
 
-<div class="max-w-6xl mx-auto bg-white p-6 mt-6 rounded shadow">
+<div class="w-full mx-auto bg-white p-6 mt-6 rounded shadow">
     <div class="flex justify-between items-center mb-4">
         <h2 class="text-xl font-bold">
             तपासणी नोंदी (Inspection Records)
@@ -33,7 +33,9 @@
                     <th>गट क्रमांक</th>
                     <th>अधिकारी</th>
                     <th>दिनांक</th>
+                    <th>शेरा</th>
                     <th>दस्तऐवज</th>
+                    <th>Updated</th>
                     <th>Actions</th>
                 </tr>
             </thead>
@@ -48,6 +50,7 @@
                     <td>{{ inspection.gut_number }}</td>
                     <td>{{ inspection.officer|default:"-" }}</td>
                     <td>{{ inspection.date|date:"d/m/Y" }}</td>
+                    <td>{{ inspection.remark|default:"-" }}</td>
                     <td>
                         {% if inspection.documents_list %}
                             <button data-record-id="{{ inspection.id }}" class="view-docs-btn text-blue-600 hover:text-blue-800 hover:underline text-xs font-medium flex items-center gap-1">
@@ -57,19 +60,23 @@
                                 </svg>
                                 View
                                 <span class="ml-1 bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded-full text-[10px]">
-                                    {% for doc_master in inspection.documents_list %}
-                                        {{ doc_master.attachments.count }}
-                                    {% endfor %}
+                                    {{ inspection.get_total_attachment_count }}
                                 </span>
                             </button>
                             
                             <!-- Hidden data for modal -->
                             <script type="application/json" id="docs-data-{{ inspection.id }}" class="hidden">
-                            [{% for doc_master in inspection.documents_list %}{% for attachment in doc_master.attachments.all %}{"url":"{{ attachment.file.url }}","name":"{{ attachment.file.name|display_filename|escapejs }}","date":"{{ attachment.uploaded_at|date:'d/m/Y H:i' }}","size":{{ attachment.file|safe_file_size }}}{% if not forloop.last or not forloop.parentloop.last %},{% endif %}{% endfor %}{% endfor %}]
+                            [{% for doc_master in inspection.documents_list %}{% for attachment in doc_master.attachments.all %}{"url":"{{ attachment.file.url }}","name":"{{ attachment.file.name|display_filename|escapejs }}","date":"{{ attachment.uploaded_at|date:'d/m/Y H:i' }}","size":{{ attachment.safe_file_size }}}{% if not forloop.last or not forloop.parentloop.last %},{% endif %}{% endfor %}{% endfor %}]
                             </script>
                         {% else %}
                             <span class="text-gray-400 text-xs">-</span>
                         {% endif %}
+                    </td>
+                    <td>
+                        <div class="text-xs text-gray-600">
+                            <div>{{ inspection.updated_at|date:"d M Y, h:i a" }}</div>
+                            <div class="text-gray-500">Updated by {{ inspection.user.username }}</div>
+                        </div>
                     </td>
                     <td style="white-space: nowrap; text-align: left;">
                         <a href="{% url 'edit_inspection' inspection.id %}"
@@ -117,8 +124,7 @@
         
         <!-- Modal Footer -->
         <div class="p-4 border-t border-gray-200 bg-gray-50">
-            <div class="flex items-center justify-between">
-                <span class="text-sm text-gray-600" id="documentCount">0 documents</span>
+            <div class="flex justify-end">
                 <button onclick="closeDocumentsModal()" 
                     class="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg text-sm font-medium transition-colors">
                     बंद करा
@@ -128,32 +134,82 @@
     </div>
 </div>
 
+<!-- File Preview Modal -->
+<div id="filePreviewModal" class="hidden fixed inset-0 bg-black bg-opacity-80 z-[60] flex items-center justify-center">
+    <div class="bg-white rounded-lg w-[90vw] h-[90vh] max-w-[1400px] max-h-[900px] shadow-2xl overflow-hidden flex flex-col">
+        <!-- Modal Header -->
+        <div class="flex items-center justify-between p-4 border-b border-gray-200 bg-gray-50 flex-shrink-0">
+            <div>
+                <h3 id="previewTitle" class="text-lg font-bold text-gray-900">दस्तऐवज पूर्वावलोकन</h3>
+                <p id="previewSubtitle" class="text-sm text-gray-500 mt-1"></p>
+            </div>
+            <div class="flex items-center gap-2">
+                <a id="previewDownload" href="#" download class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded text-sm font-medium transition-colors">
+                    ⬇ डाउनलोड
+                </a>
+                <button onclick="closeFilePreview()" class="text-gray-400 hover:text-gray-600 transition-colors text-2xl px-2">
+                    &times;
+                </button>
+            </div>
+        </div>
+        
+        <!-- Modal Body -->
+        <div id="previewContent" class="flex-1 overflow-auto flex items-center justify-center w-full">
+            <!-- Content will be loaded here -->
+        </div>
+    </div>
+</div>
+
 <script>
     $(document).ready(function () {
+        // Destroy existing DataTable if it exists
         if ($.fn.DataTable.isDataTable('#inspectionTable')) {
             $('#inspectionTable').DataTable().destroy();
         }
 
-        $('#inspectionTable').DataTable({
-            pageLength: 5,
-            lengthMenu: [5, 10, 25, 50],
+        // Initialize DataTable with proper configuration
+        const table = $('#inspectionTable').DataTable({
+            pageLength: 10,
+            lengthMenu: [[5, 10, 25, 50, -1], [5, 10, 25, 50, "All"]],
             ordering: true,
             searching: true,
             autoWidth: false,
+            responsive: true,
+            order: [[0, 'desc']], // Sort by ID descending by default
             columnDefs: [
-                { targets: -1, orderable: false, searchable: false }
+                { targets: 0, width: '50px' }, // ID column
+                { targets: 7, orderable: false, searchable: false }, // Documents column
+                { targets: 9, orderable: false, searchable: false, width: '100px' } // Actions column
             ],
             language: {
                 emptyTable: "कोणतीही नोंद उपलब्ध नाही.",
                 zeroRecords: "जुळणारी नोंद सापडली नाही.",
-                search: "Search:",
-                lengthMenu: "Show _MENU_ entries",
-                info: "Showing _START_ to _END_ of _TOTAL_ entries",
-                infoEmpty: "Showing 0 to 0 of 0 entries",
+                search: "शोधा:",
+                searchPlaceholder: "Type to search...",
+                lengthMenu: "दाखवा _MENU_ नोंदी",
+                info: "_TOTAL_ पैकी _START_ ते _END_ नोंदी दाखवत आहे",
+                infoEmpty: "0 पैकी 0 ते 0 नोंदी दाखवत आहे",
+                infoFiltered: "(एकूण _MAX_ नोंदींमधून फिल्टर केले)",
                 paginate: {
-                    previous: "Previous",
-                    next: "Next"
-                }
+                    first: "पहिला",
+                    last: "शेवटचा",
+                    previous: "मागील",
+                    next: "पुढील"
+                },
+                loadingRecords: "लोड होत आहे...",
+                processing: "प्रक्रिया करत आहे..."
+            },
+            dom: '<"flex flex-col sm:flex-row justify-between items-center mb-4 gap-3"<"flex items-center gap-2"l><"flex-1"f>>rtip',
+            initComplete: function() {
+                // Style the search input
+                $('.dataTables_filter input').addClass('border border-gray-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-400 focus:border-blue-400');
+                $('.dataTables_filter input').attr('placeholder', 'Search records...');
+                
+                // Style the length select
+                $('.dataTables_length select').addClass('border border-gray-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-400');
+                
+                // Style pagination
+                $('.dataTables_paginate').addClass('mt-4');
             }
         });
         
@@ -161,6 +217,11 @@
         $(document).on('click', '.view-docs-btn', function() {
             const recordId = $(this).data('record-id');
             openDocumentsModal(recordId);
+        });
+        
+        // Redraw table on window resize for responsiveness
+        $(window).on('resize', function() {
+            table.columns.adjust().draw();
         });
     });
     
@@ -192,7 +253,9 @@
         }
         
         // Update count
-        countSpan.textContent = documents.length + ' document' + (documents.length !== 1 ? 's' : '');
+        if (countSpan) {
+            countSpan.textContent = documents.length + ' document' + (documents.length !== 1 ? 's' : '');
+        }
         
         // Create tile for each document
         documents.forEach((doc, index) => {
@@ -214,18 +277,22 @@
     function createDocumentTile(url, filename, date, size, index) {
         const div = document.createElement('div');
         div.className = 'bg-white border-2 border-gray-200 rounded-lg p-4 hover:border-orange-500 hover:shadow-lg transition-all duration-200 cursor-pointer group';
+        div.setAttribute('data-url', url);
+        div.setAttribute('data-filename', filename);
+        div.setAttribute('data-date', date);
+        div.setAttribute('data-ext', filename.split('.').pop().toLowerCase());
         
         const ext = filename.split('.').pop().toLowerCase();
-        const icon = getFileIconForModal(ext);
         const displayName = filename.split('/').pop();
         const formattedSize = formatFileSize(size);
+        const preview = getFilePreviewForModal(url, ext, displayName);
         
         div.innerHTML = `
-            <a href="${url}" target="_blank" class="block">
+            <a href="${url}" target="_blank" class="block" onclick="event.preventDefault();">
                 <div class="flex flex-col items-center text-center">
-                    <!-- File Icon -->
+                    <!-- File Preview -->
                     <div class="w-16 h-16 mb-3 flex items-center justify-center bg-gray-100 rounded-lg group-hover:bg-orange-50 transition-colors">
-                        ${icon}
+                        ${preview}
                     </div>
                     
                     <!-- File Name -->
@@ -252,7 +319,23 @@
             </a>
         `;
         
+        // Add double-click event listener
+        div.addEventListener('dblclick', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            openFilePreview(url, displayName, ext, date);
+        });
+        
         return div;
+    }
+
+    function getFilePreviewForModal(url, ext, displayName) {
+        const imageExtensions = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
+        if (imageExtensions.includes(ext)) {
+            return `<img src="${url}" alt="${displayName}" class="w-full h-full object-cover rounded-lg" loading="lazy">`;
+        }
+
+        return getFileIconForModal(ext);
     }
     
     function getFileIconForModal(ext) {
@@ -287,6 +370,81 @@
     document.getElementById('documentsModal')?.addEventListener('click', function(e) {
         if (e.target === this) {
             closeDocumentsModal();
+        }
+    });
+    
+    // File Preview Functions
+    function openFilePreview(url, filename, ext, date) {
+        if (!url) {
+            alert('फाईल उपलब्ध नाही');
+            return;
+        }
+        
+        // Extract just the path component
+        let fileUrl = url;
+        try {
+            if (fileUrl.startsWith('http://') || fileUrl.startsWith('https://')) {
+                const urlObj = new URL(fileUrl);
+                fileUrl = urlObj.pathname;
+            }
+        } catch (e) {
+            console.error('URL parsing error:', e);
+        }
+        
+        document.getElementById('previewTitle').textContent = filename;
+        document.getElementById('previewSubtitle').textContent = `${ext.toUpperCase()} • ${date}`;
+        document.getElementById('previewDownload').href = fileUrl;
+        document.getElementById('previewDownload').download = filename;
+        
+        const content = document.getElementById('previewContent');
+        const extension = ext.toLowerCase();
+        
+        if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(extension)) {
+            // Image preview
+            content.innerHTML = `<img src="${fileUrl}" style="max-width:100%;max-height:100%;object-fit:contain;" alt="${filename}">`;
+        } else if (extension === 'pdf') {
+            // PDF preview
+            content.innerHTML = `<iframe src="${fileUrl}" style="width:100%;height:100%;border:none;" title="${filename}"></iframe>`;
+        } else if (['doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx'].includes(extension)) {
+            // Office documents - use Google Docs Viewer
+            const fullUrl = window.location.origin + fileUrl;
+            content.innerHTML = `<iframe src="https://docs.google.com/viewer?url=${encodeURIComponent(fullUrl)}&embedded=true" style="width:100%;height:100%;border:none;" title="${filename}"></iframe>`;
+        } else {
+            // Unsupported file type
+            content.innerHTML = `
+                <div style="text-align:center;padding:40px;color:#6b7280;">
+                    <div style="font-size:48px;margin-bottom:16px;">📄</div>
+                    <h4 style="font-size:16px;font-weight:600;margin-bottom:8px;color:#374151;">${filename}</h4>
+                    <p style="font-size:14px;margin-bottom:16px;">या फाईल प्रकाराचे पूर्वावलोकन समर्थित नाही</p>
+                    <a href="${fileUrl}" target="_blank" style="display:inline-block;padding:8px 16px;background:#4f46e5;color:#fff;text-decoration:none;border-radius:4px;font-size:13px;font-weight:600;">नवीन टॅबमध्ये उघडा</a>
+                </div>
+            `;
+        }
+        
+        document.getElementById('filePreviewModal').classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+    }
+    
+    function closeFilePreview() {
+        document.getElementById('filePreviewModal').classList.add('hidden');
+        document.getElementById('previewContent').innerHTML = '';
+        document.body.style.overflow = 'auto';
+    }
+    
+    // Close preview modal on escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            const previewModal = document.getElementById('filePreviewModal');
+            if (previewModal && !previewModal.classList.contains('hidden')) {
+                closeFilePreview();
+            }
+        }
+    });
+    
+    // Close preview modal on backdrop click
+    document.getElementById('filePreviewModal')?.addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeFilePreview();
         }
     });
 </script>

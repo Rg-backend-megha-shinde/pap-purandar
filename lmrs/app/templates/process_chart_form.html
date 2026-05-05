@@ -1,0 +1,1319 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    .tool-tabs-shell {
+        border: 1px solid #d8e4f2;
+        background: #f8fbff;
+        border-radius: 0.65rem;
+        padding: 0.4rem 0.55rem 0;
+    }
+
+    .tool-tabs {
+        display: flex;
+        align-items: flex-end;
+        gap: 0.4rem;
+        flex-wrap: wrap;
+    }
+
+    .tool-tab-link {
+        display: inline-block;
+        margin-bottom: -1px;
+        padding: 0.7rem 1.1rem;
+        border: 1px solid transparent;
+        border-radius: 0.5rem 0.5rem 0 0;
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: #6b7d99;
+        line-height: 1;
+        transition: all 120ms ease;
+    }
+
+    .tool-tab-link:hover {
+        color: #213a63;
+    }
+
+    .tool-tab-link.is-active {
+        background: #ffffff;
+        color: #125fcb;
+        border-color: #cad8ea;
+        box-shadow: 0 1px 3px rgba(18, 95, 203, 0.15);
+    }
+
+    .pc-step-panel {
+        display: none;
+    }
+
+    .pc-step-panel.is-active {
+        display: block;
+    }
+
+    .pc-form-card {
+        overflow: hidden;
+        border: 1px solid #cfdceb;
+        border-radius: 0.65rem;
+        background: #fff;
+        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+    }
+
+    .pc-section {
+        border: 1px solid #e2ebf7;
+        border-radius: 1rem;
+        background: #fbfdff;
+        padding: 1.25rem;
+    }
+
+    .pc-label {
+        display: block;
+        margin-bottom: 0.45rem;
+        color: #44597a;
+        font-size: 0.875rem;
+        font-weight: 700;
+    }
+
+    .pc-input {
+        width: 100%;
+        border: 1px solid #d3deeb;
+        border-radius: 0.75rem;
+        background: #fff;
+        padding: 0.75rem 1rem;
+        color: #394d6c;
+        font-size: 0.875rem;
+    }
+
+    .pc-input[readonly] {
+        background: #f3f7fc;
+        color: #6d7f9b;
+    }
+
+    .pc-upload {
+        display: block;
+        width: 100%;
+        border: 1px dashed #c5d6ec;
+        border-radius: 0.75rem;
+        background: #fff;
+        padding: 0.7rem 0.9rem;
+        color: #60708a;
+        font-size: 0.875rem;
+    }
+
+    .pc-upload::file-selector-button {
+        margin-right: 0.85rem;
+        border: 0;
+        border-radius: 0.55rem;
+        background: #125fcb;
+        color: #fff;
+        font-weight: 700;
+        padding: 0.58rem 0.9rem;
+        cursor: pointer;
+    }
+
+    .pc-eye-view {
+        width: 2.5rem;
+        height: 2.5rem;
+        border: 1px solid #b9d0ef;
+        border-radius: 9999px;
+        background: #ffffff;
+        color: #2164cf;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 120ms ease;
+        cursor: pointer;
+    }
+
+    .pc-eye-view:hover {
+        background: #edf5ff;
+        border-color: #2164cf;
+    }
+
+    .pc-eye-view svg {
+        width: 1.1rem;
+        height: 1.1rem;
+    }
+
+    .pc-eye-col {
+        display: flex;
+        align-items: flex-end;
+    }
+
+    .pc-generate-notice-btn {
+        border: 1px solid #dc2626;
+        border-radius: 0.55rem;
+        background: #dc2626;
+        color: #fff;
+        font-size: 0.82rem;
+        font-weight: 700;
+        line-height: 1;
+        padding: 0.58rem 0.9rem;
+        cursor: pointer;
+        transition: background 120ms ease, border-color 120ms ease;
+    }
+
+    .pc-generate-notice-btn:hover {
+        border-color: #b91c1c;
+        background: #b91c1c;
+    }
+
+    .pc-table {
+        min-width: 100%;
+        border-collapse: collapse;
+        color: #2a3f62;
+        font-size: 0.875rem;
+    }
+
+    .pc-table th,
+    .pc-table td {
+        border: 1px solid #d7e5f6;
+        padding: 0.6rem;
+        vertical-align: top;
+    }
+
+    .pc-table th {
+        background: #eef5ff;
+        text-align: center;
+        font-weight: 700;
+    }
+
+    .pc-step-dot.is-active span {
+        border-color: #125fcb;
+        background: #125fcb;
+        color: #fff;
+    }
+
+    .pc-step-dot.is-done span {
+        border-color: #16a34a;
+        background: #dcfce7;
+        color: #166534;
+    }
+
+    .pc-stepper-grid {
+        display: grid;
+        grid-template-columns: repeat(12, minmax(0, 1fr));
+        gap: 0.35rem;
+    }
+
+    .pc-step-dot {
+        min-width: 0;
+    }
+
+    .pc-step-dot span {
+        width: 2.5rem;
+        height: 2.5rem;
+        font-size: 0.9rem;
+    }
+
+    .pc-step-dot small {
+        max-width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-size: 0.78rem;
+        line-height: 1.2;
+    }
+
+    @media (max-width: 767px) {
+        .pc-table {
+            min-width: 760px;
+        }
+
+        .pc-stepper-wrap {
+            overflow-x: auto;
+            padding-bottom: 0.25rem;
+        }
+
+        .pc-stepper-grid {
+            min-width: 980px;
+        }
+    }
+</style>
+
+<div class="w-full px-2 sm:px-3 md:px-4 py-4">
+    <div class="overflow-hidden rounded-lg border border-slate-300 bg-white shadow-sm">
+        <div class="px-3 py-4 md:px-5 lg:px-6">
+            <div class="tool-tabs-shell mb-6">
+                <nav class="tool-tabs" aria-label="Tool views">
+                    <a href="{% url 'land_record_712_list' %}" class="tool-tab-link">७/१२ उतार नोंद</a>
+                    <a href="{% url 'ready_reckoner_list' %}" class="tool-tab-link">रेडी रेकनर दर</a>
+                    <a href="{% url 'village_info' %}" class="tool-tab-link">गावाची माहिती</a>
+                    <a href="{% url 'add_entry' %}" class="tool-tab-link">नुकसान भरपाई नोंद</a>
+                    <a href="{% url 'process_chart_form' %}" class="tool-tab-link is-active">भूसंपादन प्रक्रिया</a>
+                </nav>
+            </div>
+
+            <form id="processChartForm" class="space-y-6">
+                <div class="mb-6 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                    <div>
+                        <h1 class="text-2xl font-bold text-[#213a63]">खातेनिहाय तपशील</h1>
+                        <p class="mt-1 text-sm text-[#6b7d99]">महाराष्ट्र महामार्ग अधिनियम प्रक्रियेसाठी पान 1 ते 16 प्रमाणे स्थिर नमुना फॉर्म.</p>
+                    </div>
+                    <div class="flex gap-2">
+                        <button type="button" class="rounded-xl border border-[#ccdbef] bg-white px-4 py-2 text-sm font-semibold text-[#4a6488]">Save Draft</button>
+                        <button type="button" class="rounded-xl bg-[#125fcb] px-4 py-2 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(18,95,203,0.2)]">Submit</button>
+                    </div>
+                </div>
+
+                <div class="pc-stepper-wrap relative mb-8">
+                    <div class="absolute left-0 right-0 top-6 hidden border-t border-[#d8e4f2] md:block"></div>
+                    <div class="pc-stepper-grid">
+                        <button type="button" class="pc-step-dot relative z-10 flex flex-col items-center gap-1 text-center" data-pc-step="1"><span class="flex items-center justify-center rounded-full border-2 border-[#cad8ea] bg-white font-bold text-[#8a99ad]">1</span><small class="font-semibold text-[#8897ab]">मूलभूत</small></button>
+                        <button type="button" class="pc-step-dot relative z-10 flex flex-col items-center gap-1 text-center" data-pc-step="2"><span class="flex items-center justify-center rounded-full border-2 border-[#cad8ea] bg-white font-bold text-[#8a99ad]">2</span><small class="font-semibold text-[#8897ab]">अधिसूचना</small></button>
+                        <button type="button" class="pc-step-dot relative z-10 flex flex-col items-center gap-1 text-center" data-pc-step="3"><span class="flex items-center justify-center rounded-full border-2 border-[#cad8ea] bg-white font-bold text-[#8a99ad]">3</span><small class="font-semibold text-[#8897ab]">15(2)/आक्षेप</small></button>
+                        <button type="button" class="pc-step-dot relative z-10 flex flex-col items-center gap-1 text-center" data-pc-step="4"><span class="flex items-center justify-center rounded-full border-2 border-[#cad8ea] bg-white font-bold text-[#8a99ad]">4</span><small class="font-semibold text-[#8897ab]">संयुक्त मोजणी</small></button>
+                        <button type="button" class="pc-step-dot relative z-10 flex flex-col items-center gap-1 text-center" data-pc-step="5"><span class="flex items-center justify-center rounded-full border-2 border-[#cad8ea] bg-white font-bold text-[#8a99ad]">5</span><small class="font-semibold text-[#8897ab]">नोटीस</small></button>
+                        <button type="button" class="pc-step-dot relative z-10 flex flex-col items-center gap-1 text-center" data-pc-step="6"><span class="flex items-center justify-center rounded-full border-2 border-[#cad8ea] bg-white font-bold text-[#8a99ad]">6</span><small class="font-semibold text-[#8897ab]">समिती</small></button>
+                        <button type="button" class="pc-step-dot relative z-10 flex flex-col items-center gap-1 text-center" data-pc-step="7"><span class="flex items-center justify-center rounded-full border-2 border-[#cad8ea] bg-white font-bold text-[#8a99ad]">7</span><small class="font-semibold text-[#8897ab]">मूल्यांकन</small></button>
+                        <button type="button" class="pc-step-dot relative z-10 flex flex-col items-center gap-1 text-center" data-pc-step="8"><span class="flex items-center justify-center rounded-full border-2 border-[#cad8ea] bg-white font-bold text-[#8a99ad]">8</span><small class="font-semibold text-[#8897ab]">मोबदला</small></button>
+                        <button type="button" class="pc-step-dot relative z-10 flex flex-col items-center gap-1 text-center" data-pc-step="9"><span class="flex items-center justify-center rounded-full border-2 border-[#cad8ea] bg-white font-bold text-[#8a99ad]">9</span><small class="font-semibold text-[#8897ab]">संमती</small></button>
+                        <button type="button" class="pc-step-dot relative z-10 flex flex-col items-center gap-1 text-center" data-pc-step="10"><span class="flex items-center justify-center rounded-full border-2 border-[#cad8ea] bg-white font-bold text-[#8a99ad]">10</span><small class="font-semibold text-[#8897ab]">प्रदान</small></button>
+                        <button type="button" class="pc-step-dot relative z-10 flex flex-col items-center gap-1 text-center" data-pc-step="11"><span class="flex items-center justify-center rounded-full border-2 border-[#cad8ea] bg-white font-bold text-[#8a99ad]">11</span><small class="font-semibold text-[#8897ab]">निवाडा</small></button>
+                        <button type="button" class="pc-step-dot relative z-10 flex flex-col items-center gap-1 text-center" data-pc-step="12"><span class="flex items-center justify-center rounded-full border-2 border-[#cad8ea] bg-white font-bold text-[#8a99ad]">12</span><small class="font-semibold text-[#8897ab]">कब्जा/नोंद</small></button>
+                    </div>
+                </div>
+
+                <section class="pc-step-panel" data-pc-panel="1">
+                    <div class="pc-form-card">
+                        <div class="border-b border-[#dbe8f8] bg-[#edf5ff] px-6 py-5">
+                            <h2 class="text-xl font-bold text-[#214a8b]">टप्पा 1: खातेनिहाय व स्थान माहिती</h2>
+                            <p class="mt-1 text-sm text-[#5c78a5]">PDF पान 1 नुसार योजनेचे प्रयोजन, स्थान व भूसंपादन क्रमांक.</p>
+                        </div>
+                        <div class="space-y-6 px-6 py-7 md:px-8">
+                            <div class="pc-section">
+                                <h3 class="mb-4 text-lg font-bold text-[#244271]">योजनेचे प्रयोजन</h3>
+                                <div class="grid gap-4 md:grid-cols-2">
+                                    <div>
+                                        <label class="pc-label">प्रयोजन निवडा</label>
+                                        <select class="pc-input" name="project_purpose">
+                                            <option value="">प्रयोजन निवडा</option>
+                                            <option>महामार्गाचे बांधकाम करणे</option>
+                                            <option>नवनगराचा विकास करणे</option>
+                                            <option>विमानतळ बांधकाम करणे</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="pc-label">भूसंपादनाचा प्रकार</label>
+                                        <select class="pc-input" name="acquisition_type">
+                                            <option>महाराष्ट्र महामार्ग अधिनियम</option>
+                                            <option>राष्ट्रीय महामार्ग अधिनियम</option>
+                                            <option>MIDC act</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="pc-section">
+                                <h3 class="mb-4 text-lg font-bold text-[#244271]">स्थान माहिती</h3>
+                                <div class="grid gap-4 md:grid-cols-4">
+                                    <div><label class="pc-label">विभाग</label><input class="pc-input" name="division" type="text"></div>
+                                    <div><label class="pc-label">जिल्हा</label><select class="pc-input" name="district"><option>जिल्हा निवडा</option></select></div>
+                                    <div><label class="pc-label">तालुका</label><select class="pc-input" name="taluka"><option>तालुका निवडा</option></select></div>
+                                    <div><label class="pc-label">गाव</label><select class="pc-input" name="village"><option>गाव निवडा</option></select></div>
+                                </div>
+                            </div>
+                            <div class="pc-section">
+                                <h3 class="mb-4 text-lg font-bold text-[#244271]">आवश्यक जमिनीचा तपशील</h3>
+                                <div class="grid gap-4 md:grid-cols-3">
+                                    <div><label class="pc-label">जमीन प्रकार</label><select class="pc-input"><option>खाजगी</option><option>सरकारी</option><option>वनविभाग</option><option>इतर विभाग</option></select></div>
+                                    <div><label class="pc-label">भोगवटदार वर्ग</label><select class="pc-input"><option>वर्ग 1</option><option>वर्ग 2</option></select></div>
+                                    <div><label class="pc-label">गट / सर्वे क्रमांक</label><input class="pc-input" type="text"></div>
+                                    <div><label class="pc-label">सर्वे / गट / नगर भूमापन क्रमांक</label><input class="pc-input" type="text"></div>
+                                    <div><label class="pc-label">हिस्सा क्रमांक</label><input class="pc-input" type="text"></div>
+                                    <div><label class="pc-label">खाते क्रमांक</label><input class="pc-input" type="text"></div>
+                                </div>
+                            </div>
+                            <div class="pc-section">
+                                <div class="mb-4 flex items-center justify-between">
+                                    <h3 class="text-lg font-bold text-[#244271]">जमीन मालक / हितसंबंधी व्यक्ती माहिती</h3>
+                                    <button type="button" class="rounded-lg bg-[#125fcb] px-3 py-2 text-sm font-semibold text-white">+ Add Row</button>
+                                </div>
+                                <div class="overflow-x-auto">
+                                    <table class="pc-table">
+                                        <thead>
+                                            <tr>
+                                                <th>भूधारकाचे नाव ७/१२ अभिलेखाप्रमाणे</th><th>आधार कार्ड क्रमांक</th><th>आधार कार्ड प्रत</th><th>पॅन कार्ड क्रमांक</th><th>पॅन कार्ड प्रत</th><th>मोबाईल नंबर</th><th>पत्ता</th><th>लागवडी योग्य</th><th>पोट खराब</th><th>एकूण क्षेत्र</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td><input class="pc-input" type="text"></td>
+                                                <td><input class="pc-input" type="text"></td>
+                                                <td><input class="pc-upload" type="file"></td>
+                                                <td><input class="pc-input" type="text"></td>
+                                                <td><input class="pc-upload" type="file"></td>
+                                                <td><input class="pc-input" type="tel"></td>
+                                                <td><textarea class="pc-input" rows="2"></textarea></td>
+                                                <td><input class="pc-input" type="text" placeholder="हे.आर"></td>
+                                                <td><input class="pc-input" type="text" placeholder="हे.आर"></td>
+                                                <td><input class="pc-input" type="text" placeholder="हे.आर"></td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <div class="pc-section">
+                                <h3 class="mb-4 text-lg font-bold text-[#244271]">7/12 प्रमाणे संपूर्ण गटातील क्षेत्र</h3>
+                                <div class="grid gap-4 md:grid-cols-3">
+                                    <div><label class="pc-label">लागवडी योग्य क्षेत्र</label><input class="pc-input" type="text" placeholder="हेक्टर आर"></div>
+                                    <div><label class="pc-label">पोटखराब क्षेत्र</label><input class="pc-input" type="text" placeholder="हेक्टर आर"></div>
+                                    <div><label class="pc-label">एकूण क्षेत्र</label><input class="pc-input" type="text" placeholder="हेक्टर आर"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="pc-step-panel" data-pc-panel="2">
+                    <div class="pc-form-card">
+                        <div class="border-b border-[#dbe8f8] bg-[#edf5ff] px-6 py-5">
+                            <h2 class="text-xl font-bold text-[#214a8b]">टप्पा 2: महामार्ग अधिसूचना</h2>
+                            <p class="mt-1 text-sm text-[#5c78a5]">महामार्ग अधिसूचना, अतिरिक्त अधिसूचना आणि प्राधिकृत अधिकारी नियुक्ती तपशील.</p>
+                        </div>
+                        <div class="space-y-6 px-6 py-7 md:px-8">
+                            <div class="pc-section">
+                                <h3 class="mb-4 text-lg font-bold text-[#244271]">महामार्ग अधिसूचना तपशिल</h3>
+                                <div class="grid gap-4 md:grid-cols-3">
+                                    <div><label class="pc-label">अधिसूचना क्रमांक</label><input class="pc-input" type="text" placeholder="क्रमांक प्रविष्ट करा"></div>
+                                    <div><label class="pc-label">दिनांक</label><input class="pc-input" type="text" placeholder="dd-mm-yyyy"></div>
+                                    <div class="pc-eye-col">
+                                        <button type="button" class="pc-eye-view" aria-label="View Documents" title="View Documents">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                                <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"></path>
+                                                <circle cx="12" cy="12" r="3"></circle>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div class="mt-5 space-y-4">
+                                    <div class="rounded-xl border border-[#d7e5f6] bg-[#f8fbff] p-4">
+                                        <h4 class="mb-3 text-base font-bold text-[#244271]">वर्तमानपत्र १</h4>
+                                        <div class="grid gap-4 md:grid-cols-3">
+                                            <div><label class="pc-label">नाव</label><input class="pc-input" type="text" placeholder="वर्तमानपत्र 1 चे नाव"></div>
+                                            <div><label class="pc-label">दिनांक</label><input class="pc-input" type="text" placeholder="dd-mm-yyyy"></div>
+                                            <div class="pc-eye-col">
+                                                <button type="button" class="pc-eye-view" aria-label="View Documents" title="View Documents">
+                                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                                        <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"></path>
+                                                        <circle cx="12" cy="12" r="3"></circle>
+                                                    </svg>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="rounded-xl border border-[#d7e5f6] bg-[#f8fbff] p-4">
+                                        <h4 class="mb-3 text-base font-bold text-[#244271]">वर्तमानपत्र २</h4>
+                                        <div class="grid gap-4 md:grid-cols-3">
+                                            <div><label class="pc-label">नाव</label><input class="pc-input" type="text" placeholder="वर्तमानपत्र 2 चे नाव"></div>
+                                            <div><label class="pc-label">दिनांक</label><input class="pc-input" type="text" placeholder="dd-mm-yyyy"></div>
+                                            <div class="pc-eye-col">
+                                                <button type="button" class="pc-eye-view" aria-label="View Documents" title="View Documents">
+                                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                                        <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"></path>
+                                                        <circle cx="12" cy="12" r="3"></circle>
+                                                    </svg>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="mt-5 grid gap-4 md:grid-cols-2 md:items-end">
+                                    <div>
+                                        <span class="pc-label">अधिसूचनेमध्ये सर्वे / गट क्रमांक समाविष्ट आहे का?</span>
+                                        <div class="flex gap-4 text-sm text-[#394d6c]"><label><input type="radio" name="survey_in_notification"> हो</label><label><input type="radio" name="survey_in_notification"> नाही</label></div>
+                                    </div>
+                                    <div>
+                                        <label class="pc-label">असल्यास क्षेत्र नमूद करा</label>
+                                        <input class="pc-input" type="text" placeholder="Area in Hector">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="pc-section">
+                                <h3 class="mb-4 text-lg font-bold text-[#244271]">२. प्रशासकीय मान्यता</h3>
+                                <div class="grid gap-4 md:grid-cols-3 md:items-end">
+                                    <div>
+                                        <label class="pc-label">आदेश/अधिसूचना क्रमांक</label>
+                                        <input class="pc-input" type="text" placeholder="क्रमांक प्रविष्ट करा">
+                                    </div>
+                                    <div>
+                                        <label class="pc-label">दिनांक</label>
+                                        <input class="pc-input" type="text" placeholder="dd-mm-yyyy">
+                                    </div>
+                                    <div class="pc-eye-col">
+                                        <button type="button" class="pc-eye-view" aria-label="View Documents" title="View Documents">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                                <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"></path>
+                                                <circle cx="12" cy="12" r="3"></circle>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="pc-section">
+                                <h3 class="mb-4 text-lg font-bold text-[#244271]">३. कलम १५(४) अन्वये प्राधिकृत भूसंपादन अधिकारी नियुक्ती</h3>
+                                <div class="grid gap-4 md:grid-cols-3 md:items-end">
+                                    <div>
+                                        <label class="pc-label">अधिसूचना क्रमांक</label>
+                                        <input class="pc-input" type="text" placeholder="क्रमांक प्रविष्ट करा">
+                                    </div>
+                                    <div>
+                                        <label class="pc-label">दिनांक</label>
+                                        <input class="pc-input" type="text" placeholder="dd-mm-yyyy">
+                                    </div>
+                                    <div class="pc-eye-col">
+                                        <button type="button" class="pc-eye-view" aria-label="View Documents" title="View Documents">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                                <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"></path>
+                                                <circle cx="12" cy="12" r="3"></circle>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </section>
+
+                <section class="pc-step-panel" data-pc-panel="3">
+                    <div class="pc-form-card">
+                        <div class="border-b border-[#dbe8f8] bg-[#edf5ff] px-6 py-5">
+                            <h2 class="text-xl font-bold text-[#214a8b]">टप्पा 3: कलम 15(2), प्रस्ताव व आक्षेप</h2>
+                            <p class="mt-1 text-sm text-[#5c78a5]">कलम 15(2) अधिसूचना, भूसंपादन प्रस्ताव आणि कलम 17(2) दाखल आक्षेप तपशील.</p>
+                        </div>
+                        <div class="space-y-6 px-6 py-7 md:px-8">
+                            <div class="pc-section">
+                                <h3 class="mb-4 text-lg font-bold text-[#244271]">४. कलम 15(2) नुसार संपादनाचा उद्देश घोषित </h3>
+                                <div class="grid gap-4 md:grid-cols-3 md:items-end">
+                                    <div><label class="pc-label">अधिसूचना क्रमांक</label><input class="pc-input" type="text" placeholder="कलम 15 अधिसूचना क्रमांक"></div>
+                                    <div><label class="pc-label">दिनांक</label><input class="pc-input" type="text" placeholder="dd-mm-yyyy"></div>
+                                    <div class="pc-eye-col">
+                                        <button type="button" class="pc-eye-view" aria-label="View Documents" title="View Documents">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                                <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"></path>
+                                                <circle cx="12" cy="12" r="3"></circle>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div class="mt-5 space-y-4">
+                                    <div class="rounded-xl border border-[#d7e5f6] bg-[#f8fbff] p-4">
+                                        <h4 class="mb-3 text-base font-bold text-[#244271]">वर्तमानपत्र १</h4>
+                                        <div class="grid gap-4 md:grid-cols-3 md:items-end">
+                                            <div><label class="pc-label">नाव</label><input class="pc-input" type="text" placeholder="वर्तमानपत्र 1 चे नाव"></div>
+                                            <div><label class="pc-label">दिनांक</label><input class="pc-input" type="text" placeholder="dd-mm-yyyy"></div>
+                                            <div class="pc-eye-col">
+                                                <button type="button" class="pc-eye-view" aria-label="View Documents" title="View Documents">
+                                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                                        <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"></path>
+                                                        <circle cx="12" cy="12" r="3"></circle>
+                                                    </svg>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="rounded-xl border border-[#d7e5f6] bg-[#f8fbff] p-4">
+                                        <h4 class="mb-3 text-base font-bold text-[#244271]">वर्तमानपत्र २</h4>
+                                        <div class="grid gap-4 md:grid-cols-3 md:items-end">
+                                            <div><label class="pc-label">नाव</label><input class="pc-input" type="text" placeholder="वर्तमानपत्र 2 चे नाव"></div>
+                                            <div><label class="pc-label">दिनांक</label><input class="pc-input" type="text" placeholder="dd-mm-yyyy"></div>
+                                            <div class="pc-eye-col">
+                                                <button type="button" class="pc-eye-view" aria-label="View Documents" title="View Documents">
+                                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                                        <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"></path>
+                                                        <circle cx="12" cy="12" r="3"></circle>
+                                                    </svg>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="pc-section">
+                                <h3 class="mb-4 text-lg font-bold text-[#244271]">भूसंपादन प्रस्ताव तपशील</h3>
+                                <div class="grid gap-4 md:grid-cols-3 md:items-end">
+                                    <div><label class="pc-label">प्रस्ताव पत्र क्रमांक</label><input class="pc-input" type="text" placeholder="प्रस्ताव पत्र क्रमांक"></div>
+                                    <div><label class="pc-label">दिनांक</label><input class="pc-input" type="text" placeholder="dd-mm-yyyy"></div>
+                                    <div class="pc-eye-col">
+                                        <button type="button" class="pc-eye-view" aria-label="View Documents" title="View Documents">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                                <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"></path>
+                                                <circle cx="12" cy="12" r="3"></circle>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="mt-4 grid gap-4 md:grid-cols-2 md:items-end">
+                                    <div>
+                                        <span class="pc-label">उक्त गट भूसंपादन प्रस्ताव आहे काय</span>
+                                        <div class="flex gap-4">
+                                            <label><input type="radio" name="acquisition_proposal_included"> होय</label>
+                                            <label><input type="radio" name="acquisition_proposal_included"> नाही</label>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label class="pc-label">असल्यास क्षेत्र नमूद करा</label>
+                                        <input class="pc-input" type="text" placeholder="नमूद करण्यासाठी जागा ठेवावी.">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="pc-section">
+                                <div class="mb-4 flex items-center justify-between gap-3">
+                                    <h3 class="text-lg font-bold text-[#244271]">कलम 17(1) दाखल आक्षेप</h3>
+                                    <button type="button" class="pc-generate-notice-btn">Generate Notice</button>
+                                </div>
+                                <div class="mb-4 grid gap-4 md:grid-cols-3 md:items-end">
+                                    <div class="md:col-span-2">
+                                        <label class="pc-label">आक्षेप व निर्णय तपशील</label>
+                                        <input class="pc-input" type="text" placeholder="आक्षेप व निर्णय तपशील">
+                                    </div>
+                                    <div class="pc-eye-col">
+                                        <button type="button" class="pc-eye-view" aria-label="View Documents" title="View Documents">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                                <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"></path>
+                                                <circle cx="12" cy="12" r="3"></circle>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="grid gap-4 md:grid-cols-2">
+                                    <div><label class="pc-label">आक्षेप दाखल करणाऱ्याचे संपूर्ण नाव</label><input class="pc-input" type="text"></div>
+                                    <div><label class="pc-label">पत्ता</label><input class="pc-input" type="text"></div>
+                                    <div><label class="pc-label">आक्षेपाचा स्वरूप</label><input class="pc-input" type="text"></div>
+                                    <div><label class="pc-label">आक्षेप पत्र</label><input class="pc-upload" type="file"></div>
+                                    <div><label class="pc-label">आक्षेपाबाबत निर्णय</label><select class="pc-input"><option>स्वीकार</option><option>अस्वीकार</option></select></div>
+                                    <div><label class="pc-label">निर्णय पत्र</label><input class="pc-upload" type="file"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="pc-step-panel" data-pc-panel="4">
+                    <div class="pc-form-card">
+                        <div class="border-b border-[#dbe8f8] bg-[#edf5ff] px-6 py-5">
+                            <h2 class="text-xl font-bold text-[#214a8b]">टप्पा 4: संयुक्त मोजणी</h2>
+                            <p class="mt-1 text-sm text-[#5c78a5]">PDF पान 6 नुसार संयुक्त मोजणी तपशील.</p>
+                        </div>
+                        <div class="space-y-6 px-6 py-7 md:px-8">
+                            <div class="pc-section">
+                                <h3 class="mb-4 text-lg font-bold text-[#244271]">संयुक्त मोजणी तपशील</h3>
+                                <div class="grid gap-4 md:grid-cols-4 md:items-end">
+                                    <div><label class="pc-label">मोजणी रजिस्टर नंबर</label><input class="pc-input" type="text" placeholder="मोजणी रजिस्टर नंबर"></div>
+                                    <div><label class="pc-label">संयुक्त मोजणी दिनांक</label><input class="pc-input" type="text" placeholder="dd-mm-yyyy"></div>
+                                    <div>
+                                        <label class="pc-label">परिशिष्ट 16</label>
+                                        <div class="pc-eye-col">
+                                            <button type="button" class="pc-eye-view" aria-label="View Documents" title="View Documents">
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                                    <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"></path>
+                                                    <circle cx="12" cy="12" r="3"></circle>
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label class="pc-label">संयुक्त मोजणी नकाशा</label>
+                                        <div class="pc-eye-col">
+                                            <button type="button" class="pc-eye-view" aria-label="View Documents" title="View Documents">
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                                    <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"></path>
+                                                    <circle cx="12" cy="12" r="3"></circle>
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="mt-4">
+                                    <span class="pc-label">संयुक्त मोजणी सर्वेक्षण करण्यात आले आहे का?</span>
+                                    <div class="flex gap-4"><label><input type="radio" name="joint_done"> हो</label><label><input type="radio" name="joint_done"> नाही</label></div>
+                                </div>
+                            </div>
+
+                            <div class="pc-section">
+                                <h3 class="mb-4 text-lg font-bold text-[#244271]">संयुक्त मोजणी संदर्भानुसार आवश्यक जमिन तपशील</h3>
+                                <div class="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                                    <p class="text-sm font-semibold text-[#2a3f62]">स्वतंत्र क्षेत्र नमूद असल्यास अन्य खातेदारांचे नाव समाविष्ट करण्यासाठी</p>
+                                    <button type="button" class="rounded-lg bg-[#125fcb] px-3 py-2 text-sm font-semibold text-white">ओळ जोडा</button>
+                                </div>
+                                <div class="overflow-x-auto">
+                                    <table class="pc-table">
+                                        <thead><tr><th>बाधीत भूधारकाचे नाव</th><th>मोबाईल नंबर</th><th>पत्ता</th><th>संपादन करावयाचे क्षेत्र(हे. आर. चौमी )</th></tr></thead>
+                                        <tbody>
+                                            <tr><td><input class="pc-input" value="XYZ"></td><td><input class="pc-input"></td><td><input class="pc-input"></td><td><input class="pc-input"></td></tr>
+                                            <tr><td><input class="pc-input" value="XZZ"></td><td><input class="pc-input"></td><td><input class="pc-input"></td><td><input class="pc-input"></td></tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <div class="pc-section">
+                                <div class="mb-4 flex items-center justify-between gap-3">
+                                    <h3 class="text-lg font-bold text-[#244271]">स्वतंत्र क्षेत्र नसल्यास अन्य खातेदारांचे नाव समाविष्ट करण्यासाठी</h3>
+                                    <button type="button" class="rounded-lg bg-[#125fcb] px-3 py-2 text-sm font-semibold text-white">ओळ जोडा</button>
+                                </div>
+                                <div class="overflow-x-auto">
+                                    <table class="pc-table">
+                                        <thead><tr><th>बाधीत भूधारकाचे नाव</th><th>मोबाईल नंबर</th><th>पत्ता</th><th>संपादन करावयाचे क्षेत्र(हे. आर. चौमी )</th></tr></thead>
+                                        <tbody>
+                                            <tr><td><input class="pc-input" value="XYZ"></td><td><input class="pc-input"></td><td><input class="pc-input"></td><td rowspan="2"><input class="pc-input" type="text"></td></tr>
+                                            <tr><td><input class="pc-input" value="XZZ"></td><td><input class="pc-input"></td><td><input class="pc-input"></td></tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="pc-step-panel" data-pc-panel="7">
+                    <div class="pc-form-card">
+                        <div class="border-b border-[#dbe8f8] bg-[#edf5ff] px-6 py-5">
+                            <h2 class="text-xl font-bold text-[#214a8b]">टप्पा 7: मालमत्ता व पिके मूल्यांकन</h2>
+                            <p class="mt-1 text-sm text-[#5c78a5]">PDF पान 7 ते 11 मधील इमारत, विहीर, झाडे, पिके आणि इतर मालमत्ता.</p>
+                        </div>
+                        <div class="space-y-6 px-6 py-7 md:px-8">
+                            <div class="pc-section">
+                                <h3 class="text-lg font-bold text-[#244271]">• निगडीत घटकांचे मूल्यांकन</h3>
+                            </div>
+
+                            <div class="pc-section">
+                                <div class="mb-4 flex items-center justify-between gap-3">
+                                    <h3 class="text-lg font-bold text-[#244271]">१७. पाणीपुरवठा</h3>
+                                    <button type="button" class="rounded-lg bg-[#125fcb] px-3 py-2 text-sm font-semibold text-white">ओळ जोडा</button>
+                                </div>
+                                <div class="grid gap-4 md:grid-cols-3 md:items-end">
+                                    <div>
+                                        <label class="pc-label">मूल्यांकन सादर केलेल्या पत्राचा तपशील</label>
+                                        <input class="pc-input" type="text" placeholder="मूल्यांकन सादर केलेल्या पत्राचा तपशील">
+                                    </div>
+                                    <div>
+                                        <label class="pc-label">दिनांक</label>
+                                        <input class="pc-input" type="text" placeholder="dd-mm-yyyy">
+                                    </div>
+                                    <div class="pc-eye-col">
+                                        <button type="button" class="pc-eye-view" aria-label="View Documents" title="View Documents">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                                <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"></path>
+                                                <circle cx="12" cy="12" r="3"></circle>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="mt-4 grid gap-4 md:grid-cols-2">
+                                    <div><label class="pc-label">निगडीत घटक तपशील</label><input class="pc-input" type="text"></div>
+                                    <div><label class="pc-label">निगडीत घटकांचे मूल्यांकन</label><input class="pc-input" type="text"></div>
+                                </div>
+                            </div>
+
+                            <div class="pc-section">
+                                <div class="mb-4 flex items-center justify-between gap-3">
+                                    <h3 class="text-lg font-bold text-[#244271]">१८. कृषी विभाग</h3>
+                                    <button type="button" class="rounded-lg bg-[#125fcb] px-3 py-2 text-sm font-semibold text-white">ओळ जोडा</button>
+                                </div>
+                                <div class="grid gap-4 md:grid-cols-3 md:items-end">
+                                    <div>
+                                        <label class="pc-label">मूल्यांकन सादर केलेल्या पत्राचा तपशील</label>
+                                        <input class="pc-input" type="text" placeholder="मूल्यांकन सादर केलेल्या पत्राचा तपशील">
+                                    </div>
+                                    <div>
+                                        <label class="pc-label">दिनांक</label>
+                                        <input class="pc-input" type="text" placeholder="dd-mm-yyyy">
+                                    </div>
+                                    <div class="pc-eye-col">
+                                        <button type="button" class="pc-eye-view" aria-label="View Documents" title="View Documents">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                                <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"></path>
+                                                <circle cx="12" cy="12" r="3"></circle>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="mt-4 grid gap-4 md:grid-cols-2">
+                                    <div><label class="pc-label">निगडीत घटक तपशील</label><input class="pc-input" type="text"></div>
+                                    <div><label class="pc-label">निगडीत घटकांचे मूल्यांकन</label><input class="pc-input" type="text"></div>
+                                </div>
+                            </div>
+
+                            <div class="pc-section">
+                                <div class="mb-4 flex items-center justify-between gap-3">
+                                    <h3 class="text-lg font-bold text-[#244271]">१९. बांधकाम विभाग</h3>
+                                    <button type="button" class="rounded-lg bg-[#125fcb] px-3 py-2 text-sm font-semibold text-white">ओळ जोडा</button>
+                                </div>
+                                <div class="grid gap-4 md:grid-cols-3 md:items-end">
+                                    <div>
+                                        <label class="pc-label">मूल्यांकन सादर केलेल्या पत्राचा तपशील</label>
+                                        <input class="pc-input" type="text" placeholder="मूल्यांकन सादर केलेल्या पत्राचा तपशील">
+                                    </div>
+                                    <div>
+                                        <label class="pc-label">दिनांक</label>
+                                        <input class="pc-input" type="text" placeholder="dd-mm-yyyy">
+                                    </div>
+                                    <div class="pc-eye-col">
+                                        <button type="button" class="pc-eye-view" aria-label="View Documents" title="View Documents">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                                <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"></path>
+                                                <circle cx="12" cy="12" r="3"></circle>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="mt-4 grid gap-4 md:grid-cols-2">
+                                    <div><label class="pc-label">निगडीत घटक तपशील</label><input class="pc-input" type="text"></div>
+                                    <div><label class="pc-label">निगडीत घटकांचे मूल्यांकन</label><input class="pc-input" type="text"></div>
+                                </div>
+                            </div>
+
+                            <div class="pc-section">
+                                <div class="mb-4 flex items-center justify-between gap-3">
+                                    <h3 class="text-lg font-bold text-[#244271]">२०. वन विभाग</h3>
+                                    <button type="button" class="rounded-lg bg-[#125fcb] px-3 py-2 text-sm font-semibold text-white">ओळ जोडा</button>
+                                </div>
+                                <div class="grid gap-4 md:grid-cols-3 md:items-end">
+                                    <div>
+                                        <label class="pc-label">मूल्यांकन सादर केलेल्या पत्राचा तपशील</label>
+                                        <input class="pc-input" type="text" placeholder="मूल्यांकन सादर केलेल्या पत्राचा तपशील">
+                                    </div>
+                                    <div>
+                                        <label class="pc-label">दिनांक</label>
+                                        <input class="pc-input" type="text" placeholder="dd-mm-yyyy">
+                                    </div>
+                                    <div class="pc-eye-col">
+                                        <button type="button" class="pc-eye-view" aria-label="View Documents" title="View Documents">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                                <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"></path>
+                                                <circle cx="12" cy="12" r="3"></circle>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="mt-4 grid gap-4 md:grid-cols-2">
+                                    <div><label class="pc-label">निगडीत घटक तपशील</label><input class="pc-input" type="text"></div>
+                                    <div><label class="pc-label">निगडीत घटकांचे मूल्यांकन</label><input class="pc-input" type="text"></div>
+                                </div>
+                            </div>
+
+                            <div class="pc-section">
+                                <div class="mb-4 flex items-center justify-between gap-3">
+                                    <h3 class="text-lg font-bold text-[#244271]">२१. इतर विभाग</h3>
+                                    <button type="button" class="rounded-lg bg-[#125fcb] px-3 py-2 text-sm font-semibold text-white">ओळ जोडा</button>
+                                </div>
+                                <div class="grid gap-4 md:grid-cols-3 md:items-end">
+                                    <div>
+                                        <label class="pc-label">मूल्यांकन सादर केलेल्या पत्राचा तपशील</label>
+                                        <input class="pc-input" type="text" placeholder="मूल्यांकन सादर केलेल्या पत्राचा तपशील">
+                                    </div>
+                                    <div>
+                                        <label class="pc-label">दिनांक</label>
+                                        <input class="pc-input" type="text" placeholder="dd-mm-yyyy">
+                                    </div>
+                                    <div class="pc-eye-col">
+                                        <button type="button" class="pc-eye-view" aria-label="View Documents" title="View Documents">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                                <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"></path>
+                                                <circle cx="12" cy="12" r="3"></circle>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="mt-4 grid gap-4 md:grid-cols-2">
+                                    <div><label class="pc-label">निगडीत घटक तपशील</label><input class="pc-input" type="text"></div>
+                                    <div><label class="pc-label">निगडीत घटकांचे मूल्यांकन</label><input class="pc-input" type="text"></div>
+                                </div>
+                            </div>
+
+                            <div class="pc-section">
+                                <h3 class="mb-4 text-lg font-bold text-[#244271]">जमिनीशी निगडीत घटकांचे एकूण मूल्यांकन(१७+१८+१९+२०+२१)</h3>
+                                <div class="flex flex-wrap items-center gap-3 text-base font-semibold text-[#2a3f62]">
+                                    <label for="total-valuation-amount">रक्कम (₹):</label>
+                                    <input id="total-valuation-amount" class="pc-input w-auto min-w-[260px]" type="text" placeholder="एकूण मूल्यांकन">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="pc-step-panel" data-pc-panel="5">
+                    <div class="pc-form-card">
+                        <div class="border-b border-[#dbe8f8] bg-[#edf5ff] px-6 py-5">
+                            <h2 class="text-xl font-bold text-[#214a8b]">टप्पा 5: 18(1), 19 नोटीस व नोटीस बजावणी</h2>
+                            <p class="mt-1 text-sm text-[#5c78a5]">PDF पान 11 आणि 12 नुसार अधिसूचना व नोटीस.</p>
+                        </div>
+                        <div class="space-y-6 px-6 py-7 md:px-8">
+                            <div class="pc-section">
+                                <h3 class="mb-4 text-lg font-bold text-[#244271]">कलम 18/1 अंतिम अधिसूचना</h3>
+                                <div class="grid gap-4 md:grid-cols-3 md:items-end">
+                                    <div><label class="pc-label">अधिसूचना क्रमांक</label><input class="pc-input" type="text"></div>
+                                    <div><label class="pc-label">दिनांक</label><input class="pc-input" type="text" placeholder="dd-mm-yyyy"></div>
+                                    <div class="pc-eye-col">
+                                        <button type="button" class="pc-eye-view" aria-label="View Documents" title="View Documents">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                                <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"></path>
+                                                <circle cx="12" cy="12" r="3"></circle>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="mt-5 space-y-4">
+                                    <div class="grid gap-4 md:grid-cols-2 md:items-end">
+                                        <div>
+                                            <span class="pc-label">उक्त गट कलम (1) मध्ये आहे काय ?</span>
+                                            <div class="flex gap-4 text-sm text-[#394d6c]">
+                                                <label><input type="radio" name="group_in_clause_one_1"> होय</label>
+                                                <label><input type="radio" name="group_in_clause_one_1"> नाही</label>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label class="pc-label">असल्यास क्षेत्र नमूद करा</label>
+                                            <input class="pc-input" type="text" placeholder="नमूद करण्यासाठी जागा ठेवावी.">
+                                        </div>
+                                    </div>
+                                    <div class="grid gap-4 md:grid-cols-2 md:items-end">
+                                        <div>
+                                            <span class="pc-label">उक्त गट कलम (1) मध्ये आहे काय ?</span>
+                                            <div class="flex gap-4 text-sm text-[#394d6c]">
+                                                <label><input type="radio" name="group_in_clause_one_2"> होय</label>
+                                                <label><input type="radio" name="group_in_clause_one_2"> नाही</label>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label class="pc-label">असल्यास क्षेत्र नमूद करा</label>
+                                            <input class="pc-input" type="text" placeholder="नमूद करण्यासाठी जागा ठेवावी.">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="pc-section">
+                                <h3 class="mb-4 text-lg font-bold text-[#244271]">कलम 19 जाहीर नोटीस प्रसिद्धी</h3>
+                                <div class="space-y-4">
+                                    <div class="rounded-xl border border-[#d7e5f6] bg-[#f8fbff] p-4">
+                                        <h4 class="mb-3 text-base font-bold text-[#244271]">१. वर्तमानपत्र</h4>
+                                        <div class="grid gap-4 md:grid-cols-3 md:items-end">
+                                            <div><label class="pc-label">नाव</label><input class="pc-input" type="text" placeholder="वर्तमानपत्र 1 चे नाव"></div>
+                                            <div><label class="pc-label">दिनांक</label><input class="pc-input" type="text" placeholder="dd-mm-yyyy"></div>
+                                            <div class="pc-eye-col">
+                                                <button type="button" class="pc-eye-view" aria-label="View Documents" title="View Documents">
+                                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                                        <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"></path>
+                                                        <circle cx="12" cy="12" r="3"></circle>
+                                                    </svg>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="rounded-xl border border-[#d7e5f6] bg-[#f8fbff] p-4">
+                                        <h4 class="mb-3 text-base font-bold text-[#244271]">२. वर्तमानपत्र</h4>
+                                        <div class="grid gap-4 md:grid-cols-3 md:items-end">
+                                            <div><label class="pc-label">नाव</label><input class="pc-input" type="text" placeholder="वर्तमानपत्र 2 चे नाव"></div>
+                                            <div><label class="pc-label">दिनांक</label><input class="pc-input" type="text" placeholder="dd-mm-yyyy"></div>
+                                            <div class="pc-eye-col">
+                                                <button type="button" class="pc-eye-view" aria-label="View Documents" title="View Documents">
+                                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                                        <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"></path>
+                                                        <circle cx="12" cy="12" r="3"></circle>
+                                                    </svg>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="pc-section">
+                                <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+                                    <h3 class="text-lg font-bold text-[#244271]">जमीन मालक / हितसंबंधित व्यक्ती नोटीस बजावणी</h3>
+                                    <button type="button" class="pc-generate-notice-btn" title="Notice will be generated" aria-label="Generate Notice">
+                                        Generate Notice
+                                    </button>
+                                </div>
+                                <div class="grid gap-4 md:grid-cols-3">
+                                    <div><label class="pc-label">भूधारकाचे नाव</label><input class="pc-input" type="text"></div>
+                                    <div><label class="pc-label">क्षेत्र</label><input class="pc-input" type="text" placeholder="हेक्टर.आर."></div>
+                                    <div><label class="pc-label">नोटीस क्रमांक</label><input class="pc-input" type="text"></div>
+                                    <div><label class="pc-label">दिनांक</label><input class="pc-input" type="date"></div>
+                                    <div><label class="pc-label">नोटीस पत्र</label><input class="pc-upload" type="file"></div>
+                                    <div><label class="pc-label">बजावणी अहवाल</label><input class="pc-upload" type="file"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="pc-step-panel" data-pc-panel="6">
+                    <div class="pc-form-card">
+                        <div class="border-b border-[#dbe8f8] bg-[#edf5ff] px-6 py-5">
+                            <h2 class="text-xl font-bold text-[#214a8b]">टप्पा 6: अर्ज व जिल्हास्तरीय समिती</h2>
+                            <p class="mt-1 text-sm text-[#5c78a5]">PDF पान 13 आणि 14 मधील अर्ज आणि समिती दर निश्चिती.</p>
+                        </div>
+                        <div class="space-y-6 px-6 py-7 md:px-8">
+                            <div class="pc-section">
+                                <h3 class="mb-4 text-lg font-bold text-[#244271]">कलम 19(6) दाखल अर्जाचा तपशील</h3>
+                                <div class="grid gap-4 md:grid-cols-2">
+                                    <div><label class="pc-label">अर्जदाराचे संपूर्ण नाव</label><input class="pc-input" type="text"></div>
+                                    <div><label class="pc-label">पत्ता</label><input class="pc-input" type="text"></div>
+                                    <div><label class="pc-label">अर्जाचे स्वरूप</label><input class="pc-input" type="text"></div>
+                                    <div><label class="pc-label">अर्ज प्रत</label><input class="pc-upload" type="file"></div>
+                                    <div><label class="pc-label">निर्णय</label><select class="pc-input"><option>स्वीकार</option><option>अस्वीकार</option></select></div>
+                                    <div><label class="pc-label">निर्णय पत्र</label><input class="pc-upload" type="file"></div>
+                                </div>
+                            </div>
+                            <div class="pc-section">
+                                <h3 class="mb-4 text-lg font-bold text-[#244271]">जिल्हास्तरीय समिती दर विवरण</h3>
+                                <div class="grid gap-4 md:grid-cols-3">
+                                    <div><label class="pc-label">बैठकी दिनांक</label><input class="pc-input" type="date" readonly></div>
+                                    <div class="md:col-span-2">
+                                        <label class="pc-label">बैठक इतिवृत्त</label>
+                                        <div class="pc-eye-col">
+                                            <button type="button" class="pc-eye-view" aria-label="View Documents" title="View Documents">
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                                    <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"></path>
+                                                    <circle cx="12" cy="12" r="3"></circle>
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="mt-5 overflow-x-auto">
+                                    <table class="pc-table">
+                                        <thead><tr><th>मूल्य विभाग प्रकार</th><th>Assessment Range</th><th>मूल्यविभाग</th><th>रेडी रेकनर दर</th><th>समिती मंजूर दर</th><th>एकक</th></tr></thead>
+                                        <tbody>
+                                            <tr><td>औद्योगिक जमीन</td><td>0.00 - 3.00</td><td><input class="pc-input" readonly></td><td><input class="pc-input" readonly></td><td><input class="pc-input"></td><td><input class="pc-input" readonly></td></tr>
+                                            <tr><td>गावठाण परिसर क्षेत्रातील शेतकऱ्यांना जमीन</td><td>0.00 - 3.00</td><td><input class="pc-input" readonly></td><td><input class="pc-input" readonly></td><td><input class="pc-input"></td><td><input class="pc-input" readonly></td></tr>
+                                            <tr><td>हायवेवरील विकसित जमीन</td><td>0.00 - 3.00</td><td><input class="pc-input" readonly></td><td><input class="pc-input" readonly></td><td><input class="pc-input"></td><td><input class="pc-input" readonly></td></tr>
+                                            <tr><td>इतर</td><td><input class="pc-input"></td><td><input class="pc-input"></td><td><input class="pc-input"></td><td><input class="pc-input"></td><td><input class="pc-input"></td></tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <div class="pc-section">
+                                <h3 class="mb-4 text-lg font-bold text-[#244271]">मूल्यांकन / मोबदला निश्चिती अहवाल</h3>
+                                <div class="grid gap-4 md:grid-cols-3">
+                                    <div><label class="pc-label">प्राधिकृत अधिकारी यांचा प्रस्ताव क्रमांक</label><input class="pc-input" type="text"></div>
+                                    <div><label class="pc-label">दिनांक</label><input class="pc-input" type="date"></div>
+                                    <div class="pc-eye-col">
+                                        <button type="button" class="pc-eye-view" aria-label="View Documents" title="View Documents">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                                <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"></path>
+                                                <circle cx="12" cy="12" r="3"></circle>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                    <div><label class="pc-label">दिनांक</label><input class="pc-input" type="date"></div>
+                                    <div class="pc-eye-col">
+                                        <button type="button" class="pc-eye-view" aria-label="View Documents" title="View Documents">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                                <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"></path>
+                                                <circle cx="12" cy="12" r="3"></circle>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="pc-step-panel" data-pc-panel="8">
+                    <div class="pc-form-card">
+                        <div class="border-b border-[#dbe8f8] bg-[#edf5ff] px-6 py-5">
+                            <h2 class="text-xl font-bold text-[#214a8b]">टप्पा 8: संपादन तपशील व मोबदला गणना</h2>
+                            <p class="mt-1 text-sm text-[#5c78a5]">PDF पान 14 आणि 15 मधील मोबदला गणना घटक.</p>
+                        </div>
+                        <div class="space-y-6 px-6 py-7 md:px-8">
+                            <div class="pc-section">
+                                <h3 class="mb-4 text-lg font-bold text-[#244271]">संपादनाचा तपशील</h3>
+                                <div class="overflow-x-auto">
+                                    <table class="pc-table">
+                                        <thead><tr><th>भूधारकाचे नाव</th><th>जिरायत क्षेत्र</th><th>हंगामातले क्षेत्र</th><th>बागायत क्षेत्र</th><th>अकृषक/फळझाडे क्षेत्र</th><th>एकूण क्षेत्र</th><th>संपादन क्षेत्र</th></tr></thead>
+                                        <tbody><tr><td><input class="pc-input" readonly></td><td><input class="pc-input"></td><td><input class="pc-input"></td><td><input class="pc-input"></td><td><input class="pc-input"></td><td><input class="pc-input" readonly></td><td><input class="pc-input" readonly></td></tr></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <div class="pc-section">
+                                <h3 class="mb-4 text-lg font-bold text-[#244271]">मोबदला संबंधित माहिती</h3>
+                                <div class="grid gap-4 md:grid-cols-2">
+                                    <div><label class="pc-label">जमिनीच्या प्रकारानुसार वार्षिक बाजारमूल्य</label><input class="pc-input" readonly></div>
+                                    <div><label class="pc-label">अधिसूचित गुणांक घटक</label><input class="pc-input" readonly></div>
+                                    <div><label class="pc-label">गुणांकानुसार देय बाजारमूल्य</label><input class="pc-input" readonly></div>
+                                    <div><label class="pc-label">Assets एकूण मोबदला</label><input class="pc-input" readonly></div>
+                                    <div><label class="pc-label">जमिनीचा निर्धारित मोबदला</label><input class="pc-input" readonly></div>
+                                    <div><label class="pc-label">Solatium 100%</label><input class="pc-input" readonly></div>
+                                    <div><label class="pc-label">12% अतिरिक्त घटक रक्कम</label><input class="pc-input" readonly></div>
+                                    <div><label class="pc-label">एकूण निर्धारित मोबदला</label><input class="pc-input" readonly></div>
+                                    <div><label class="pc-label">संमतीसाठी 25% वाढीव मोबदला</label><input class="pc-input" readonly></div>
+                                    <div><label class="pc-label">संमती निवाड्यासाठी एकूण मोबदला</label><input class="pc-input" readonly></div>
+                                    <div><label class="pc-label">नजराणा / अधिनियम रक्कम</label><input class="pc-input" readonly></div>
+                                    <div><label class="pc-label">अक्षरी एकूण रक्कम रुपये</label><input class="pc-input" readonly></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="pc-step-panel" data-pc-panel="9">
+                    <div class="pc-form-card">
+                        <div class="border-b border-[#dbe8f8] bg-[#edf5ff] px-6 py-5">
+                            <h2 class="text-xl font-bold text-[#214a8b]">टप्पा 9: संमती तपशील व करारनामा</h2>
+                            <p class="mt-1 text-sm text-[#5c78a5]">PDF पान 15 आणि 16 नुसार संमती व करारनामा.</p>
+                        </div>
+                        <div class="space-y-6 px-6 py-7 md:px-8">
+                            <div class="pc-section">
+                                <h3 class="mb-4 text-lg font-bold text-[#244271]">कलम 19(6) संमती तपशील</h3>
+                                <div class="mb-5">
+                                    <div class="mb-2 flex flex-wrap items-center justify-between gap-3">
+                                        <span class="pc-label mb-0">संमती दाखल केले आहे का?</span>
+                                        <button type="button" class="pc-generate-notice-btn" title="Notice will be generated" aria-label="Generate Notice">
+                                            Generate Notice
+                                        </button>
+                                    </div>
+                                    <div class="flex gap-4"><label><input type="radio" name="consent_submitted"> होय</label><label><input type="radio" name="consent_submitted"> नाही</label></div>
+                                </div>
+                                <div class="grid gap-4 md:grid-cols-3">
+                                    <div><label class="pc-label">संमतीपत्र दाखल करणाऱ्याचे नाव</label><input class="pc-input" type="text"></div>
+                                    <div><label class="pc-label">पत्ता</label><input class="pc-input" type="text"></div>
+                                    <div><label class="pc-label">संमतीचा स्वरूप</label><input class="pc-input" type="text"></div>
+                                    <div><label class="pc-label">संमती क्षेत्र</label><input class="pc-input" type="text" placeholder="हेक्टर.आर."></div>
+                                    <div><label class="pc-label">संमती पत्र</label><input class="pc-upload" type="file"></div>
+                                    <div><label class="pc-label">संमतीचा निर्णय</label><select class="pc-input"><option>स्वीकार</option><option>अस्वीकार</option></select></div>
+                                    <div><label class="pc-label">निर्णय पत्र</label><input class="pc-upload" type="file"></div>
+                                    <div><label class="pc-label">संमती करारनामा क्रमांक</label><input class="pc-input" type="text"></div>
+                                    <div><label class="pc-label">दिनांक</label><input class="pc-input" type="date"></div>
+                                    <div><label class="pc-label">करारनामा पत्र</label><input class="pc-upload" type="file"></div>
+                                </div>
+                                <div class="mt-4 flex gap-2">
+                                    <button type="button" class="rounded-lg bg-[#125fcb] px-3 py-2 text-sm font-semibold text-white">+ Add Row</button>
+                                    <button type="button" class="rounded-lg border border-red-200 px-3 py-2 text-sm font-semibold text-red-600">- Delete Row</button>
+                                </div>
+                            </div>
+                            <div class="pc-section">
+                                <h3 class="mb-4 text-lg font-bold text-[#244271]">कलम 19(6) संपादनाचा करारनामा</h3>
+                                <div class="grid gap-4 md:grid-cols-2">
+                                    <div><label class="pc-label">करारनामा झाल्याचा दिनांक</label><input class="pc-input" type="date"></div>
+                                    <div><label class="pc-label">करारनामा अपलोड करा</label><input class="pc-upload" type="file"></div>
+                                </div>
+                                <p class="mt-3 text-sm font-semibold text-red-600">निर्गमित करारनामा Draft स्वयंरिया निर्गमित झाला पाहिजे.</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="pc-step-panel" data-pc-panel="10">
+                    <div class="pc-form-card">
+                        <div class="border-b border-[#dbe8f8] bg-[#edf5ff] px-6 py-5">
+                            <h2 class="text-xl font-bold text-[#214a8b]">टप्पा 10: मोबदला प्रदान तपशील</h2>
+                            <p class="mt-1 text-sm text-[#5c78a5]">PDF पान 17 नुसार भूधारक, बँक आणि मोबदला प्रदान माहिती.</p>
+                        </div>
+                        <div class="space-y-6 px-6 py-7 md:px-8">
+                            <div class="pc-section">
+                                <h3 class="mb-4 text-lg font-bold text-[#244271]">भूधारक माहिती</h3>
+                                <div class="grid gap-4 md:grid-cols-2">
+                                    <div>
+                                        <label class="pc-label">भूधारकाचे नाव</label>
+                                        <select class="pc-input">
+                                            <option>भूधारकाचे नाव निवडा</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="pc-label">आधार कार्ड क्रमांक</label>
+                                        <input class="pc-input" type="text" readonly placeholder="पूर्वीच्या माहितीतून येईल">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="pc-section">
+                                <h3 class="mb-4 text-lg font-bold text-[#244271]">बँक तपशील</h3>
+                                <div class="grid gap-4 md:grid-cols-2">
+                                    <div><label class="pc-label">बँकेचे नाव</label><input class="pc-input" type="text"></div>
+                                    <div><label class="pc-label">बँक खाते क्रमांक</label><input class="pc-input" type="text"></div>
+                                    <div><label class="pc-label">बँकेची शाखा</label><input class="pc-input" type="text"></div>
+                                    <div><label class="pc-label">IFSC Code</label><input class="pc-input" type="text"></div>
+                                    <div class="md:col-span-2"><label class="pc-label">पासबुक / चेकबुक प्रत अपलोड करा</label><input class="pc-upload" type="file"></div>
+                                </div>
+                            </div>
+
+                            <div class="pc-section">
+                                <h3 class="mb-4 text-lg font-bold text-[#244271]">मोबदला तपशील</h3>
+                                <div class="grid gap-4 md:grid-cols-4">
+                                    <div><label class="pc-label">संपादन क्षेत्र</label><input class="pc-input" type="text" placeholder="हेक्टर.आर."></div>
+                                    <div><label class="pc-label">मोबदला रक्कम</label><input class="pc-input" type="number" step="0.01"></div>
+                                    <div><label class="pc-label">दिनांक</label><input class="pc-input" type="date"></div>
+                                    <div><label class="pc-label">मोबदला पत्र</label><input class="pc-upload" type="file"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="pc-step-panel" data-pc-panel="11">
+                    <div class="pc-form-card">
+                        <div class="border-b border-[#dbe8f8] bg-[#edf5ff] px-6 py-5">
+                            <h2 class="text-xl font-bold text-[#214a8b]">टप्पा 11: निवाडा व न्यायालयात जमा तपशील</h2>
+                            <p class="mt-1 text-sm text-[#5c78a5]">PDF पान 18 आणि 19 नुसार निवाडा, नमुना-6 नोटीस आणि न्यायालय जमा तपशील.</p>
+                        </div>
+                        <div class="space-y-6 px-6 py-7 md:px-8">
+                            <div class="pc-section">
+                                <h3 class="mb-4 text-lg font-bold text-[#244271]">संपादनाचा निवाडा (संमती / विनासंमती)</h3>
+                                <div class="grid gap-4 md:grid-cols-3">
+                                    <div><label class="pc-label">निवाडा क्रमांक</label><input class="pc-input" type="text"></div>
+                                    <div><label class="pc-label">दिनांक</label><input class="pc-input" type="date"></div>
+                                    <div><label class="pc-label">निवाडा पत्र</label><input class="pc-upload" type="file"></div>
+                                </div>
+                            </div>
+
+                            <div class="pc-section">
+                                <h3 class="mb-4 text-lg font-bold text-[#244271]">नमुना-6 नोटीस</h3>
+                                <div class="grid gap-4 md:grid-cols-3">
+                                    <div><label class="pc-label">नोटीस क्रमांक</label><input class="pc-input" type="text"></div>
+                                    <div><label class="pc-label">नोटीस दाखल केल्याचा दिनांक</label><input class="pc-input" type="date"></div>
+                                    <div><label class="pc-label">नोटीस पत्र</label><input class="pc-upload" type="file"></div>
+                                </div>
+                                <p class="mt-3 text-sm font-semibold text-red-600">नमुना-6 नोटीस निर्गमित करा: स्वयंरिया निर्गमित झाले पाहिजे.</p>
+                            </div>
+
+                            <div class="pc-section">
+                                <h3 class="mb-4 text-lg font-bold text-[#244271]">मोबदला न्यायालयात जमा करणे</h3>
+                                <div class="grid gap-4 md:grid-cols-3">
+                                    <div><label class="pc-label">न्यायालयाचे नाव</label><input class="pc-input" type="text"></div>
+                                    <div><label class="pc-label">जिल्हा</label><input class="pc-input" type="text"></div>
+                                    <div><label class="pc-label">प्रकरण दाखल करणाऱ्याचे नाव</label><input class="pc-input" type="text"></div>
+                                    <div><label class="pc-label">एकूण मोबदला रक्कम</label><input class="pc-input" type="number" step="0.01"></div>
+                                    <div><label class="pc-label">एकूण प्राप्त क्षेत्र</label><input class="pc-input" type="text" placeholder="हेक्टर.आर."></div>
+                                    <div><label class="pc-label">प्रकरण क्रमांक</label><input class="pc-input" type="text"></div>
+                                    <div><label class="pc-label">दिनांक</label><input class="pc-input" type="date"></div>
+                                    <div><label class="pc-label">रक्कम भरलेली पावती</label><input class="pc-upload" type="file"></div>
+                                    <div><label class="pc-label">संबंधित विविध बाब तपशील</label><input class="pc-input" type="text"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="pc-step-panel" data-pc-panel="12">
+                    <div class="pc-form-card">
+                        <div class="border-b border-[#dbe8f8] bg-[#edf5ff] px-6 py-5">
+                            <h2 class="text-xl font-bold text-[#214a8b]">टप्पा 12: कब्जा, अभिलेख व करार कार्यवाही</h2>
+                            <p class="mt-1 text-sm text-[#5c78a5]">PDF पान 19 ते 22 नुसार कब्जा, अभिलेख अद्ययावतकरण आणि नव्याने करार कार्यवाही.</p>
+                        </div>
+                        <div class="space-y-6 px-6 py-7 md:px-8">
+                            <div class="pc-section">
+                                <h3 class="mb-4 text-lg font-bold text-[#244271]">संपादित जमिनीचा कब्जा घेण्याबाबत नोटीस</h3>
+                                <div class="grid gap-4 md:grid-cols-3">
+                                    <div><label class="pc-label">नोटीस बजावण्यात आलेल्या भूधारकाचे नाव</label><input class="pc-input" type="text"></div>
+                                    <div><label class="pc-label">नोटीस क्रमांक</label><input class="pc-input" type="text"></div>
+                                    <div><label class="pc-label">दिनांक</label><input class="pc-input" type="date"></div>
+                                    <div><label class="pc-label">नोटीस पत्र</label><input class="pc-upload" type="file"></div>
+                                    <div><label class="pc-label">कार्यालयाचे नाव</label><input class="pc-input" type="text"></div>
+                                    <div><label class="pc-label">कार्यालय पत्र</label><input class="pc-upload" type="file"></div>
+                                    <div class="md:col-span-3">
+                                        <span class="pc-label">सक्षम प्राधिकारी संपादित जमिनीचा कब्जा घेण्यात आला आहे का?</span>
+                                        <div class="flex gap-4"><label><input type="radio" name="possession_taken"> होय</label><label><input type="radio" name="possession_taken"> नाही</label></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="pc-section">
+                                <h3 class="mb-4 text-lg font-bold text-[#244271]">कब्जा मंडळाकडून सुपूर्द करणे</h3>
+                                <div class="grid gap-4 md:grid-cols-5">
+                                    <div class="md:col-span-5">
+                                        <span class="pc-label">कब्जा मंडळाकडून सुपूर्द करण्यात आले आहे काय?</span>
+                                        <div class="flex gap-4"><label><input type="radio" name="possession_handed"> होय</label><label><input type="radio" name="possession_handed"> नाही</label></div>
+                                    </div>
+                                    <div><label class="pc-label">भूधारकाचे नाव</label><input class="pc-input" type="text"></div>
+                                    <div><label class="pc-label">क्षेत्र</label><input class="pc-input" type="text" placeholder="हेक्टर.आर."></div>
+                                    <div><label class="pc-label">कब्जा पावती क्रमांक</label><input class="pc-input" type="text"></div>
+                                    <div><label class="pc-label">दिनांक</label><input class="pc-input" type="date"></div>
+                                    <div><label class="pc-label">कब्जा पावती</label><input class="pc-upload" type="file"></div>
+                                </div>
+                            </div>
+
+                            <div class="pc-section">
+                                <h3 class="mb-4 text-lg font-bold text-[#244271]">अभिलेख अद्ययावतकरण</h3>
+                                <div class="grid gap-4 md:grid-cols-2">
+                                    <div class="md:col-span-2">
+                                        <span class="pc-label">अभिलेखामध्ये योजना / विभागाचे नाव दाखल करण्यात आले आहे काय?</span>
+                                        <div class="flex gap-4"><label><input type="radio" name="record_updated"> होय</label><label><input type="radio" name="record_updated"> नाही</label></div>
+                                    </div>
+                                    <div><label class="pc-label">नोंद दाखल न घेण्याचे कारण</label><input class="pc-input" type="text"></div>
+                                    <div><label class="pc-label">नोंद मंजूर न होण्याचे कारण</label><input class="pc-input" type="text"></div>
+                                </div>
+                            </div>
+
+                            <div class="pc-section">
+                                <h3 class="mb-4 text-lg font-bold text-[#244271]">कलम 19 क(9) नुसार नव्याने करार कार्यवाही</h3>
+                                <div class="grid gap-4 md:grid-cols-3">
+                                    <div class="md:col-span-3">
+                                        <span class="pc-label">नव्याने कार्यवाही करण्यात आले आहे काय?</span>
+                                        <div class="flex gap-4"><label><input type="radio" name="new_agreement_process"> होय</label><label><input type="radio" name="new_agreement_process"> नाही</label></div>
+                                    </div>
+                                    <div><label class="pc-label">भूधारकाचे नाव</label><input class="pc-input" type="text" readonly placeholder="स्वयंरिया"></div>
+                                    <div><label class="pc-label">आधार कार्ड क्रमांक</label><input class="pc-input" type="text" readonly placeholder="स्वयंरिया"></div>
+                                    <div><label class="pc-label">बँकेचे नाव</label><input class="pc-input" type="text" readonly placeholder="स्वयंरिया"></div>
+                                    <div><label class="pc-label">बँक खाते क्रमांक</label><input class="pc-input" type="text" readonly placeholder="स्वयंरिया"></div>
+                                    <div><label class="pc-label">बँकेची शाखा</label><input class="pc-input" type="text" readonly placeholder="स्वयंरिया"></div>
+                                    <div><label class="pc-label">IFSC Code</label><input class="pc-input" type="text" readonly placeholder="स्वयंरिया"></div>
+                                    <div><label class="pc-label">पासबुक स्कॅन अपलोड</label><input class="pc-upload" type="file"></div>
+                                    <div><label class="pc-label">करार दिनांक</label><input class="pc-input" type="date"></div>
+                                    <div><label class="pc-label">क्षेत्र</label><input class="pc-input" type="text" placeholder="हेक्टर.आर."></div>
+                                    <div><label class="pc-label">आदेश दिनांक</label><input class="pc-input" type="date"></div>
+                                    <div><label class="pc-label">रक्कम अदा नोंदवही धनादेश क्र.</label><input class="pc-input" type="text"></div>
+                                    <div><label class="pc-label">बाकी मोबदला रक्कम</label><input class="pc-input" type="number" step="0.01" readonly placeholder="स्वयंरिया"></div>
+                                    <div class="md:col-span-3"><label class="pc-label">पत्ता</label><input class="pc-input" type="text"></div>
+                                    <div class="md:col-span-3"><label class="pc-label">पत्र अपलोड करा</label><input class="pc-upload" type="file"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <div class="flex flex-col gap-3 border-t border-[#d8e4f2] pt-5 sm:flex-row sm:items-center sm:justify-between">
+                    <button type="button" id="pcPrevBtn" class="rounded-xl border border-[#ccdbef] bg-white px-5 py-3 text-sm font-semibold text-[#4a6488]">Save & Previous</button>
+                    <div class="flex gap-3">
+                        <button type="button" class="rounded-xl border border-[#ccdbef] bg-white px-5 py-3 text-sm font-semibold text-[#4a6488]">Save</button>
+                        <button type="button" id="pcNextBtn" class="rounded-xl bg-[#125fcb] px-5 py-3 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(18,95,203,0.2)]">Save & Next</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    (() => {
+        const dots = Array.from(document.querySelectorAll('[data-pc-step]'));
+        const panels = Array.from(document.querySelectorAll('[data-pc-panel]'));
+        const prevBtn = document.getElementById('pcPrevBtn');
+        const nextBtn = document.getElementById('pcNextBtn');
+        let currentStep = 1;
+        const totalSteps = 12;
+
+        function setStep(step) {
+            currentStep = Math.max(1, Math.min(totalSteps, Number(step) || 1));
+            dots.forEach((dot) => {
+                const dotStep = Number(dot.dataset.pcStep);
+                dot.classList.toggle('is-active', dotStep === currentStep);
+                dot.classList.toggle('is-done', dotStep < currentStep);
+            });
+            panels.forEach((panel) => {
+                panel.classList.toggle('is-active', Number(panel.dataset.pcPanel) === currentStep);
+            });
+            prevBtn.disabled = currentStep === 1;
+            prevBtn.classList.toggle('opacity-50', currentStep === 1);
+            nextBtn.textContent = currentStep === totalSteps ? 'Save & Finish' : 'Save & Next';
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        dots.forEach((dot) => dot.addEventListener('click', () => setStep(dot.dataset.pcStep)));
+        prevBtn.addEventListener('click', () => setStep(currentStep - 1));
+        nextBtn.addEventListener('click', () => {
+            if (currentStep < totalSteps) {
+                setStep(currentStep + 1);
+            }
+        });
+        setStep(1);
+    })();
+</script>
+{% endblock %}

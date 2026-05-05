@@ -1,9 +1,83 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="max-w-6xl mx-auto bg-white p-6 border border-gray-300 mt-6 rounded-lg shadow">
+<style>
+    .calc-align-field {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+    }
+
+    .calc-align-field > label {
+        display: block;
+        line-height: 1.3;
+        min-height: 3.5rem;
+    }
+
+    .calc-align-field > input,
+    .calc-align-field > select {
+        margin-top: 0.25rem;
+    }
+
+    @media (max-width: 767px) {
+        .calc-align-field > label {
+            min-height: auto;
+        }
+    }
+
+    .tool-tabs-shell {
+        border: 1px solid #d8e4f2;
+        background: #f8fbff;
+        border-radius: 0.65rem;
+        padding: 0.4rem 0.55rem 0;
+    }
+
+    .tool-tabs {
+        display: flex;
+        align-items: flex-end;
+        gap: 0.4rem;
+    }
+
+    .tool-tab-link {
+        display: inline-block;
+        margin-bottom: -1px;
+        padding: 0.7rem 1.1rem;
+        border: 1px solid transparent;
+        border-radius: 0.5rem 0.5rem 0 0;
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: #6b7d99;
+        line-height: 1;
+        transition: all 120ms ease;
+    }
+
+    .tool-tab-link:hover {
+        color: #213a63;
+    }
+
+    .tool-tab-link.is-active {
+        background: #ffffff;
+        color: #125fcb;
+        border-color: #cad8ea;
+        box-shadow: 0 1px 3px rgba(18, 95, 203, 0.15);
+    }
+</style>
+<div class="w-full px-2 sm:px-3 md:px-4 py-4">
+    <div class="overflow-hidden rounded-lg border border-slate-300 bg-white shadow-sm">
+        <div class="px-3 py-4 md:px-5 lg:px-6">
+            <div class="tool-tabs-shell mb-6">
+                <nav class="tool-tabs" aria-label="Tool views">
+                    <a href="{% url 'land_record_712_list' %}" class="tool-tab-link">७/१२ उतार नोंद</a>
+                    <a href="{% url 'ready_reckoner_list' %}" class="tool-tab-link">रेडी रेकनर दर</a>
+                    <a href="{% url 'village_info' %}" class="tool-tab-link">गावाची माहिती</a>
+                    <a href="{% url 'add_entry' %}" class="tool-tab-link is-active">नुकसान भरपाई नोंद</a>
+                    <a href="{% url 'process_chart_form' %}" class="tool-tab-link">भूसंपादन प्रक्रिया</a>
+                </nav>
+            </div>
+
     <h2 class="text-center font-bold text-xl underline mb-2">नवीन नुकसान भरपाई नोंद</h2>
-    <p class="text-center text-sm mb-6">रस्ता रुंदीकरणासाठी भूमी नुकसान भरपाई रक्कम आपोआप मोजण्यासाठी सर्वे आणि मालमता तपशील भरा.</p>
+    <p class="text-center text-sm mb-6">रस्ता रुंदीकरणासाठी भूमी नुकसान भरपाई रक्कम आपोआप मोजण्यासाठी सर्वे आणि मालमता
+        तपशील भरा.</p>
 
     {% if success %}
     <div class="mb-4 p-3 rounded border border-green-300 bg-green-50 text-green-700 text-sm">
@@ -11,8 +85,9 @@
     </div>
     {% endif %}
 
-    <form method="POST" id="rateCalculatorForm">
+    <form method="POST" enctype="multipart/form-data" id="rateCalculatorForm">
         {% csrf_token %}
+        <input type="hidden" id="entry_id" name="entry_id">
 
         <!-- मूलभूत माहिती -->
         <div class="border rounded-lg p-4 bg-gray-50 mb-6">
@@ -20,35 +95,41 @@
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                     <label class="font-semibold">जिल्हा</label>
-                    <select id="district" name="district" required class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-400">
+                    <select id="district" name="district" required
+                        class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-400">
                         <option value="">जिल्हा निवडा</option>
                     </select>
                 </div>
                 <div>
                     <label class="font-semibold">तालुका</label>
-                    <select id="taluka" name="taluka" required class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-400">
+                    <select id="taluka" name="taluka" required
+                        class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-400">
                         <option value="">तालुका निवडा</option>
                     </select>
                 </div>
                 <div>
                     <label class="font-semibold">गाव</label>
-                    <select id="village" name="village" required class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-400">
+                    <select id="village" name="village" required
+                        class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-400">
                         <option value="">गाव निवडा</option>
                     </select>
                 </div>
                 <div>
                     <label class="font-semibold">सर्व्हे नं./गट नं.</label>
-                    <select id="gutNumber" name="sr_no_02" class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-400">
+                    <select id="gutNumber" name="sr_no_02"
+                        class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-400">
                         <option value="">गट क्रमांक निवडा</option>
                     </select>
                 </div>
                 <div>
                     <label class="font-semibold">खातेदाराचे नाव</label>
-                    <input id="owner_name_03" name="owner_name_03" type="text" placeholder="पूर्ण नाव टाका" class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-400">
+                    <input id="owner_name_03" name="owner_name_03" type="text" placeholder="पूर्ण नाव टाका"
+                        class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-400">
                 </div>
                 <div>
                     <label class="font-semibold">भूधारणा पद्धती भोगवटदार वर्ग</label>
-                    <select id="land_class_04" name="land_class_04" class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-400">
+                    <select id="land_class_04" name="land_class_04"
+                        class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-400">
                         <option value="">निवडा</option>
                         <option value="1">वर्ग 1</option>
                         <option value="2">वर्ग 2</option>
@@ -63,27 +144,33 @@
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                     <label class="font-semibold">7/12 चे एकूण क्षेत्र</label>
-                    <input id="total_area_05" name="total_area_05" type="number" step="0.0001" placeholder="0.0000" class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-400">
+                    <input id="total_area_05" name="total_area_05" type="number" step="0.0001" placeholder="0.0000"
+                        class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-400">
                 </div>
                 <div>
                     <label class="font-semibold">7/12 ची एकूण आकारणी</label>
-                    <input id="total_assessment_06" name="total_assessment_06" type="number" step="0.01" placeholder="0.00" class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-400">
+                    <input id="total_assessment_06" name="total_assessment_06" type="number" step="0.01"
+                        placeholder="0.00" class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-400">
                 </div>
                 <div>
                     <label class="font-semibold">प्रति हेक्टरी आकारणी</label>
-                    <input id="per_hectare_assessment_07" name="per_hectare_assessment_07" type="number" step="0.01" readonly class="w-full border p-2 rounded bg-gray-100">
+                    <input id="per_hectare_assessment_07" name="per_hectare_assessment_07" type="number" step="0.01"
+                        readonly class="w-full border p-2 rounded bg-gray-100">
                 </div>
                 <div>
                     <label class="font-semibold">जमिनीचा ग्रुप</label>
-                    <input id="land_group_08" name="land_group_08" type="text" readonly class="w-full border p-2 rounded bg-gray-100">
+                    <input id="land_group_08" name="land_group_08" type="text" readonly
+                        class="w-full border p-2 rounded bg-gray-100">
                 </div>
                 <div>
                     <label class="font-semibold">संपादित क्षेत्र</label>
-                    <input id="to_create_09" name="to_create_09" type="number" step="0.0001" placeholder="0.0000" class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-400">
+                    <input id="to_create_09" name="to_create_09" type="number" step="0.0001" placeholder="0.0000"
+                        class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-400">
                 </div>
                 <div>
                     <label class="font-semibold">शिघ्रसिद्ध गणकातील क्रमांक</label>
-                    <input id="shighrasiddha_number_10" name="shighrasiddha_number_10" type="text" placeholder="क्रमांक" class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-400">
+                    <input id="shighrasiddha_number_10" name="shighrasiddha_number_10" type="text" placeholder="क्रमांक"
+                        class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-400">
                 </div>
             </div>
         </div>
@@ -94,21 +181,20 @@
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
                 <div class="flex flex-col">
                     <label class="font-semibold mb-1">उपविभागीय अधिकारांनी निश्चित केलेला जमिनीचा प्रकार</label>
-                    <select id="land_type_13" name="land_type_13" class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-400">
+                    <select id="land_type_13" name="land_type_13"
+                        class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-400">
                         <option value="">गाव निवडा (प्रकार लोड होतील)</option>
                     </select>
                 </div>
                 <div class="flex flex-col">
-                    <label class="font-semibold mb-1">रेडी रेकनर दर</label>
-                    <input id="ready_reckoner_rate_11" type="number" step="0.01" readonly placeholder="0.00" class="w-full border p-2 rounded bg-gray-100">
-                </div>
-                <div class="flex flex-col">
                     <label class="font-semibold mb-1">जिल्हास्तरीय समितीने निश्चित केलेले सर्वाधिक बाजारमूल्य</label>
-                    <input id="committee_market_rate_12" name="committee_market_rate_12" type="number" step="0.01" placeholder="0.00" class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-400">
+                    <input id="committee_market_rate_12" name="committee_market_rate_12" type="number" step="0.01"
+                        placeholder="0.00" class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-400">
                 </div>
                 <div class="flex flex-col">
                     <label class="font-semibold mb-1">जमिनीच्या प्रकारानुसार विचारात घ्यावयाचे बाजारमूल्य</label>
-                    <input id="considered_market_rate_14" name="considered_market_rate_14" type="number" step="0.01" readonly placeholder="0.00" class="w-full border p-2 rounded bg-gray-100">
+                    <input id="considered_market_rate_14" name="considered_market_rate_14" type="number" step="0.01"
+                        readonly placeholder="0.00" class="w-full border p-2 rounded bg-gray-100">
                 </div>
             </div>
         </div>
@@ -117,21 +203,25 @@
         <div class="border rounded-lg p-4 bg-white mb-6">
             <h3 class="font-bold text-lg mb-4">भूसंपादन अधिनियम 2013 अनुसार</h3>
             <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div>
+                <div class="calc-align-field">
                     <label class="font-semibold">भूसंपादन अधिनियम 2013 अन्वये जमिनीचे बाजारमूल्य</label>
-                    <input id="market_value_15a" name="market_value_15a" type="number" step="0.01" readonly placeholder="0.00" class="w-full border p-2 rounded bg-gray-100">
+                    <input id="market_value_15a" name="market_value_15a" type="number" step="0.01" readonly
+                        placeholder="0.00" class="w-full border p-2 rounded bg-gray-100">
                 </div>
-                <div>
+                <div class="calc-align-field">
                     <label class="font-semibold">प्रादेशिक योजनेतील झोन / आरक्षण</label>
-                    <input id="zone_15b" name="zone_15b" type="text" placeholder="झोन" class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-400">
+                    <input id="zone_15b" name="zone_15b" type="text" placeholder="झोन"
+                        class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-400">
                 </div>
-                <div>
+                <div class="calc-align-field">
                     <label class="font-semibold">गुणांक घटक</label>
-                    <input id="coefficient_15c" name="coefficient_15c" type="number" step="0.01" placeholder="0.00" class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-400">
+                    <input id="coefficient_15c" name="coefficient_15c" type="number" step="0.01" placeholder="0.00"
+                        class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-400">
                 </div>
-                <div>
+                <div class="calc-align-field">
                     <label class="font-semibold">जमिनीचे एकूण बाजारमूल्य</label>
-                    <input id="total_market_value_15d" name="total_market_value_15d" type="number" step="0.01" readonly placeholder="0.00" class="w-full border p-2 rounded bg-gray-100">
+                    <input id="total_market_value_15d" name="total_market_value_15d" type="number" step="0.01" readonly
+                        placeholder="0.00" class="w-full border p-2 rounded bg-gray-100">
                 </div>
             </div>
         </div>
@@ -142,23 +232,28 @@
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                     <label class="font-semibold">फळझाडे</label>
-                    <input id="fruit_trees_16a" name="fruit_trees_16a" type="number" step="0.01" placeholder="0.00" class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-400">
+                    <input id="fruit_trees_16a" name="fruit_trees_16a" type="number" step="0.01" placeholder="0.00"
+                        class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-400">
                 </div>
                 <div>
                     <label class="font-semibold">वनझाडे</label>
-                    <input id="forest_trees_16b" name="forest_trees_16b" type="number" step="0.01" placeholder="0.00" class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-400">
+                    <input id="forest_trees_16b" name="forest_trees_16b" type="number" step="0.01" placeholder="0.00"
+                        class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-400">
                 </div>
                 <div>
                     <label class="font-semibold">बांधकामे</label>
-                    <input id="construction_16c" name="construction_16c" type="number" step="0.01" placeholder="0.00" class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-400">
+                    <input id="construction_16c" name="construction_16c" type="number" step="0.01" placeholder="0.00"
+                        class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-400">
                 </div>
                 <div>
                     <label class="font-semibold">इतर बाबी (विहीर, पाइप लाईन, बोअरवेल इ.)</label>
-                    <input id="other_assets_16d" name="other_assets_16d" type="number" step="0.01" placeholder="0.00" class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-400">
+                    <input id="other_assets_16d" name="other_assets_16d" type="number" step="0.01" placeholder="0.00"
+                        class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-400">
                 </div>
                 <div>
                     <label class="font-semibold">एकूण मूल्यांकन</label>
-                    <input id="total_assets_16e" name="total_assets_16e" type="number" step="0.01" readonly placeholder="0.00" class="w-full border p-2 rounded bg-gray-100">
+                    <input id="total_assets_16e" name="total_assets_16e" type="number" step="0.01" readonly
+                        placeholder="0.00" class="w-full border p-2 rounded bg-gray-100">
                 </div>
             </div>
         </div>
@@ -179,97 +274,141 @@
                 </div>
                 <div>
                     <label class="font-semibold">निर्धारित मोबदला</label>
-                    <input id="determined_compensation_17" name="determined_compensation_17" type="number" step="0.01" readonly placeholder="0.00" class="w-full border p-2 rounded bg-gray-100">
+                    <input id="determined_compensation_17" name="determined_compensation_17" type="number" step="0.01"
+                        readonly placeholder="0.00" class="w-full border p-2 rounded bg-gray-100">
                 </div>
                 <div>
                     <label class="font-semibold">दिलासा रक्कम</label>
-                    <input id="solatium_amount_18" name="solatium_amount_18" type="number" step="0.01" readonly placeholder="0.00" class="w-full border p-2 rounded bg-gray-100">
+                    <input id="solatium_amount_18" name="solatium_amount_18" type="number" step="0.01" readonly
+                        placeholder="0.00" class="w-full border p-2 rounded bg-gray-100">
                 </div>
                 <div>
                     <label class="font-semibold">मोबदला मंजुरी दिनांक</label>
-                    <input id="award_date" name="award_date" type="date" class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-400">
+                    <input id="award_date" name="award_date" type="date"
+                        class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-400">
                 </div>
                 <div>
                     <label class="font-semibold">अधिसूचना/मूल्यांकन दिनांक</label>
-                    <input id="notification_date" name="notification_date" type="date" class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-400">
+                    <input id="notification_date" name="notification_date" type="date"
+                        class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-400">
                 </div>
                 <div>
                     <label class="font-semibold">12% अतिरिक्त घटकाची रक्कम</label>
-                    <input id="additional_12_percent_19" name="additional_12_percent_19" type="number" step="0.01" readonly placeholder="0.00" class="w-full border p-2 rounded bg-gray-100">
-                </div>
-                <div>
-                    <label class="font-semibold">आस्थापना खर्च देय मोबदल्याच्या (%)</label>
-                    <input id="establishment_expense_percent" name="establishment_expense_percent" type="number" step="0.01" value="0" class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-400">
-                </div>
-                <div>
-                    <label class="font-semibold">सोईसुविधा रक्कम देय मोबदल्याच्या (%)</label>
-                    <input id="facility_amount_percent" name="facility_amount_percent" type="number" step="0.01" value="0" class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-400">
+                    <input id="additional_12_percent_19" name="additional_12_percent_19" type="number" step="0.01"
+                        readonly placeholder="0.00" class="w-full border p-2 rounded bg-gray-100">
                 </div>
                 <div>
                     <label class="font-semibold">दिवस फरक</label>
-                    <input id="days_difference" name="days_difference" type="number" readonly class="w-full border p-2 rounded bg-gray-100">
+                    <input id="days_difference" name="days_difference" type="number" readonly
+                        class="w-full border p-2 rounded bg-gray-100">
                 </div>
             </div>
 
             <!-- विनासंमती निवाडा -->
-            <div class="mt-4 border rounded-lg p-4 bg-gray-50">
+            <div id="section_non_consent" class="mt-4 border rounded-lg p-4 bg-gray-50">
                 <h4 class="font-bold text-base mb-3">विनासंमती निवाडा</h4>
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
+                    <div class="calc-align-field">
                         <label class="font-semibold">विनासंमती निवाड्यासाठी निर्धारित मोबदला</label>
-                        <input id="non_consent_compensation_20" name="non_consent_compensation_20" type="number" step="0.01" readonly class="w-full border p-2 rounded bg-gray-100">
+                        <input id="non_consent_compensation_20" name="non_consent_compensation_20" type="number"
+                            step="0.01" readonly class="w-full border p-2 rounded bg-gray-100">
                     </div>
-                    <div>
+                    <div class="calc-align-field">
                         <label class="font-semibold">वर्ग-2 जमिनीची कपात करावयाची नजराणा रक्कम</label>
-                        <input id="class2_deduction_21" name="class2_deduction_21" type="number" step="0.01" readonly class="w-full border p-2 rounded bg-gray-100">
+                        <input id="class2_deduction_21" name="class2_deduction_21" type="number" step="0.01" readonly
+                            class="w-full border p-2 rounded bg-gray-100">
                     </div>
-                    <div>
+                    <div class="calc-align-field">
                         <label class="font-semibold">विनासंमती निवाड्यासाठी देय मोबदला</label>
-                        <input id="payable_non_consent_22" name="payable_non_consent_22" type="number" step="0.01" readonly class="w-full border p-2 rounded bg-gray-100">
+                        <input id="payable_non_consent_22" name="payable_non_consent_22" type="number" step="0.01"
+                            readonly class="w-full border p-2 rounded bg-gray-100">
                     </div>
                 </div>
             </div>
 
             <!-- संमती निवाडा -->
-            <div class="mt-4 border rounded-lg p-4 bg-gray-50">
+            <div id="section_consent" class="mt-4 border rounded-lg p-4 bg-gray-50" style="display:none">
                 <h4 class="font-bold text-base mb-3">संमती निवाडा</h4>
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                    <div>
+                    <div class="calc-align-field">
                         <label class="font-semibold">संमतीसाठी देय 25% वाढीव मोबदला</label>
-                        <input id="consent_bonus_23" name="consent_bonus_23" type="number" step="0.01" readonly class="w-full border p-2 rounded bg-gray-100">
+                        <input id="consent_bonus_23" name="consent_bonus_23" type="number" step="0.01" readonly
+                            class="w-full border p-2 rounded bg-gray-100">
                     </div>
-                    <div>
+                    <div class="calc-align-field">
                         <label class="font-semibold">संमती निवाड्यासाठी निर्धारित मोबदला</label>
-                        <input id="consent_total_24" name="consent_total_24" type="number" step="0.01" readonly class="w-full border p-2 rounded bg-gray-100">
+                        <input id="consent_total_24" name="consent_total_24" type="number" step="0.01" readonly
+                            class="w-full border p-2 rounded bg-gray-100">
                     </div>
-                    <div>
+                    <div class="calc-align-field">
                         <label class="font-semibold">वर्ग-2 जमिनीची कपात करावयाची नजराणा रक्कम (संमती)</label>
-                        <input id="class2_deduction_consent_25" name="class2_deduction_consent_25" type="number" step="0.01" readonly class="w-full border p-2 rounded bg-gray-100">
+                        <input id="class2_deduction_consent_25" name="class2_deduction_consent_25" type="number"
+                            step="0.01" readonly class="w-full border p-2 rounded bg-gray-100">
                     </div>
-                    <div>
+                    <div class="calc-align-field">
                         <label class="font-semibold">संमती निवाड्यासाठी देय मोबदला</label>
-                        <input id="payable_consent_26" name="payable_consent_26" type="number" step="0.01" readonly class="w-full border p-2 rounded bg-gray-100">
+                        <input id="payable_consent_26" name="payable_consent_26" type="number" step="0.01" readonly
+                            class="w-full border p-2 rounded bg-gray-100">
                     </div>
                 </div>
             </div>
 
             <!-- फाईल्स -->
-            <div class="mt-4">
-                <h4 class="font-bold text-base mb-2">फाईल्स</h4>
-                <input type="file" id="files" multiple class="hidden"/>
-                <button type="button" onclick="document.getElementById('files').click()" class="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700">फाईल अपलोड करा</button>
+            <div class="mt-6 border-t pt-4">
+                <label class="font-semibold text-sm text-gray-700 mb-3 block">Upload Documents</label>
+                <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 bg-gray-50 hover:bg-gray-100 transition-colors duration-200" id="dropZone">
+                    <div class="text-center">
+                        <div class="mx-auto w-16 h-16 mb-4 flex items-center justify-center bg-orange-100 rounded-full">
+                            <svg class="w-8 h-8 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                            </svg>
+                        </div>
+                        <h3 class="text-base font-semibold text-gray-700 mb-2">Choose files or drag and drop here</h3>
+                        <p class="text-sm text-gray-500 mb-4">PDF, JPG, PNG, DOC, DOCX (Max 5MB each)</p>
+                        <input type="file" id="files" name="documents" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" multiple class="hidden" />
+                        <button type="button" onclick="document.getElementById('files').click()" class="px-6 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-medium transition-colors duration-200">Choose Files</button>
+                    </div>
+                </div>
+                <p id="file-error" class="text-sm text-red-600 mt-2 hidden"></p>
+                <div id="filesList" class="mt-4 space-y-2 hidden">
+                    <h4 class="text-sm font-semibold text-gray-700 mb-2">Selected Files:</h4>
+                    <div id="filesContainer" class="space-y-2"></div>
+                </div>
+                {% if documents %}
+                <div class="mt-3 border rounded p-3 bg-white">
+                    <div class="space-y-2">
+                        {% for doc_master in documents %}
+                            {% for attachment in doc_master.attachments.all %}
+                            <div class="flex items-center justify-between border rounded px-2 py-1 text-sm" id="attachment-row-{{ attachment.id }}">
+                                <a href="{{ attachment.file.url }}" target="_blank" class="text-blue-700 hover:underline break-all">
+                                    {{ attachment.file.name|cut:'documents/files/' }}
+                                </a>
+                                <button type="button" class="bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded text-xs delete-attachment-btn" data-attachment-id="{{ attachment.id }}">Delete</button>
+                            </div>
+                            {% endfor %}
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
             </div>
         </div>
 
         <div class="flex gap-3 mt-2">
-            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded shadow-sm transition duration-200">
+            <button type="submit"
+                class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded shadow-sm transition duration-200">
                 शेतकरी नोंद जतन करा
             </button>
-            <button type="button" onclick="document.getElementById('rateCalculatorForm').reset(); gutNumberSelect.innerHTML='<option value=\'\'>\u0917\u091f \u0915\u094d\u0930\u092e\u093e\u0902\u0915 \u0928\u093f\u0935\u0921\u093e</option>'; talukaSelect.innerHTML='<option value=\'\'>\u0924\u093e\u0932\u0941\u0915\u093e \u0928\u093f\u0935\u0921\u093e</option>'; villageSelect.innerHTML='<option value=\'\'>\u0917\u093e\u0935 \u0928\u093f\u0935\u0921\u093e</option>'; loadLocationData(); calculateAll();" class="bg-gray-600 hover:bg-gray-700 text-white px-5 py-2 rounded shadow-sm transition duration-200">
+            <button type="button" id="resetFormBtn"
+                class="bg-gray-600 hover:bg-gray-700 text-white px-5 py-2 rounded shadow-sm transition duration-200">
                 फॉर्म रिसेट करा
             </button>
+            <a href="{% url 'entry_list' %}" class="bg-gray-800 hover:bg-gray-900 text-white px-4 py-2 rounded shadow-sm transition duration-200">
+                &#2344;&#2379;&#2306;&#2342;&#2368; &#2346;&#2361;&#2366;
+            </a>
         </div>
     </form>
+        </div>
+    </div>
 </div>
 
 <script>
@@ -277,198 +416,437 @@
     const talukaSelect = document.getElementById('taluka');
     const villageSelect = document.getElementById('village');
     const gutNumberSelect = document.getElementById('gutNumber');
-    let locationData = [];
+    const landTypeSelect = document.getElementById('land_type_13');
+    const resetFormBtn = document.getElementById('resetFormBtn');
+    // _rrData: { assessmentType -> { unit, year, rates: [{min,max,rate}] } }
+    window._rrData = {};
+
+    if (resetFormBtn) {
+        resetFormBtn.addEventListener('click', function () {
+            const form = document.getElementById('rateCalculatorForm');
+            if (form) form.reset();
+            gutNumberSelect.innerHTML = '<option value="">गट क्रमांक निवडा</option>';
+            talukaSelect.innerHTML = '<option value="">तालुका निवडा</option>';
+            villageSelect.innerHTML = '<option value="">गाव निवडा</option>';
+            loadLocationData();
+            calculateAll();
+        });
+    }
+
+    document.addEventListener('click', function (e) {
+        const deleteBtn = e.target.closest('.delete-attachment-btn');
+        if (!deleteBtn) return;
+        const attachmentId = deleteBtn.getAttribute('data-attachment-id');
+        if (attachmentId) deleteAttachment(attachmentId);
+    });
+
+    function addSelectOptions(selectEl, items = []) {
+        items.forEach(item => {
+            const value = typeof item === 'string' ? item : (item.value || '');
+            const label = typeof item === 'string' ? item : (item.label || item.value || '');
+            if (!value) return;
+            selectEl.insertAdjacentHTML('beforeend', `<option value="${value}">${label}</option>`);
+        });
+    }
 
     async function loadLocationData() {
         try {
-            const response = await fetch('/api/location-data/');
-            const data = await response.json();
-            locationData = data.villages || [];
-            const districts = [...new Set(locationData.map(item => item.district).filter(Boolean))];
             districtSelect.innerHTML = '<option value="">जिल्हा निवडा</option>';
-            districts.forEach(d => districtSelect.insertAdjacentHTML('beforeend', `<option value="${d}">${d}</option>`));
-            if (districts.length === 1) {
-                districtSelect.value = districts[0];
-                populateTalukas(districts[0]);
-            }
-        } catch (e) { console.error('Error loading location data:', e); }
+            talukaSelect.innerHTML = '<option value="">तालुका निवडा</option>';
+            villageSelect.innerHTML = '<option value="">गाव निवडा</option>';
+            gutNumberSelect.innerHTML = '<option value="">गट क्रमांक निवडा</option>';
+            const res = await fetch('/api/locations/?lang=mr');
+            const data = await res.json();
+            addSelectOptions(districtSelect, data.data || []);
+        } catch (e) { console.error(e); }
     }
 
-    function populateTalukas(selectedDistrict) {
+    async function populateTalukas(district) {
         talukaSelect.innerHTML = '<option value="">तालुका निवडा</option>';
         villageSelect.innerHTML = '<option value="">गाव निवडा</option>';
         gutNumberSelect.innerHTML = '<option value="">गट क्रमांक निवडा</option>';
-        const talukas = [...new Set(locationData.filter(i => i.district === selectedDistrict).map(i => i.taluka).filter(Boolean))];
-        talukas.forEach(t => talukaSelect.insertAdjacentHTML('beforeend', `<option value="${t}">${t}</option>`));
+        if (!district) return;
+        try {
+            const res = await fetch(`/api/locations/?district=${encodeURIComponent(district)}&lang=mr`);
+            const data = await res.json();
+            addSelectOptions(talukaSelect, data.data || []);
+        } catch (e) { console.error(e); }
     }
 
-    function populateVillages(selectedDistrict, selectedTaluka) {
+    async function populateVillages(district, taluka) {
         villageSelect.innerHTML = '<option value="">गाव निवडा</option>';
         gutNumberSelect.innerHTML = '<option value="">गट क्रमांक निवडा</option>';
-        const villages = [...new Set(locationData.filter(i => i.district === selectedDistrict && i.taluka === selectedTaluka).map(i => i.village_name).filter(Boolean))];
-        villages.forEach(v => villageSelect.insertAdjacentHTML('beforeend', `<option value="${v}">${v}</option>`));
+        if (!district || !taluka) return;
+        try {
+            const res = await fetch(`/api/locations/?district=${encodeURIComponent(district)}&taluka=${encodeURIComponent(taluka)}&lang=mr`);
+            const data = await res.json();
+            addSelectOptions(villageSelect, data.data || []);
+        } catch (e) { console.error(e); }
     }
 
     async function loadGutNumbers(village) {
         gutNumberSelect.innerHTML = '<option value="">गट क्रमांक निवडा</option>';
-        if (!village) return;
+        const district = districtSelect.value;
+        const taluka = talukaSelect.value;
+        if (!district || !taluka || !village) return;
         try {
-            const response = await fetch(`/api/gut-numbers/${encodeURIComponent(village)}/`);
-            const data = await response.json();
-            (data.gut_numbers || []).forEach(gut => gutNumberSelect.insertAdjacentHTML('beforeend', `<option value="${gut}">${gut}</option>`));
-        } catch (e) { console.error('Error loading gut numbers:', e); }
+            const res = await fetch(`/api/locations/?district=${encodeURIComponent(district)}&taluka=${encodeURIComponent(taluka)}&village=${encodeURIComponent(village)}`);
+            const data = await res.json();
+            addSelectOptions(gutNumberSelect, data.data || []);
+        } catch (e) { console.error(e); }
     }
 
-    async function loadRRRate(village) {
-        const rrField = document.getElementById('ready_reckoner_rate_11');
-        const landTypeSelect = document.getElementById('land_type_13');
-        rrField.value = '';
-        rrField.title = '';
-        landTypeSelect.innerHTML = '<option value="">गाव निवडा (प्रकार लोड होतील)</option>';
-        if (!village) return;
+    async function loadAssessmentTypes(village) {
+        landTypeSelect.innerHTML = '<option value="">प्रकार लोड होत आहे...</option>';
+        window._rrData = {};
+        if (!village) {
+            landTypeSelect.innerHTML = '<option value="">गाव निवडा (प्रकार लोड होतील)</option>';
+            return;
+        }
         try {
             const res = await fetch(`/api/rr-rate-by-village/${encodeURIComponent(village)}/`);
             const data = await res.json();
             if (data.found && data.assessment_types.length) {
-                // Store rates keyed by assessment_type for quick lookup
-                window._rrRates = {};
+                landTypeSelect.innerHTML = '<option value="">प्रकार निवडा</option>';
                 data.assessment_types.forEach(item => {
-                    window._rrRates[item.assessment_type] = item;
+                    window._rrData[item.assessment_type] = item;
                     landTypeSelect.insertAdjacentHTML('beforeend',
-                        `<option value="${item.assessment_type}">${item.assessment_type} — ₹${item.rate.toLocaleString('en-IN')} / ${item.unit}</option>`);
+                        `<option value="${item.assessment_type}">${item.assessment_type}</option>`);
                 });
-                // Auto-select first and set rate
                 if (data.assessment_types.length === 1) {
                     landTypeSelect.value = data.assessment_types[0].assessment_type;
-                    setRRRateFromType(data.assessment_types[0].assessment_type);
+                    calculateAll();
                 }
             } else {
-                landTypeSelect.innerHTML = '<option value="">रेडी रेकनर नोंद नाही (2025-2026)</option>';
-                window._rrRates = {};
+                landTypeSelect.innerHTML = '<option value="">रेडी रेकनर नोंद नाही</option>';
             }
-        } catch (e) { console.error('Error loading RR rate:', e); }
-    }
-
-    function setRRRateFromType(assessmentType) {
-        const rrField = document.getElementById('ready_reckoner_rate_11');
-        const item = window._rrRates && window._rrRates[assessmentType];
-        if (item) {
-            rrField.value = item.rate.toFixed(2);
-            rrField.title = `${item.assessment_type} | ${item.unit} | ${item.year}`;
-        } else {
-            rrField.value = '';
-            rrField.title = '';
+        } catch (e) {
+            console.error(e);
+            landTypeSelect.innerHTML = '<option value="">लोड करताना त्रुटी</option>';
         }
-        calculateAll();
     }
 
-    document.getElementById('land_type_13').addEventListener('change', function () {
-        setRRRateFromType(this.value);
-    });
-
+    landTypeSelect.addEventListener('change', calculateAll);
     districtSelect.addEventListener('change', function () { populateTalukas(this.value); });
     talukaSelect.addEventListener('change', function () { populateVillages(districtSelect.value, this.value); });
-    villageSelect.addEventListener('change', function () { loadGutNumbers(this.value); loadRRRate(this.value); });
+    villageSelect.addEventListener('change', function () {
+        loadGutNumbers(this.value);
+        loadAssessmentTypes(this.value);
+    });
 
-    loadLocationData();
+    const editEntryId = new URLSearchParams(window.location.search).get('edit_id');
 
-document.getElementById('consent_status').addEventListener('change', function() {
-    document.getElementById('is_with_consent').checked = this.value === 'with';
-});
-
-function val(id) { return parseFloat(document.getElementById(id).value) || 0; }
-function setVal(id, number, digits = 2) {
-    document.getElementById(id).value = Number.isFinite(number) ? number.toFixed(digits) : '';
-}
-
-function calculateAll() {
-    const totalArea = val('total_area_05');
-    const totalAssessment = val('total_assessment_06');
-    const perHectare = totalArea > 0 ? totalAssessment / totalArea : 0;
-    setVal('per_hectare_assessment_07', perHectare, 2);
-
-    let landGroup = '';
-    if (perHectare <= 1.25) landGroup = 'I';
-    else if (perHectare <= 2.5) landGroup = 'II';
-    else if (perHectare <= 5) landGroup = 'III';
-    else if (perHectare <= 7.5) landGroup = 'IV';
-    else if (perHectare <= 10) landGroup = 'V';
-    else if (perHectare <= 12.5) landGroup = 'VI';
-    else if (perHectare > 12.5) landGroup = 'VII';
-    document.getElementById('land_group_08').value = totalArea > 0 ? landGroup : '';
-
-    // रेडी रेकनर दर is auto-filled from DB via loadRRRate(); use committee_market_rate_12 for calculations
-    const committee = val('committee_market_rate_12');
-
-    const landType = document.getElementById('land_type_13').value;
-    let multiplier = 1;
-    if (landType === 'हंगामी बागायत') multiplier = 1.5;
-    if (landType === 'बागायत') multiplier = 2;
-
-    const considered = committee * multiplier;
-    setVal('considered_market_rate_14', considered, 2);
-
-    const market15a = considered * val('to_create_09');
-    setVal('market_value_15a', market15a, 2);
-
-    const total15d = market15a * val('coefficient_15c');
-    setVal('total_market_value_15d', total15d, 2);
-
-    const assetsTotal = val('fruit_trees_16a') + val('forest_trees_16b') + val('construction_16c') + val('other_assets_16d');
-    setVal('total_assets_16e', assetsTotal, 2);
-
-    const comp17 = Math.round(total15d + assetsTotal);
-    setVal('determined_compensation_17', comp17, 0);
-    setVal('solatium_amount_18', comp17, 0);
-
-    const notificationDate = document.getElementById('notification_date').value;
-    const awardDate = document.getElementById('award_date').value;
-    let days = 0;
-    if (notificationDate && awardDate) {
-        const diff = Math.abs(new Date(awardDate) - new Date(notificationDate));
-        days = Math.ceil(diff / (1000 * 60 * 60 * 24));
+    function fillField(id, value) {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.value = (value === null || value === undefined) ? '' : value;
     }
-    document.getElementById('days_difference').value = days || '';
 
-    const consentBonus = Math.round(comp17 * 0.25);
-    setVal('consent_bonus_23', consentBonus, 0);
+    function ensureSelectOption(selectEl, value) {
+        if (!selectEl || value === null || value === undefined || value === '') return;
+        const hasOption = Array.from(selectEl.options).some(opt => opt.value === String(value));
+        if (!hasOption) {
+            selectEl.insertAdjacentHTML('beforeend', `<option value="${value}">${value}</option>`);
+        }
+    }
 
-    const add12 = Math.round((((comp17 + consentBonus) * 0.12) / 365) * days);
-    setVal('additional_12_percent_19', add12, 0);
+    async function loadEntryForEdit(entryId) {
+        try {
+            const res = await fetch(`/tools/add-entry/?id=${encodeURIComponent(entryId)}`);
+            const data = await res.json();
+            if (!data.success || !data.entry) return;
 
-    const nonConsent20 = Math.round(comp17 + comp17 + add12);
-    setVal('non_consent_compensation_20', nonConsent20, 0);
+            const entry = data.entry;
+            fillField('entry_id', entry.id);
 
-    const landClass = document.getElementById('land_class_04').value;
-    const class2Deduction21 = landClass === '2' ? Math.round(nonConsent20 * 0.10) : 0;
-    setVal('class2_deduction_21', class2Deduction21, 0);
+            if (entry.district) {
+                districtSelect.value = entry.district;
+                await populateTalukas(entry.district);
+            }
+            if (entry.taluka) {
+                talukaSelect.value = entry.taluka;
+                await populateVillages(entry.district, entry.taluka);
+            }
+            if (entry.village) {
+                villageSelect.value = entry.village;
+                await loadGutNumbers(entry.village);
+                await loadAssessmentTypes(entry.village);
+            }
 
-    const establishmentPct = val('establishment_expense_percent');
-    const facilityPct = val('facility_amount_percent');
+            ensureSelectOption(gutNumberSelect, entry.sr_no_02);
+            ensureSelectOption(landTypeSelect, entry.land_type_13);
+            fillField('gutNumber', entry.sr_no_02);
+            fillField('owner_name_03', entry.owner_name_03);
+            fillField('land_class_04', entry.land_class_04);
+            fillField('total_area_05', entry.total_area_05);
+            fillField('total_assessment_06', entry.total_assessment_06);
+            fillField('to_create_09', entry.to_create_09);
+            fillField('shighrasiddha_number_10', entry.shighrasiddha_number_10);
+            fillField('committee_market_rate_12', entry.committee_market_rate_12);
+            fillField('land_type_13', entry.land_type_13);
+            fillField('zone_15b', entry.zone_15b);
+            fillField('coefficient_15c', entry.coefficient_15c);
+            fillField('fruit_trees_16a', entry.fruit_trees_16a);
+            fillField('forest_trees_16b', entry.forest_trees_16b);
+            fillField('construction_16c', entry.construction_16c);
+            fillField('other_assets_16d', entry.other_assets_16d);
+            fillField('notification_date', entry.notification_date);
+            fillField('award_date', entry.award_date);
+            fillField('per_hectare_assessment_07', entry.per_hectare_assessment_07);
+            fillField('land_group_08', entry.land_group_08);
+            fillField('considered_market_rate_14', entry.considered_market_rate_14);
+            fillField('market_value_15a', entry.market_value_15a);
+            fillField('total_market_value_15d', entry.total_market_value_15d);
+            fillField('total_assets_16e', entry.total_assets_16e);
+            fillField('determined_compensation_17', entry.determined_compensation_17);
+            fillField('solatium_amount_18', entry.solatium_amount_18);
+            fillField('days_difference', entry.days_difference);
+            fillField('additional_12_percent_19', entry.additional_12_percent_19);
+            fillField('non_consent_compensation_20', entry.non_consent_compensation_20);
+            fillField('class2_deduction_21', entry.class2_deduction_21);
+            fillField('payable_non_consent_22', entry.payable_non_consent_22);
+            fillField('consent_bonus_23', entry.consent_bonus_23);
+            fillField('consent_total_24', entry.consent_total_24);
+            fillField('class2_deduction_consent_25', entry.class2_deduction_consent_25);
+            fillField('payable_consent_26', entry.payable_consent_26);
 
-    const baseNonConsent = nonConsent20 - class2Deduction21;
-    const payableNonConsent = Math.round(baseNonConsent + (baseNonConsent * establishmentPct / 100) + (baseNonConsent * facilityPct / 100));
-    setVal('payable_non_consent_22', payableNonConsent, 0);
+            const isWithConsent = !!entry.is_with_consent;
+            document.getElementById('is_with_consent').checked = isWithConsent;
+            document.getElementById('consent_status').value = isWithConsent ? 'with' : 'without';
 
-    const consent24 = Math.round(nonConsent20 + consentBonus);
-    setVal('consent_total_24', consent24, 0);
+            const submitBtn = document.querySelector('#rateCalculatorForm button[type="submit"]');
+            if (submitBtn) submitBtn.textContent = 'नोंद अपडेट करा';
 
-    const class2Deduction25 = landClass === '2' ? Math.round(consent24 * 0.10) : 0;
-    setVal('class2_deduction_consent_25', class2Deduction25, 0);
+            calculateAll();
+        } catch (e) {
+            console.error('Failed to load entry for edit:', e);
+        }
+    }
 
-    const baseConsent = consent24 - class2Deduction25;
-    const payableConsent = Math.round(baseConsent + (baseConsent * establishmentPct / 100) + (baseConsent * facilityPct / 100));
-    setVal('payable_consent_26', payableConsent, 0);
-}
+    async function initializeForm() {
+        await loadLocationData();
+        if (editEntryId) {
+            await loadEntryForEdit(editEntryId);
+        } else {
+            calculateAll();
+        }
+    }
 
-[
-    'total_area_05', 'total_assessment_06', 'to_create_09', 'committee_market_rate_12',
-    'coefficient_15c', 'fruit_trees_16a', 'forest_trees_16b', 'construction_16c', 'other_assets_16d',
-    'notification_date', 'award_date', 'land_class_04', 'establishment_expense_percent', 'facility_amount_percent'
-].forEach(id => {
-    const el = document.getElementById(id);
-    el.addEventListener('input', calculateAll);
-    el.addEventListener('change', calculateAll);
-});
+    initializeForm();
+
+    document.getElementById('consent_status').addEventListener('change', function () {
+        document.getElementById('is_with_consent').checked = this.value === 'with';
+        calculateAll();
+    });
+
+    function val(id) { return parseFloat(document.getElementById(id).value) || 0; }
+    function setVal(id, number, digits = 2) {
+        document.getElementById(id).value = Number.isFinite(number) ? number.toFixed(digits) : '';
+    }
+
+    function calculateAll() {
+        const totalArea = val('total_area_05');
+        const totalAssessment = val('total_assessment_06');
+        const perHectare = totalArea > 0 ? totalAssessment / totalArea : 0;
+        setVal('per_hectare_assessment_07', perHectare, 2);
+
+        let landGroup = '';
+        if (totalArea > 0) {
+            if (perHectare <= 1.25) landGroup = 'I';
+            else if (perHectare <= 2.5) landGroup = 'II';
+            else if (perHectare <= 5) landGroup = 'III';
+            else if (perHectare <= 7.5) landGroup = 'IV';
+            else if (perHectare <= 10) landGroup = 'V';
+            else if (perHectare <= 12.5) landGroup = 'VI';
+            else landGroup = 'VII';
+        }
+        document.getElementById('land_group_08').value = landGroup;
+
+        // --- full decimal chain, no intermediate rounding ---
+        const committee = val('committee_market_rate_12');
+        const landType = landTypeSelect.value.trim();
+        let multiplier = 1.0;
+        if (landType.includes('बागायत') && landType.includes('हंगामी')) multiplier = 1.10;
+        else if (landType.includes('बागायत')) multiplier = 1.20;
+
+        const considered = committee * multiplier;           // decimal
+        const market15a = considered * val('to_create_09'); // decimal
+        const total15d = market15a * val('coefficient_15c'); // decimal
+        const assetsTotal = val('fruit_trees_16a') + val('forest_trees_16b')
+            + val('construction_16c') + val('other_assets_16d'); // decimal
+        const comp17 = total15d + assetsTotal;           // decimal — NO round yet
+
+        // display — round only for output
+        setVal('considered_market_rate_14', considered, 0);
+        setVal('market_value_15a', Math.round(market15a), 0);
+        setVal('total_market_value_15d', Math.round(total15d), 0);
+        setVal('total_assets_16e', assetsTotal, 2);
+
+        // col 17 and 18 = ROUND(comp17)
+        const comp17r = Math.round(comp17);
+        setVal('determined_compensation_17', comp17r, 0);
+        setVal('solatium_amount_18', comp17r, 0);
+
+        const notificationDate = document.getElementById('notification_date').value;
+        const awardDate = document.getElementById('award_date').value;
+        let days = 0;
+        if (notificationDate && awardDate) {
+            days = Math.round(Math.abs(new Date(awardDate) - new Date(notificationDate)) / 86400000);
+        }
+        document.getElementById('days_difference').value = days || '';
+
+        const isWithConsent = document.getElementById('consent_status').value === 'with';
+        const landClass = document.getElementById('land_class_04').value;
+
+        // col 19: Excel ROUND((total15d * 0.12) / 365 * days, 0)
+        const add12 = Math.round(total15d * 0.12 / 365 * days);
+        setVal('additional_12_percent_19', add12, 0);
+
+        // col 20 = 17 + 18 + 19
+        const nonConsent20 = comp17r + comp17r + add12;
+        setVal('non_consent_compensation_20', nonConsent20, 0);
+        // col 23 = ROUND(20 * 0.25)
+        const consentBonus23 = Math.round(nonConsent20 * 0.25);
+        setVal('consent_bonus_23', consentBonus23, 0);
+        // col 21 = ROUND(20 * 0.10) if class2 else 0
+        const class2Ded21 = landClass === '2' ? Math.round(nonConsent20 * 0.10) : 0;
+        // col 22 = 20 - 21
+        setVal('class2_deduction_21', class2Ded21, 0);
+        setVal('payable_non_consent_22', nonConsent20 - class2Ded21, 0);
+
+        // col 24 = 20 + 23
+        const consent24 = nonConsent20 + consentBonus23;
+        // col 25 = ROUND(24 * 0.10) if class2 else 0
+        const class2Ded25 = landClass === '2' ? Math.round(consent24 * 0.10) : 0;
+        // col 26 = 24 - 25
+        const baseC = consent24 - class2Ded25;
+        setVal('consent_total_24', consent24, 0);
+        setVal('class2_deduction_consent_25', class2Ded25, 0);
+        setVal('payable_consent_26', baseC, 0);
+
+        document.getElementById('section_non_consent').style.display = isWithConsent ? 'none' : 'block';
+        document.getElementById('section_consent').style.display = isWithConsent ? 'block' : 'none';
+    }
+
+    [
+        'total_area_05', 'total_assessment_06', 'to_create_09', 'committee_market_rate_12',
+        'coefficient_15c', 'fruit_trees_16a', 'forest_trees_16b', 'construction_16c', 'other_assets_16d',
+        'notification_date', 'award_date', 'land_class_04'
+    ].forEach(id => {
+        const el = document.getElementById(id);
+        el.addEventListener('input', calculateAll);
+        el.addEventListener('change', calculateAll);
+    });
+
+    (function initFileUploadUI() {
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('files');
+        const fileError = document.getElementById('file-error');
+        const filesList = document.getElementById('filesList');
+        const filesContainer = document.getElementById('filesContainer');
+        if (!dropZone || !fileInput) return;
+
+        const maxSize = 5 * 1024 * 1024; // 5MB
+        let selectedFiles = [];
+
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, preventDefaults, false);
+        });
+
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropZone.addEventListener(eventName, () => {
+                dropZone.classList.add('border-orange-500', 'bg-orange-50');
+            }, false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, () => {
+                dropZone.classList.remove('border-orange-500', 'bg-orange-50');
+            }, false);
+        });
+
+        dropZone.addEventListener('drop', (e) => handleFiles(e.dataTransfer.files), false);
+        fileInput.addEventListener('change', (e) => handleFiles(e.target.files));
+
+        function handleFiles(files) {
+            fileError.classList.add('hidden');
+            selectedFiles = [];
+
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                if (file.size > maxSize) {
+                    fileError.textContent = `"${file.name}" फाईल साईझ 5MB पेक्षा जास्त आहे.`;
+                    fileError.classList.remove('hidden');
+                    continue;
+                }
+                selectedFiles.push(file);
+            }
+
+            // Sync final selected files back to file input
+            const dt = new DataTransfer();
+            selectedFiles.forEach(file => dt.items.add(file));
+            fileInput.files = dt.files;
+
+            if (!selectedFiles.length) {
+                filesList.classList.add('hidden');
+                filesContainer.innerHTML = '';
+                return;
+            }
+
+            filesContainer.innerHTML = selectedFiles.map((file, idx) => `
+                <div class="bg-white border border-gray-200 rounded-lg p-3 flex items-center justify-between">
+                    <div class="min-w-0">
+                        <p class="text-sm font-medium text-gray-900 truncate">${file.name}</p>
+                        <p class="text-xs text-gray-500">${formatFileSize(file.size)}</p>
+                    </div>
+                    <button type="button" class="text-xs px-2 py-1 rounded bg-red-100 text-red-700 hover:bg-red-200" onclick="removeSelectedFile(${idx})">काढा</button>
+                </div>
+            `).join('');
+            filesList.classList.remove('hidden');
+        }
+
+        function formatFileSize(bytes) {
+            if (!bytes) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
+        }
+
+        window.removeSelectedFile = function(index) {
+            selectedFiles.splice(index, 1);
+            const dt = new DataTransfer();
+            selectedFiles.forEach(file => dt.items.add(file));
+            fileInput.files = dt.files;
+            handleFiles(fileInput.files);
+        };
+    })();
+
+    async function deleteAttachment(attachmentId) {
+        if (!confirm('तुम्हाला ही फाईल हटवायची आहे का?')) return;
+        try {
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
+            const response = await fetch(`/tools/delete-document-attachment/${attachmentId}/`, {
+                method: 'POST',
+                headers: { 'X-CSRFToken': csrfToken }
+            });
+            const data = await response.json();
+            if (data.success) {
+                const row = document.getElementById(`attachment-row-${attachmentId}`);
+                if (row) row.remove();
+            } else {
+                alert('फाईल हटवता आली नाही.');
+            }
+        } catch (e) {
+            console.error(e);
+            alert('फाईल हटवताना त्रुटी आली.');
+        }
+    }
 </script>
 {% endblock %}
+

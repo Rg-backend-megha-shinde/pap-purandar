@@ -1,0 +1,3079 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <style>
+        .tool-tabs-shell {
+            border: 1px solid #d8e4f2;
+            background: #f8fbff;
+            border-radius: 0.65rem;
+            padding: 0.4rem 0.55rem 0;
+        }
+
+        .tool-tabs {
+            display: flex;
+            align-items: flex-end;
+            gap: 0.4rem;
+            flex-wrap: wrap;
+        }
+
+        .tool-tab-link {
+            display: inline-block;
+            margin-bottom: -1px;
+            padding: 0.7rem 1.1rem;
+            border: 1px solid transparent;
+            border-radius: 0.5rem 0.5rem 0 0;
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #6b7d99;
+            line-height: 1;
+            transition: all 120ms ease;
+        }
+
+        .tool-tab-link:hover {
+            color: #213a63;
+        }
+
+        .tool-tab-link.is-active {
+            background: #ffffff;
+            color: #125fcb;
+            border-color: #cad8ea;
+            box-shadow: 0 1px 3px rgba(18, 95, 203, 0.15);
+        }
+
+        .vi-toast-host {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            width: min(90vw, 360px);
+        }
+
+        .vi-toast {
+            border-radius: 0.75rem;
+            border: 1px solid;
+            padding: 0.7rem 0.85rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            box-shadow: 0 10px 24px rgba(18, 95, 203, 0.15);
+            opacity: 0;
+            transform: translateY(-8px);
+            transition: opacity 180ms ease, transform 180ms ease;
+        }
+
+        .vi-toast.is-show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .vi-toast.is-success {
+            border-color: #bbf7d0;
+            background: #f0fdf4;
+            color: #166534;
+        }
+
+        .vi-toast.is-error {
+            border-color: #fecaca;
+            background: #fef2f2;
+            color: #b91c1c;
+        }
+
+        .vi-dropzone {
+            transition: border-color 140ms ease, background-color 140ms ease, box-shadow 140ms ease;
+        }
+
+        .vi-dropzone.is-dragover {
+            border-color: #125fcb !important;
+            background: #eef5ff !important;
+            box-shadow: 0 0 0 3px rgba(18, 95, 203, 0.12);
+        }
+
+        .vi-files-toggle {
+            cursor: pointer;
+            list-style: none;
+            user-select: none;
+        }
+
+        .vi-files-toggle::-webkit-details-marker {
+            display: none;
+        }
+
+        .vi-files-popover {
+            position: static;
+            margin-top: 0.75rem;
+            z-index: 40;
+            width: 100%;
+        }
+
+        .vi-hide-native-file-label {
+            color: transparent !important;
+            font-size: 0 !important;
+            line-height: 0 !important;
+            text-shadow: none !important;
+            caret-color: transparent;
+        }
+
+        .vi-hide-native-file-label::file-selector-button {
+            font-size: 0.95rem !important;
+            line-height: 1 !important;
+            color: #fff !important;
+        }
+
+        .vi-hide-native-file-label::-webkit-file-upload-button {
+            font-size: 0.95rem !important;
+            line-height: 1 !important;
+            color: #fff !important;
+        }
+
+        .vi-upload-input {
+            display: block;
+            width: 100%;
+            border: 1px dashed #c5d6ec;
+            border-radius: 0.75rem;
+            background: #fff;
+            padding: 0.65rem 0.85rem;
+            font-size: 0.875rem;
+            color: #60708a;
+        }
+
+        .vi-upload-input::file-selector-button {
+            margin-right: 0.9rem;
+            border: 0;
+            border-radius: 0.55rem;
+            background: #125fcb;
+            color: #fff;
+            font-size: 0.95rem;
+            font-weight: 600;
+            line-height: 1;
+            padding: 0.68rem 1.05rem;
+            cursor: pointer;
+        }
+
+        .vi-upload-input::-webkit-file-upload-button {
+            margin-right: 0.9rem;
+            border: 0;
+            border-radius: 0.55rem;
+            background: #125fcb;
+            color: #fff;
+            font-size: 0.95rem;
+            font-weight: 600;
+            line-height: 1;
+            padding: 0.68rem 1.05rem;
+            cursor: pointer;
+        }
+
+        .vi-selected-files {
+            margin-top: 0.35rem;
+            font-size: 11px;
+            color: #60708a;
+            line-height: 1.3;
+        }
+
+        .vi-selected-files .vi-selected-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            margin: 0 0.3rem 0.25rem 0;
+            padding: 0.18rem 0.3rem 0.18rem 0.45rem;
+            border: 1px solid #dbe8f8;
+            border-radius: 999px;
+            background: #f8fbff;
+            color: #355685;
+            max-width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            vertical-align: middle;
+        }
+
+        .vi-selected-chip-name {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            max-width: 220px;
+        }
+
+        .vi-selected-chip-remove {
+            border: 0;
+            background: transparent;
+            color: #5f7596;
+            width: 1rem;
+            height: 1rem;
+            line-height: 1;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 999px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            padding: 0;
+            flex: 0 0 auto;
+        }
+
+        .vi-file-error-wrap {
+            outline: 3px solid #dc2626 !important;
+            outline-offset: 4px;
+            border-radius: 0.75rem;
+            background: #fff5f5 !important;
+        }
+        .vi-file-error-wrap input[type="file"] {
+            border: 2px solid #dc2626 !important;
+            background: #fff5f5 !important;
+        }
+
+        @media (max-width: 640px) {
+            .tool-tab-link {
+                padding: 0.6rem 0.85rem;
+                font-size: 0.85rem;
+            }
+
+            #vi-search-input {
+                min-width: 0 !important;
+            }
+
+            #vi-add-new-btn,
+            #vi-back-to-list-btn {
+                width: 100%;
+            }
+        }
+    </style>
+    <div class="w-full px-2 sm:px-3 md:px-4 py-4">
+        <div id="vi-toast-host" class="vi-toast-host"></div>
+        <div id="viDuplicateToast" class="hidden fixed top-4 right-4 z-50 bg-red-600 text-white text-sm px-4 py-3 rounded shadow-lg flex items-start gap-3 max-w-sm">
+            <span id="viDuplicateToastMsg" class="flex-1"></span>
+            <button type="button" onclick="hideViDuplicateToast()" class="text-white hover:text-red-200 font-bold text-base leading-none mt-0.5">&times;</button>
+        </div>
+        <div
+            class="overflow-hidden rounded-lg border border-slate-300 bg-white shadow-sm">
+            <div class="px-3 py-4 md:px-5 lg:px-6">
+                <div class="tool-tabs-shell mb-6">
+                    <nav class="tool-tabs" aria-label="Tool views">
+                        <a href="{% url 'land_record_712_list' %}" class="tool-tab-link">
+                            ७/१२ नोंद
+                        </a>
+                        <a href="{% url 'ready_reckoner_list' %}" class="tool-tab-link">
+                            रेडी रेकनर दर
+                        </a>
+                        <a href="{% url 'village_info' %}" class="tool-tab-link {% if active_tab == 'village-info' %}is-active{% endif %}">
+                            गावाची माहिती 
+                        </a>
+                        <a href="{% url 'add_entry' %}" class="tool-tab-link {% if active_tab == 'rate-calculator' %}is-active{% endif %}">
+                            नुकसान भरपाई नोंद
+                        </a>
+                        <a href="{% url 'process_chart_form' %}" class="tool-tab-link {% if active_tab == 'process-chart' %}is-active{% endif %}">
+                            भूसंपादन प्रक्रिया
+                        </a>
+                    </nav>
+                </div>
+                <div id="vi-form-status" class="mb-4 hidden rounded-lg border px-4 py-3 text-sm"></div>
+
+                <div id="vi-list-view" class="rounded-2xl border border-[#d7e5f6] bg-[#fbfdff] p-3 sm:p-4 md:p-5">
+                    <div class="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                        <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
+                            <div class="flex items-center gap-2 text-sm text-[#4a6178]">
+                                <span>Show</span>
+                                <select id="vi-page-size" class="rounded border border-[#cbd5e1] bg-white px-3 py-2 text-sm text-[#2a3f62]">
+                                    <option value="5">5</option>
+                                    <option value="10" selected>10</option>
+                                    <option value="25">25</option>
+                                    <option value="50">50</option>
+                                </select>
+                                <span>entries</span>
+                            </div>
+                            <div class="relative w-full sm:w-auto">
+                                <input id="vi-search-input" type="search" placeholder="Search" class="w-full sm:min-w-[200px] rounded border border-[#cbd5e1] bg-white px-3 py-2 text-sm text-[#2a3f62] focus:border-[#125fcb] focus:outline-none" />
+                            </div>
+                        </div>
+                        <button type="button" id="vi-add-new-btn"
+                            class="w-full sm:w-auto rounded-xl bg-[#125fcb] px-5 py-3 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(18,95,203,0.2)]">
+                            Add New
+                        </button>
+                    </div>
+                    <div class="overflow-x-auto rounded-xl border border-[#d7e5f6] bg-white">
+                        <table class="min-w-full border-collapse text-sm text-[#2a3f62]">
+                            <thead class="bg-[#eef5ff]">
+                                <tr>
+                                    <th class="border border-[#d7e5f6] px-3 py-2 text-center font-semibold">ID</th>
+                                    <th class="w-28 border border-[#d7e5f6] px-3 py-2 text-center font-semibold whitespace-nowrap">Record ID</th>
+                                    <th class="border border-[#d7e5f6] px-3 py-2 text-center font-semibold">District</th>
+                                    <th class="border border-[#d7e5f6] px-3 py-2 text-center font-semibold">Taluka</th>
+                                    <th class="border border-[#d7e5f6] px-3 py-2 text-center font-semibold">Village</th>
+                                    <th class="border border-[#d7e5f6] px-3 py-2 text-center font-semibold">Status</th>
+                                    <th class="border border-[#d7e5f6] px-3 py-2 text-center font-semibold">Updated</th>
+                                    <th class="border border-[#d7e5f6] px-3 py-2 text-center font-semibold">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="vi-record-list-body" class="bg-white">
+                                <tr>
+                                    <td colspan="8" class="border border-[#d7e5f6] px-3 py-3 text-center text-[#6d7f9b]">
+                                        Loading...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div id="vi-list-pagination" class="mt-4 flex flex-col gap-3 border-t border-[#d7e5f6] bg-[#f8fbff] px-4 py-4 text-sm text-[#4a6178] md:flex-row md:items-center md:justify-between">
+                        <div id="vi-list-info">Showing 0 to 0 of 0 entries</div>
+                        <div id="vi-pagination-controls" class="flex flex-wrap items-center gap-2"></div>
+                    </div>
+                </div>
+
+                <div id="vi-form-view" class="hidden">
+                    <div id="vi-step-loader" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-[rgba(15,23,42,0.45)]">
+                        <div class="flex items-center gap-3 rounded-2xl bg-white px-6 py-4 shadow-xl shadow-slate-900/10">
+                            <span class="inline-block h-6 w-6 animate-spin rounded-full border-2 border-slate-200 border-t-sky-600"></span>
+                            <div class="text-sm font-semibold text-slate-800">
+                                <div>Saving and uploading files...</div>
+                                <div class="text-xs text-slate-500">Please wait while the current step is saved.</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="vi-step-loader" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-[rgba(15,23,42,0.45)]">
+                        <div class="flex items-center gap-3 rounded-2xl bg-white px-6 py-4 shadow-xl shadow-slate-900/10">
+                            <span class="inline-block h-6 w-6 animate-spin rounded-full border-2 border-slate-200 border-t-sky-600"></span>
+                            <div class="text-sm font-semibold text-slate-800">
+                                <div>Saving and uploading files...</div>
+                                <div class="text-xs text-slate-500">Please wait while the current step is saved.</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-4">
+                        <button type="button" id="vi-back-to-list-btn"
+                            class="w-full sm:w-auto rounded-xl border border-[#ccdbef] bg-white px-4 py-2 text-sm font-semibold text-[#4a6488] hover:bg-[#f6f9ff]">
+                            Back to List
+                        </button>
+                    </div>
+                <div class="relative mb-8 overflow-x-auto">
+                    <div class="absolute left-0 right-0 top-6 hidden border-t border-[#d8e4f2] md:block"></div>
+                    <div class="grid min-w-[760px] gap-5 md:min-w-0 md:grid-cols-8">
+                        <button type="button"
+                            class="tab-trigger relative z-10 flex flex-col items-center gap-2 rounded-2xl px-2 py-2 text-center transition"
+                            data-tab="1">
+                            <span
+                                class="flex h-12 w-12 items-center justify-center rounded-full border-2 border-[#cad8ea] bg-white text-lg font-bold text-[#8a99ad]">1</span>
+                            <span class="text-sm font-semibold text-[#8897ab]">मूलभूत माहिती</span>
+                        </button>
+                        <button type="button"
+                            class="tab-trigger relative z-10 flex flex-col items-center gap-2 rounded-2xl px-2 py-2 text-center transition"
+                            data-tab="2">
+                            <span
+                                class="flex h-12 w-12 items-center justify-center rounded-full border-2 border-[#cad8ea] bg-white text-lg font-bold text-[#8a99ad]">2</span>
+                            <span class="text-sm font-semibold text-[#8897ab]">अधिसूचना</span>
+                        </button>
+                        <button type="button"
+                            class="tab-trigger relative z-10 flex flex-col items-center gap-2 rounded-2xl px-2 py-2 text-center transition"
+                            data-tab="3">
+                            <span
+                                class="flex h-12 w-12 items-center justify-center rounded-full border-2 border-[#cad8ea] bg-white text-lg font-bold text-[#8a99ad]">3</span>
+                            <span class="text-sm font-semibold text-[#8897ab]">सुनावणी</span>
+                        </button>
+                        <button type="button"
+                            class="tab-trigger relative z-10 flex flex-col items-center gap-2 rounded-2xl px-2 py-2 text-center transition"
+                            data-tab="4">
+                            <span
+                                class="flex h-12 w-12 items-center justify-center rounded-full border-2 border-[#cad8ea] bg-white text-lg font-bold text-[#8a99ad]">4</span>
+                            <span class="text-sm font-semibold text-[#8897ab]">मूल्यांकन</span>
+                        </button>
+                        <button type="button"
+                            class="tab-trigger relative z-10 flex flex-col items-center gap-2 rounded-2xl px-2 py-2 text-center transition"
+                            data-tab="5">
+                            <span
+                                class="flex h-12 w-12 items-center justify-center rounded-full border-2 border-[#cad8ea] bg-white text-lg font-bold text-[#8a99ad]">5</span>
+                            <span class="text-sm font-semibold text-[#8897ab]">दर निश्चिती</span>
+                        </button>
+                        <button type="button"
+                            class="tab-trigger relative z-10 flex flex-col items-center gap-2 rounded-2xl px-2 py-2 text-center transition"
+                            data-tab="6">
+                            <span
+                                class="flex h-12 w-12 items-center justify-center rounded-full border-2 border-[#cad8ea] bg-white text-lg font-bold text-[#8a99ad]">6</span>
+                            <span class="text-sm font-semibold text-[#8897ab]">अभिप्राय</span>
+                        </button>
+                        <button type="button"
+                            class="tab-trigger relative z-10 flex flex-col items-center gap-2 rounded-2xl px-2 py-2 text-center transition"
+                            data-tab="7">
+                            <span
+                                class="flex h-12 w-12 items-center justify-center rounded-full border-2 border-[#cad8ea] bg-white text-lg font-bold text-[#8a99ad]">7</span>
+                            <span class="text-sm font-semibold text-[#8897ab]">जिल्हास्तरीय समिती</span>
+                        </button>
+                        <button type="button"
+                            class="tab-trigger relative z-10 flex flex-col items-center gap-2 rounded-2xl px-2 py-2 text-center transition"
+                            data-tab="8">
+                            <span
+                                class="flex h-12 w-12 items-center justify-center rounded-full border-2 border-[#cad8ea] bg-white text-lg font-bold text-[#8a99ad]">8</span>
+                            <span class="text-sm font-semibold text-[#8897ab]">निवाडा</span>
+                        </button>
+                    </div>
+                </div>
+
+                <section class="tab-panel" data-panel="1">
+                    <div
+                        class="w-full overflow-hidden rounded-lg border border-[#cfdceb] bg-white shadow-sm">
+                        <div class="border-b border-[#dbe8f8] bg-[#edf5ff] px-6 py-5">
+                            <div class="flex items-start gap-3">
+                                <div
+                                    class="mt-1 flex h-7 w-7 items-center justify-center rounded-full bg-[#125fcb] text-xs font-bold text-white">
+                                    i</div>
+                                <div>
+                                    <h2 class="text-xl font-bold text-[#214a8b]">टप्पा 1: जमिनीची मूलभूत माहिती</h2>
+                                    <p class="mt-1 text-sm text-[#5c78a5]">कृपया सर्व माहिती नमुन्यादाखल भरा. चिन्हांकित
+                                        फील्ड आवश्यक आहेत.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="space-y-8 px-6 py-7 md:px-8 md:py-8">
+                            <div class="grid gap-6 md:grid-cols-3">
+                                <div>
+                                    <label
+                                        class="mb-2 flex min-h-[48px] items-end text-sm font-semibold text-[#384d6d]">जिल्हा
+                                        (District) *</label>
+                                    <select id="vi-district" name="district"
+                                        class="w-full rounded-xl border border-[#d3deeb] bg-white px-4 py-3 text-sm text-[#394d6c]">
+                                        <option value="">लोड होत आहे...</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label
+                                        class="mb-2 flex min-h-[48px] items-end text-sm font-semibold text-[#384d6d]">तालुका
+                                        (Taluka) *</label>
+                                    <select id="vi-taluka" name="taluka" disabled
+                                        class="w-full rounded-xl border border-[#d3deeb] bg-white px-4 py-3 text-sm text-[#394d6c]">
+                                        <option value="">आधी जिल्हा निवडा</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label
+                                        class="mb-2 flex min-h-[48px] items-end text-sm font-semibold text-[#384d6d]">गाव
+                                        (Village) *</label>
+                                    <select id="vi-village" name="village" disabled
+                                        class="w-full rounded-xl border border-[#d3deeb] bg-white px-4 py-3 text-sm text-[#394d6c]">
+                                        <option value="">आधी तालुका निवडा</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="rounded-2xl border border-[#e2ebf7] bg-[#fbfdff] p-5">
+                                <div class="mb-4 flex items-center justify-between gap-3">
+                                    <h3 class="text-lg font-bold text-[#244271]">१. प्रशासकीय मान्यता</h3>
+                                </div>
+                                <div class="grid gap-4 md:grid-cols-2">
+                                    <div>
+                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">आदेश/अधिसूचना
+                                            क्रमांक</label>
+                                        <input type="text" placeholder="क्रमांक प्रविष्ट करा"
+                                            class="w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
+                                    </div>
+                                    <div>
+                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">दिनांक</label>
+                                        <input type="date"
+                                            class="w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
+                                    </div>
+                                    <div class="md:col-span-2">
+                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">अपलोड करा</label>
+                                        <input type="file" multiple
+                                            class="block w-full rounded-xl border border-dashed border-[#c5d6ec] bg-white px-4 py-3 text-sm text-[#60708a] file:mr-4 file:rounded-lg file:border-0 file:bg-[#125fcb] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="rounded-2xl border border-[#e2ebf7] bg-[#fbfdff] p-5">
+                                <div class="mb-4 flex items-center justify-between gap-3">
+                                    <h3 class="text-lg font-bold text-[#244271]">२. कलम 3 अधिसूचना</h3>
+                                </div>
+                                <div class="grid gap-4 md:grid-cols-3">
+                                    <div>
+                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">अधिसूचना क्रमांक</label>
+                                        <input type="text" placeholder="क्रमांक प्रविष्ट करा"
+                                            class="w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
+                                    </div>
+                                    <div>
+                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">दिनांक</label>
+                                        <input type="date"
+                                            class="w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
+                                    </div>
+                                    <div>
+                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">अपलोड करा</label>
+                                        <input type="file" multiple
+                                            class="block w-full rounded-xl border border-dashed border-[#c5d6ec] bg-white px-4 py-3 text-sm text-[#60708a] file:mr-4 file:rounded-lg file:border-0 file:bg-[#125fcb] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white">
+                                    </div>
+
+                                    <div class="md:col-span-3 space-y-3">
+                                        <div class="rounded-xl border border-[#dfe8f5] bg-white p-3">
+                                            <p class="mb-2 text-sm font-semibold text-[#44597a]">१. वर्तमानपत्र</p>
+                                            <div class="grid gap-3 md:grid-cols-3 md:items-end">
+                                                <div>
+                                                    <label class="mb-2 block text-sm font-semibold text-[#44597a]">नाव</label>
+                                                    <input type="text" placeholder="वर्तमानपत्र 1 चे नाव"
+                                                        class="w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
+                                                </div>
+                                                <div>
+                                                    <label class="mb-2 block text-sm font-semibold text-[#44597a]">दिनांक</label>
+                                                    <input type="date"
+                                                        class="w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
+                                                </div>
+                                                <div>
+                                                    <label class="mb-2 block text-sm font-semibold text-[#44597a]">अपलोड</label>
+                                                    <input type="file" multiple
+                                                        class="block w-full rounded-xl border border-dashed border-[#c5d6ec] bg-white px-4 py-3 text-sm text-[#60708a] file:mr-4 file:rounded-lg file:border-0 file:bg-[#125fcb] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white">
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="rounded-xl border border-[#dfe8f5] bg-white p-3">
+                                            <p class="mb-2 text-sm font-semibold text-[#44597a]">२. वर्तमानपत्र</p>
+                                            <div class="grid gap-3 md:grid-cols-3 md:items-end">
+                                                <div>
+                                                    <label class="mb-2 block text-sm font-semibold text-[#44597a]">नाव</label>
+                                                    <input type="text" placeholder="वर्तमानपत्र 2 चे नाव"
+                                                        class="w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
+                                                </div>
+                                                <div>
+                                                    <label class="mb-2 block text-sm font-semibold text-[#44597a]">दिनांक</label>
+                                                    <input type="date"
+                                                        class="w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
+                                                </div>
+                                                <div>
+                                                    <label class="mb-2 block text-sm font-semibold text-[#44597a]">अपलोड</label>
+                                                    <input type="file" multiple
+                                                        class="block w-full rounded-xl border border-dashed border-[#c5d6ec] bg-white px-4 py-3 text-sm text-[#60708a] file:mr-4 file:rounded-lg file:border-0 file:bg-[#125fcb] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white">
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="rounded-2xl border border-[#e2ebf7] bg-[#fbfdff] p-5">
+                                <div class="mb-4 flex items-center justify-between gap-3">
+                                    <h3 class="text-lg font-bold text-[#244271]">३. प्राधिकृत भूसंपादन अधिकारी नियुक्ती
+                                    </h3>
+                                </div>
+                                <div class="grid gap-4 md:grid-cols-2">
+                                    <div>
+                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">अधिसूचना
+                                            क्रमांक</label>
+                                        <input type="text" placeholder="क्रमांक प्रविष्ट करा"
+                                            class="w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
+                                    </div>
+                                    <div>
+                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">दिनांक</label>
+                                        <input type="date"
+                                            class="w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
+                                    </div>
+                                    <div class="md:col-span-2">
+                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">अपलोड करा</label>
+                                        <input type="file" multiple
+                                            class="block w-full rounded-xl border border-dashed border-[#c5d6ec] bg-white px-4 py-3 text-sm text-[#60708a] file:mr-4 file:rounded-lg file:border-0 file:bg-[#125fcb] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div
+                            class="flex flex-col gap-3 border-t border-[#e6edf7] bg-[#fcfdff] px-6 py-5 md:flex-row md:items-center md:justify-between">
+                            <div></div>
+                            <div class="text-sm text-[#7c8da5]">टॅब 1 / 7</div>
+                            <div class="flex items-center gap-2">
+                                <button type="button"
+                                    class="rounded-xl border border-[#ccdbef] bg-white px-5 py-3 text-sm font-semibold text-[#4a6488]">Save & Next</button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="tab-panel hidden" data-panel="2">
+                    <div
+                        class="w-full rounded-lg border border-[#cfdceb] bg-white shadow-sm">
+                        <div class="border-b border-[#dbe8f8] bg-[#edf5ff] px-6 py-5">
+                            <h2 class="text-xl font-bold text-[#214a8b]">टप्पा 2: अधिसूचना</h2>
+                            <p class="mt-1 text-sm text-[#5c78a5]">कलम 15, भूसंपादन प्रस्ताव आणि संयुक्त मोजणी.</p>
+                        </div>
+                        <div class="space-y-6 px-6 py-7 md:px-8">
+                            <div class="rounded-2xl border border-[#e2ebf7] bg-[#fbfdff] p-5">
+                                <div class="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                                    <h3 class="text-lg font-bold text-[#244271]">४. कलम 15(2) प्राथमिक अधिसूचना</h3>
+                                    <button type="button" id="add-sec4-row-btn"
+                                        class="inline-flex items-center justify-center rounded-lg border border-[#c6d9f2] bg-white px-4 py-2 text-sm font-semibold text-[#125fcb] hover:bg-[#eef5ff]">+ ओळ जोडा</button>
+                                </div>
+                                <div id="record-sec4-rows" class="space-y-3"></div>
+                            </div>
+                            <div class="rounded-2xl border border-[#e2ebf7] bg-[#fbfdff] p-5">
+                                <h3 class="mb-4 text-lg font-bold text-[#244271]">५. भूसंपादन प्रस्ताव</h3>
+                                <div class="grid gap-4 md:grid-cols-2">
+                                    <div>
+                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">प्रस्ताव पत्र
+                                            क्रमांक</label>
+                                        <input type="text" placeholder="प्रस्ताव पत्र क्रमांक"
+                                            class="w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
+                                    </div>
+                                    <div>
+                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">दिनांक</label>
+                                        <input type="date" class="w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
+                                    </div>
+                                    <div class="md:col-span-2">
+                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">अपलोड करा</label>
+                                        <input type="file" multiple
+                                            class="block w-full rounded-xl border border-dashed border-[#c5d6ec] bg-white px-4 py-3 text-sm text-[#60708a] file:mr-4 file:rounded-lg file:border-0 file:bg-[#125fcb] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="rounded-2xl border border-[#e2ebf7] bg-[#fbfdff] p-5">
+                                <h3 class="mb-4 text-lg font-bold text-[#244271]">६. संयुक्त मोजणी</h3>
+                                <div class="grid gap-4 md:grid-cols-2">
+                                    <div>
+                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">मोजणी रजिस्टर
+                                            नंबर</label>
+                                        <input type="text" placeholder="मोजणी रजिस्टर नंबर"
+                                            class="w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
+                                    </div>
+                                    <div>
+                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">संयुक्त मोजणी दिनांक</label>
+                                        <input type="date" class="w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
+                                    </div>
+                                    <div>
+                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">परिशिष्ट
+                                            16</label>
+                                        <input type="file" multiple
+                                            class="block w-full rounded-xl border border-dashed border-[#c5d6ec] bg-white px-4 py-3 text-sm text-[#60708a] file:mr-4 file:rounded-lg file:border-0 file:bg-[#125fcb] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white">
+                                    </div>
+                                    <div>
+                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">संयुक्त मोजणी
+                                            नकाशा</label>
+                                        <input type="file" multiple
+                                            class="block w-full rounded-xl border border-dashed border-[#c5d6ec] bg-white px-4 py-3 text-sm text-[#60708a] file:mr-4 file:rounded-lg file:border-0 file:bg-[#125fcb] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div
+                            class="flex flex-col gap-3 border-t border-[#e6edf7] bg-[#fcfdff] px-6 py-5 md:flex-row md:items-center md:justify-between">
+                            <button type="button"
+                                class="nav-btn rounded-xl border border-[#ccdbef] px-5 py-3 text-sm font-semibold text-[#4a6488]"
+                                data-direction="prev">मागील (Previous)</button>
+                            <div class="text-sm text-[#7c8da5]">टॅब 2 / 7</div>
+                            <div class="flex items-center gap-2">
+                                <button type="button"
+                                    class="rounded-xl border border-[#ccdbef] bg-white px-5 py-3 text-sm font-semibold text-[#4a6488]">Save & Next</button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="tab-panel hidden" data-panel="3">
+                    <div
+                        class="w-full rounded-lg border border-[#cfdceb] bg-white shadow-sm">
+                        <div class="border-b border-[#dbe8f8] bg-[#edf5ff] px-6 py-5">
+                            <h2 class="text-xl font-bold text-[#214a8b]">टप्पा 3: सुनावणी</h2>
+                            <p class="mt-1 text-sm text-[#5c78a5]">आक्षेप, अंतिम अधिसूचना आणि जाहीर नोटीस.</p>
+                        </div>
+                        <div class="space-y-6 px-6 py-7 md:px-8">
+                            <div class="rounded-2xl border border-[#e2ebf7] bg-[#fbfdff] p-5">
+                                <h3 class="mb-4 text-lg font-bold text-[#244271]">७. कलम 17 सुनावणी निर्णय</h3>
+                                <div class="grid gap-4 md:grid-cols-2">
+                                    <div class="md:col-span-2">
+                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">आक्षेप व निर्णय तपशील</label>
+                                        <input type="text" placeholder="आक्षेप व निर्णय तपशील"
+                                            class="w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
+                                    </div>
+                                    <div class="md:col-span-2">
+                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">अपलोड करा</label>
+                                        <input type="file" multiple
+                                            class="block w-full rounded-xl border border-dashed border-[#c5d6ec] bg-white px-4 py-3 text-sm text-[#60708a] file:mr-4 file:rounded-lg file:border-0 file:bg-[#125fcb] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="rounded-2xl border border-[#e2ebf7] bg-[#fbfdff] p-5">
+                                <div class="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                                    <h3 class="text-lg font-bold text-[#244271]">८. कलम 18/1 अंतिम अधिसूचना</h3>
+                                    <button type="button" id="add-sec8-row-btn"
+                                        class="inline-flex items-center justify-center rounded-lg border border-[#c6d9f2] bg-white px-4 py-2 text-sm font-semibold text-[#125fcb] hover:bg-[#eef5ff]">+ ओळ जोडा</button>
+                                </div>
+                                <div id="record-sec8-rows" class="space-y-3"></div>
+                            </div>
+                            <div class="rounded-2xl border border-[#e2ebf7] bg-[#fbfdff] p-5">
+                                <h3 class="mb-4 text-lg font-bold text-[#244271]">९. कलम 19-ब जाहीर नोटीस</h3>
+                                <div class="space-y-3">
+                                    <div class="rounded-xl border border-[#dfe8f5] bg-white p-3">
+                                        <p class="mb-2 text-sm font-semibold text-[#44597a]">१. वर्तमानपत्र</p>
+                                        <div class="grid gap-3 md:grid-cols-3 md:items-end">
+                                            <div>
+                                                <label class="mb-2 block text-sm font-semibold text-[#44597a]">नाव</label>
+                                                <input type="text" placeholder="वर्तमानपत्र 1 चे नाव"
+                                                    class="w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
+                                            </div>
+                                            <div>
+                                                <label class="mb-2 block text-sm font-semibold text-[#44597a]">दिनांक</label>
+                                                <input type="date"
+                                                    class="w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
+                                            </div>
+                                            <div>
+                                                <label class="mb-2 block text-sm font-semibold text-[#44597a]">अपलोड</label>
+                                                <input type="file" multiple
+                                                    class="block w-full rounded-xl border border-dashed border-[#c5d6ec] bg-white px-4 py-3 text-sm text-[#60708a] file:mr-4 file:rounded-lg file:border-0 file:bg-[#125fcb] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white">
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="rounded-xl border border-[#dfe8f5] bg-white p-3">
+                                        <p class="mb-2 text-sm font-semibold text-[#44597a]">२. वर्तमानपत्र</p>
+                                        <div class="grid gap-3 md:grid-cols-3 md:items-end">
+                                            <div>
+                                                <label class="mb-2 block text-sm font-semibold text-[#44597a]">नाव</label>
+                                                <input type="text" placeholder="वर्तमानपत्र 2 चे नाव"
+                                                    class="w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
+                                            </div>
+                                            <div>
+                                                <label class="mb-2 block text-sm font-semibold text-[#44597a]">दिनांक</label>
+                                                <input type="date"
+                                                    class="w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
+                                            </div>
+                                            <div>
+                                                <label class="mb-2 block text-sm font-semibold text-[#44597a]">अपलोड</label>
+                                                <input type="file" multiple
+                                                    class="block w-full rounded-xl border border-dashed border-[#c5d6ec] bg-white px-4 py-3 text-sm text-[#60708a] file:mr-4 file:rounded-lg file:border-0 file:bg-[#125fcb] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div
+                            class="flex flex-col gap-3 border-t border-[#e6edf7] bg-[#fcfdff] px-6 py-5 md:flex-row md:items-center md:justify-between">
+                            <button type="button"
+                                class="nav-btn rounded-xl border border-[#ccdbef] px-5 py-3 text-sm font-semibold text-[#4a6488]"
+                                data-direction="prev">मागील (Previous)</button>
+                            <div class="text-sm text-[#7c8da5]">टॅब 3 / 7</div>
+                            <div class="flex items-center gap-2">
+                                <button type="button"
+                                    class="rounded-xl border border-[#ccdbef] bg-white px-5 py-3 text-sm font-semibold text-[#4a6488]">Save & Next</button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="tab-panel hidden" data-panel="4">
+                    <div
+                        class="w-full rounded-lg border border-[#cfdceb] bg-white shadow-sm">
+                        <div class="border-b border-[#dbe8f8] bg-[#edf5ff] px-6 py-5">
+                            <h2 class="text-xl font-bold text-[#214a8b]">टप्पा 4: मूल्यांकन</h2>
+                            <p class="mt-1 text-sm text-[#5c78a5]">जमीन मूल्यांकन, नगर रचना आणि झोन माहिती.</p>
+                        </div>
+                        <div class="space-y-6 px-6 py-7 md:px-8">
+                            <div class="rounded-2xl border border-[#e2ebf7] bg-[#fbfdff] p-5">
+                                <h3 class="mb-4 text-lg font-bold text-[#244271]">१०. जमीन मूल्यांकन</h3>
+                                <div class="grid gap-4 md:grid-cols-2">
+                                    <div>
+                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">प्राधिकृत अधिकारी यांचा प्रस्ताव क्रमांक</label>
+                                        <input type="text" placeholder="प्राधिकृत अधिकारी यांचा प्रस्ताव क्रमांक"
+                                            class="w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
+                                    </div>
+                                    <div>
+                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">दिनांक</label>
+                                        <input type="date" class="w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
+                                    </div>
+                                    <div class="md:col-span-2">
+                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">अपलोड करा</label>
+                                        <input type="file" multiple
+                                            class="block w-full rounded-xl border border-dashed border-[#c5d6ec] bg-white px-4 py-3 text-sm text-[#60708a] file:mr-4 file:rounded-lg file:border-0 file:bg-[#125fcb] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="rounded-2xl border border-[#e2ebf7] bg-[#fbfdff] p-5">
+                                <h3 class="mb-4 text-lg font-bold text-[#244271]">११.नगर रचना विभागाचे अभिप्राय</h3>
+                                <div class="grid gap-4 md:grid-cols-2">
+                                    <div>
+                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">दिनांक</label>
+                                        <input type="date"
+                                            class="w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
+                                    </div>
+                                    <div>
+                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">अपलोड करा</label>
+                                        <input type="file" multiple
+                                            class="block w-full rounded-xl border border-dashed border-[#c5d6ec] bg-white px-4 py-3 text-sm text-[#60708a] file:mr-4 file:rounded-lg file:border-0 file:bg-[#125fcb] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="rounded-2xl border border-[#e2ebf7] bg-[#fbfdff] p-5">
+                                <h3 class="mb-4 text-lg font-bold text-[#244271]">१२. झोन दाखला माहिती</h3>
+                                <div class="grid gap-4 md:grid-cols-2">
+                                    <div class="md:col-span-2">
+                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">झोन दाखला तपशील</label>
+                                        <input type="text" placeholder="झोन तपशील लिहा"
+                                            class="w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
+                                    </div>
+                                    <div>
+                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">दिनांक</label>
+                                        <input type="date" class="w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
+                                    </div>
+                                    <div>
+                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">अपलोड करा</label>
+                                        <input type="file" multiple
+                                            class="block w-full rounded-xl border border-dashed border-[#c5d6ec] bg-white px-4 py-3 text-sm text-[#60708a] file:mr-4 file:rounded-lg file:border-0 file:bg-[#125fcb] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div
+                            class="flex flex-col gap-3 border-t border-[#e6edf7] bg-[#fcfdff] px-6 py-5 md:flex-row md:items-center md:justify-between">
+                            <button type="button"
+                                class="nav-btn rounded-xl border border-[#ccdbef] px-5 py-3 text-sm font-semibold text-[#4a6488]"
+                                data-direction="prev">मागील (Previous)</button>
+                            <div class="text-sm text-[#7c8da5]">टॅब 4 / 7</div>
+                            <div class="flex items-center gap-2">
+                                <button type="button"
+                                    class="rounded-xl border border-[#ccdbef] bg-white px-5 py-3 text-sm font-semibold text-[#4a6488]">Save & Next</button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="tab-panel hidden" data-panel="5">
+                    <div
+                        class="w-full rounded-lg border border-[#cfdceb] bg-white shadow-sm">
+                        <div class="border-b border-[#dbe8f8] bg-[#edf5ff] px-6 py-5">
+                            <h2 class="text-xl font-bold text-[#214a8b]">टप्पा 5: दर निश्चिती</h2>
+                            <p class="mt-1 text-sm text-[#5c78a5]">खरेदी विक्री डेटा, मंजूर दर आणि वन विभाग.</p>
+                        </div>
+                        <div class="space-y-6 px-6 py-7 md:px-8">
+                            <div class="rounded-2xl border border-[#e2ebf7] bg-[#fbfdff] p-5">
+                                <h3 class="mb-4 text-lg font-bold text-[#244271]">१३. दर निश्चितीसाठी खरेदी विक्री तपशील</h3>
+                                <div class="grid gap-4 md:grid-cols-2">
+                                    <div>
+                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">खरेदी विक्री तपशील</label>
+                                        <input type="text" placeholder="खरेदी विक्री तपशील"
+                                            class="w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
+                                    </div>
+                                    <div>
+                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">अपलोड करा</label>
+                                        <input type="file" multiple
+                                            class="block w-full rounded-xl border border-dashed border-[#c5d6ec] bg-white px-4 py-3 text-sm text-[#60708a] file:mr-4 file:rounded-lg file:border-0 file:bg-[#125fcb] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="rounded-2xl border border-[#e2ebf7] bg-[#fbfdff] p-5">
+                                <h3 class="mb-4 text-lg font-bold text-[#244271]">१४. दर निश्चितीसाठी जिल्हास्तरीय समितीच्या बैठकीचा तपशील</h3>
+                                <div class="grid gap-4 md:grid-cols-2">
+                                    <div class="md:col-span-2">
+                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">दर निश्चितीसाठी जिल्हास्तरीय समितीच्या बैठकीचा तपशील</label>
+                                        <input type="text" placeholder="मंजूर दर तपशील"
+                                            class="w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
+                                    </div>
+                                    <div>
+                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">दिनांक</label>
+                                        <input type="date" class="w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
+                                    </div>
+                                    <div>
+                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">अपलोड करा</label>
+                                        <input type="file" multiple
+                                            class="block w-full rounded-xl border border-dashed border-[#c5d6ec] bg-white px-4 py-3 text-sm text-[#60708a] file:mr-4 file:rounded-lg file:border-0 file:bg-[#125fcb] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="rounded-2xl border border-[#e2ebf7] bg-[#fbfdff] p-5">
+                                <h3 class="mb-4 text-lg font-bold text-[#244271]">१५. संपादनाखालील जमिनींसाठी जिल्हास्तरीय समितीने मंजूर केलेला अंतिम दर</h3>
+                                <div class="overflow-x-auto rounded-xl border border-[#cdd7e5]">
+                                    <table class="min-w-full border-collapse text-sm text-[#2a3f62]">
+                                        <thead class="bg-[#f2f4f8]">
+                                            <tr>
+                                                <th class="border border-[#cdd7e5] px-3 py-2 text-left font-semibold">मूल्य विभाग प्रकार</th>
+                                                <th class="border border-[#cdd7e5] px-3 py-2 text-left font-semibold">Assessment Range</th>
+                                                <th class="border border-[#cdd7e5] px-3 py-2 text-left font-semibold">रेडी रेकनर दर</th>
+                                                <th class="border border-[#cdd7e5] px-3 py-2 text-left font-semibold">जिल्हास्तरीय समितीने मंजूर केलेला दर</th>
+                                                <th class="border border-[#cdd7e5] px-3 py-2 text-left font-semibold">एकक</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="sec15-rate-table-body" class="bg-white sec15-rate-body">
+                                            <tr>
+                                                <td colspan="5" class="border border-[#cdd7e5] px-3 py-3 text-center text-sm text-[#6d7f9b]">
+                                                    गाव निवडल्यावर रेडी रेकनर दर दिसतील
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <div class="rounded-2xl border border-[#e2ebf7] bg-[#fbfdff] p-5">
+                                <h3 class="mb-4 text-lg font-bold text-[#244271]">१६. वन विभाग</h3>
+                                <div class="grid gap-4 md:grid-cols-2">
+                                    <div class="md:col-span-2">
+                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">मूल्यांकन सादर केलेल्या पत्राचा तपशील</label>
+                                        <input type="text" placeholder="मूल्यांकन सादर केलेल्या पत्राचा तपशील"
+                                            class="w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
+                                    </div>
+                                    <div>
+                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">दिनांक</label>
+                                        <input type="date" class="w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
+                                    </div>
+                                    <div>
+                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">अपलोड करा</label>
+                                        <input type="file" multiple
+                                            class="block w-full rounded-xl border border-dashed border-[#c5d6ec] bg-white px-4 py-3 text-sm text-[#60708a] file:mr-4 file:rounded-lg file:border-0 file:bg-[#125fcb] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div
+                            class="flex flex-col gap-3 border-t border-[#e6edf7] bg-[#fcfdff] px-6 py-5 md:flex-row md:items-center md:justify-between">
+                            <button type="button"
+                                class="nav-btn rounded-xl border border-[#ccdbef] px-5 py-3 text-sm font-semibold text-[#4a6488]"
+                                data-direction="prev">मागील (Previous)</button>
+                            <div class="text-sm text-[#7c8da5]">टॅब 5 / 7</div>
+                            <div class="flex items-center gap-2">
+                                <button type="button"
+                                    class="rounded-xl border border-[#ccdbef] bg-white px-5 py-3 text-sm font-semibold text-[#4a6488]">Save & Next</button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="tab-panel hidden" data-panel="6">
+                    <div
+                        class="w-full rounded-lg border border-[#cfdceb] bg-white shadow-sm">
+                        <div class="border-b border-[#dbe8f8] bg-[#edf5ff] px-6 py-5">
+                            <h2 class="text-xl font-bold text-[#214a8b]">टप्पा 6: विभागीय अभिप्राय</h2>
+                            <p class="mt-1 text-sm text-[#5c78a5]">कृषी, बांधकाम, पाणी पुरवठा आणि इतर विभाग.</p>
+                        </div>
+                        <div class="space-y-4 px-6 py-6 md:px-8">
+                            <div class="rounded-xl border border-[#d6e3f5] bg-[#eef4ff] px-4 py-3 text-base font-extrabold text-[#244271] md:text-lg">
+                                • निगडीत घटकांचे मूल्यांकन
+                            </div>
+                            <div class="rounded-2xl border border-[#e2ebf7] bg-[#fbfdff] p-4">
+                                <h3 class="mb-3 text-lg font-bold text-[#244271]">१७. पाणीपुरवठा</h3>
+                                <div class="grid gap-3 md:grid-cols-2">
+                                    <div class="md:col-span-2">
+                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">मूल्यांकन सादर केलेल्या पत्राचा तपशील</label>
+                                        <input type="text" placeholder="मूल्यांकन सादर केलेल्या पत्राचा तपशील"
+                                            class="w-full rounded-xl border border-[#d3deeb] px-3 py-2.5 text-sm">
+                                    </div>
+                                    <div>
+                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">दिनांक</label>
+                                        <input type="date" class="w-full rounded-xl border border-[#d3deeb] px-3 py-2.5 text-sm">
+                                    </div>
+                                    <div>
+                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">अपलोड करा</label>
+                                        <input type="file" multiple
+                                            class="block w-full rounded-xl border border-dashed border-[#c5d6ec] bg-white px-3 py-2.5 text-sm text-[#60708a] file:mr-3 file:rounded-lg file:border-0 file:bg-[#125fcb] file:px-3 file:py-1.5 file:text-sm file:font-semibold file:text-white">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="rounded-2xl border border-[#e2ebf7] bg-[#fbfdff] p-4">
+                                <h3 class="mb-3 text-lg font-bold text-[#244271]">१८. कृषी विभाग</h3>
+                                <div class="grid gap-3 md:grid-cols-2">
+                                    <div class="md:col-span-2">
+                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">मूल्यांकन सादर केलेल्या पत्राचा तपशील</label>
+                                        <input type="text" placeholder="मूल्यांकन सादर केलेल्या पत्राचा तपशील"
+                                            class="w-full rounded-xl border border-[#d3deeb] px-3 py-2.5 text-sm">
+                                    </div>
+                                    <div>
+                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">दिनांक</label>
+                                        <input type="date" class="w-full rounded-xl border border-[#d3deeb] px-3 py-2.5 text-sm">
+                                    </div>
+                                    <div>
+                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">अपलोड करा</label>
+                                        <input type="file" multiple
+                                            class="block w-full rounded-xl border border-dashed border-[#c5d6ec] bg-white px-3 py-2.5 text-sm text-[#60708a] file:mr-3 file:rounded-lg file:border-0 file:bg-[#125fcb] file:px-3 file:py-1.5 file:text-sm file:font-semibold file:text-white">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="rounded-2xl border border-[#e2ebf7] bg-[#fbfdff] p-4">
+                                <h3 class="mb-3 text-lg font-bold text-[#244271]">१९. बांधकाम विभाग</h3>
+                                <div class="grid gap-3 md:grid-cols-2">
+                                    <div class="md:col-span-2">
+                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">मूल्यांकन सादर केलेल्या पत्राचा तपशील</label>
+                                        <input type="text" placeholder="मूल्यांकन सादर केलेल्या पत्राचा तपशील"
+                                            class="w-full rounded-xl border border-[#d3deeb] px-3 py-2.5 text-sm">
+                                    </div>
+                                    <div>
+                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">दिनांक</label>
+                                        <input type="date" class="w-full rounded-xl border border-[#d3deeb] px-3 py-2.5 text-sm">
+                                    </div>
+                                    <div>
+                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">अपलोड करा</label>
+                                        <input type="file" multiple
+                                            class="block w-full rounded-xl border border-dashed border-[#c5d6ec] bg-white px-3 py-2.5 text-sm text-[#60708a] file:mr-3 file:rounded-lg file:border-0 file:bg-[#125fcb] file:px-3 file:py-1.5 file:text-sm file:font-semibold file:text-white">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="rounded-2xl border border-[#e2ebf7] bg-[#fbfdff] p-4">
+                                <h3 class="mb-3 text-lg font-bold text-[#244271]">२०. इतर विभाग</h3>
+                                <div class="grid gap-3 md:grid-cols-2">
+                                    <div class="md:col-span-2">
+                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">मूल्यांकन सादर केलेल्या पत्राचा तपशील</label>
+                                        <input type="text" placeholder="मूल्यांकन सादर केलेल्या पत्राचा तपशील"
+                                            class="w-full rounded-xl border border-[#d3deeb] px-3 py-2.5 text-sm">
+                                    </div>
+                                    <div>
+                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">दिनांक</label>
+                                        <input type="date" class="w-full rounded-xl border border-[#d3deeb] px-3 py-2.5 text-sm">
+                                    </div>
+                                    <div>
+                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">अपलोड करा</label>
+                                        <input type="file" multiple
+                                            class="block w-full rounded-xl border border-dashed border-[#c5d6ec] bg-white px-3 py-2.5 text-sm text-[#60708a] file:mr-3 file:rounded-lg file:border-0 file:bg-[#125fcb] file:px-3 file:py-1.5 file:text-sm file:font-semibold file:text-white">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div
+                            class="flex flex-col gap-3 border-t border-[#e6edf7] bg-[#fcfdff] px-6 py-5 md:flex-row md:items-center md:justify-between">
+                            <button type="button"
+                                class="nav-btn rounded-xl border border-[#ccdbef] px-5 py-3 text-sm font-semibold text-[#4a6488]"
+                                data-direction="prev">मागील (Previous)</button>
+                            <div class="text-sm text-[#7c8da5]">टॅब 6 / 7</div>
+                            <div class="flex items-center gap-2">
+                                <button type="button"
+                                    class="rounded-xl border border-[#ccdbef] bg-white px-5 py-3 text-sm font-semibold text-[#4a6488]">Save & Next</button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="tab-panel hidden" data-panel="7">
+                    <div
+                        class="w-full rounded-lg border border-[#cfdceb] bg-white shadow-sm">
+                        <div class="border-b border-[#dbe8f8] bg-[#edf5ff] px-6 py-5">
+                            <h2 class="text-xl font-bold text-[#214a8b]">टप्पा 7: जिल्हास्तरीय समितीचे कार्यवृत्तांत</h2>
+                            <p class="mt-1 text-sm text-[#5c78a5]">संमती निवाडा आणि क.जा.प तपशील.</p>
+                        </div>
+                        <div class="space-y-6 px-6 py-7 md:px-8">
+                            <div class="rounded-2xl border border-[#e2ebf7] bg-[#fbfdff] p-5">
+                                <h3 class="mb-4 text-lg font-bold text-[#244271]">२१. जिल्हास्तरीय समितीने मंजूर केलेले
+                                    मोबदला निश्चिती प्रपत्र</h3>
+                                <div class="space-y-4">
+                                    <div class="grid gap-4 md:grid-cols-3">
+                                        <div>
+                                            <label class="mb-2 block text-sm font-semibold text-[#44597a]">प्रस्ताव</label>
+                                            <input type="text" placeholder="प्रस्ताव"
+                                                class="w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
+                                        </div>
+                                        <div>
+                                            <label class="mb-2 block text-sm font-semibold text-[#44597a]">दिनांक</label>
+                                            <input type="date" class="w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
+                                        </div>
+                                        <div>
+                                            <label class="mb-2 block text-sm font-semibold text-[#44597a]">अपलोड करा</label>
+                                            <input type="file" multiple
+                                                class="block w-full rounded-xl border border-dashed border-[#c5d6ec] bg-white px-4 py-3 text-sm text-[#60708a] file:mr-4 file:rounded-lg file:border-0 file:bg-[#125fcb] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white">
+                                        </div>
+                                    </div>
+                                    <div class="grid gap-4 md:grid-cols-3">
+                                        <div>
+                                            <label class="mb-2 block text-sm font-semibold text-[#44597a]">कार्यवृत्तांत</label>
+                                            <input type="text" placeholder="कार्यवृत्तांत"
+                                                class="w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
+                                        </div>
+                                        <div>
+                                            <label class="mb-2 block text-sm font-semibold text-[#44597a]">दिनांक</label>
+                                            <input type="date" class="w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
+                                        </div>
+                                        <div>
+                                            <label class="mb-2 block text-sm font-semibold text-[#44597a]">अपलोड करा</label>
+                                            <input type="file" multiple
+                                                class="block w-full rounded-xl border border-dashed border-[#c5d6ec] bg-white px-4 py-3 text-sm text-[#60708a] file:mr-4 file:rounded-lg file:border-0 file:bg-[#125fcb] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div
+                            class="flex flex-col gap-3 border-t border-[#e6edf7] bg-[#fcfdff] px-6 py-5 md:flex-row md:items-center md:justify-between">
+                            <button type="button"
+                                class="nav-btn rounded-xl border border-[#ccdbef] px-5 py-3 text-sm font-semibold text-[#4a6488]"
+                                data-direction="prev">मागील (Previous)</button>
+                            <div class="text-sm text-[#7c8da5]">टॅब 7 / 8</div>
+                            <div class="flex items-center gap-2">
+                                <button type="button"
+                                    class="rounded-xl border border-[#ccdbef] bg-white px-5 py-3 text-sm font-semibold text-[#4a6488]">Save & Next</button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="tab-panel hidden" data-panel="8">
+                    <div
+                        class="w-full rounded-lg border border-[#cfdceb] bg-white shadow-sm">
+                        <div class="border-b border-[#dbe8f8] bg-[#edf5ff] px-6 py-5">
+                            <h2 class="text-xl font-bold text-[#214a8b]">टप्पा 8 - निवाडा</h2>
+                            <p class="mt-1 text-sm text-[#5c78a5]">संमती करारनामा, निवाडा आणि मोबदला अदा तपशील.</p>
+                        </div>
+                        <div class="space-y-6 px-6 py-7 md:px-8">
+                            <div class="rounded-2xl border border-[#e2ebf7] bg-[#fbfdff] p-5">
+                                <h3 class="mb-4 text-lg font-bold text-[#244271]">२२. संमती/विनासंमती निवाडा</h3>
+                                <div class="grid gap-4 md:grid-cols-2">
+                                    <div>
+                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">क्रमांक</label>
+                                        <input type="text" placeholder="क्रमांक"
+                                            class="w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
+                                    </div>
+                                    <div>
+                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">दिनांक</label>
+                                        <input type="date" class="w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
+                                    </div>
+                                    <div class="md:col-span-2">
+                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">अपलोड करा</label>
+                                        <input type="file" multiple
+                                            class="block w-full rounded-xl border border-dashed border-[#c5d6ec] bg-white px-4 py-3 text-sm text-[#60708a] file:mr-4 file:rounded-lg file:border-0 file:bg-[#125fcb] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="rounded-2xl border border-[#e2ebf7] bg-[#fbfdff] p-5">
+                                <h3 class="mb-4 text-lg font-bold text-[#244271]">२३. न्यायालयीन प्रकरणांचा तपशील</h3>
+                                <div class="grid gap-4 md:grid-cols-2">
+                                    <div>
+                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">न्यायालयीन प्रकरणांचा तपशील</label>
+                                        <input type="text" placeholder="न्यायालयीन प्रकरणांचा तपशील"
+                                            class="w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
+                                    </div>
+                                    <div>
+                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">तपशील अपलोड</label>
+                                        <input type="file" multiple
+                                            class="block w-full rounded-xl border border-dashed border-[#c5d6ec] bg-white px-4 py-3 text-sm text-[#60708a] file:mr-4 file:rounded-lg file:border-0 file:bg-[#125fcb] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="rounded-2xl border border-[#e2ebf7] bg-[#fbfdff] p-5">
+                                <h3 class="mb-4 text-lg font-bold text-[#244271]">२४. क.जा.प तपशील</h3>
+                                <div class="grid gap-4 md:grid-cols-2">
+                                    <div>
+                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">क्रमांक</label>
+                                        <input type="text" placeholder="क्रमांक"
+                                            class="w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
+                                    </div>
+                                    <div>
+                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">दिनांक</label>
+                                        <input type="date" class="w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
+                                    </div>
+                                    <div class="md:col-span-2">
+                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">अपलोड करा</label>
+                                        <input type="file" multiple
+                                            class="block w-full rounded-xl border border-dashed border-[#c5d6ec] bg-white px-4 py-3 text-sm text-[#60708a] file:mr-4 file:rounded-lg file:border-0 file:bg-[#125fcb] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="rounded-2xl border border-[#e2ebf7] bg-[#fbfdff] p-5">
+                                <div class="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                                    <h3 class="text-lg font-bold text-[#244271]">२५. संपादन संस्थेच्या नावावर झालेल्या ८ अ अभिलेखाचा तपशील</h3>
+                                    <button type="button" id="add-8a-line-btn"
+                                        class="inline-flex items-center justify-center rounded-lg border border-[#c6d9f2] bg-white px-4 py-2 text-sm font-semibold text-[#125fcb] hover:bg-[#eef5ff]">+ ओळ जोडा</button>
+                                </div>
+                                <div id="record-8a-lines" class="space-y-4">
+                                    <div class="record-8a-line relative rounded-xl border border-[#e2ebf7] bg-white p-4">
+                                        <div>
+                                            <div class="grid gap-4 md:grid-cols-3">
+                                                <div>
+                                                    <label class="mb-2 block text-sm font-semibold text-[#44597a]">खातेक्रमांक</label>
+                                                    <input type="text" placeholder="खातेक्रमांक"
+                                                        class="vi-8a-khate w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
+                                                </div>
+                                                <div>
+                                                    <label class="mb-2 block text-sm font-semibold text-[#44597a]">नावावर झालेले क्षेत्र</label>
+                                                    <input type="text" placeholder="नावावर झालेले क्षेत्र"
+                                                        class="vi-8a-navavar w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
+                                                </div>
+                                                <div>
+                                                    <label class="mb-2 block text-sm font-semibold text-[#44597a]">फेरफार क्रमांक</label>
+                                                    <input type="text" placeholder="फेरफार क्रमांक"
+                                                        class="vi-8a-ferfar w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
+                                                </div>
+                                            </div>
+                                            <div class="mt-4 grid gap-4 md:grid-cols-2">
+                                                <div>
+                                                    <label class="mb-2 block text-sm font-semibold text-[#44597a]">फेरफार दिनांक</label>
+                                                    <input type="date" class="vi-8a-date w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
+                                                </div>
+                                                <div>
+                                                    <label class="mb-2 block text-sm font-semibold text-[#44597a]">८ अ अपलोड</label>
+                                                    <input type="file" multiple
+                                                        class="vi-8a-files block w-full rounded-xl border border-dashed border-[#c5d6ec] bg-white px-4 py-2.5 text-sm text-[#60708a] file:mr-4 file:rounded-lg file:border-0 file:bg-[#125fcb] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white">
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div
+                            class="flex flex-col gap-3 border-t border-[#e6edf7] bg-[#fcfdff] px-6 py-5 md:flex-row md:items-center md:justify-between">
+                            <button type="button"
+                                class="nav-btn rounded-xl border border-[#ccdbef] px-5 py-3 text-sm font-semibold text-[#4a6488]"
+                                data-direction="prev">मागील (Previous)</button>
+                            <div class="text-sm text-[#7c8da5]">टॅब 8 / 8</div>
+                            <div class="flex items-center gap-2">
+                                <button type="button"
+                                    class="rounded-xl bg-[#125fcb] px-5 py-3 text-sm font-semibold text-white">Submit</button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const tabs = Array.from(document.querySelectorAll('.tab-trigger'));
+        const panels = Array.from(document.querySelectorAll('.tab-panel'));
+        const navButtons = Array.from(document.querySelectorAll('.nav-btn'));
+        const saveNextButtons = Array.from(document.querySelectorAll('button')).filter(btn => btn.textContent.trim() === 'Save & Next');
+        const submitButton = Array.from(document.querySelectorAll('button')).find(btn => btn.textContent.trim() === 'Submit');
+        const statusBox = document.getElementById('vi-form-status');
+        const toastHost = document.getElementById('vi-toast-host');
+        const listView = document.getElementById('vi-list-view');
+        const formView = document.getElementById('vi-form-view');
+        const addNewBtn = document.getElementById('vi-add-new-btn');
+        const backToListBtn = document.getElementById('vi-back-to-list-btn');
+        const recordListBody = document.getElementById('vi-record-list-body');
+        const pageSizeSelect = document.getElementById('vi-page-size');
+        const searchInput = document.getElementById('vi-search-input');
+        const listInfo = document.getElementById('vi-list-info');
+        const paginationControls = document.getElementById('vi-pagination-controls');
+        let currentTab = 1;
+        let locationInitPromise = null;
+        let isEditingRecord = false;
+        const completedTabs = new Set();
+        let villageRecords = [];
+        let filteredVillageRecords = [];
+        let currentPage = 1;
+        let pageSize = Number(pageSizeSelect.value || 10);
+        let currentSearchQuery = '';
+
+        const districtSel = document.getElementById('vi-district');
+        const talukaSel = document.getElementById('vi-taluka');
+        const villageSel = document.getElementById('vi-village');
+        const sec15TableBody = document.getElementById('sec15-rate-table-body');
+        const DRAFT_STORAGE_PREFIX = 'vi_draft_v1';
+        const draftCache = {};
+        const progressCache = {};
+
+        function showStatus(message, isError = false) {
+            statusBox.classList.add('hidden');
+            statusBox.textContent = '';
+            const toast = document.createElement('div');
+            toast.className = `vi-toast ${isError ? 'is-error' : 'is-success'}`;
+            toast.style.cssText = 'display:flex;align-items:flex-start;justify-content:space-between;gap:0.75rem;padding:0.85rem 1rem;';
+
+            const msg = document.createElement('span');
+            msg.textContent = message;
+            msg.style.cssText = 'flex:1;word-break:break-word;line-height:1.4;';
+
+            const removeToast = () => {
+                toast.classList.remove('is-show');
+                setTimeout(() => toast.remove(), 180);
+            };
+
+            const closeBtn = document.createElement('button');
+            closeBtn.type = 'button';
+            closeBtn.innerHTML = '&times;';
+            closeBtn.style.cssText = 'background:none;border:none;color:inherit;font-size:1.5rem;font-weight:bold;cursor:pointer;padding:0 0.25rem;line-height:1;flex-shrink:0;opacity:0.75;';
+            closeBtn.addEventListener('click', (e) => { e.stopPropagation(); removeToast(); });
+
+            toast.appendChild(msg);
+            toast.appendChild(closeBtn);
+            toastHost.appendChild(toast);
+            requestAnimationFrame(() => toast.classList.add('is-show'));
+
+            if (!isError) {
+                setTimeout(removeToast, 5000);
+            }
+        }
+
+        function showDuplicateFileError(errorMessage) {
+            // Parse conflict keys: e.g. "sec1_files: foo.pdf", "sec4_row_1_main: foo.pdf", "sec8_row_1: foo.pdf", "sec26_row_1: foo.pdf"
+            const conflictMatches = [...errorMessage.matchAll(/([\w]+(?:_[\w]+)*):\s*[^,]+/g)];
+            const conflictKeys = [...new Set(conflictMatches.map(m => m[1].trim()))];
+
+            // Clear previous error highlights
+            document.querySelectorAll('.vi-file-error').forEach(el => el.classList.remove('vi-file-error'));
+
+            const fieldMap = bindFieldMap();
+            let firstConflictEl = null;
+
+            function markInput(el) {
+                if (!el) return;
+                // Walk up to find the div that contains the label + file input
+                let wrap = el.parentElement;
+                while (wrap && wrap.tagName !== 'DIV') wrap = wrap.parentElement;
+                if (!wrap) wrap = el.parentElement;
+                wrap.classList.add('vi-file-error-wrap');
+                if (!firstConflictEl) firstConflictEl = wrap;
+                el.addEventListener('change', () => wrap.classList.remove('vi-file-error-wrap'), { once: true });
+            }
+
+            conflictKeys.forEach(key => {
+                // Standard field keys like sec1_files, sec7_files, etc.
+                if (fieldMap[key] && fieldMap[key].type === 'file') {
+                    markInput(fieldMap[key]);
+                    return;
+                }
+
+                // sec4_row_N_main / sec4_row_N_paper1 / sec4_row_N_paper2  (1-based index)
+                const sec4Match = key.match(/^sec4_row_(\d+)(?:_(main|paper1|paper2))?$/);
+                if (sec4Match) {
+                    const idx = parseInt(sec4Match[1]) - 1;
+                    const subkey = sec4Match[2] || 'main';
+                    const rows = document.querySelectorAll('#record-sec4-rows .record-sec4-row');
+                    const row = rows[idx];
+                    if (row) {
+                        const selMap = { main: '.vi-sec4-main-files', paper1: '.vi-sec4-paper1-files', paper2: '.vi-sec4-paper2-files' };
+                        markInput(row.querySelector(selMap[subkey]));
+                    }
+                    return;
+                }
+
+                // sec8_row_N  (1-based)
+                const sec8Match = key.match(/^sec8_row_(\d+)$/);
+                if (sec8Match) {
+                    const idx = parseInt(sec8Match[1]) - 1;
+                    const rows = document.querySelectorAll('#record-sec8-rows .record-sec8-row');
+                    const row = rows[idx];
+                    if (row) markInput(row.querySelector('.vi-sec8-files'));
+                    return;
+                }
+
+                // sec26_row_N  (1-based)
+                const sec26Match = key.match(/^sec26_row_(\d+)$/);
+                if (sec26Match) {
+                    const idx = parseInt(sec26Match[1]) - 1;
+                    const rows = document.querySelectorAll('#record-8a-lines .record-8a-line');
+                    const row = rows[idx];
+                    if (row) markInput(row.querySelector('.vi-8a-files'));
+                    return;
+                }
+            });
+
+            showStatus(errorMessage, true);
+
+            if (firstConflictEl) {
+                setTimeout(() => firstConflictEl.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
+            }
+        }
+
+        let viDuplicateToastTimer = null;
+
+        function showViDuplicateToast(message) {
+            const toast = document.getElementById('viDuplicateToast');
+            const msg = document.getElementById('viDuplicateToastMsg');
+            if (!toast || !msg) return;
+            msg.textContent = message || 'या गावासाठी गावाची माहिती नोंद आधीच अस्तित्वात आहे.';
+            toast.classList.remove('hidden');
+            if (viDuplicateToastTimer) clearTimeout(viDuplicateToastTimer);
+            viDuplicateToastTimer = setTimeout(hideViDuplicateToast, 10000);
+        }
+
+        function hideViDuplicateToast() {
+            const toast = document.getElementById('viDuplicateToast');
+            if (toast) toast.classList.add('hidden');
+            if (viDuplicateToastTimer) { clearTimeout(viDuplicateToastTimer); viDuplicateToastTimer = null; }
+            // Reset village selection to allow user to try again
+            villageSel.value = '';
+            setVillageInfoFieldsLocked(false);
+        }
+
+        function setLocationFieldsReadonly(isReadonly) {
+            const fields = [districtSel, talukaSel, villageSel];
+            fields.forEach((field) => {
+                if (isReadonly) {
+                    field.style.backgroundColor = '#f0f0f0';
+                    field.style.cursor = 'not-allowed';
+                    field.style.color = '#666';
+                    field.disabled = true;
+                } else {
+                    field.style.backgroundColor = '';
+                    field.style.cursor = 'pointer';
+                    field.style.color = '';
+                    field.disabled = false;
+                }
+            });
+        }
+
+        function setVillageInfoFieldsLocked(isLocked) {
+            const formView = document.getElementById('vi-form-view');
+            if (!formView) return;
+            formView.classList.toggle('opacity-50', isLocked);
+
+            formView.querySelectorAll('input, select, textarea, button').forEach((el) => {
+                // Skip back button and location fields (they're handled separately)
+                if (el.id === 'vi-back-to-list-btn' || el.id === 'vi-district' || el.id === 'vi-taluka' || el.id === 'vi-village') {
+                    return;
+                }
+                el.disabled = isLocked;
+            });
+        }
+
+        function setStepLoader(isLoading) {
+            const loader = document.getElementById('vi-step-loader');
+            if (!loader) return;
+            loader.classList.toggle('hidden', !isLoading);
+        }
+
+        function setSavingState(isSaving) {
+            setStepLoader(isSaving);
+            setVillageInfoFieldsLocked(isSaving);
+            saveNextButtons.forEach((btn) => { btn.disabled = isSaving; });
+            if (submitButton) submitButton.disabled = isSaving;
+        }
+
+        async function checkVillageInfoDuplicateAndToggleFields() {
+            const district = (districtSel.value || '').trim();
+            const taluka = (talukaSel.value || '').trim();
+            const village = (villageSel.value || '').trim();
+
+            if (!district || !taluka || !village) {
+                setVillageInfoFieldsLocked(false);
+                return;
+            }
+
+            try {
+                const url = `/api/village-info/exists/?district=${encodeURIComponent(district)}&taluka=${encodeURIComponent(taluka)}&village=${encodeURIComponent(village)}`;
+                const response = await fetch(url);
+                const data = await response.json();
+                const duplicate = !!data.exists;
+                setVillageInfoFieldsLocked(duplicate);
+                if (duplicate) {
+                    showViDuplicateToast(data.message || 'या गावासाठी गावाची माहिती नोंद आधीच अस्तित्वात आहे.');
+                }
+            } catch (err) {
+                setVillageInfoFieldsLocked(false);
+            }
+        }
+
+        function persistFormState() {
+            try {
+                const d = districtSel.value;
+                const t = talukaSel.value;
+                const v = villageSel.value;
+                if (d || t || v) {
+                    // Only treat as editing if it was explicitly opened via Edit button
+                    sessionStorage.setItem('vi_form_state', JSON.stringify({
+                        district: d, taluka: t, village: v,
+                        tab: currentTab, isEditing: isEditingRecord,
+                        completed_tabs: Array.from(completedTabs)
+                    }));
+                }
+            } catch (e) { /* ignore */ }
+        }
+
+        function setActiveTab(tabNumber) {
+            currentTab = tabNumber;
+            tabs.forEach((tab) => {
+                const tabNo = Number(tab.dataset.tab);
+                const isActive = tabNo === tabNumber;
+                const isCompleted = completedTabs.has(tabNo);
+                const spans = tab.querySelectorAll('span');
+                const circle = spans[0];
+                const label = spans[1];
+
+                circle.classList.remove(
+                    'bg-[#125fcb]', 'border-[#125fcb]', 'shadow-[0_10px_22px_rgba(18,95,203,0.25)]',
+                    'bg-[#dc2626]', 'border-[#dc2626]', 'shadow-[0_10px_22px_rgba(220,38,38,0.25)]',
+                    'bg-[#16a34a]', 'border-[#16a34a]', 'shadow-[0_10px_22px_rgba(22,163,74,0.25)]',
+                    'bg-white', 'text-white', 'text-[#8a99ad]', 'text-[#8a99ad]', 'border-[#cad8ea]'
+                );
+
+                if (isActive) {
+                    circle.classList.add('bg-[#125fcb]', 'text-white', 'border-[#125fcb]', 'shadow-[0_10px_22px_rgba(18,95,203,0.25)]');
+                    label.classList.add('text-[#125fcb]');
+                } else if (isCompleted) {
+                    circle.classList.add('bg-[#16a34a]', 'text-white', 'border-[#16a34a]', 'shadow-[0_10px_22px_rgba(22,163,74,0.25)]');
+                    label.classList.add('text-[#16a34a]');
+                } else {
+                    circle.classList.add('bg-white', 'text-[#8a99ad]', 'border-[#cad8ea]');
+                    label.classList.add('text-[#8897ab]');
+                }
+            });
+
+            panels.forEach((panel) => {
+                panel.classList.toggle('hidden', Number(panel.dataset.panel) !== tabNumber);
+            });
+            requestAnimationFrame(() => refreshSavedFilePopovers());
+            persistFormState();
+        }
+
+        tabs.forEach((tab) => tab.addEventListener('click', () => {
+            const tabNumber = Number(tab.dataset.tab);
+            if (isEditingRecord || tabNumber <= currentTab) {
+                setActiveTab(tabNumber);
+            }
+        }));
+        navButtons.forEach((button) => {
+            button.addEventListener('click', () => {
+                const direction = button.dataset.direction;
+                if (direction === 'prev' && currentTab > 1) setActiveTab(currentTab - 1);
+            });
+        });
+
+        function csrfToken() {
+            const cookies = document.cookie ? document.cookie.split('; ') : [];
+            for (const c of cookies) {
+                const [k, ...rest] = c.split('=');
+                if (k === 'csrftoken') return decodeURIComponent(rest.join('='));
+            }
+            return '';
+        }
+
+        async function fetchJSON(url, options = {}) {
+            const res = await fetch(url, options);
+            const contentType = (res.headers.get('content-type') || '').toLowerCase();
+            const bodyText = await res.text();
+            let data = null;
+
+            if (bodyText) {
+                try {
+                    data = JSON.parse(bodyText);
+                } catch (parseErr) {
+                    if (!res.ok) {
+                        throw new Error(`Request failed (${res.status}) for ${url}. Server returned non-JSON response.`);
+                    }
+                    throw new Error(`Invalid JSON response from ${url}. Content-Type: ${contentType || 'unknown'}`);
+                }
+            }
+
+            if (!res.ok) {
+                throw new Error((data && (data.error || data.message)) || `Request failed (${res.status}) for ${url}`);
+            }
+            if (!data) {
+                throw new Error(`Empty response received from ${url}`);
+            }
+            return data;
+        }
+
+        function buildMergedFileList(inputEl, droppedFiles = []) {
+            const dt = new DataTransfer();
+            const includeExisting = inputEl.multiple;
+            if (includeExisting) {
+                Array.from(inputEl.files || []).forEach((f) => dt.items.add(f));
+            }
+            Array.from(droppedFiles || []).forEach((f) => dt.items.add(f));
+            return dt.files;
+        }
+
+        function attachDropzone(inputEl) {
+            if (!inputEl || inputEl.dataset.dropzoneBound === '1') return;
+            inputEl.dataset.dropzoneBound = '1';
+            inputEl.classList.add('vi-dropzone');
+            inputEl.classList.add('vi-upload-input');
+            inputEl.classList.add('vi-hide-native-file-label');
+            if (!inputEl.title) {
+                inputEl.title = 'Drag and drop files here, or click to browse';
+            }
+
+            // Store existing files before file picker opens
+            let existingFiles = [];
+            const onFocus = () => {
+                if (inputEl.multiple) {
+                    existingFiles = Array.from(inputEl.files || []);
+                }
+            };
+
+            const onDragEnter = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                inputEl.classList.add('is-dragover');
+            };
+            const onDragOver = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                inputEl.classList.add('is-dragover');
+            };
+            const onDragLeave = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (e.target === inputEl) inputEl.classList.remove('is-dragover');
+            };
+            const onDrop = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                inputEl.classList.remove('is-dragover');
+                const droppedFiles = Array.from(e.dataTransfer?.files || []);
+                if (!droppedFiles.length) return;
+                inputEl.files = buildMergedFileList(inputEl, droppedFiles);
+                inputEl.dispatchEvent(new Event('change', { bubbles: true }));
+            };
+            const onChange = (e) => {
+                if (inputEl.multiple && e.target.files && e.target.files.length > 0) {
+                    // For multiple file inputs, merge new files with existing ones
+                    const newFiles = Array.from(e.target.files || []);
+                    const dt = new DataTransfer();
+                    // Add existing files first
+                    existingFiles.forEach((f) => dt.items.add(f));
+                    // Add new files
+                    newFiles.forEach((f) => dt.items.add(f));
+                    inputEl.files = dt.files;
+                }
+                renderSelectedFilesForInput(inputEl);
+            };
+
+            inputEl.addEventListener('focus', onFocus);
+            inputEl.addEventListener('click', onFocus);
+            inputEl.addEventListener('dragenter', onDragEnter);
+            inputEl.addEventListener('dragover', onDragOver);
+            inputEl.addEventListener('dragleave', onDragLeave);
+            inputEl.addEventListener('drop', onDrop);
+            inputEl.addEventListener('change', onChange);
+            renderSelectedFilesForInput(inputEl);
+        }
+
+        function initAllDropzones(root = document) {
+            root.querySelectorAll('input[type="file"]').forEach((inputEl) => attachDropzone(inputEl));
+        }
+
+        function getTodayIsoDate() {
+            const now = new Date();
+            const y = now.getFullYear();
+            const m = String(now.getMonth() + 1).padStart(2, '0');
+            const d = String(now.getDate()).padStart(2, '0');
+            return `${y}-${m}-${d}`;
+        }
+
+        function initDateValidation(root = document) {
+            const maxDate = getTodayIsoDate();
+            root.querySelectorAll('input[type="date"]').forEach((inputEl) => {
+                inputEl.max = maxDate;
+            });
+        }
+
+        function ensureSelectedFilesContainer(inputEl) {
+            if (!inputEl) return null;
+            let box = inputEl.parentElement?.querySelector('.vi-selected-files');
+            if (!box) {
+                box = document.createElement('div');
+                box.className = 'vi-selected-files hidden';
+                inputEl.insertAdjacentElement('afterend', box);
+            }
+            if (box.dataset.removeBound !== '1') {
+                box.dataset.removeBound = '1';
+                box.addEventListener('click', (event) => {
+                    const removeBtn = event.target.closest('.vi-selected-chip-remove');
+                    if (!removeBtn) return;
+                    const index = Number(removeBtn.dataset.fileIndex);
+                    if (!Number.isInteger(index) || index < 0) return;
+                    removeSelectedFileFromInput(inputEl, index);
+                });
+            }
+            return box;
+        }
+
+        function escapeHtml(value) {
+            return String(value || '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function removeSelectedFileFromInput(inputEl, removeIndex) {
+            const files = Array.from(inputEl.files || []);
+            if (!files.length) return;
+            const dt = new DataTransfer();
+            files.forEach((file, index) => {
+                if (index !== removeIndex) dt.items.add(file);
+            });
+            inputEl.files = dt.files;
+            renderSelectedFilesForInput(inputEl);
+        }
+
+        function renderSelectedFilesForInput(inputEl) {
+            const box = ensureSelectedFilesContainer(inputEl);
+            if (!box) return;
+            const files = Array.from(inputEl.files || []);
+            if (!files.length) {
+                box.innerHTML = '';
+                box.classList.add('hidden');
+                return;
+            }
+            box.classList.remove('hidden');
+            box.innerHTML = files
+                .map((f, index) => `
+                    <span class="vi-selected-chip" title="${escapeHtml(f.name)}">
+                        <span class="vi-selected-chip-name">${escapeHtml(f.name)}</span>
+                        <button type="button" class="vi-selected-chip-remove" data-file-index="${index}" aria-label="Remove ${escapeHtml(f.name)}">×</button>
+                    </span>
+                `)
+                .join('');
+        }
+
+        function formatDateTime(iso) {
+            if (!iso) return '-';
+            const dt = new Date(iso);
+            if (Number.isNaN(dt.getTime())) return '-';
+            return dt.toLocaleString('en-IN', {
+                day: '2-digit',
+                month: 'short',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        function formatUpdatedCell(row) {
+            const updatedAt = formatDateTime(row?.updated_at);
+            const updatedBy = (row?.updated_by || '').trim();
+            if (!updatedBy) return updatedAt;
+            return `${updatedAt}<div class="text-xs text-[#6d7f9b]">Updated by ${updatedBy}</div>`;
+        }
+
+        function showListView() {
+            window.location.href = '/tools/village-info/';
+        }
+
+        function showFormView() {
+            window.location.href = '/tools/village-info/form/';
+        }
+
+        function clearVillageForm() {
+            completedTabs.clear();
+            if (districtSel.value && talukaSel.value && villageSel.value) {
+                clearProgressFromLocal(districtSel.value, talukaSel.value, villageSel.value);
+            }
+            const fieldMap = bindFieldMap();
+            Object.values(fieldMap).forEach((el) => {
+                if (!el) return;
+                if (el.type === 'file') {
+                    el.value = '';
+                    renderSelectedFilesForInput(el);
+                    const savedBox = el.parentElement.querySelector('.vi-saved-files');
+                    if (savedBox) {
+                        savedBox.classList.add('hidden');
+                        savedBox.innerHTML = '';
+                    }
+                    return;
+                }
+                el.value = '';
+            });
+            districtSel.value = '';
+            fillSelect(talukaSel, [], 'आधी जिल्हा निवडा');
+            fillSelect(villageSel, [], 'आधी तालुका निवडा');
+            renderSec4Rows([]);
+            renderSec8Rows([]);
+            render8aRecords([]);
+            renderSec15Rows([], 'गाव निवडा');
+            setLocationFieldsReadonly(false);
+            setVillageInfoFieldsLocked(false);
+            setActiveTab(1);
+        }
+
+        function clearVillageDataSectionsOnly() {
+            const fieldMap = bindFieldMap();
+            Object.values(fieldMap).forEach((el) => {
+                if (!el) return;
+                if (el.type === 'file') {
+                    el.value = '';
+                    renderSelectedFilesForInput(el);
+                    const savedBox = el.parentElement.querySelector('.vi-saved-files');
+                    if (savedBox) {
+                        savedBox.classList.add('hidden');
+                        savedBox.innerHTML = '';
+                    }
+                    return;
+                }
+                el.value = '';
+            });
+            renderSec4Rows([]);
+            renderSec8Rows([]);
+            render8aRecords([]);
+            renderFieldFileLists(fieldMap, {});
+        }
+
+        function renderVillageList(rows = []) {
+            if (!rows.length) {
+                recordListBody.innerHTML = `
+                    <tr>
+                        <td colspan="8" class="border border-[#d7e5f6] px-3 py-3 text-center text-[#6d7f9b]">
+                            No village records found.
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            recordListBody.innerHTML = rows.map((row, idx) => `
+                <tr data-record-id="${row.id}" data-district="${row.district_en || row.district}" data-taluka="${row.taluka_en || row.taluka}" data-village="${row.village_en || row.village}">
+                    <td class="border border-[#d7e5f6] px-3 py-2 text-center align-middle">${idx + 1}</td>
+                    <td class="w-28 border border-[#d7e5f6] px-3 py-2 text-center align-middle font-semibold whitespace-nowrap">${row.id}</td>
+                    <td class="border border-[#d7e5f6] px-3 py-2 text-center align-middle">${row.district || '-'}</td>
+                    <td class="border border-[#d7e5f6] px-3 py-2 text-center align-middle">${row.taluka || '-'}</td>
+                    <td class="border border-[#d7e5f6] px-3 py-2 text-center align-middle">${row.village || '-'}</td>
+                    <td class="border border-[#d7e5f6] px-3 py-2 text-center align-middle">
+                        ${row.is_final_submitted
+                            ? '<button type="button" class="rounded-lg border border-[#bbf7d0] bg-[#f0fdf4] px-3 py-1 text-xs font-semibold text-[#166534]" disabled>Completed</button>'
+                            : '<button type="button" class="rounded-lg border border-[#fde68a] bg-[#fffbeb] px-3 py-1 text-xs font-semibold text-[#92400e]" disabled>Draft</button>'}
+                    </td>
+                    <td class="border border-[#d7e5f6] px-3 py-2 text-center align-middle">${formatUpdatedCell(row)}</td>
+                    <td class="border border-[#d7e5f6] px-3 py-2 text-center align-middle">
+                        <div class="flex items-center justify-center gap-2">
+                            <button type="button" class="vi-edit-row rounded-lg border border-[#c6d9f2] bg-white px-3 py-1 text-xs font-semibold text-[#125fcb] hover:bg-[#eef5ff]">Edit</button>
+                            <button type="button" class="vi-delete-row rounded-lg border border-[#f3c7cf] bg-[#fff5f7] px-3 py-1 text-xs font-semibold text-[#c12e49] hover:bg-[#ffecef]">Delete</button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        async function loadVillageRecordList() {
+            recordListBody.innerHTML = `
+                <tr>
+                    <td colspan="8" class="border border-[#d7e5f6] px-3 py-3 text-center text-[#6d7f9b]">Loading...</td>
+                </tr>
+            `;
+            const data = await fetchJSON('/api/village-info/list/');
+            villageRecords = data.rows || [];
+            currentPage = 1;
+            applyVillageSearchAndRender();
+        }
+
+        function getVisibleVillageRows() {
+            const start = (currentPage - 1) * pageSize;
+            const end = start + pageSize;
+            return filteredVillageRecords.slice(start, end);
+        }
+
+        function formatSearchValue(row) {
+            const values = [row.id, row.district, row.taluka, row.village, row.updated_by, row.is_final_submitted ? 'completed' : 'draft'];
+            return values.join(' ').toString().toLowerCase();
+        }
+
+        function applyVillageSearchAndRender() {
+            const query = currentSearchQuery.trim().toLowerCase();
+            if (!query) {
+                filteredVillageRecords = villageRecords.slice();
+            } else {
+                filteredVillageRecords = villageRecords.filter((row) => formatSearchValue(row).includes(query));
+            }
+            const totalPages = Math.max(1, Math.ceil(filteredVillageRecords.length / pageSize));
+            if (currentPage > totalPages) currentPage = totalPages;
+            renderVillageList(getVisibleVillageRows());
+            renderPaginationControls();
+            updateListInfo();
+        }
+
+        function updateListInfo() {
+            const total = filteredVillageRecords.length;
+            const from = total === 0 ? 0 : (currentPage - 1) * pageSize + 1;
+            const to = Math.min(total, currentPage * pageSize);
+            listInfo.textContent = `Showing ${from} to ${to} of ${total} entries`;
+        }
+
+        function renderPaginationControls() {
+            const total = filteredVillageRecords.length;
+            const pageCount = Math.max(1, Math.ceil(total / pageSize));
+            const buttons = [];
+
+            function buildButton(label, page, isActive = false, isDisabled = false) {
+                return `<button type="button" class="vi-page-btn rounded-xl border px-3 py-2 text-sm font-semibold ${isActive ? 'bg-[#125fcb] text-white border-[#125fcb]' : 'bg-white text-[#125fcb] border-[#cbd5e1] hover:bg-[#eef5ff]'}" data-page="${page}" ${isDisabled ? 'disabled' : ''}>${label}</button>`;
+            }
+
+            buttons.push(buildButton('Previous', currentPage - 1, false, currentPage === 1));
+
+            if (pageCount <= 7) {
+                for (let i = 1; i <= pageCount; i += 1) {
+                    buttons.push(buildButton(i, i, i === currentPage));
+                }
+            } else {
+                buttons.push(buildButton(1, 1, currentPage === 1));
+                if (currentPage > 3) {
+                    buttons.push('<span class="px-2 text-sm text-[#6d7f9b]">…</span>');
+                }
+                const start = Math.max(2, currentPage - 1);
+                const end = Math.min(pageCount - 1, currentPage + 1);
+                for (let i = start; i <= end; i += 1) {
+                    buttons.push(buildButton(i, i, i === currentPage));
+                }
+                if (currentPage < pageCount - 2) {
+                    buttons.push('<span class="px-2 text-sm text-[#6d7f9b]">…</span>');
+                }
+                buttons.push(buildButton(pageCount, pageCount, currentPage === pageCount));
+            }
+
+            buttons.push(buildButton('Next', currentPage + 1, false, currentPage === pageCount));
+            paginationControls.innerHTML = buttons.join('');
+        }
+
+        function changeVillagePage(page) {
+            const total = filteredVillageRecords.length;
+            const pageCount = Math.max(1, Math.ceil(total / pageSize));
+            if (page < 1 || page > pageCount) return;
+            currentPage = page;
+            renderVillageList(getVisibleVillageRows());
+            renderPaginationControls();
+            updateListInfo();
+        }
+
+        function handlePageSizeChange() {
+            pageSize = Number(pageSizeSelect.value) || 10;
+            currentPage = 1;
+            applyVillageSearchAndRender();
+        }
+
+        function handleSearchChange() {
+            currentSearchQuery = searchInput.value || '';
+            currentPage = 1;
+            applyVillageSearchAndRender();
+        }
+
+        function fillSelect(sel, items, placeholder, valueKey) {
+            sel.innerHTML = `<option value="">${placeholder}</option>`;
+            items.forEach(item => {
+                const val = valueKey ? item[valueKey] : (typeof item === 'object' ? (item.value ?? '') : item);
+                const label = typeof item === 'object' ? (item.label ?? item.value ?? '') : val;
+                if (!val) return;
+                const opt = document.createElement('option');
+                opt.value = val;
+                opt.textContent = label;
+                sel.appendChild(opt);
+            });
+            sel.disabled = items.length === 0;
+        }
+
+        function panelInputs(panelNo) {
+            const panel = document.querySelector(`.tab-panel[data-panel="${panelNo}"]`);
+            if (!panel) return [];
+            return Array.from(panel.querySelectorAll('input')).filter((el) =>
+                !el.classList.contains('vi-sec4-row-input') &&
+                !el.classList.contains('vi-sec8-row-input') &&
+                !el.closest('.sec15-rate-body')
+            );
+        }
+
+        function bindFieldMap() {
+            const p1 = panelInputs(1);
+            const p2 = panelInputs(2);
+            const p3 = panelInputs(3);
+            const p4 = panelInputs(4);
+            const p5 = panelInputs(5);
+            const p6 = panelInputs(6);
+            const p7 = panelInputs(7);
+            const p8 = panelInputs(8);
+
+            return {
+                sec1_adesh_kramank: p1[0], sec1_date: p1[1], sec1_files: p1[2],
+                sec2_adhisuchana_kramank: p1[3], sec2_date: p1[4], sec2_files: p1[5],
+                sec2_paper1_name: p1[6], sec2_paper1_date: p1[7], sec2_paper1_files: p1[8],
+                sec2_paper2_name: p1[9], sec2_paper2_date: p1[10], sec2_paper2_files: p1[11],
+                sec3_adhisuchana_kramank: p1[12], sec3_date: p1[13], sec3_files: p1[14],
+
+                sec5_prastaav_kramank: p2[0], sec5_date: p2[1], sec5_files: p2[2],
+                sec6_register_number: p2[3], sec6_date: p2[4], sec6_parishisht16_files: p2[5], sec6_nakasha_files: p2[6],
+
+                sec7_aakshep_details: p3[0], sec7_files: p3[1],
+                sec9_paper1_name: p3[2], sec9_paper1_date: p3[3], sec9_paper1_files: p3[4],
+                sec9_paper2_name: p3[5], sec9_paper2_date: p3[6], sec9_paper2_files: p3[7],
+
+                sec10_prastaav_kramank: p4[0], sec10_date: p4[1], sec10_files: p4[2],
+                sec11_date: p4[3], sec11_files: p4[4],
+                sec12_zone_details: p4[5], sec12_date: p4[6], sec12_files: p4[7],
+
+                sec13_kharedi_vikri_details: p5[0], sec13_files: p5[1],
+                sec14_meeting_details: p5[2], sec14_date: p5[3], sec14_files: p5[4],
+                sec16_letter_details: p5[5], sec16_date: p5[6], sec16_files: p5[7],
+
+                sec17_letter_details: p6[0], sec17_date: p6[1], sec17_files: p6[2],
+                sec18_letter_details: p6[3], sec18_date: p6[4], sec18_files: p6[5],
+                sec19_letter_details: p6[6], sec19_date: p6[7], sec19_files: p6[8],
+                sec20_letter_details: p6[9], sec20_date: p6[10], sec20_files: p6[11],
+
+                sec21_prastaav: p7[0], sec21_prastaav_date: p7[1], sec21_prastaav_files: p7[2],
+                sec21_karyavrutant: p7[3], sec21_karyavrutant_date: p7[4], sec21_karyavrutant_files: p7[5],
+
+                sec23_kramank: p8[0], sec23_date: p8[1], sec23_files: p8[2],
+                sec24_court_details: p8[3], sec24_files: p8[4],
+                sec25_kramank: p8[5], sec25_date: p8[6], sec25_files: p8[7],
+            };
+        }
+
+        async function loadTalukasForDistrict(district, selectedTaluka = '') {
+            fillSelect(talukaSel, [], 'आधी जिल्हा निवडा');
+            fillSelect(villageSel, [], 'आधी तालुका निवडा');
+            if (!district) return;
+            const data = await fetchJSON(`/api/locations/?district=${encodeURIComponent(district)}&lang=mr`);
+            fillSelect(talukaSel, data.data || [], 'तालुका निवडा');
+            talukaSel.value = selectedTaluka || '';
+        }
+
+        async function loadVillagesForTaluka(district, taluka, selectedVillage = '') {
+            fillSelect(villageSel, [], 'आधी तालुका निवडा');
+            if (!district || !taluka) return;
+            const data = await fetchJSON(`/api/locations/?district=${encodeURIComponent(district)}&taluka=${encodeURIComponent(taluka)}&lang=mr`);
+            fillSelect(villageSel, data.data || [], 'गाव निवडा');
+            villageSel.value = selectedVillage || '';
+        }
+
+        async function openFormForRecord(district, taluka, village) {
+            if (!locationInitPromise) return;
+            isEditingRecord = true;
+            // Store record info for form page to load
+            try {
+                sessionStorage.setItem('vi_edit_record', JSON.stringify({ district, taluka, village }));
+            } catch (e) {
+                // Ignore storage errors
+            }
+            showFormView();
+        }
+
+        function ensureSavedFilesContainer(inputEl, className = 'vi-saved-files') {
+            let container = inputEl.nextElementSibling;
+            if (!container || !container.classList.contains(className)) {
+                const holder = inputEl.parentElement;
+                if (holder) holder.classList.add('relative');
+                container = document.createElement('div');
+                container.className = `${className} vi-files-popover hidden`;
+                inputEl.insertAdjacentElement('afterend', container);
+            }
+            container._fileInput = inputEl;
+            positionSavedFilesContainer(container, inputEl);
+            return container;
+        }
+
+        function positionSavedFilesContainer(container, inputEl) {
+            if (!container || !inputEl) return;
+            // Block positioning below the file input
+            container.style.position = 'static';
+            container.style.left = 'auto';
+            container.style.right = 'auto';
+            container.style.top = 'auto';
+            container.style.width = '100%';
+        }
+
+        function refreshSavedFilePopovers(root = document) {
+            root.querySelectorAll('.vi-files-popover').forEach((container) => {
+                positionSavedFilesContainer(container, container._fileInput);
+            });
+        }
+
+        function renderSavedFilesInContainer(container, files = [], deleteUrlBuilder, onDeleted) {
+            if (!files.length) {
+                container.innerHTML = '';
+                container.classList.add('hidden');
+                return;
+            }
+            container.classList.remove('hidden');
+            container.innerHTML = '';
+
+            const details = document.createElement('details');
+            details.className = 'rounded-md border border-[#dbe8f8] bg-white shadow-[0_8px_22px_rgba(18,95,203,0.12)]';
+
+            const summary = document.createElement('summary');
+            summary.className = 'vi-files-toggle flex h-9 items-center justify-between gap-3 px-3 text-xs font-semibold text-[#355685]';
+            const summaryLabel = document.createElement('span');
+            summaryLabel.textContent = '';
+            const summaryHint = document.createElement('span');
+            summaryHint.className = 'text-[11px] font-medium text-[#60708a]';
+            summaryHint.setAttribute('aria-hidden', 'true');
+            summaryHint.textContent = '▾';
+            summary.appendChild(summaryLabel);
+            summary.appendChild(summaryHint);
+
+            const body = document.createElement('div');
+            body.className = 'border-t border-[#e4edf9] px-2 py-1';
+
+            const updateSummary = () => {
+                const uploadedCount = body.querySelectorAll('[data-file-row="uploaded"]').length;
+                summaryLabel.textContent = `Uploaded files (${uploadedCount})`;
+                summaryHint.textContent = details.open ? '▴' : '▾';
+                if (!uploadedCount) {
+                    container.innerHTML = '';
+                    container.classList.add('hidden');
+                }
+            };
+            details.addEventListener('toggle', updateSummary);
+
+            files.forEach((file) => {
+                const row = document.createElement('div');
+                row.dataset.fileRow = 'uploaded';
+                row.className = 'flex items-center justify-between gap-2 border-b border-[#e4edf9] px-1 py-1.5 last:border-b-0';
+                row.innerHTML = `
+                    <a href="${file.url}" target="_blank" rel="noopener"
+                        class="truncate text-xs font-semibold text-[#125fcb] hover:underline">${file.name || 'File'}</a>
+                    <button type="button"
+                        class="rounded border border-[#f3c7cf] bg-[#fff5f7] px-2 py-0.5 text-[11px] font-semibold text-[#c12e49] hover:bg-[#ffecef]">Delete</button>
+                `;
+                const deleteBtn = row.querySelector('button');
+                deleteBtn.addEventListener('click', async () => {
+                    deleteBtn.disabled = true;
+                    try {
+                        await fetchJSON(deleteUrlBuilder(file.id), {
+                            method: 'POST',
+                            headers: { 'X-CSRFToken': csrfToken() }
+                        });
+                        row.remove();
+                        const idx = files.findIndex((x) => Number(x.id) === Number(file.id));
+                        if (idx >= 0) files.splice(idx, 1);
+                        updateSummary();
+                        if (typeof onDeleted === 'function') onDeleted(file.id);
+                    } catch (err) {
+                        showStatus(err.message, true);
+                        deleteBtn.disabled = false;
+                    }
+                });
+                body.appendChild(row);
+            });
+
+            details.appendChild(summary);
+            details.appendChild(body);
+            container.appendChild(details);
+            updateSummary();
+        }
+
+        function renderFieldFileLists(fieldMap, filesMap = {}) {
+            Object.entries(fieldMap).forEach(([fieldKey, el]) => {
+                if (!el || el.type !== 'file') return;
+                const container = ensureSavedFilesContainer(el, 'vi-saved-files');
+                const files = Array.isArray(filesMap[fieldKey]) ? filesMap[fieldKey] : [];
+                renderSavedFilesInContainer(
+                    container,
+                    files,
+                    (id) => `/api/village-info/delete-file/${id}/`
+                );
+            });
+        }
+
+        function buildSec4RowHtml() {
+            return `
+                <button type="button"
+                    class="remove-sec4-row-btn absolute right-3 top-3 inline-flex h-7 w-7 items-center justify-center rounded-full border border-[#cddcf0] text-sm font-bold text-[#6b7d99] hover:bg-[#eef5ff]">✕</button>
+                <div class="grid gap-4 md:grid-cols-3 md:items-end">
+                    <div>
+                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">अधिसूचना क्रमांक</label>
+                        <input type="text" placeholder="कलम 15 अधिसूचना क्रमांक"
+                            class="vi-sec4-kramank vi-sec4-row-input w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
+                    </div>
+                    <div>
+                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">दिनांक</label>
+                        <input type="date"
+                            class="vi-sec4-date vi-sec4-row-input w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
+                    </div>
+                    <div>
+                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">अपलोड</label>
+                        <input type="file" multiple
+                            class="vi-sec4-main-files vi-sec4-row-input block w-full rounded-xl border border-dashed border-[#c5d6ec] bg-white px-4 py-3 text-sm text-[#60708a] file:mr-4 file:rounded-lg file:border-0 file:bg-[#125fcb] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white">
+                    </div>
+                </div>
+                <div class="mt-4 space-y-3">
+                    <div class="rounded-xl border border-[#dfe8f5] bg-white p-3">
+                        <p class="mb-2 text-sm font-semibold text-[#44597a]">१. वर्तमानपत्र</p>
+                        <div class="grid gap-3 md:grid-cols-3 md:items-end">
+                            <div>
+                                <label class="mb-2 block text-sm font-semibold text-[#44597a]">नाव</label>
+                                <input type="text" placeholder="वर्तमानपत्र 1 चे नाव"
+                                    class="vi-sec4-paper1-name vi-sec4-row-input w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
+                            </div>
+                            <div>
+                                <label class="mb-2 block text-sm font-semibold text-[#44597a]">दिनांक</label>
+                                <input type="date"
+                                    class="vi-sec4-paper1-date vi-sec4-row-input w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
+                            </div>
+                            <div>
+                                <label class="mb-2 block text-sm font-semibold text-[#44597a]">अपलोड</label>
+                                <input type="file" multiple
+                                    class="vi-sec4-paper1-files vi-sec4-row-input block w-full rounded-xl border border-dashed border-[#c5d6ec] bg-white px-4 py-3 text-sm text-[#60708a] file:mr-4 file:rounded-lg file:border-0 file:bg-[#125fcb] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="rounded-xl border border-[#dfe8f5] bg-white p-3">
+                        <p class="mb-2 text-sm font-semibold text-[#44597a]">२. वर्तमानपत्र</p>
+                        <div class="grid gap-3 md:grid-cols-3 md:items-end">
+                            <div>
+                                <label class="mb-2 block text-sm font-semibold text-[#44597a]">नाव</label>
+                                <input type="text" placeholder="वर्तमानपत्र 2 चे नाव"
+                                    class="vi-sec4-paper2-name vi-sec4-row-input w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
+                            </div>
+                            <div>
+                                <label class="mb-2 block text-sm font-semibold text-[#44597a]">दिनांक</label>
+                                <input type="date"
+                                    class="vi-sec4-paper2-date vi-sec4-row-input w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
+                            </div>
+                            <div>
+                                <label class="mb-2 block text-sm font-semibold text-[#44597a]">अपलोड</label>
+                                <input type="file" multiple
+                                    class="vi-sec4-paper2-files vi-sec4-row-input block w-full rounded-xl border border-dashed border-[#c5d6ec] bg-white px-4 py-3 text-sm text-[#60708a] file:mr-4 file:rounded-lg file:border-0 file:bg-[#125fcb] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderSec4SavedFiles(lineEl, files = []) {
+            const filesMap = (files && typeof files === 'object') ? files : {};
+            const buckets = [
+                ['main', '.vi-sec4-main-files'],
+                ['paper1', '.vi-sec4-paper1-files'],
+                ['paper2', '.vi-sec4-paper2-files'],
+            ];
+            buckets.forEach(([key, selector]) => {
+                const fileInput = lineEl.querySelector(selector);
+                if (!fileInput) return;
+                const container = ensureSavedFilesContainer(fileInput, 'vi-sec4-saved-files');
+                renderSavedFilesInContainer(
+                    container,
+                    Array.isArray(filesMap[key]) ? filesMap[key] : [],
+                    (id) => `/api/village-info/delete-sec4-row-file/${id}/`
+                );
+            });
+        }
+
+        function renderSec4Rows(rows = []) {
+            const container = document.getElementById('record-sec4-rows');
+            if (!container) return;
+            container.innerHTML = '';
+            const finalRows = rows.length ? rows : [{}];
+            finalRows.forEach((row) => {
+                const line = document.createElement('div');
+                line.className = 'record-sec4-row relative rounded-xl border border-[#e2ebf7] bg-[#fbfdff] p-4';
+                line.innerHTML = buildSec4RowHtml();
+                line.querySelector('.vi-sec4-kramank').value = row.adhisuchana_kramank || '';
+                line.querySelector('.vi-sec4-date').value = row.adhisuchana_date || '';
+                line.querySelector('.vi-sec4-paper1-name').value = row.paper1_name || '';
+                line.querySelector('.vi-sec4-paper1-date').value = row.paper1_date || '';
+                line.querySelector('.vi-sec4-paper2-name').value = row.paper2_name || '';
+                line.querySelector('.vi-sec4-paper2-date').value = row.paper2_date || '';
+                renderSec4SavedFiles(line, row.files || []);
+                initAllDropzones(line);
+                initDateValidation(line);
+                container.appendChild(line);
+            });
+            syncSec4RemoveButtons();
+            requestAnimationFrame(() => refreshSavedFilePopovers(container));
+        }
+
+        function syncSec4RemoveButtons() {
+            const rows = Array.from(document.querySelectorAll('#record-sec4-rows .record-sec4-row'));
+            rows.forEach((row, index) => {
+                const btn = row.querySelector('.remove-sec4-row-btn');
+                if (!btn) return;
+                if (index === 0) {
+                    btn.classList.add('hidden');
+                } else {
+                    btn.classList.remove('hidden');
+                }
+            });
+        }
+
+        function buildSec8RowHtml() {
+            return `
+                <button type="button"
+                    class="remove-sec8-row-btn absolute right-3 top-3 inline-flex h-7 w-7 items-center justify-center rounded-full border border-[#cddcf0] text-sm font-bold text-[#6b7d99] hover:bg-[#eef5ff]">✕</button>
+                <div class="grid gap-4 md:grid-cols-3 md:items-end">
+                    <div>
+                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">अधिसूचना क्रमांक</label>
+                        <input type="text" placeholder="कलम 18/1 अधिसूचना क्रमांक"
+                            class="vi-sec8-kramank vi-sec8-row-input w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
+                    </div>
+                    <div>
+                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">दिनांक</label>
+                        <input type="date"
+                            class="vi-sec8-date vi-sec8-row-input w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
+                    </div>
+                    <div>
+                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">अपलोड</label>
+                        <input type="file" multiple
+                            class="vi-sec8-files vi-sec8-row-input block w-full rounded-xl border border-dashed border-[#c5d6ec] bg-white px-4 py-3 text-sm text-[#60708a] file:mr-4 file:rounded-lg file:border-0 file:bg-[#125fcb] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white">
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderSec8SavedFiles(lineEl, files = []) {
+            const fileInput = lineEl.querySelector('.vi-sec8-files');
+            const container = ensureSavedFilesContainer(fileInput, 'vi-sec8-saved-files');
+            renderSavedFilesInContainer(
+                container,
+                Array.isArray(files) ? files : [],
+                (id) => `/api/village-info/delete-sec8-row-file/${id}/`
+            );
+        }
+
+        function renderSec8Rows(rows = []) {
+            const container = document.getElementById('record-sec8-rows');
+            if (!container) return;
+            container.innerHTML = '';
+            const finalRows = rows.length ? rows : [{}];
+            finalRows.forEach((row) => {
+                const line = document.createElement('div');
+                line.className = 'record-sec8-row relative rounded-xl border border-[#e2ebf7] bg-[#fbfdff] p-4';
+                line.innerHTML = buildSec8RowHtml();
+                line.querySelector('.vi-sec8-kramank').value = row.adhisuchana_kramank || '';
+                line.querySelector('.vi-sec8-date').value = row.adhisuchana_date || '';
+                renderSec8SavedFiles(line, row.files || []);
+                initAllDropzones(line);
+                initDateValidation(line);
+                container.appendChild(line);
+            });
+            syncSec8RemoveButtons();
+            requestAnimationFrame(() => refreshSavedFilePopovers(container));
+        }
+
+        function syncSec8RemoveButtons() {
+            const rows = Array.from(document.querySelectorAll('#record-sec8-rows .record-sec8-row'));
+            rows.forEach((row, index) => {
+                const btn = row.querySelector('.remove-sec8-row-btn');
+                if (!btn) return;
+                if (index === 0) {
+                    btn.classList.add('hidden');
+                } else {
+                    btn.classList.remove('hidden');
+                }
+            });
+        }
+
+        function build8aLineHtml() {
+            return `
+                <button type="button"
+                    class="remove-8a-line-btn absolute right-3 top-3 inline-flex h-7 w-7 items-center justify-center rounded-full border border-[#cddcf0] text-sm font-bold text-[#6b7d99] hover:bg-[#eef5ff]">✕</button>
+                <div class="grid gap-4 md:grid-cols-3">
+                    <div>
+                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">खातेक्रमांक</label>
+                        <input type="text" placeholder="खातेक्रमांक"
+                            class="vi-8a-khate w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
+                    </div>
+                    <div>
+                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">नावावर झालेले क्षेत्र</label>
+                        <input type="text" placeholder="नावावर झालेले क्षेत्र"
+                            class="vi-8a-navavar w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
+                    </div>
+                    <div>
+                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">फेरफार क्रमांक</label>
+                        <input type="text" placeholder="फेरफार क्रमांक"
+                            class="vi-8a-ferfar w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
+                    </div>
+                </div>
+                <div class="mt-4 grid gap-4 md:grid-cols-2">
+                    <div>
+                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">फेरफार दिनांक</label>
+                        <input type="date" class="vi-8a-date w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
+                    </div>
+                    <div>
+                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">८ अ अपलोड</label>
+                        <input type="file" multiple
+                            class="vi-8a-files block w-full rounded-xl border border-dashed border-[#c5d6ec] bg-white px-4 py-2.5 text-sm text-[#60708a] file:mr-4 file:rounded-lg file:border-0 file:bg-[#125fcb] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white">
+                    </div>
+                </div>
+            `;
+        }
+
+        function render8aSavedFiles(lineEl, files = []) {
+            const fileInput = lineEl.querySelector('.vi-8a-files');
+            const container = ensureSavedFilesContainer(fileInput, 'vi-8a-saved-files');
+            renderSavedFilesInContainer(
+                container,
+                Array.isArray(files) ? files : [],
+                (id) => `/api/village-info/delete-8a-file/${id}/`
+            );
+        }
+
+        function render8aRecords(rows = []) {
+            const container = document.getElementById('record-8a-lines');
+            container.innerHTML = '';
+            const finalRows = rows.length ? rows : [{}];
+            finalRows.forEach(row => {
+                const line = document.createElement('div');
+                line.className = 'record-8a-line relative rounded-xl border border-[#e2ebf7] bg-white p-4';
+                line.innerHTML = build8aLineHtml();
+                line.querySelector('.vi-8a-khate').value = row.khate_kramank || '';
+                line.querySelector('.vi-8a-navavar').value = row.navavar_kshetra || '';
+                line.querySelector('.vi-8a-ferfar').value = row.ferfar_kramank || '';
+                line.querySelector('.vi-8a-date').value = row.ferfar_date || '';
+                render8aSavedFiles(line, row.files || []);
+                initAllDropzones(line);
+                initDateValidation(line);
+                container.appendChild(line);
+            });
+            requestAnimationFrame(() => refreshSavedFilePopovers(container));
+        }
+
+        function renderSec15Rows(rows = [], message = '') {
+            if (!rows.length) {
+                sec15TableBody.innerHTML = `
+                    <tr>
+                        <td colspan="5" class="border border-[#cdd7e5] px-3 py-3 text-center text-sm text-[#6d7f9b]">
+                            ${message || 'No data'}
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            const isProabhav = rows.length > 0 && rows[0].village_type === 'prabhav';
+            const thead = sec15TableBody.closest('table').querySelector('thead tr');
+            if (thead) {
+                thead.innerHTML = `
+                    <th class="border border-[#cdd7e5] px-3 py-2 text-left font-semibold">मूल्य विभाग प्रकार</th>
+                    <th class="border border-[#cdd7e5] px-3 py-2 text-left font-semibold">${isProabhav ? 'शिघ्रसिध्द गणकातील विभाग' : 'Assessment Range'}</th>
+                    <th class="border border-[#cdd7e5] px-3 py-2 text-left font-semibold">रेडी रेकनर दर</th>
+                    <th class="border border-[#cdd7e5] px-3 py-2 text-left font-semibold">जिल्हास्तरीय समितीने मंजूर केलेला दर</th>
+                    <th class="border border-[#cdd7e5] px-3 py-2 text-left font-semibold">एकक</th>
+                `;
+            }
+            sec15TableBody.innerHTML = rows.map((row) => `
+                <tr data-rr-rate-id="${row.rr_rate_id}">
+                    <td class="border border-[#cdd7e5] px-3 py-2 text-sm">${row.assessment_type || '-'}</td>
+                    <td class="border border-[#cdd7e5] px-3 py-2 text-sm">${isProabhav ? (row.shighrasiddha_vibhag || '-') : (row.assessment_range || '-')}</td>
+                    <td class="border border-[#cdd7e5] px-3 py-2">
+                        <input type="number" value="${row.ready_reckoner_rate ?? ''}" readonly
+                            class="w-full rounded-lg border border-[#d3deeb] bg-[#f7fafe] px-3 py-2 text-sm">
+                    </td>
+                    <td class="border border-[#cdd7e5] px-3 py-2">
+                        <input type="number" value="${row.approved_rate ?? ''}" placeholder="मंजूर दर"
+                            class="vi-sec15-approved w-full rounded-lg border border-[#d3deeb] px-3 py-2 text-sm">
+                    </td>
+                    <td class="border border-[#cdd7e5] px-3 py-2">
+                        <input type="text" value="${row.unit || ''}" readonly
+                            class="w-full rounded-lg border border-[#d3deeb] bg-[#f7fafe] px-3 py-2 text-sm">
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        async function loadSec15ForSelectedVillage() {
+            const district = districtSel.value;
+            const taluka = talukaSel.value;
+            const village = villageSel.value;
+            if (!village) {
+                renderSec15Rows([], 'गाव निवडा');
+                return;
+            }
+            try {
+                const data = await fetchJSON(
+                    `/api/village-info/sec15-rates/?district=${encodeURIComponent(district)}&taluka=${encodeURIComponent(taluka)}&village=${encodeURIComponent(village)}`
+                );
+                if (!data.found) {
+                    renderSec15Rows([], data.message || 'No data');
+                    return;
+                }
+                renderSec15Rows(data.rates || [], data.message || '');
+            } catch (err) {
+                renderSec15Rows([], 'No data');
+            }
+        }
+
+        async function loadVillageData() {
+            const district = districtSel.value;
+            const taluka = talukaSel.value;
+            const village = villageSel.value;
+            if (!district || !taluka || !village) return;
+
+            const fieldMap = bindFieldMap();
+
+            try {
+                const data = await fetchJSON(
+                    `/api/village-info/data/?district=${encodeURIComponent(district)}&taluka=${encodeURIComponent(taluka)}&village=${encodeURIComponent(village)}`
+                );
+                if (!data.found) {
+                    Object.values(fieldMap).forEach((el) => {
+                        if (!el) return;
+                        if (el.type === 'file') {
+                            el.value = '';
+                            renderSelectedFilesForInput(el);
+                            const savedBox = el.parentElement.querySelector('.vi-saved-files');
+                            if (savedBox) {
+                                savedBox.classList.add('hidden');
+                                savedBox.innerHTML = '';
+                            }
+                            return;
+                        }
+                        el.value = '';
+                    });
+                    renderSec4Rows([]);
+                    renderSec8Rows([]);
+                    render8aRecords([]);
+                    renderFieldFileLists(fieldMap, {});
+                    return;
+                }
+                const values = data.data || {};
+                for (const [key, el] of Object.entries(fieldMap)) {
+                    if (!el) continue;
+                    if (el.type === 'file') {
+                        el.value = '';
+                        renderSelectedFilesForInput(el);
+                        continue;
+                    }
+                    el.value = values[key] || '';
+                }
+                renderFieldFileLists(fieldMap, data.files_map || {});
+                renderSec4Rows(data.sec4_rows || []);
+                renderSec8Rows(data.sec8_rows || []);
+                render8aRecords(data.sec26_8a_records || []);
+            } catch (err) {
+                showStatus(err.message, true);
+            }
+        }
+
+        function collect8ARecords() {
+            return Array.from(document.querySelectorAll('#record-8a-lines .record-8a-line')).map((line) => {
+                return {
+                    khate_kramank: line.querySelector('.vi-8a-khate')?.value?.trim() || '',
+                    navavar_kshetra: line.querySelector('.vi-8a-navavar')?.value?.trim() || '',
+                    ferfar_kramank: line.querySelector('.vi-8a-ferfar')?.value?.trim() || '',
+                    ferfar_date: line.querySelector('.vi-8a-date')?.value || '',
+                    filesInput: line.querySelector('.vi-8a-files')
+                };
+            });
+        }
+
+        function collectSec4Rows() {
+            return Array.from(document.querySelectorAll('#record-sec4-rows .record-sec4-row')).map((line) => {
+                return {
+                    adhisuchana_kramank: line.querySelector('.vi-sec4-kramank')?.value?.trim() || '',
+                    adhisuchana_date: line.querySelector('.vi-sec4-date')?.value || '',
+                    paper1_name: line.querySelector('.vi-sec4-paper1-name')?.value?.trim() || '',
+                    paper1_date: line.querySelector('.vi-sec4-paper1-date')?.value || '',
+                    paper2_name: line.querySelector('.vi-sec4-paper2-name')?.value?.trim() || '',
+                    paper2_date: line.querySelector('.vi-sec4-paper2-date')?.value || '',
+                    filesInput: line.querySelector('.vi-sec4-main-files'),
+                    paper1FilesInput: line.querySelector('.vi-sec4-paper1-files'),
+                    paper2FilesInput: line.querySelector('.vi-sec4-paper2-files')
+                };
+            });
+        }
+
+        function collectSec8Rows() {
+            return Array.from(document.querySelectorAll('#record-sec8-rows .record-sec8-row')).map((line) => {
+                return {
+                    adhisuchana_kramank: line.querySelector('.vi-sec8-kramank')?.value?.trim() || '',
+                    adhisuchana_date: line.querySelector('.vi-sec8-date')?.value || '',
+                    filesInput: line.querySelector('.vi-sec8-files')
+                };
+            });
+        }
+
+        function collectSec15Rates() {
+            return Array.from(sec15TableBody.querySelectorAll('tr[data-rr-rate-id]')).map((row) => {
+                const approved = row.querySelector('.vi-sec15-approved')?.value;
+                return {
+                    rr_rate_id: row.dataset.rrRateId,
+                    approved_rate: approved === '' ? null : approved
+                };
+            });
+        }
+
+        function getDraftStorageKey(district, taluka, village) {
+            return `${DRAFT_STORAGE_PREFIX}:${district || ''}:${taluka || ''}:${village || ''}`;
+        }
+
+        function getProgressStorageKey(district, taluka, village) {
+            return `vi_progress_v1:${district || ''}:${taluka || ''}:${village || ''}`;
+        }
+
+        function saveProgressToLocal(district, taluka, village, lastTab) {
+            progressCache[getProgressStorageKey(district, taluka, village)] = {
+                last_tab: Math.max(1, Math.min(8, Number(lastTab) || 1)),
+                completed_tabs: Array.from(completedTabs).sort((a, b) => a - b),
+                saved_at: new Date().toISOString()
+            };
+        }
+
+        function loadProgressFromLocal(district, taluka, village) {
+            return progressCache[getProgressStorageKey(district, taluka, village)] || null;
+        }
+
+        function applyProgress(progress) {
+            completedTabs.clear();
+            const tabsDone = Array.isArray(progress?.completed_tabs) ? progress.completed_tabs : [];
+            tabsDone.forEach((t) => {
+                const n = Number(t);
+                if (n >= 1 && n <= 8) completedTabs.add(n);
+            });
+            const tabNo = Number(progress?.last_tab) || 1;
+            setActiveTab(tabNo >= 1 && tabNo <= 8 ? tabNo : 1);
+        }
+
+        function clearProgressFromLocal(district, taluka, village) {
+            delete progressCache[getProgressStorageKey(district, taluka, village)];
+        }
+
+        function collectCurrentFormSnapshot() {
+            const fieldMap = bindFieldMap();
+            const fields = {};
+            for (const [key, el] of Object.entries(fieldMap)) {
+                if (!el || el.type === 'file') continue;
+                fields[key] = el.value || '';
+            }
+            return {
+                district: districtSel.value || '',
+                taluka: talukaSel.value || '',
+                village: villageSel.value || '',
+                fields,
+                sec4_rows: collectSec4Rows().map((row) => ({
+                    adhisuchana_kramank: row.adhisuchana_kramank || '',
+                    adhisuchana_date: row.adhisuchana_date || '',
+                    paper1_name: row.paper1_name || '',
+                    paper1_date: row.paper1_date || '',
+                    paper2_name: row.paper2_name || '',
+                    paper2_date: row.paper2_date || ''
+                })),
+                sec8_rows: collectSec8Rows().map((row) => ({
+                    adhisuchana_kramank: row.adhisuchana_kramank || '',
+                    adhisuchana_date: row.adhisuchana_date || ''
+                })),
+                sec26_rows: collect8ARecords().map((row) => ({
+                    khate_kramank: row.khate_kramank || '',
+                    navavar_kshetra: row.navavar_kshetra || '',
+                    ferfar_kramank: row.ferfar_kramank || '',
+                    ferfar_date: row.ferfar_date || ''
+                })),
+                sec15_rows: collectSec15Rates().map((row) => ({
+                    rr_rate_id: row.rr_rate_id || '',
+                    approved_rate: row.approved_rate
+                })),
+                saved_at: new Date().toISOString()
+            };
+        }
+
+        function applyFormSnapshot(snapshot) {
+            const fieldMap = bindFieldMap();
+            const fields = snapshot?.fields || {};
+            for (const [key, el] of Object.entries(fieldMap)) {
+                if (!el || el.type === 'file') continue;
+                el.value = fields[key] || '';
+            }
+
+            const sec4Rows = Array.isArray(snapshot?.sec4_rows) && snapshot.sec4_rows.length ? snapshot.sec4_rows : [{}];
+            renderSec4Rows(sec4Rows);
+
+            const sec8Rows = Array.isArray(snapshot?.sec8_rows) && snapshot.sec8_rows.length ? snapshot.sec8_rows : [{}];
+            renderSec8Rows(sec8Rows);
+
+            const rows = Array.isArray(snapshot?.sec26_rows) && snapshot.sec26_rows.length ? snapshot.sec26_rows : [{}];
+            render8aRecords(rows);
+
+            const sec15ById = new Map(
+                (Array.isArray(snapshot?.sec15_rows) ? snapshot.sec15_rows : [])
+                    .filter((r) => r && r.rr_rate_id)
+                    .map((r) => [String(r.rr_rate_id), r.approved_rate])
+            );
+            sec15TableBody.querySelectorAll('tr[data-rr-rate-id]').forEach((row) => {
+                const approvedInput = row.querySelector('.vi-sec15-approved');
+                if (!approvedInput) return;
+                const key = String(row.dataset.rrRateId || '');
+                if (!sec15ById.has(key)) return;
+                const val = sec15ById.get(key);
+                approvedInput.value = val == null ? '' : String(val);
+            });
+        }
+
+        function saveDraftToLocal() {
+            const district = districtSel.value;
+            const taluka = talukaSel.value;
+            const village = villageSel.value;
+            if (!district || !taluka || !village) {
+                showStatus('ड्राफ्ट सेव्ह करण्यासाठी जिल्हा, तालुका आणि गाव निवडा.', true);
+                setActiveTab(1);
+                return;
+            }
+            const key = getDraftStorageKey(district, taluka, village);
+            draftCache[key] = collectCurrentFormSnapshot();
+            showStatus('ड्राफ्ट सेव्ह झाला.');
+        }
+
+        function loadDraftFromLocal(district, taluka, village) {
+            const key = getDraftStorageKey(district, taluka, village);
+            const snapshot = draftCache[key];
+            if (!snapshot) return false;
+            applyFormSnapshot(snapshot);
+            return true;
+        }
+
+        function clearDraftFromLocal(district, taluka, village) {
+            delete draftCache[getDraftStorageKey(district, taluka, village)];
+        }
+
+        function clearLegacyPersistedDrafts() {
+            try {
+                for (let i = localStorage.length - 1; i >= 0; i -= 1) {
+                    const key = localStorage.key(i);
+                    if (key && key.startsWith(`${DRAFT_STORAGE_PREFIX}:`)) {
+                        localStorage.removeItem(key);
+                    }
+                }
+            } catch (_) {
+                // Ignore storage access issues.
+            }
+        }
+
+        async function saveVillageInfo({ goToList = false, goNext = false } = {}) {
+            const district = districtSel.value;
+            const taluka = talukaSel.value;
+            const village = villageSel.value;
+            if (!district || !taluka || !village) {
+                showStatus('कृपया जिल्हा, तालुका आणि गाव निवडा.', true);
+                setActiveTab(1);
+                return;
+            }
+
+            const fieldMap = bindFieldMap();
+            const formData = new FormData();
+            formData.append('district', district);
+            formData.append('taluka', taluka);
+            formData.append('village', village);
+            formData.append('final_submit', goToList ? '1' : '0');
+
+            for (const [key, el] of Object.entries(fieldMap)) {
+                if (!el) continue;
+                if (el.type === 'file') {
+                    Array.from(el.files || []).forEach((file) => formData.append(key, file));
+                } else {
+                    formData.append(key, el.value || '');
+                }
+            }
+
+            const sec4Rows = collectSec4Rows();
+            formData.append('sec4_row_count', String(sec4Rows.length));
+            sec4Rows.forEach((row, i) => {
+                formData.append(`sec4_row_adhisuchana_${i}`, row.adhisuchana_kramank);
+                formData.append(`sec4_row_date_${i}`, row.adhisuchana_date);
+                formData.append(`sec4_row_paper1_name_${i}`, row.paper1_name);
+                formData.append(`sec4_row_paper1_date_${i}`, row.paper1_date);
+                formData.append(`sec4_row_paper2_name_${i}`, row.paper2_name);
+                formData.append(`sec4_row_paper2_date_${i}`, row.paper2_date);
+                Array.from(row.filesInput?.files || []).forEach((file) => {
+                    formData.append(`sec4_row_files_${i}`, file);
+                });
+                Array.from(row.paper1FilesInput?.files || []).forEach((file) => {
+                    formData.append(`sec4_row_paper1_files_${i}`, file);
+                });
+                Array.from(row.paper2FilesInput?.files || []).forEach((file) => {
+                    formData.append(`sec4_row_paper2_files_${i}`, file);
+                });
+            });
+
+            const sec8Rows = collectSec8Rows();
+            formData.append('sec8_row_count', String(sec8Rows.length));
+            sec8Rows.forEach((row, i) => {
+                formData.append(`sec8_row_adhisuchana_${i}`, row.adhisuchana_kramank);
+                formData.append(`sec8_row_date_${i}`, row.adhisuchana_date);
+                Array.from(row.filesInput?.files || []).forEach((file) => {
+                    formData.append(`sec8_row_files_${i}`, file);
+                });
+            });
+
+            const sec26Rows = collect8ARecords();
+            formData.append('sec26_count', String(sec26Rows.length));
+            sec26Rows.forEach((row, i) => {
+                formData.append(`sec26_khate_${i}`, row.khate_kramank);
+                formData.append(`sec26_navavar_${i}`, row.navavar_kshetra);
+                formData.append(`sec26_ferfar_${i}`, row.ferfar_kramank);
+                formData.append(`sec26_date_${i}`, row.ferfar_date);
+                Array.from(row.filesInput?.files || []).forEach((file) => {
+                    formData.append(`sec26_files_${i}`, file);
+                });
+            });
+
+            const sec15Rows = collectSec15Rates();
+            formData.append('sec15_count', String(sec15Rows.length));
+            sec15Rows.forEach((row, i) => {
+                formData.append(`sec15_rr_rate_id_${i}`, row.rr_rate_id || '');
+                formData.append(`sec15_approved_${i}`, row.approved_rate ?? '');
+            });
+
+            setSavingState(true);
+            try {
+                const res = await fetchJSON('/tools/village-info/', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': csrfToken()
+                    },
+                    body: formData
+                });
+                if (!res.success) throw new Error(res.error || 'Save failed');
+
+                completedTabs.add(currentTab);
+
+                if (goToList) {
+                    showStatus('डेटा यशस्वीरित्या सबमिट झाला.');
+                    clearDraftFromLocal(district, taluka, village);
+                    clearProgressFromLocal(district, taluka, village);
+                    await loadVillageRecordList();
+                    showListView();
+                } else {
+                    showStatus('डेटा यशस्वीरित्या सेव्ह झाला.');
+                    await Promise.all([loadVillageData(), loadSec15ForSelectedVillage()]);
+                    showFormView();
+                    const nextTab = (goNext && currentTab < 8) ? currentTab + 1 : currentTab;
+                    saveProgressToLocal(district, taluka, village, nextTab);
+                    setActiveTab(nextTab);
+                }
+            } catch (err) {
+                if (err.message && err.message.includes('File with this name already exists')) {
+                    showDuplicateFileError(err.message);
+                } else {
+                    showStatus(err.message, true);
+                }
+            } finally {
+                setSavingState(false);
+            }
+        }
+
+        function wireSec4RowButtons() {
+            const addSec4RowBtn = document.getElementById('add-sec4-row-btn');
+            const recordSec4Rows = document.getElementById('record-sec4-rows');
+            if (!addSec4RowBtn || !recordSec4Rows) return;
+
+            addSec4RowBtn.addEventListener('click', () => {
+                const line = document.createElement('div');
+                line.className = 'record-sec4-row relative rounded-xl border border-[#e2ebf7] bg-[#fbfdff] p-4';
+                line.innerHTML = buildSec4RowHtml();
+                initAllDropzones(line);
+                initDateValidation(line);
+                recordSec4Rows.appendChild(line);
+                syncSec4RemoveButtons();
+            });
+
+            recordSec4Rows.addEventListener('click', (event) => {
+                const removeBtn = event.target.closest('.remove-sec4-row-btn');
+                if (!removeBtn) return;
+                const line = removeBtn.closest('.record-sec4-row');
+                if (line && recordSec4Rows.querySelectorAll('.record-sec4-row').length > 1) {
+                    line.remove();
+                    syncSec4RemoveButtons();
+                }
+            });
+        }
+
+        function wireSec8RowButtons() {
+            const addSec8RowBtn = document.getElementById('add-sec8-row-btn');
+            const recordSec8Rows = document.getElementById('record-sec8-rows');
+            if (!addSec8RowBtn || !recordSec8Rows) return;
+
+            addSec8RowBtn.addEventListener('click', () => {
+                const line = document.createElement('div');
+                line.className = 'record-sec8-row relative rounded-xl border border-[#e2ebf7] bg-[#fbfdff] p-4';
+                line.innerHTML = buildSec8RowHtml();
+                initAllDropzones(line);
+                initDateValidation(line);
+                recordSec8Rows.appendChild(line);
+                syncSec8RemoveButtons();
+            });
+
+            recordSec8Rows.addEventListener('click', (event) => {
+                const removeBtn = event.target.closest('.remove-sec8-row-btn');
+                if (!removeBtn) return;
+                const line = removeBtn.closest('.record-sec8-row');
+                if (line && recordSec8Rows.querySelectorAll('.record-sec8-row').length > 1) {
+                    line.remove();
+                    syncSec8RemoveButtons();
+                }
+            });
+        }
+
+        function wire8AButtons() {
+            const add8aLineBtn = document.getElementById('add-8a-line-btn');
+            const record8aLines = document.getElementById('record-8a-lines');
+            add8aLineBtn.addEventListener('click', () => {
+                const line = document.createElement('div');
+                line.className = 'record-8a-line relative rounded-xl border border-[#e2ebf7] bg-white p-4';
+                line.innerHTML = build8aLineHtml();
+                initAllDropzones(line);
+                initDateValidation(line);
+                record8aLines.appendChild(line);
+            });
+            record8aLines.addEventListener('click', (event) => {
+                const removeBtn = event.target.closest('.remove-8a-line-btn');
+                if (!removeBtn) return;
+                const line = removeBtn.closest('.record-8a-line');
+                if (line && record8aLines.querySelectorAll('.record-8a-line').length > 1) {
+                    line.remove();
+                }
+            });
+        }
+
+        function wireRecordListActions() {
+            addNewBtn.addEventListener('click', async () => {
+                if (locationInitPromise) await locationInitPromise;
+                isEditingRecord = false;
+                try { sessionStorage.removeItem('vi_form_state'); } catch (e) { /* ignore */ }
+                clearVillageForm();
+                showFormView();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            });
+
+            backToListBtn.addEventListener('click', async () => {
+                isEditingRecord = false;
+                try { sessionStorage.removeItem('vi_form_state'); } catch (e) { /* ignore */ }
+                showListView();
+            });
+
+            recordListBody.addEventListener('click', async (event) => {
+                const editBtn = event.target.closest('.vi-edit-row');
+                if (editBtn) {
+                    const row = editBtn.closest('tr[data-record-id]');
+                    if (!row) return;
+                    await openFormForRecord(row.dataset.district, row.dataset.taluka, row.dataset.village);
+                    return;
+                }
+
+                const deleteBtn = event.target.closest('.vi-delete-row');
+                if (!deleteBtn) return;
+                const row = deleteBtn.closest('tr[data-record-id]');
+                if (!row) return;
+                const recordId = row.dataset.recordId;
+                const villageLabel = `${row.dataset.village}, ${row.dataset.taluka}, ${row.dataset.district}`;
+                if (!confirm(`Delete village record: ${villageLabel}?`)) return;
+                deleteBtn.disabled = true;
+                try {
+                    await fetchJSON(`/api/village-info/delete/${recordId}/`, {
+                        method: 'POST',
+                        headers: { 'X-CSRFToken': csrfToken() }
+                    });
+                    showStatus('रेकॉर्ड हटवला गेला.');
+                    await loadVillageRecordList();
+                } catch (err) {
+                    showStatus(err.message, true);
+                    deleteBtn.disabled = false;
+                }
+            });
+        }
+
+        async function initLocationSelectors() {
+            const districtsData = await fetchJSON('/api/locations/?lang=mr');
+            fillSelect(districtSel, districtsData.data || [], 'जिल्हा निवडा');
+
+            districtSel.addEventListener('change', async () => {
+                renderSec15Rows([], 'गाव निवडा');
+                await loadTalukasForDistrict(districtSel.value, '');
+            });
+
+            talukaSel.addEventListener('change', async () => {
+                renderSec15Rows([], 'गाव निवडा');
+                await loadVillagesForTaluka(districtSel.value, talukaSel.value, '');
+            });
+
+            villageSel.addEventListener('change', async () => {
+                if (isEditingRecord) {
+                    await Promise.all([loadVillageData(), loadSec15ForSelectedVillage()]);
+                } else {
+                    clearVillageDataSectionsOnly();
+                    await loadSec15ForSelectedVillage();
+                    await checkVillageInfoDuplicateAndToggleFields();
+                }
+            });
+        }
+
+        saveNextButtons.forEach(btn => btn.addEventListener('click', () => saveVillageInfo({ goNext: true })));
+        if (submitButton) submitButton.addEventListener('click', () => saveVillageInfo({ goToList: true }));
+
+        wireSec4RowButtons();
+        wireSec8RowButtons();
+        wire8AButtons();
+        wireRecordListActions();
+        pageSizeSelect.addEventListener('change', handlePageSizeChange);
+        searchInput.addEventListener('input', handleSearchChange);
+        paginationControls.addEventListener('click', (event) => {
+            const btn = event.target.closest('.vi-page-btn');
+            if (!btn) return;
+            const page = Number(btn.dataset.page);
+            if (!page || Number.isNaN(page)) return;
+            changeVillagePage(page);
+        });
+        renderSec4Rows([]);
+        renderSec8Rows([]);
+        render8aRecords([]);
+        initAllDropzones();
+        initDateValidation();
+        renderSec15Rows([], 'गाव निवडा');
+        setActiveTab(1);
+        clearLegacyPersistedDrafts();
+        locationInitPromise = initLocationSelectors();
+        locationInitPromise.catch(err => showStatus(err.message, true));
+        
+        // Determine which view to show based on URL
+        const showForm = ("{{ show_form|default:False|lower }}" === "true");
+        
+        if (showForm) {
+            // Form view - show form and initialize
+            listView.classList.add('hidden');
+            formView.classList.remove('hidden');
+            
+            // Check if we have an edit record from sessionStorage
+            async function initFormView() {
+                try {
+                    await locationInitPromise;
+                    
+                    let editRecord = null;
+                    try {
+                        const stored = sessionStorage.getItem('vi_edit_record');
+                        if (stored) {
+                            editRecord = JSON.parse(stored);
+                            sessionStorage.removeItem('vi_edit_record');
+                        }
+                    } catch (e) {
+                        // Ignore storage errors
+                    }
+                    
+                    if (editRecord && editRecord.district && editRecord.taluka && editRecord.village) {
+                        isEditingRecord = true;
+                        completedTabs.clear();
+                        districtSel.value = editRecord.district;
+                        await loadTalukasForDistrict(districtSel.value, editRecord.taluka);
+                        await loadVillagesForTaluka(districtSel.value, talukaSel.value, editRecord.village);
+                        setLocationFieldsReadonly(true);
+                        await Promise.all([loadVillageData(), loadSec15ForSelectedVillage()]);
+                        setVillageInfoFieldsLocked(false);
+                        const progress = loadProgressFromLocal(districtSel.value, talukaSel.value, villageSel.value);
+                        if (progress) {
+                            applyProgress(progress);
+                        } else {
+                            setActiveTab(1);
+                        }
+                    } else {
+                        // No edit record from list — check if we have a persisted form state (e.g. from a reload)
+                        let restoredState = null;
+                        try {
+                            const stored = sessionStorage.getItem('vi_form_state');
+                            if (stored) restoredState = JSON.parse(stored);
+                        } catch (e) { /* ignore */ }
+
+                        if (restoredState && restoredState.district && restoredState.taluka && restoredState.village) {
+                            isEditingRecord = !!restoredState.isEditing;
+                            // Restore completed tabs so previously saved steps show green
+                            if (Array.isArray(restoredState.completed_tabs)) {
+                                restoredState.completed_tabs.forEach((t) => {
+                                    const n = Number(t);
+                                    if (n >= 1 && n <= 8) completedTabs.add(n);
+                                });
+                            }
+                            districtSel.value = restoredState.district;
+                            await loadTalukasForDistrict(districtSel.value, restoredState.taluka);
+                            await loadVillagesForTaluka(districtSel.value, talukaSel.value, restoredState.village);
+                            if (isEditingRecord) {
+                                setLocationFieldsReadonly(true);
+                                await Promise.all([loadVillageData(), loadSec15ForSelectedVillage()]);
+                                setVillageInfoFieldsLocked(false);
+                            } else if (completedTabs.size > 0) {
+                                // New entry already saved at least once — load data, skip duplicate check, don't lock location
+                                await Promise.all([loadVillageData(), loadSec15ForSelectedVillage()]);
+                                setVillageInfoFieldsLocked(false);
+                            } else {
+                                await loadSec15ForSelectedVillage();
+                                await checkVillageInfoDuplicateAndToggleFields();
+                            }
+                            const tabToRestore = Number(restoredState.tab) || 1;
+                            setActiveTab(tabToRestore >= 1 && tabToRestore <= 8 ? tabToRestore : 1);
+                        } else {
+                            isEditingRecord = false;
+                            setLocationFieldsReadonly(false);
+                            clearVillageForm();
+                        }
+                    }
+                } catch (err) {
+                    showStatus(err.message, true);
+                }
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+            initFormView().catch(err => showStatus(err.message, true));
+        } else {
+            // List view - show list and load records
+            listView.classList.remove('hidden');
+            formView.classList.add('hidden');
+            loadVillageRecordList().catch(err => showStatus(err.message, true));
+        }
+        
+        window.addEventListener('resize', () => refreshSavedFilePopovers());
+    </script>
+
+{% endblock %}
+
+
+
+
+
+
+
+

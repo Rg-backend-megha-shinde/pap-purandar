@@ -1,0 +1,314 @@
+{% extends "base.html" %}
+{% load asset_display %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto bg-white p-6 border border-gray-300 mt-6 rounded-lg shadow">
+    <div class="flex items-center justify-between mb-4">
+        <h2 class="text-xl font-bold underline">रेट कॅल्क्युलेटर नोंदी</h2>
+        <a href="{% url 'add_entry' %}" class="bg-gray-800 hover:bg-gray-900 text-white px-4 py-2 rounded">नवीन नोंद</a>
+    </div>
+    {% if request.GET.saved %}
+    <div class="mb-4 rounded border border-green-300 bg-green-50 px-4 py-2 text-sm text-green-700">
+        नोंद यशस्वीरित्या जतन झाली.
+    </div>
+    {% endif %}
+
+    <div class="overflow-x-auto">
+        <table id="entryTable" class="display w-full text-sm">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>जिल्हा</th>
+                    <th>तालुका</th>
+                    <th>गाव</th>
+                    <th>सर्व्हे/गट नं.</th>
+                    <th>खातेदाराचे नाव</th>
+                    <th>जमीन वर्ग</th>
+                    <th>निर्धारित मोबदला</th>
+                    <th>देय मोबदला (विनासंमती)</th>
+                    <th>देय मोबदला (संमती)</th>
+                    <th>दस्तऐवज</th>
+                    <th>कृती</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in entries %}
+                <tr>
+                    <td>{{ item.id }}</td>
+                    <td>{{ item.district|default:"-" }}</td>
+                    <td>{{ item.taluka|default:"-" }}</td>
+                    <td>{{ item.village|default:"-" }}</td>
+                    <td>{{ item.sr_no_02|default:"-" }}</td>
+                    <td>{{ item.owner_name_03|default:"-" }}</td>
+                    <td>{{ item.land_class_04|default:"-" }}</td>
+                    <td>{{ item.determined_compensation_17|default:"-" }}</td>
+                    <td>{{ item.payable_non_consent_22|default:"-" }}</td>
+                    <td>{{ item.payable_consent_26|default:"-" }}</td>
+                    <td>
+                        {% if item.files_count %}
+                            <button data-record-id="{{ item.id }}" class="view-docs-btn text-blue-600 hover:text-blue-800 hover:underline text-xs font-medium flex items-center gap-1">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                </svg>
+                                View
+                                <span class="ml-1 bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded-full text-[10px]">{{ item.files_count }}</span>
+                            </button>
+                            <script type="application/json" id="docs-data-{{ item.id }}" class="hidden">
+                            [{% for doc_master in item.documents.all %}{% for attachment in doc_master.attachments.all %}{"url":"{{ attachment.file.url }}","name":"{{ attachment.file.name|display_filename|escapejs }}","date":"{{ attachment.uploaded_at|date:'d/m/Y H:i' }}","size":{{ attachment.file.size }}}{% if not forloop.last or not forloop.parentloop.last %},{% endif %}{% endfor %}{% endfor %}]
+                            </script>
+                        {% else %}
+                            <span class="text-gray-400 text-xs">-</span>
+                        {% endif %}
+                    </td>
+                    <td class="flex gap-2">
+                        <button type="button" data-entry-id="{{ item.id }}" title="Info" class="entry-info-btn flex items-center justify-center w-8 h-8 bg-slate-600 hover:bg-slate-700 text-white rounded">i</button>
+                        <a href="{% url 'add_entry' %}?edit_id={{ item.id }}" title="Edit" class="flex items-center justify-center w-8 h-8 bg-blue-600 hover:bg-blue-700 text-white rounded">✏</a>
+                        <a href="{% url 'delete_entry' item.id %}" title="Delete" class="flex items-center justify-center w-8 h-8 bg-red-600 hover:bg-red-700 text-white rounded" onclick="return confirm('Do you want to delete this entry?');">🗑</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Documents Modal -->
+<div id="documentsModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] flex flex-col">
+        <div class="flex items-center justify-between p-4 border-b border-gray-200">
+            <div>
+                <h3 class="text-lg font-bold text-gray-900">दस्तऐवज</h3>
+                <p class="text-sm text-gray-500 mt-1">रेट कॅल्क्युलेटर दस्तऐवज</p>
+            </div>
+            <button onclick="closeDocumentsModal()" class="text-gray-400 hover:text-gray-600 transition-colors">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+        </div>
+        <div class="flex-1 overflow-y-auto p-6">
+            <div id="documentsGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4"></div>
+        </div>
+        <div class="p-4 border-t border-gray-200 bg-gray-50">
+            <div class="flex items-center justify-between">
+                <span class="text-sm text-gray-600" id="documentCount">0 दस्तऐवज</span>
+                <button onclick="closeDocumentsModal()" class="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg text-sm font-medium transition-colors">
+                    बंद करा
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="entryInfoModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 p-4">
+    <div class="bg-white w-full max-w-6xl h-[88vh] rounded-lg shadow-xl flex flex-col">
+        <div class="flex items-center justify-between border-b px-4 py-3">
+            <h3 class="text-base font-semibold">नोंद तपशील</h3>
+            <button type="button" id="closeEntryInfoModalBtn" class="text-gray-500 hover:text-gray-700 text-lg leading-none">&times;</button>
+        </div>
+        <div class="px-4 py-4 flex-1 overflow-y-auto">
+            <div id="entryInfoContent" class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm"></div>
+        </div>
+        <div class="border-t px-4 py-3 flex justify-end">
+            <button type="button" id="closeEntryInfoModalFooterBtn" class="px-3 py-1.5 bg-gray-700 hover:bg-gray-800 text-white rounded text-sm">बंद करा</button>
+        </div>
+    </div>
+</div>
+
+<script>
+$(document).ready(function () {
+    $('#entryTable').DataTable({
+        pageLength: 10,
+        scrollX: true,
+        columnDefs: [
+            { targets: -1, orderable: false, searchable: false }
+        ],
+        language: {
+            lengthMenu: "_MENU_ नोंदी दाखवा",
+            search: "शोध:",
+            info: "_TOTAL_ पैकी _START_ ते _END_ नोंदी",
+            infoEmpty: "0 नोंदी",
+            zeroRecords: "नोंदी आढळल्या नाहीत",
+            paginate: {
+                previous: "मागील",
+                next: "पुढील"
+            }
+        }
+    });
+
+    const modal = document.getElementById('entryInfoModal');
+    const content = document.getElementById('entryInfoContent');
+    const docsModal = document.getElementById('documentsModal');
+
+    function row(label, value) {
+        return `<div class="border rounded p-2"><div class="text-xs text-slate-500">${label}</div><div class="font-medium break-words">${value ?? '-'}</div></div>`;
+    }
+
+    function openModal() {
+        modal.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeModal() {
+        modal.classList.add('hidden');
+        document.body.style.overflow = '';
+    }
+
+    async function showEntryInfo(entryId) {
+        content.innerHTML = '<div class="col-span-2 text-slate-600">Loading...</div>';
+        openModal();
+        try {
+            const res = await fetch(`/tools/add-entry/?id=${encodeURIComponent(entryId)}`);
+            const data = await res.json();
+            if (!data.success || !data.entry) {
+                content.innerHTML = '<div class="col-span-2 text-red-600">Failed to load details.</div>';
+                return;
+            }
+
+            const e = data.entry;
+            content.innerHTML = [
+                row('जिल्हा', e.district),
+                row('तालुका', e.taluka),
+                row('गाव', e.village),
+                row('सर्व्हे/गट नं.', e.sr_no_02),
+                row('खातेदाराचे नाव', e.owner_name_03),
+                row('जमीन वर्ग', e.land_class_04),
+                row('7/12 चे एकूण क्षेत्र', e.total_area_05),
+                row('7/12 ची एकूण आकारणी', e.total_assessment_06),
+                row('प्रति हेक्टरी आकारणी', e.per_hectare_assessment_07),
+                row('जमिनीचा ग्रुप', e.land_group_08),
+                row('संपादित क्षेत्र', e.to_create_09),
+                row('शिघ्रसिद्ध क्रमांक', e.shighrasiddha_number_10),
+                row('समिती बाजारमूल्य', e.committee_market_rate_12),
+                row('जमिनीचा प्रकार', e.land_type_13),
+                row('विचारात घेतलेले बाजारमूल्य', e.considered_market_rate_14),
+                row('बाजार मूल्य 15A', e.market_value_15a),
+                row('झोन', e.zone_15b),
+                row('गुणांक', e.coefficient_15c),
+                row('एकूण बाजार मूल्य', e.total_market_value_15d),
+                row('फळझाडे', e.fruit_trees_16a),
+                row('वनझाडे', e.forest_trees_16b),
+                row('बांधकामे', e.construction_16c),
+                row('इतर बाबी', e.other_assets_16d),
+                row('एकूण मूल्यांकन', e.total_assets_16e),
+                row('निर्धारित मोबदला', e.determined_compensation_17),
+                row('दिलासा रक्कम', e.solatium_amount_18),
+                row('अधिसूचना/मूल्यांकन दिनांक', e.notification_date),
+                row('मोबदला मंजुरी दिनांक', e.award_date),
+                row('दिवस फरक', e.days_difference),
+                row('12% अतिरिक्त घटक', e.additional_12_percent_19),
+                row('विनासंमती निर्धारित मोबदला', e.non_consent_compensation_20),
+                row('वर्ग-2 कपात (विनासंमती)', e.class2_deduction_21),
+                row('विनासंमती देय मोबदला', e.payable_non_consent_22),
+                row('संमतीसाठी 25% वाढीव मोबदला', e.consent_bonus_23),
+                row('संमती निर्धारित मोबदला', e.consent_total_24),
+                row('वर्ग-2 कपात (संमती)', e.class2_deduction_consent_25),
+                row('संमती देय मोबदला', e.payable_consent_26)
+            ].join('');
+        } catch (err) {
+            content.innerHTML = '<div class="col-span-2 text-red-600">Failed to load details.</div>';
+        }
+    }
+
+    $(document).on('click', '.entry-info-btn', function () {
+        showEntryInfo($(this).data('entry-id'));
+    });
+    $(document).on('click', '.view-docs-btn', function () {
+        openDocumentsModal($(this).data('record-id'));
+    });
+
+    document.getElementById('closeEntryInfoModalBtn').addEventListener('click', closeModal);
+    document.getElementById('closeEntryInfoModalFooterBtn').addEventListener('click', closeModal);
+    modal.addEventListener('click', function (e) {
+        if (e.target === modal) closeModal();
+    });
+
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && !modal.classList.contains('hidden')) closeModal();
+        if (e.key === 'Escape' && docsModal && !docsModal.classList.contains('hidden')) closeDocumentsModal();
+    });
+});
+
+function openDocumentsModal(recordId) {
+    const modal = document.getElementById('documentsModal');
+    const grid = document.getElementById('documentsGrid');
+    const countSpan = document.getElementById('documentCount');
+    const dataContainer = document.getElementById('docs-data-' + recordId);
+    if (!dataContainer) return;
+
+    grid.innerHTML = '';
+    let documents = [];
+    try {
+        documents = JSON.parse(dataContainer.textContent || dataContainer.innerText || '[]');
+    } catch (e) {
+        grid.innerHTML = '<p class="col-span-full text-center text-gray-500">दस्तऐवज लोड करताना त्रुटी.</p>';
+        return;
+    }
+
+    if (!documents.length) {
+        grid.innerHTML = '<p class="col-span-full text-center text-gray-500">दस्तऐवज उपलब्ध नाहीत.</p>';
+        countSpan.textContent = '0 दस्तऐवज';
+    } else {
+        countSpan.textContent = `${documents.length} दस्तऐवज`;
+        documents.forEach((doc) => grid.appendChild(createDocumentTile(doc.url, doc.name, doc.date, doc.size)));
+    }
+
+    modal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeDocumentsModal() {
+    const modal = document.getElementById('documentsModal');
+    if (!modal) return;
+    modal.classList.add('hidden');
+    document.body.style.overflow = '';
+}
+
+function createDocumentTile(url, filename, date, size) {
+    const div = document.createElement('div');
+    div.className = 'bg-white border-2 border-gray-200 rounded-lg p-4 hover:border-orange-500 hover:shadow-lg transition-all duration-200 cursor-pointer group';
+    const ext = (filename || '').split('.').pop().toLowerCase();
+    const icon = getFileIconForModal(ext);
+    const displayName = filename || 'फाईल';
+    const formattedSize = formatFileSize(size);
+    div.innerHTML = `
+        <a href="${url}" target="_blank" class="block">
+            <div class="flex flex-col items-center text-center">
+                <div class="w-16 h-16 mb-3 flex items-center justify-center bg-gray-100 rounded-lg group-hover:bg-orange-50 transition-colors">${icon}</div>
+                <p class="text-sm font-medium text-gray-900 truncate w-full mb-1" title="${displayName}">${displayName.length > 20 ? displayName.substring(0, 20) + '...' : displayName}</p>
+                <div class="text-xs text-gray-500 space-y-0.5">
+                    <p>${formattedSize}</p>
+                    <p>${date || ''}</p>
+                </div>
+            </div>
+        </a>
+    `;
+    return div;
+}
+
+function getFileIconForModal(ext) {
+    const icons = {
+        'pdf': '<svg class="w-10 h-10 text-red-600" fill="currentColor" viewBox="0 0 20 20"><path d="M4 18h12V6h-4V2H4v16zm-2 1V0h12l4 4v16H2v-1z"/></svg>',
+        'doc': '<svg class="w-10 h-10 text-blue-600" fill="currentColor" viewBox="0 0 20 20"><path d="M4 18h12V6h-4V2H4v16zm-2 1V0h12l4 4v16H2v-1z"/></svg>',
+        'docx': '<svg class="w-10 h-10 text-blue-600" fill="currentColor" viewBox="0 0 20 20"><path d="M4 18h12V6h-4V2H4v16zm-2 1V0h12l4 4v16H2v-1z"/></svg>',
+        'jpg': '<svg class="w-10 h-10 text-green-600" fill="currentColor" viewBox="0 0 20 20"><path d="M4 3h12v14H4V3zm2 2v10h8V5H6z"/></svg>',
+        'jpeg': '<svg class="w-10 h-10 text-green-600" fill="currentColor" viewBox="0 0 20 20"><path d="M4 3h12v14H4V3zm2 2v10h8V5H6z"/></svg>',
+        'png': '<svg class="w-10 h-10 text-green-600" fill="currentColor" viewBox="0 0 20 20"><path d="M4 3h12v14H4V3zm2 2v10h8V5H6z"/></svg>',
+    };
+    return icons[ext] || '<svg class="w-10 h-10 text-gray-600" fill="currentColor" viewBox="0 0 20 20"><path d="M4 18h12V6h-4V2H4v16zm-2 1V0h12l4 4v16H2v-1z"/></svg>';
+}
+
+function formatFileSize(bytes) {
+    if (!bytes || bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+}
+
+document.getElementById('documentsModal')?.addEventListener('click', function(e) {
+    if (e.target === this) closeDocumentsModal();
+});
+</script>
+{% endblock %}

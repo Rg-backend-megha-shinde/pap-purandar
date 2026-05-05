@@ -1,469 +1,142 @@
 {% extends "base.html" %}
 
 {% block content %}
+<style>
+    .tool-tabs-shell {
+        border: 1px solid #d8e4f2;
+        background: #f8fbff;
+        border-radius: 0.65rem;
+        padding: 0.4rem 0.55rem 0;
+        margin-bottom: 1rem;
+    }
+    .tool-tabs {
+        display: flex;
+        align-items: flex-end;
+        gap: 0.4rem;
+        flex-wrap: wrap;
+    }
+    .tool-tab-link {
+        display: inline-block;
+        margin-bottom: -1px;
+        padding: 0.7rem 1.1rem;
+        border: 1px solid transparent;
+        border-radius: 0.5rem 0.5rem 0 0;
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: #6b7d99;
+        line-height: 1;
+        transition: all 120ms ease;
+    }
+    .tool-tab-link:hover { color: #213a63; }
+    .tool-tab-link.is-active {
+        background: #ffffff;
+        color: #125fcb;
+        border-color: #cad8ea;
+        box-shadow: 0 1px 3px rgba(18, 95, 203, 0.15);
+    }
+    @media (max-width: 640px) {
+        .tool-tab-link {
+            padding: 0.6rem 0.85rem;
+            font-size: 0.85rem;
+        }
+    }
+</style>
+<div class="w-full px-2 sm:px-3 md:px-4 py-4">
+    <div class="tool-tabs-shell">
+        <nav class="tool-tabs" aria-label="Tool views">
+            <a href="{% url 'land_record_712_list' %}" class="tool-tab-link is-active">७/१२ उतार नोंद</a>
+            <a href="{% url 'ready_reckoner_list' %}" class="tool-tab-link">रेडी रेकनर दर</a>
+            <a href="{% url 'village_info' %}" class="tool-tab-link">गावाची माहिती</a>
+            <a href="{% url 'add_entry' %}" class="tool-tab-link">नुकसान भरपाई नोंद</a>
+            <a href="{% url 'process_chart_form' %}" class="tool-tab-link">भूसंपादन प्रक्रिया</a>
+        </nav>
+    </div>
+<div class="w-full mx-auto bg-white p-3 sm:p-4 md:p-6 border border-gray-300 mt-4 sm:mt-6 rounded-lg shadow">
+    <h2 class="text-center font-bold text-xl underline">७/१२ उतारा संपादन</h2>
 
-<div class="max-w-4xl mx-auto bg-white p-6 border border-gray-300 mt-6 rounded-lg shadow">
-
-    <h2 class="text-center font-bold text-xl underline">
-        ७/१२ उतारा संपादन
-    </h2>
-
-    <form method="POST" enctype="multipart/form-data" class="mt-6">
+    <form method="POST" class="mt-6">
         {% csrf_token %}
 
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
+        <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 text-sm">
             <div>
                 <label class="font-semibold">जिल्हा</label>
-                <input type="text" name="district" value="{{ obj.district }}" required class="w-full border p-2 rounded">
+                <input type="text" name="district" value="{{ obj.district|default:'उपलब्ध नाही' }}" required readonly class="w-full border p-2 rounded bg-gray-100 cursor-not-allowed">
             </div>
             <div>
                 <label class="font-semibold">तालुका</label>
-                <input type="text" name="taluka" value="{{ obj.taluka }}" required class="w-full border p-2 rounded">
+                <input type="text" name="taluka" value="{{ obj.taluka|default:'उपलब्ध नाही' }}" required readonly class="w-full border p-2 rounded bg-gray-100 cursor-not-allowed">
             </div>
             <div>
                 <label class="font-semibold">गाव</label>
-                <input type="text" name="village" value="{{ obj.village }}" required class="w-full border p-2 rounded">
+                <input type="text" name="village" value="{{ obj.village|default:'उपलब्ध नाही' }}" required readonly class="w-full border p-2 rounded bg-gray-100 cursor-not-allowed">
             </div>
             <div>
                 <label class="font-semibold">गट क्रमांक</label>
-                <input type="text" name="gut_number" value="{{ obj.gut_number }}" required class="w-full border p-2 rounded">
+                <input type="text" name="gut_number" value="{{ obj.gut_number|default:'उपलब्ध नाही' }}" required readonly class="w-full border p-2 rounded bg-gray-100 cursor-not-allowed">
             </div>
         </div>
 
         <div class="mt-6 border-t pt-4">
-            <h3 class="font-semibold text-sm text-gray-700 mb-3">शेतकरी माहिती</h3>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-
-                <div class="md:col-span-2">
-                    <div class="flex gap-2 mb-1">
-                        <span class="font-semibold flex-1">शेतकऱ्यांची नावे</span>
-                        <span class="font-semibold w-36 text-center">मूळ क्षेत्र</span>
-                        <span class="font-semibold w-36 text-center">पोटखराबा</span>
-                        <span class="w-8"></span>
-                    </div>
-                    <div id="farmer-list" class="space-y-2">
-                        {% for farmer in farmers %}
-                        <div class="flex gap-2 items-center">
-                            <input type="text" name="farmer_name[]" value="{{ farmer.farmer_name }}"
-                                class="flex-1 border p-2 rounded focus:ring-2 focus:ring-green-400">
-                            <input type="text" name="total_area[]" value="{{ farmer.total_area }}" placeholder="उदा. 1-65"
-                                class="w-36 border p-2 rounded focus:ring-2 focus:ring-green-400">
-                            <input type="text" name="potkharaba[]" value="{{ farmer.potkharaba }}" placeholder="उदा. 0-53"
-                                class="w-36 border p-2 rounded focus:ring-2 focus:ring-green-400">
-                            <button type="button" onclick="removeFarmer(this)" class="text-red-500 font-bold px-2">✕</button>
-                        </div>
-                        {% empty %}
-                        <div class="flex gap-2 items-center">
-                            <input type="text" name="farmer_name[]" placeholder="पूर्ण नाव टाका"
-                                class="flex-1 border p-2 rounded focus:ring-2 focus:ring-green-400">
-                            <input type="text" name="total_area[]" placeholder="उदा. 1-65"
-                                class="w-36 border p-2 rounded focus:ring-2 focus:ring-green-400">
-                            <input type="text" name="potkharaba[]" placeholder="उदा. 0-53"
-                                class="w-36 border p-2 rounded focus:ring-2 focus:ring-green-400">
-                            <button type="button" onclick="removeFarmer(this)" class="text-red-500 font-bold px-2 hidden">✕</button>
-                        </div>
-                        {% endfor %}
-                    </div>
-                    <button type="button" onclick="addFarmer()"
-                        class="mt-2 text-sm text-green-700 border border-green-500 px-3 py-1 rounded hover:bg-green-50">
-                        + शेतकरी जोडा
-                    </button>
+            <h3 class="font-semibold text-sm text-gray-700 mb-3">७/१२ माहिती</h3>
+            <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 text-sm">
+                <div>
+                    <label class="font-semibold">खाता नं</label>
+                    <input type="text" name="khata_number" value="{{ obj.khata_number|default:'उपलब्ध नाही' }}" class="w-full border p-2 rounded">
+                </div>
+                <div>
+                    <label class="font-semibold">PUID/ULIP नं</label>
+                    <input type="text" name="puid_ulip_no" value="{{ obj.puid_ulip_no|default:'उपलब्ध नाही' }}" class="w-full border p-2 rounded">
                 </div>
 
+                <div>
+                    <label class="font-semibold">जिरायत</label>
+                    <input type="text" name="jirayit" value="{{ obj.jirayit|default:'उपलब्ध नाही' }}" class="w-full border p-2 rounded">
+                </div>
+                <div>
+                    <label class="font-semibold">बागायत</label>
+                    <input type="text" name="bagayat" value="{{ obj.bagayat|default:'उपलब्ध नाही' }}" class="w-full border p-2 rounded">
+                </div>
+                <div>
+                    <label class="font-semibold">पोटखराब</label>
+                    <input type="text" name="potkharaba" value="{{ obj.potkharaba|default:'उपलब्ध नाही' }}" class="w-full border p-2 rounded">
+                </div>
+
+                <div>
+                    <label class="font-semibold">एकूण क्षेत्र</label>
+                    <input type="text" name="total_area" value="{{ obj.total_area|default:'उपलब्ध नाही' }}" class="w-full border p-2 rounded">
+                </div>
                 <div>
                     <label class="font-semibold">आकारणी</label>
-                    <input type="text" name="aakarnee" value="{{ obj.aakarnee }}" class="w-full border p-2 rounded">
+                    <input type="text" name="aakarni" value="{{ obj.aakarni|default:'उपलब्ध नाही' }}" class="w-full border p-2 rounded">
+                </div>
+                <div>
+                    <label class="font-semibold">खाता क्षेत्र</label>
+                    <input type="text" name="khata_area" value="{{ obj.khata_area|default:'उपलब्ध नाही' }}" class="w-full border p-2 rounded">
                 </div>
 
                 <div>
-                    <label class="font-semibold">मूल्यांकन प्रकार (Assessment Type)</label>
-                    <input type="text" name="assessment_type" value="{{ obj.assessment_type }}" class="w-full border p-2 rounded">
+                    <label class="font-semibold">आकार</label>
+                    <input type="text" name="aakar" value="{{ obj.aakar|default:'उपलब्ध नाही' }}" class="w-full border p-2 rounded">
                 </div>
 
-                <div>
-                    <label class="font-semibold">लागू दर (Rate Applied)</label>
-                    <input type="text" name="rate_applied" value="{{ obj.rate_applied }}" class="w-full border p-2 rounded">
+                <div class="md:col-span-3">
+                    <label class="font-semibold">भोगवटादाराचे नांव</label>
+                    <textarea name="holder_name" rows="3" class="w-full border p-2 rounded">{{ obj.holder_name|default:'उपलब्ध नाही' }}</textarea>
                 </div>
 
+                <div class="md:col-span-3">
+                    <label class="font-semibold">कुळ, खंड व इतर अधिकार</label>
+                    <textarea name="kul_khand_other_rights" rows="4" class="w-full border p-2 rounded" placeholder="कुळ, खंड व इतर अधिकाराची माहिती येथे लिहा...">{{ obj.kul_khand_other_rights|default:'उपलब्ध नाही' }}</textarea>
+                </div>
             </div>
         </div>
 
-        <!-- Document Management Section -->
-        <div class="mt-6 border-t pt-4">
-            <h3 class="font-semibold text-sm text-gray-700 mb-3">दस्तऐवज व्यवस्थापन (Document Management)</h3>
-            
-            {% if documents %}
-                <div class="mb-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                    <div class="flex items-center justify-between mb-3">
-                        <span class="text-sm font-semibold text-gray-700">सध्याचे दस्तऐवज</span>
-                        <span class="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full font-medium">
-                            {% for doc_master in documents %}
-                                {{ doc_master.attachments.count }} फाइल्स
-                            {% endfor %}
-                        </span>
-                    </div>
-                    <div class="space-y-2">
-                        {% for doc_master in documents %}
-                            {% for attachment in doc_master.attachments.all %}
-                                <div class="flex items-center justify-between bg-white p-3 rounded-lg border border-gray-200 hover:shadow-sm transition-shadow duration-200" id="file-{{ attachment.id }}">
-                                    <div class="flex items-center gap-3 flex-1 min-w-0">
-                                        <div class="flex-shrink-0 w-10 h-10 flex items-center justify-center bg-gray-100 rounded-lg">
-                                            {% if '.pdf' in attachment.file.name|lower %}
-                                                <svg class="w-6 h-6 text-red-600" fill="currentColor" viewBox="0 0 20 20"><path d="M4 18h12V6h-4V2H4v16zm-2 1V0h12l4 4v16H2v-1z"/></svg>
-                                            {% elif '.doc' in attachment.file.name|lower %}
-                                                <svg class="w-6 h-6 text-blue-600" fill="currentColor" viewBox="0 0 20 20"><path d="M4 18h12V6h-4V2H4v16zm-2 1V0h12l4 4v16H2v-1z"/></svg>
-                                            {% else %}
-                                                <svg class="w-6 h-6 text-green-600" fill="currentColor" viewBox="0 0 20 20"><path d="M4 3h12v14H4V3zm2 2v10h8V5H6z"/></svg>
-                                            {% endif %}
-                                        </div>
-                                        <div class="flex-1 min-w-0">
-                                            <a href="{{ attachment.file.url }}" target="_blank" class="text-sm font-medium text-blue-600 hover:text-blue-800 hover:underline truncate block">
-                                                {{ attachment.file.name|cut:"documents/files/" }}
-                                            </a>
-                                            <p class="text-xs text-gray-500">{{ attachment.uploaded_at|date:"d/m/Y, H:i" }}</p>
-                                        </div>
-                                    </div>
-                                    <div class="flex items-center gap-2">
-                                        <a href="{{ attachment.file.url }}" download class="flex-shrink-0 text-gray-400 hover:text-green-600 transition-colors duration-200" title="Download">
-                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
-                                            </svg>
-                                        </a>
-                                        <button type="button" onclick="deleteFile({{ attachment.id }})" class="flex-shrink-0 text-gray-400 hover:text-red-600 transition-colors duration-200" title="Delete">
-                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                                            </svg>
-                                        </button>
-                                    </div>
-                                </div>
-                            {% endfor %}
-                        {% endfor %}
-                    </div>
-                </div>
-            {% endif %}
-            
-            <!-- File Upload Container -->
-            <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 bg-gray-50 hover:bg-gray-100 transition-colors duration-200" id="dropZone">
-                <div class="text-center">
-                    <!-- Upload Icon -->
-                    <div class="mx-auto w-16 h-16 mb-4 flex items-center justify-center bg-green-100 rounded-full">
-                        <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
-                        </svg>
-                    </div>
-                    
-                    <h3 class="text-base font-semibold text-gray-700 mb-2">अधिक फाइल्स जोडा</h3>
-                    <p class="text-sm text-gray-500 mb-4">PDF, JPG, PNG, DOC, DOCX (प्रत्येक कमाल 5MB)</p>
-                    
-                    <!-- Hidden File Input -->
-                    <input type="file" id="documents" name="documents" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" multiple class="hidden">
-                    
-                    <!-- Browse Button -->
-                    <button type="button" onclick="document.getElementById('documents').click()" 
-                        class="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors duration-200">
-                        फाइल निवडा
-                    </button>
-                </div>
-            </div>
-            
-            <!-- Error Message -->
-            <p id="file-error" class="text-sm text-red-600 mt-2 hidden"></p>
-            
-            <!-- Selected Files List -->
-            <div id="filesList" class="mt-4 space-y-2 hidden">
-                <h4 class="text-sm font-semibold text-gray-700 mb-2">नवीन फाइल्स:</h4>
-                <div id="filesContainer" class="space-y-2"></div>
-            </div>
+        <div class="flex flex-col sm:flex-row gap-3 mt-6">
+            <a href="{% url 'land_record_712_list' %}" class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded text-center">← यादीकडे जा</a>
+            <button type="submit" class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded">अपडेट करा</button>
+            <a href="{% url 'delete_land_record_712' obj.id %}" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded text-center" onclick="return confirm('तुम्हाला ही नोंद हटवायची आहे का?');">हटवा</a>
         </div>
-
-        <div class="flex gap-3 mt-6">
-            <a href="{% url 'land_record_712_list' %}" class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded">
-                ← यादीकडे जा
-            </a>
-            <button type="submit" class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded">
-                अपडेट करा
-            </button>
-            <a href="{% url 'delete_land_record_712' obj.id %}"
-                class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded"
-                onclick="return confirm('तुम्हाला ही नोंद हटवायची आहे का?');">
-                🗑 हटवा
-            </a>
-        </div>
-
     </form>
-
 </div>
-
-<script>
-function addFarmer() {
-    const list = document.getElementById('farmer-list');
-    const row = document.createElement('div');
-    row.className = 'flex gap-2 items-center';
-    row.innerHTML = `<input type="text" name="farmer_name[]" placeholder="पूर्ण नाव टाका" class="flex-1 border p-2 rounded focus:ring-2 focus:ring-green-400">
-        <input type="text" name="total_area[]" placeholder="मूळ क्षेत्र (उदा. 1-65)" class="w-36 border p-2 rounded focus:ring-2 focus:ring-green-400">
-        <input type="text" name="potkharaba[]" placeholder="पोटखराबा (उदा. 0-53)" class="w-36 border p-2 rounded focus:ring-2 focus:ring-green-400">
-        <button type="button" onclick="removeFarmer(this)" class="text-red-500 font-bold px-2">✕</button>`;
-    list.appendChild(row);
-}
-
-function removeFarmer(btn) {
-    const list = document.getElementById('farmer-list');
-    if (list.children.length > 1) btn.parentElement.remove();
-}
-
-// Delete File Function
-function deleteFile(attachmentId) {
-    if (!confirm('तुम्हाला ही फाइल हटवायची आहे का?')) {
-        return;
-    }
-    
-    const fileElement = document.getElementById('file-' + attachmentId);
-    
-    // Show loading state
-    fileElement.style.opacity = '0.5';
-    fileElement.style.pointerEvents = 'none';
-    
-    // Send delete request
-    fetch(`/tools/delete-document-attachment/${attachmentId}/`, {
-        method: 'POST',
-        headers: {
-            'X-CSRFToken': '{{ csrf_token }}',
-            'Content-Type': 'application/json',
-        },
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            // Remove the file element with animation
-            fileElement.style.transition = 'all 0.3s ease';
-            fileElement.style.transform = 'translateX(100%)';
-            fileElement.style.opacity = '0';
-            
-            setTimeout(() => {
-                fileElement.remove();
-                
-                // Check if there are any files left
-                const filesContainer = fileElement.parentElement;
-                if (filesContainer && filesContainer.children.length === 0) {
-                    // Remove the entire documents section if no files left
-                    const documentsSection = filesContainer.closest('.mb-4');
-                    if (documentsSection) {
-                        documentsSection.remove();
-                    }
-                }
-            }, 300);
-        } else {
-            alert('फाइल हटवताना त्रुटी आली: ' + (data.error || 'Unknown error'));
-            fileElement.style.opacity = '1';
-            fileElement.style.pointerEvents = 'auto';
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('फाइल हटवताना त्रुटी आली. कृपया पुन्हा प्रयत्न करा.');
-        fileElement.style.opacity = '1';
-        fileElement.style.pointerEvents = 'auto';
-    });
-}
-
-// File Upload Handler with Drag & Drop and Progress
-(function() {
-    const dropZone = document.getElementById('dropZone');
-    const fileInput = document.getElementById('documents');
-    const fileError = document.getElementById('file-error');
-    const filesList = document.getElementById('filesList');
-    const filesContainer = document.getElementById('filesContainer');
-    const maxSize = 5 * 1024 * 1024; // 5MB
-    let selectedFiles = [];
-
-    // Prevent default drag behaviors
-    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-        dropZone.addEventListener(eventName, preventDefaults, false);
-        document.body.addEventListener(eventName, preventDefaults, false);
-    });
-
-    function preventDefaults(e) {
-        e.preventDefault();
-        e.stopPropagation();
-    }
-
-    // Highlight drop zone when dragging over it
-    ['dragenter', 'dragover'].forEach(eventName => {
-        dropZone.addEventListener(eventName, () => {
-            dropZone.classList.add('border-green-500', 'bg-green-50');
-        }, false);
-    });
-
-    ['dragleave', 'drop'].forEach(eventName => {
-        dropZone.addEventListener(eventName, () => {
-            dropZone.classList.remove('border-green-500', 'bg-green-50');
-        }, false);
-    });
-
-    // Handle dropped files
-    dropZone.addEventListener('drop', (e) => {
-        const dt = e.dataTransfer;
-        const files = dt.files;
-        handleFiles(files);
-    }, false);
-
-    // Handle selected files from input
-    fileInput.addEventListener('change', (e) => {
-        handleFiles(e.target.files);
-    });
-
-    function handleFiles(files) {
-        fileError.classList.add('hidden');
-        selectedFiles = [];
-        
-        // Validate and add files
-        for (let i = 0; i < files.length; i++) {
-            const file = files[i];
-            
-            if (file.size > maxSize) {
-                fileError.textContent = `"${file.name}" फाइल साइझ 5MB पेक्षा जास्त आहे.`;
-                fileError.classList.remove('hidden');
-                continue;
-            }
-            
-            selectedFiles.push(file);
-        }
-        
-        if (selectedFiles.length > 0) {
-            displayFiles();
-            filesList.classList.remove('hidden');
-        } else {
-            filesList.classList.add('hidden');
-        }
-    }
-
-    function displayFiles() {
-        filesContainer.innerHTML = '';
-        
-        selectedFiles.forEach((file, index) => {
-            const fileItem = createFileItem(file, index);
-            filesContainer.appendChild(fileItem);
-        });
-    }
-
-    function createFileItem(file, index) {
-        const div = document.createElement('div');
-        div.className = 'bg-white border border-gray-200 rounded-lg p-3 hover:shadow-md transition-shadow duration-200';
-        
-        const fileSize = formatFileSize(file.size);
-        const fileIcon = getFileIcon(file.name);
-        
-        div.innerHTML = `
-            <div class="flex items-center gap-3">
-                <!-- File Icon -->
-                <div class="flex-shrink-0 w-10 h-10 flex items-center justify-center bg-gray-100 rounded-lg">
-                    ${fileIcon}
-                </div>
-                
-                <!-- File Info -->
-                <div class="flex-1 min-w-0">
-                    <p class="text-sm font-medium text-gray-900 truncate">${file.name}</p>
-                    <p class="text-xs text-gray-500">${fileSize}</p>
-                </div>
-                
-                <!-- Remove Button -->
-                <button type="button" onclick="removeFile(${index})" 
-                    class="flex-shrink-0 w-8 h-8 flex items-center justify-center text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors duration-200">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                    </svg>
-                </button>
-            </div>
-            
-            <!-- Progress Bar (hidden initially) -->
-            <div class="mt-2 hidden" id="progress-${index}">
-                <div class="flex items-center gap-2 mb-1">
-                    <span class="text-xs text-gray-600">अपलोड होत आहे...</span>
-                    <span class="text-xs font-medium text-green-600" id="progress-percent-${index}">0%</span>
-                </div>
-                <div class="w-full bg-gray-200 rounded-full h-1.5">
-                    <div class="bg-green-600 h-1.5 rounded-full transition-all duration-300" id="progress-bar-${index}" style="width: 0%"></div>
-                </div>
-            </div>
-        `;
-        
-        return div;
-    }
-
-    function getFileIcon(filename) {
-        const ext = filename.split('.').pop().toLowerCase();
-        
-        const icons = {
-            'pdf': '<svg class="w-6 h-6 text-red-600" fill="currentColor" viewBox="0 0 20 20"><path d="M4 18h12V6h-4V2H4v16zm-2 1V0h12l4 4v16H2v-1z"/></svg>',
-            'doc': '<svg class="w-6 h-6 text-blue-600" fill="currentColor" viewBox="0 0 20 20"><path d="M4 18h12V6h-4V2H4v16zm-2 1V0h12l4 4v16H2v-1z"/></svg>',
-            'docx': '<svg class="w-6 h-6 text-blue-600" fill="currentColor" viewBox="0 0 20 20"><path d="M4 18h12V6h-4V2H4v16zm-2 1V0h12l4 4v16H2v-1z"/></svg>',
-            'jpg': '<svg class="w-6 h-6 text-green-600" fill="currentColor" viewBox="0 0 20 20"><path d="M4 3h12v14H4V3zm2 2v10h8V5H6z"/></svg>',
-            'jpeg': '<svg class="w-6 h-6 text-green-600" fill="currentColor" viewBox="0 0 20 20"><path d="M4 3h12v14H4V3zm2 2v10h8V5H6z"/></svg>',
-            'png': '<svg class="w-6 h-6 text-green-600" fill="currentColor" viewBox="0 0 20 20"><path d="M4 3h12v14H4V3zm2 2v10h8V5H6z"/></svg>',
-        };
-        
-        return icons[ext] || '<svg class="w-6 h-6 text-gray-600" fill="currentColor" viewBox="0 0 20 20"><path d="M4 18h12V6h-4V2H4v16zm-2 1V0h12l4 4v16H2v-1z"/></svg>';
-    }
-
-    function formatFileSize(bytes) {
-        if (bytes === 0) return '0 Bytes';
-        const k = 1024;
-        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-        const i = Math.floor(Math.log(bytes) / Math.log(k));
-        return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
-    }
-
-    // Make removeFile function global
-    window.removeFile = function(index) {
-        selectedFiles.splice(index, 1);
-        
-        // Update the file input
-        const dt = new DataTransfer();
-        selectedFiles.forEach(file => dt.items.add(file));
-        fileInput.files = dt.files;
-        
-        if (selectedFiles.length > 0) {
-            displayFiles();
-        } else {
-            filesList.classList.add('hidden');
-        }
-    };
-
-    // Simulate upload progress on form submit
-    const form = document.querySelector('form');
-    form.addEventListener('submit', function(e) {
-        if (selectedFiles.length > 0) {
-            // Show progress bars
-            selectedFiles.forEach((file, index) => {
-                const progressDiv = document.getElementById(`progress-${index}`);
-                if (progressDiv) {
-                    progressDiv.classList.remove('hidden');
-                    simulateProgress(index);
-                }
-            });
-        }
-    });
-
-    function simulateProgress(index) {
-        const progressBar = document.getElementById(`progress-bar-${index}`);
-        const progressPercent = document.getElementById(`progress-percent-${index}`);
-        
-        if (!progressBar || !progressPercent) return;
-        
-        let progress = 0;
-        const interval = setInterval(() => {
-            progress += Math.random() * 30;
-            if (progress > 100) progress = 100;
-            
-            progressBar.style.width = progress + '%';
-            progressPercent.textContent = Math.round(progress) + '%';
-            
-            if (progress >= 100) {
-                clearInterval(interval);
-            }
-        }, 200);
-    }
-})();
-</script>
-
+</div>
 {% endblock %}

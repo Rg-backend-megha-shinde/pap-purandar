@@ -3,119 +3,88 @@
 
 {% block content %}
 
-<div class="max-w-6xl mx-auto mt-6 px-4">
 
-    <div class="flex items-center gap-3 mb-6">
-        <h2 class="text-xl font-bold">Tools</h2>
+<div class="bg-gray-100">
+    <div class="max-w-6xl mx-auto px-2 sm:px-4 pt-6 pb-8">
+        <div class="flex flex-col items-center mb-8">
+            <h2 class="text-2xl sm:text-3xl font-extrabold text-gray-800 tracking-tight">Tools</h2>
+            <div class="w-16 h-1 bg-blue-500 rounded mt-2 mb-2"></div>
+            <p class="text-gray-500 text-sm">Select a tool to get started</p>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-8">
+            <!-- Card 1 -->
+            <div onclick="goToInspection()" class="group cursor-pointer bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-200 p-5 sm:p-7 border border-gray-200 flex flex-col transform hover:-translate-y-1 hover:scale-[1.03]">
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="bg-blue-100 text-blue-600 p-4 rounded-full text-2xl shadow">📝</div>
+                    <h3 class="text-lg sm:text-xl font-bold">तपासणी साधन</h3>
+                </div>
+                <p class="text-sm sm:text-base text-gray-600 leading-relaxed mb-2">क्षेत्र तपासणी, पंचनामा, झाडे व मोजमाप नोंदीसाठी.</p>
+                <ul class="mt-2 text-xs sm:text-sm text-gray-500 space-y-1 flex-1">
+                    <li>✔ तपासणी नोंद</li>
+                    <li>✔ झाडे / मालमत्ता</li>
+                    <li>✔ Dynamic row entry</li>
+                    <li>✔ अधिकारी वापरासाठी</li>
+                </ul>
+                <button class="mt-6 w-full bg-blue-600 text-white py-2 rounded-lg font-semibold shadow hover:bg-blue-700 transition">उघडा →</button>
+            </div>
+
+            <!-- Card 2 -->
+            <div onclick="goToDocuments()" class="group cursor-pointer bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-200 p-5 sm:p-7 border border-gray-200 flex flex-col transform hover:-translate-y-1 hover:scale-[1.03]">
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="bg-indigo-100 text-indigo-600 p-4 rounded-full text-2xl shadow">📁</div>
+                    <h3 class="text-lg sm:text-xl font-bold">कागदपत्रे व्यवस्थापन</h3>
+                </div>
+                <p class="text-sm sm:text-base text-gray-600 leading-relaxed mb-2">जिल्हा/तालुका/गाव/गट स्तरावर दस्तऐवज अपलोड व व्यवस्थापन.</p>
+                <ul class="mt-2 text-xs sm:text-sm text-gray-500 space-y-1 flex-1">
+                    <li>✔ सामान्य कागदपत्रे</li>
+                    <li>✔ न्यायालयीन प्रकरणे</li>
+                    <li>✔ स्थानानुसार नोंद</li>
+                    <li>✔ PDF / File अपलोड</li>
+                </ul>
+                <button class="mt-6 w-full bg-indigo-600 text-white py-2 rounded-lg font-semibold shadow hover:bg-indigo-700 transition">उघडा →</button>
+            </div>
+
+            <!-- Card 3 -->
+            <div onclick="goToAssetCreation()" class="group cursor-pointer bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-200 p-5 sm:p-7 border border-gray-200 flex flex-col transform hover:-translate-y-1 hover:scale-[1.03]">
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="bg-purple-100 text-purple-600 p-4 rounded-full text-2xl shadow">🏗️</div>
+                    <h3 class="text-lg sm:text-xl font-bold">मालमत्ता निर्मिती साधन</h3>
+                </div>
+                <p class="text-sm sm:text-base text-gray-600 leading-relaxed mb-2">मालमत्ता नोंद, रचना तपशील आणि मोजमाप नोंदणी.</p>
+                <ul class="mt-2 text-xs sm:text-sm text-gray-500 space-y-1 flex-1">
+                    <li>✔ मालमत्ता नोंद</li>
+                    <li>✔ संरचना तपशील</li>
+                    <li>✔ मोजमाप नोंद</li>
+                    <li>✔ अधिकारी वापरासाठी</li>
+                </ul>
+                <button class="mt-6 w-full bg-purple-600 text-white py-2 rounded-lg font-semibold shadow hover:bg-purple-700 transition">उघडा →</button>
+            </div>
+
+            <!-- Card 4 -->
+            <div onclick="goToRateCalculator()" class="group cursor-pointer bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-200 p-5 sm:p-7 border border-gray-200 flex flex-col transform hover:-translate-y-1 hover:scale-[1.03]">
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="bg-teal-100 text-teal-600 p-4 rounded-full text-2xl shadow">🧮</div>
+                    <h3 class="text-lg sm:text-xl font-bold">भूसंपादन व्यवस्थापन प्रणाली</h3>
+                </div>
+                <p class="text-sm sm:text-base text-gray-600 leading-relaxed mb-2">Entry नोंद भरा आणि दर/भरपाई गणना पटकन करा.</p>
+                <ul class="mt-2 text-xs sm:text-sm text-gray-500 space-y-1 flex-1">
+                    <li>✔ Entry नोंद</li>
+                    <li>✔ स्वयंचलित गणना</li>
+                    <li>✔ भरपाई तपशील</li>
+                    <li>✔ जतन सुविधा</li>
+                </ul>
+                <button class="mt-6 w-full bg-teal-600 text-white py-2 rounded-lg font-semibold shadow hover:bg-teal-700 transition">उघडा →</button>
+            </div>
+        </div>
     </div>
-
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-
-        <div onclick="goToInspection()" class="cursor-pointer bg-white rounded-xl shadow-md hover:shadow-xl transition p-5 border border-gray-200 flex flex-col">
-            <div class="flex items-center gap-3 mb-3">
-                <div class="bg-blue-100 text-blue-600 p-3 rounded-full text-xl">📝</div>
-                <h3 class="text-lg font-semibold">तपासणी साधन</h3>
-            </div>
-            <p class="text-sm text-gray-600 leading-relaxed">क्षेत्र तपासणी, पंचनामा, झाडे व मोजमाप नोंदीसाठी.</p>
-            <ul class="mt-4 text-xs text-gray-500 space-y-1 flex-1">
-                <li>✔ तपासणी नोंद</li>
-                <li>✔ झाडे / मालमत्ता</li>
-                <li>✔ Dynamic row entry</li>
-                <li>✔ अधिकारी वापरासाठी</li>
-            </ul>
-            <button class="mt-4 w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">उघडा →</button>
-        </div>
-
-        <div onclick="goToReadyReckoner()" class="cursor-pointer bg-white rounded-xl shadow-md hover:shadow-xl transition p-5 border border-gray-200 flex flex-col">
-            <div class="flex items-center gap-3 mb-3">
-                <div class="bg-orange-100 text-orange-600 p-3 rounded-full text-xl">💰</div>
-                <h3 class="text-lg font-semibold">रेडी रेकनर दर</h3>
-            </div>
-            <p class="text-sm text-gray-600 leading-relaxed">गावनिहाय मूल्यांकन प्रकार आणि दर नोंदवा.</p>
-            <ul class="mt-4 text-xs text-gray-500 space-y-1 flex-1">
-                <li>✔ मूल्यांकन प्रकार</li>
-                <li>✔ आकारणी श्रेणी</li>
-                <li>✔ दर व एकक</li>
-                <li>✔ तलाठी वापरासाठी</li>
-            </ul>
-            <button class="mt-4 w-full bg-orange-600 text-white py-2 rounded hover:bg-orange-700">उघडा →</button>
-        </div>
-
-        <div onclick="goTo712()" class="cursor-pointer bg-white rounded-xl shadow-md hover:shadow-xl transition p-5 border border-gray-200 flex flex-col">
-            <div class="flex items-center gap-3 mb-3">
-                <div class="bg-green-100 text-green-600 p-3 rounded-full text-xl">📋</div>
-                <h3 class="text-lg font-semibold">७/१२ नोंद</h3>
-            </div>
-            <p class="text-sm text-gray-600 leading-relaxed">गट, शेतकरी आणि आकारणी माहिती नोंदवा.</p>
-            <ul class="mt-4 text-xs text-gray-500 space-y-1 flex-1">
-                <li>✔ गट क्रमांक</li>
-                <li>✔ शेतकरी माहिती</li>
-                <li>✔ आकारणी / दर</li>
-                <li>✔ तलाठी वापरासाठी</li>
-            </ul>
-            <button class="mt-4 w-full bg-green-600 text-white py-2 rounded hover:bg-green-700">उघडा →</button>
-        </div>
-
-    </div>
-
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-
-        <div onclick="goToDocuments()" class="cursor-pointer bg-white rounded-xl shadow-md hover:shadow-xl transition p-5 border border-gray-200 flex flex-col">
-            <div class="flex items-center gap-3 mb-3">
-                <div class="bg-indigo-100 text-indigo-600 p-3 rounded-full text-xl">📁</div>
-                <h3 class="text-lg font-semibold">कागदपत्रे व्यवस्थापन</h3>
-            </div>
-            <p class="text-sm text-gray-600 leading-relaxed">जिल्हा/तालुका/गाव/गट स्तरावर दस्तऐवज अपलोड व व्यवस्थापन.</p>
-            <ul class="mt-4 text-xs text-gray-500 space-y-1 flex-1">
-                <li>✔ सामान्य कागदपत्रे</li>
-                <li>✔ न्यायालयीन प्रकरणे</li>
-                <li>✔ स्थानानुसार नोंद</li>
-                <li>✔ PDF / File अपलोड</li>
-            </ul>
-            <button class="mt-4 w-full bg-indigo-600 text-white py-2 rounded hover:bg-indigo-700">उघडा →</button>
-        </div>
-
-        <div onclick="goToAssetCreation()" class="cursor-pointer bg-white rounded-xl shadow-md hover:shadow-xl transition p-5 border border-gray-200 flex flex-col">
-            <div class="flex items-center gap-3 mb-3">
-                <div class="bg-purple-100 text-purple-600 p-3 rounded-full text-xl">🏗️</div>
-                <h3 class="text-lg font-semibold">मालमत्ता निर्मिती साधन</h3>
-            </div>
-            <p class="text-sm text-gray-600 leading-relaxed">मालमत्ता नोंद, रचना तपशील आणि मोजमाप नोंदणी.</p>
-            <ul class="mt-4 text-xs text-gray-500 space-y-1 flex-1">
-                <li>✔ मालमत्ता नोंद</li>
-                <li>✔ संरचना तपशील</li>
-                <li>✔ मोजमाप नोंद</li>
-                <li>✔ अधिकारी वापरासाठी</li>
-            </ul>
-            <button class="mt-4 w-full bg-purple-600 text-white py-2 rounded hover:bg-purple-700">उघडा →</button>
-        </div>
-
-        <div onclick="goToRateCalculator()" class="cursor-pointer bg-white rounded-xl shadow-md hover:shadow-xl transition p-5 border border-gray-200 flex flex-col">
-            <div class="flex items-center gap-3 mb-3">
-                <div class="bg-teal-100 text-teal-600 p-3 rounded-full text-xl">🧮</div>
-                <h3 class="text-lg font-semibold">Rate Calculator</h3>
-            </div>
-            <p class="text-sm text-gray-600 leading-relaxed">Entry नोंद भरा आणि दर/भरपाई गणना पटकन करा.</p>
-            <ul class="mt-4 text-xs text-gray-500 space-y-1 flex-1">
-                <li>✔ Entry नोंद</li>
-                <li>✔ स्वयंचलित गणना</li>
-                <li>✔ भरपाई तपशील</li>
-                <li>✔ जतन सुविधा</li>
-            </ul>
-            <button class="mt-4 w-full bg-teal-600 text-white py-2 rounded hover:bg-teal-700">उघडा →</button>
-        </div>
-
-    </div>
-
 </div>
 
 <script>
-    function goToInspection() { window.location.href = "/tools/inspection/"; }
-    function goToReadyReckoner() { window.location.href = "/tools/ready-reckoner/"; }
-    function goTo712() { window.location.href = "/tools/712/"; }
+    function goToInspection() { window.location.href = "/inspections/"; }
     function goToDocuments() { window.location.href = "/tools/documents/"; }
-    function goToAssetCreation() { window.location.href = "/tools/asset-creation/"; }
-    function goToRateCalculator() { window.location.href = "/tools/add-entry/"; }
+    function goToAssetCreation() { window.location.href = "/tools/asset-list/"; }
+    function goToRateCalculator() { window.location.href = "/tools/712/list/"; }
 </script>
 
 {% endblock %}

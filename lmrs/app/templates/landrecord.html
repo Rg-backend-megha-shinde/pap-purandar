@@ -1,559 +1,589 @@
 {% extends "base.html" %}
 
 {% block content %}
-
-<div class="max-w-4xl mx-auto bg-white p-6 border border-gray-300 mt-6 rounded-lg shadow">
-
-    <!-- HEADER -->
-    <h2 class="text-center font-bold text-xl underline">
+<style>
+    .tool-tabs-shell {
+        border: 1px solid #d8e4f2;
+        background: #f8fbff;
+        border-radius: 0.65rem;
+        padding: 0.4rem 0.55rem 0;
+        margin-bottom: 1rem;
+    }
+    .tool-tabs {
+        display: flex;
+        align-items: flex-end;
+        gap: 0.4rem;
+        flex-wrap: wrap;
+    }
+    .tool-tab-link {
+        display: inline-block;
+        margin-bottom: -1px;
+        padding: 0.7rem 1.1rem;
+        border: 1px solid transparent;
+        border-radius: 0.5rem 0.5rem 0 0;
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: #6b7d99;
+        line-height: 1;
+        transition: all 120ms ease;
+    }
+    .tool-tab-link:hover { color: #213a63; }
+    .tool-tab-link.is-active {
+        background: #ffffff;
+        color: #125fcb;
+        border-color: #cad8ea;
+        box-shadow: 0 1px 3px rgba(18, 95, 203, 0.15);
+    }
+    .dropzone-active {
+        border-color: #2563eb !important;
+        background: #eff6ff !important;
+    }
+    @media (max-width: 640px) {
+        .tool-tab-link {
+            padding: 0.6rem 0.85rem;
+            font-size: 0.85rem;
+        }
+    }
+</style>
+<div class="w-full px-2 sm:px-3 md:px-4 py-4">
+    <div class="tool-tabs-shell">
+        <nav class="tool-tabs" aria-label="Tool views">
+            <a href="{% url 'land_record_712_list' %}" class="tool-tab-link is-active">७/१२ उतार नोंद</a>
+            <a href="{% url 'ready_reckoner_list' %}" class="tool-tab-link">रेडी रेकनर दर</a>
+            <a href="{% url 'village_info' %}" class="tool-tab-link">गावाची माहिती</a>
+            <a href="{% url 'add_entry' %}" class="tool-tab-link">नुकसान भरपाई नोंद</a>
+            <a href="{% url 'process_chart_form' %}" class="tool-tab-link">भूसंपादन प्रक्रिया</a>
+        </nav>
+    </div>
+<div class="w-full mx-auto bg-white p-3 sm:p-4 md:p-6 border border-gray-300 mt-4 sm:mt-6 rounded-lg shadow">
+    <h2 class="text-center font-bold text-xl underline mb-2">
         ७/१२ उतारा नोंद
     </h2>
-    <p class="text-center text-sm mt-1 text-gray-500">
+
+    <p class="text-center text-sm mb-6">
         जमीन नोंदवही माहिती भरा
     </p>
 
-    <form method="POST" enctype="multipart/form-data" class="mt-6">
+    {% if error_message %}
+        <div class="mb-4 rounded border border-red-300 bg-red-50 p-3 text-sm font-semibold text-red-700">
+            {{ error_message }}
+        </div>
+    {% endif %}
+
+    <div id="clientErrorBox" class="mb-4 hidden rounded border border-red-300 bg-red-50 p-3 text-sm text-red-700"></div>
+    <div id="clientSuccessBox" class="mb-4 hidden rounded border border-green-300 bg-green-50 p-3 text-sm text-green-700"></div>
+
+    <form method="POST" enctype="multipart/form-data" id="landRecordForm" class="mt-6">
         {% csrf_token %}
 
-        <!-- LOCATION SECTION -->
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
-
-            <div>
-                <label class="font-semibold">जिल्हा</label>
-                <select id="district" name="district" required class="w-full border p-2 rounded focus:ring-2 focus:ring-green-400">
-                    <option value="">जिल्हा निवडा</option>
-                </select>
-            </div>
-
-            <div>
-                <label class="font-semibold">तालुका</label>
-                <select id="taluka" name="taluka" required class="w-full border p-2 rounded focus:ring-2 focus:ring-green-400">
-                    <option value="">तालुका निवडा</option>
-                </select>
-            </div>
-
-            <div>
-                <label class="font-semibold">गाव</label>
-                <select id="village" name="village" required class="w-full border p-2 rounded focus:ring-2 focus:ring-green-400">
-                    <option value="">गाव निवडा</option>
-                </select>
-            </div>
-
-            <div>
-                <label class="font-semibold">गट क्रमांक</label>
-                <select id="gut" name="gut_number" required class="w-full border p-2 rounded focus:ring-2 focus:ring-green-400">
-                    <option value="">गट क्रमांक निवडा</option>
-                </select>
-            </div>
-
-        </div>
-
-        <!-- FARMER & LAND DETAILS -->
-        <div class="mt-6 border-t pt-4">
-            <h3 class="font-semibold text-sm text-gray-700 mb-3">शेतकरी माहिती</h3>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-
-                <div class="md:col-span-2">
-                    <div class="flex gap-2 mb-1">
-                        <span class="font-semibold flex-1">शेतकऱ्यांची नावे</span>
-                        <span class="font-semibold w-36 text-center">मूळ क्षेत्र</span>
-                        <span class="font-semibold w-36 text-center">पोटखराबा</span>
-                        <span class="w-8"></span>
-                    </div>
-                    <div id="farmer-list" class="space-y-2">
-                        <div class="flex gap-2 items-center">
-                            <input type="text" name="farmer_name[]" required
-                                placeholder="पूर्ण नाव टाका"
-                                class="flex-1 border p-2 rounded focus:ring-2 focus:ring-green-400">
-                            <input type="text" name="total_area[]" placeholder="उदा. 1-65"
-                                class="w-36 border p-2 rounded focus:ring-2 focus:ring-green-400">
-                            <input type="text" name="potkharaba[]" placeholder="उदा. 0-53"
-                                class="w-36 border p-2 rounded focus:ring-2 focus:ring-green-400">
-                            <button type="button" onclick="removeFarmer(this)"
-                                class="text-red-500 font-bold px-2 hidden">✕</button>
-                        </div>
-                    </div>
-                    <button type="button" onclick="addFarmer()"
-                        class="mt-2 text-sm text-green-700 border border-green-500 px-3 py-1 rounded hover:bg-green-50">
-                        + शेतकरी जोडा
-                    </button>
-                </div>
-
+        <div class="border rounded-lg p-4 bg-gray-50 mb-6">
+            <h3 class="font-bold text-lg mb-4">१. स्थान माहिती</h3>
+            <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
                 <div>
-                    <label class="font-semibold">मूल्यांकन प्रकार (Assessment Type)</label>
-                    <select id="assessment_type" name="assessment_type" class="w-full border p-2 rounded focus:ring-2 focus:ring-green-400">
-                        <option value="">गाव निवडल्यावर दिसेल</option>
+                    <label class="font-semibold">जिल्हा</label>
+                    <select id="district" name="district" required class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-400">
+                        <option value="">जिल्हा निवडा</option>
                     </select>
                 </div>
 
                 <div>
-                    <label class="font-semibold">रेडी रेकनर वर्ष</label>
-                    <select id="rate_year_select" name="rate_year" class="w-full border p-2 rounded focus:ring-2 focus:ring-green-400">
-                        <option value="20252026" selected>20252026</option>
+                    <label class="font-semibold">तालुका</label>
+                    <select id="taluka" name="taluka" required class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-400">
+                        <option value="">तालुका निवडा</option>
                     </select>
                 </div>
 
-                <div class="md:col-span-2">
-                    <label class="font-semibold">आकारणी</label>
-                    <input type="text" id="aakarnee" name="aakarnee"
-                        placeholder="उदा. 10.1.1"
-                        class="w-full border p-2 rounded focus:ring-2 focus:ring-green-400">
+                <div>
+                    <label class="font-semibold">गाव</label>
+                    <select id="village" name="village" required class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-400">
+                        <option value="">गाव निवडा</option>
+                    </select>
                 </div>
 
-                <div class="md:col-span-2">
-                    <label class="font-semibold">लागू दर (Rate Applied)</label>
-                    <input type="text" id="rate_applied" name="rate_applied"
-                        placeholder="आकारणी भरल्यावर आपोआप भरेल"
-                        class="w-full border p-2 rounded bg-gray-50 focus:ring-2 focus:ring-green-400">
+                <div>
+                    <label class="font-semibold">गट क्रमांक</label>
+                    <select id="gut" name="gut_number" required class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-400">
+                        <option value="">गट क्रमांक निवडा</option>
+                    </select>
                 </div>
-
             </div>
         </div>
 
-        <!-- DOCUMENT UPLOAD SECTION -->
-        <div class="mt-6 border-t pt-4">
-            <label class="font-semibold text-sm text-gray-700 mb-3 block">दस्तऐवज अपलोड करा (Document Upload)</label>
-            
-            <!-- File Upload Container -->
-            <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 bg-gray-50 hover:bg-gray-100 transition-colors duration-200" id="dropZone">
-                <div class="text-center">
-                    <!-- Upload Icon -->
-                    <div class="mx-auto w-16 h-16 mb-4 flex items-center justify-center bg-green-100 rounded-full">
-                        <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
-                        </svg>
+        <div class="border rounded-lg p-4 bg-gray-50 mb-6">
+            <h3 class="font-bold text-lg mb-4">२. ७/१२ HTML फाईल अपलोड</h3>
+            <div class="flex flex-col items-center justify-center">
+                <div id="dropZone712" class="w-full max-w-xl border-2 border-dashed border-gray-400 rounded-lg p-6 bg-white text-center transition">
+                    <p class="text-sm font-semibold text-gray-700 mb-1">७/१२ HTML फाईल निवडा</p>
+                    <p id="file712Name" class="text-xs text-gray-500 mb-4">कोणतीही फाईल निवडलेली नाही</p>
+                    <input type="file" id="document_712" name="document_712" accept=".html,.htm" class="hidden">
+                    <div class="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center justify-center gap-2">
+                        <button type="button" id="chooseFileBtn" class="bg-gray-600 hover:bg-gray-700 text-white px-5 py-2 rounded-md shadow-sm transition duration-200">
+                            फाईल निवडा
+                        </button>
+                        <button type="button" id="fetchFromHtmlBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-md shadow-sm transition duration-200">
+                            माहिती भरा
+                        </button>
+                        <button type="button" id="viewUploadedFileBtn" class="hidden bg-slate-600 hover:bg-slate-700 text-white px-5 py-2 rounded-md shadow-sm transition duration-200">
+                            View file
+                        </button>
                     </div>
-                    
-                    <h3 class="text-base font-semibold text-gray-700 mb-2">फाइल्स निवडा किंवा येथे ड्रॅग करा</h3>
-                    <p class="text-sm text-gray-500 mb-4">PDF, JPG, PNG, DOC, DOCX (प्रत्येक कमाल 5MB)</p>
-                    
-                    <!-- Hidden File Input -->
-                    <input type="file" id="documents" name="documents" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" multiple class="hidden">
-                    
-                    <!-- Browse Button -->
-                    <button type="button" onclick="document.getElementById('documents').click()" 
-                        class="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors duration-200">
-                        फाइल निवडा
-                    </button>
                 </div>
             </div>
-            
-            <!-- Error Message -->
-            <p id="file-error" class="text-sm text-red-600 mt-2 hidden"></p>
-            
-            <!-- Selected Files List -->
-            <div id="filesList" class="mt-4 space-y-2 hidden">
-                <h4 class="text-sm font-semibold text-gray-700 mb-2">निवडलेल्या फाइल्स:</h4>
-                <div id="filesContainer" class="space-y-2"></div>
+
+            <div id="fetchLoader" class="hidden mt-4 w-full max-w-xl mx-auto">
+                <div class="flex items-center justify-between text-xs text-gray-600 mb-1">
+                    <span>HTML मधून डेटा fetch होत आहे...</span>
+                    <span id="fetchProgressLabel">0%</span>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+                    <div id="fetchProgressBar" class="bg-blue-600 h-2 rounded-full" style="width: 0%"></div>
+                </div>
             </div>
         </div>
 
-        <!-- BUTTONS -->
-        <div class="flex gap-3 mt-6">
-            <button type="button" onclick="window.history.back()"
-                class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded">
-                ← मागे जा
+        <div id="khataSection" class="border rounded-lg p-4 bg-gray-50 mb-6 hidden">
+            <h3 class="font-bold text-lg mb-4">३. ७/१२ माहिती</h3>
+
+            <div class="overflow-x-auto">
+                <table class="w-full border text-sm text-center border-collapse" id="khata-table">
+                    <thead class="bg-gray-100 font-semibold">
+                        <tr>
+                            <th class="border p-2">गट नंबर/सर्वे नंबर</th>
+                            <th class="border p-2">PUID/ULIP नं</th>
+                            <th class="border p-2">खाता नं</th>
+                            <th class="border p-2">खाता क्षेत्र</th>
+                            <th class="border p-2">जिरायत</th>
+                            <th class="border p-2">बागायत</th>
+                            <th class="border p-2">पोटखराब</th>
+                            <th class="border p-2">आकार</th>
+                            <th class="border p-2">आकारणी</th>
+                            <th class="border p-2">एकूण क्षेत्र</th>
+                            <th class="border p-2">भोगवटादाराचे नांव</th>
+                            <th class="border p-2">कुळ, खंड व इतर अधिकार</th>
+                        </tr>
+                    </thead>
+                    <tbody id="khata-rows"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="flex flex-col sm:flex-row gap-3 mt-6 border-t pt-6 justify-center">
+            <button type="button" onclick="window.history.back()" class="bg-gray-600 hover:bg-gray-700 text-white px-5 py-2 rounded-md shadow-sm transition duration-200">
+                मागे जा
             </button>
-            <button type="submit"
-                class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded">
+
+            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-md shadow-sm transition duration-200">
                 सबमिट करा
             </button>
-            <a href="{% url 'land_record_712_list' %}"
-                class="bg-gray-700 hover:bg-gray-800 text-white px-4 py-2 rounded">
+
+            <a href="{% url 'land_record_712_list' %}" class="bg-gray-800 hover:bg-gray-900 text-white px-5 py-2 rounded-md">
                 नोंदी पहा
             </a>
         </div>
-
     </form>
+</div>
 
+<!-- Modal for कुळ, खंड व इतर अधिकार -->
+<div id="kulKhandModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="bg-white rounded-lg max-w-4xl w-full max-h-[80vh] overflow-y-auto">
+            <div class="flex justify-between items-center p-4 border-b">
+                <h3 class="text-lg font-semibold">कुळ, खंड व इतर अधिकार</h3>
+                <button onclick="closeKulKhandModal()" class="text-gray-500 hover:text-gray-700">
+                    <span class="text-2xl">&times;</span>
+                </button>
+            </div>
+            <div class="p-4">
+                <div class="bg-gray-50 p-4 rounded border">
+                    <div id="kulKhandContent" class="whitespace-pre-wrap text-sm"></div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 <script>
+function showKulKhandInfo(_ignored, kulKhandData) {
+    const modal = document.getElementById('kulKhandModal');
+    const contentEl = document.getElementById('kulKhandContent');
 
-let fullData = [];
-
-fetch('/api/location-data/')
-    .then(res => res.json())
-    .then(data => {
-        fullData = data.villages;
-        let districtDropdown = document.getElementById("district");
-        let districts = [...new Set(fullData.map(v => v.district))];
-        districts.forEach(d => {
-            if (d) districtDropdown.add(new Option(d, d));
-        });
-    });
-
-document.getElementById("district").addEventListener("change", function () {
-    let district = this.value;
-    let talukaDropdown = document.getElementById("taluka");
-    let villageDropdown = document.getElementById("village");
-    let gutDropdown = document.getElementById("gut");
-
-    talukaDropdown.innerHTML = '<option value="">तालुका निवडा</option>';
-    villageDropdown.innerHTML = '<option value="">गाव निवडा</option>';
-    gutDropdown.innerHTML = '<option value="">गट क्रमांक निवडा</option>';
-    resetAssessmentAndYear();
-
-    let talukas = [...new Set(fullData.filter(v => v.district === district).map(v => v.taluka))];
-    talukas.forEach(t => talukaDropdown.add(new Option(t, t)));
-});
-
-document.getElementById("taluka").addEventListener("change", function () {
-    let taluka = this.value;
-    let district = document.getElementById("district").value;
-    let villageDropdown = document.getElementById("village");
-    let gutDropdown = document.getElementById("gut");
-
-    villageDropdown.innerHTML = '<option value="">गाव निवडा</option>';
-    gutDropdown.innerHTML = '<option value="">गट क्रमांक निवडा</option>';
-    resetAssessmentAndYear();
-
-    let uniqueVillages = [...new Set(
-        fullData.filter(v => v.taluka === taluka && v.district === district).map(v => v.village_name)
-    )];
-    uniqueVillages.forEach(v => villageDropdown.add(new Option(v, v)));
-});
-
-document.getElementById("village").addEventListener("change", function () {
-    let village = this.value;
-    let gutDropdown = document.getElementById("gut");
-
-    gutDropdown.innerHTML = '<option value="">गट क्रमांक निवडा</option>';
-    resetAssessmentAndYear();
-    if (!village) return;
-
-    fetch(`/api/gut-numbers/${village}/`)
-        .then(res => res.json())
-        .then(data => {
-            data.gut_numbers.forEach(g => gutDropdown.add(new Option(g, g)));
-        });
-
-    fetch(`/api/assessment-types/${village}/`)
-        .then(res => res.json())
-        .then(data => {
-            let assessmentDropdown = document.getElementById("assessment_type");
-            assessmentDropdown.innerHTML = '<option value="">मूल्यांकन प्रकार निवडा</option>';
-            data.assessment_types.forEach(t => assessmentDropdown.add(new Option(t, t)));
-        });
-});
-
-document.getElementById("assessment_type").addEventListener("change", function () {
-    let village = document.getElementById("village").value;
-    let assessmentType = this.value;
-    
-    // Clear rate data and applied rate
-    rateData = [];
-    document.getElementById('rate_applied').value = '';
-    
-    if (!village || !assessmentType) return;
-
-    fetch(`/api/years/${village}/${encodeURIComponent(assessmentType)}/`)
-        .then(res => res.json())
-        .then(data => {
-            let yearDropdown = document.getElementById("rate_year_select");
-            if (data.years && data.years.length > 0) {
-                yearDropdown.innerHTML = '';
-                // Show years exactly as they are in the database
-                data.years.forEach(y => yearDropdown.add(new Option(y, y)));
-                // Select first year by default
-                yearDropdown.selectedIndex = 0;
-                // Fetch rates immediately after populating years
-                fetchRates();
-            } else {
-                // Keep default year if no years found
-                yearDropdown.innerHTML = '<option value="20252026" selected>20252026</option>';
-                // Try to fetch rates with default year
-                fetchRates();
-            }
-        });
-});
-
-document.getElementById("rate_year_select").addEventListener("change", function () {
-    fetchRates();
-});
-
-let rateData = [];
-
-function fetchRates() {
-    const village = document.getElementById("village").value;
-    const assessmentType = document.getElementById("assessment_type").value;
-    const year = document.getElementById("rate_year_select").value;
-    
-    console.log('Fetching rates for:', { village, assessmentType, year });
-    
-    rateData = [];
-    document.getElementById('rate_applied').value = '';
-    
-    if (!village || !assessmentType || !year) {
-        console.log('Missing required fields for rate fetch');
-        return;
-    }
-
-    fetch(`/api/rates/${village}/${encodeURIComponent(assessmentType)}/?year=${encodeURIComponent(year)}`)
-        .then(res => res.json())
-        .then(data => {
-            console.log('Rates fetched:', data.rates);
-            rateData = data.rates;
-            applyRate();
-        })
-        .catch(error => {
-            console.error('Error fetching rates:', error);
-        });
-}
-
-document.getElementById("aakarnee").addEventListener("input", applyRate);
-
-function applyRate() {
-    let aakarnee = parseFloat(document.getElementById("aakarnee").value);
-    let rateField = document.getElementById("rate_applied");
-    
-    console.log('Applying rate for aakarnee:', aakarnee, 'Available rates:', rateData);
-    
-    rateField.value = '';
-    
-    if (isNaN(aakarnee) || rateData.length === 0) {
-        console.log('Cannot apply rate - invalid aakarnee or no rate data');
-        return;
-    }
-    
-    let match = rateData.find(r => aakarnee >= r.assessment_range_min && aakarnee <= r.assessment_range_max);
-    
-    if (match) {
-        console.log('Rate matched:', match);
-        rateField.value = match.rate;
+    if (kulKhandData && kulKhandData.trim() && kulKhandData !== 'Not available') {
+        contentEl.textContent = kulKhandData;
     } else {
-        console.log('No matching rate found for aakarnee:', aakarnee);
+        contentEl.textContent = 'Information not available';
+    }
+
+    modal.classList.remove('hidden');
+}
+
+function showKulKhandInfoFromButton(button) {
+    const kulKhandData = button.getAttribute('data-kul-khand');
+    showKulKhandInfo('', kulKhandData);
+}
+
+function closeKulKhandModal() {
+    document.getElementById('kulKhandModal').classList.add('hidden');
+}
+
+// Close modal when clicking outside
+document.getElementById('kulKhandModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeKulKhandModal();
+    }
+});
+
+let htmlDataValidated = false;
+let loaderInterval = null;
+
+const formEl = document.getElementById('landRecordForm');
+const districtEl = document.getElementById('district');
+const talukaEl = document.getElementById('taluka');
+const villageEl = document.getElementById('village');
+const gutEl = document.getElementById('gut');
+const fileInputEl = document.getElementById('document_712');
+const fileNameEl = document.getElementById('file712Name');
+const chooseFileBtnEl = document.getElementById('chooseFileBtn');
+const dropZone712El = document.getElementById('dropZone712');
+const fetchBtnEl = document.getElementById('fetchFromHtmlBtn');
+const viewUploadedFileBtnEl = document.getElementById('viewUploadedFileBtn');
+const errorBoxEl = document.getElementById('clientErrorBox');
+const successBoxEl = document.getElementById('clientSuccessBox');
+const loaderEl = document.getElementById('fetchLoader');
+const loaderBarEl = document.getElementById('fetchProgressBar');
+const loaderLabelEl = document.getElementById('fetchProgressLabel');
+const khataSectionEl = document.getElementById('khataSection');
+const MARATHI_NA = 'उपलब्ध नाही';
+
+function showError(message) {
+    successBoxEl.classList.add('hidden');
+    errorBoxEl.textContent = message;
+    errorBoxEl.classList.remove('hidden');
+}
+
+function showSuccess(message) {
+    errorBoxEl.classList.add('hidden');
+    successBoxEl.textContent = message;
+    successBoxEl.classList.remove('hidden');
+}
+
+function clearMessages() {
+    errorBoxEl.classList.add('hidden');
+    successBoxEl.classList.add('hidden');
+}
+
+function setLoading(isLoading) {
+    if (!isLoading) {
+        loaderEl.classList.add('hidden');
+        if (loaderInterval) {
+            clearInterval(loaderInterval);
+            loaderInterval = null;
+        }
+        loaderBarEl.style.width = '100%';
+        loaderLabelEl.textContent = '100%';
+        return;
+    }
+
+    let progress = 0;
+    loaderEl.classList.remove('hidden');
+    loaderBarEl.style.width = '0%';
+    loaderLabelEl.textContent = '0%';
+
+    if (loaderInterval) clearInterval(loaderInterval);
+    loaderInterval = setInterval(() => {
+        progress = Math.min(progress + 7, 90);
+        loaderBarEl.style.width = `${progress}%`;
+        loaderLabelEl.textContent = `${progress}%`;
+    }, 150);
+}
+
+function normalizeText(value) {
+    return String(value || '').trim().toLowerCase();
+}
+
+function yesNoOption(value) {
+    const v = normalizeText(value);
+    if (v === 'yes' || v === 'होय' || v === 'hoy') return 'Yes';
+    if (v === 'no' || v === 'नाही' || v === 'nahi') return 'No';
+    return '';
+}
+
+function withMarathiNA(value) {
+    if (value === null || value === undefined) return MARATHI_NA;
+    const text = String(value).trim();
+    return text === '' ? MARATHI_NA : text;
+}
+
+function createKhataRow(data = {}) {
+    const tr = document.createElement('tr');
+    const kulKhandData = (data.kul_khand_other_rights || '').replace(/'/g, "&#39;").replace(/"/g, "&quot;");
+    const holderNameFull = withMarathiNA(data.holder_name);
+    const holderNameShort = holderNameFull.length > 45 ? `${holderNameFull.slice(0, 45)}...` : holderNameFull;
+    tr.innerHTML = `
+        <td class="border px-1 py-1"><input type="text" name="gut_number_row[]" value="${withMarathiNA(data.gut_number)}" class="w-24 border-0 p-1 text-xs focus:ring-1 focus:ring-green-400 rounded"></td>
+        <td class="border px-1 py-1"><input type="text" name="puid_ulip_no[]" value="${withMarathiNA(data.puid_ulip_no)}" class="w-28 border-0 p-1 text-xs focus:ring-1 focus:ring-green-400 rounded"></td>
+        <td class="border px-1 py-1"><input type="text" name="khata_number[]" value="${withMarathiNA(data.khata_number)}" class="w-20 border-0 p-1 text-xs focus:ring-1 focus:ring-green-400 rounded"></td>
+        <td class="border px-1 py-1"><input type="text" name="khata_area[]" value="${withMarathiNA(data.khata_area)}" class="w-16 border-0 p-1 text-xs focus:ring-1 focus:ring-green-400 rounded"></td>        
+<td class="border px-1 py-1"><input type="text" name="jirayit[]" value="${withMarathiNA(data.jirayit)}" class="w-20 border-0 p-1 text-xs focus:ring-1 focus:ring-green-400 rounded"></td>
+        <td class="border px-1 py-1"><input type="text" name="bagayat[]" value="${withMarathiNA(data.bagayat)}" class="w-20 border-0 p-1 text-xs focus:ring-1 focus:ring-green-400 rounded"></td>
+        <td class="border px-1 py-1"><input type="text" name="potkharaba[]" value="${withMarathiNA(data.potkharaba)}" class="w-20 border-0 p-1 text-xs focus:ring-1 focus:ring-green-400 rounded"></td>
+        <td class="border px-1 py-1"><input type="text" name="aakar[]" value="${withMarathiNA(data.aakar)}" class="w-16 border-0 p-1 text-xs focus:ring-1 focus:ring-green-400 rounded"></td>
+        <td class="border px-1 py-1"><input type="text" name="aakarni[]" value="${withMarathiNA(data.aakarni)}" class="w-16 border-0 p-1 text-xs focus:ring-1 focus:ring-green-400 rounded"></td>
+        <td class="border px-1 py-1"><input type="text" name="total_area[]" value="${withMarathiNA(data.total_area)}" class="w-20 border-0 p-1 text-xs focus:ring-1 focus:ring-green-400 rounded"></td>
+        <td class="border px-1 py-1"><span class="inline-block w-44 truncate text-xs align-middle" title="${holderNameFull.replace(/"/g, '&quot;')}">${holderNameShort}</span><input type="hidden" name="holder_name[]" value="${holderNameFull.replace(/"/g, '&quot;')}"></td>
+        <td class="border px-1 py-1 text-center"><button type="button" data-kul-khand="${kulKhandData}" onclick="showKulKhandInfoFromButton(this)" class="bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded text-xs">View</button></td>
+    `;
+    return tr;
+}
+
+function addKhataRow(data = {}) {
+    const tbody = document.getElementById('khata-rows');
+    tbody.appendChild(createKhataRow(data));
+}
+
+window.addKhataRow = addKhataRow;
+
+function setRows(rows) {
+    const tbody = document.getElementById('khata-rows');
+    tbody.innerHTML = '';
+
+    if (!rows || !rows.length) {
+        khataSectionEl.classList.add('hidden');
+        return;
+    }
+
+    rows.forEach(row => addKhataRow(row));
+    khataSectionEl.classList.remove('hidden');
+}
+
+function clearLowerDropdowns(fromLevel) {
+    if (fromLevel === 'district') {
+        talukaEl.innerHTML = '<option value="">तालुका निवडा</option>';
+        villageEl.innerHTML = '<option value="">गाव निवडा</option>';
+        gutEl.innerHTML = '<option value="">गट क्रमांक निवडा</option>';
+    }
+    if (fromLevel === 'taluka') {
+        villageEl.innerHTML = '<option value="">गाव निवडा</option>';
+        gutEl.innerHTML = '<option value="">गट क्रमांक निवडा</option>';
+    }
+    if (fromLevel === 'village') {
+        gutEl.innerHTML = '<option value="">गट क्रमांक निवडा</option>';
     }
 }
 
-function resetAssessmentAndYear() {
-    document.getElementById("assessment_type").innerHTML = '<option value="">गाव निवडल्यावर दिसेल</option>';
-    resetYearAndRate();
-}
-
-function resetYearAndRate() {
-    document.getElementById("rate_year_select").innerHTML = '<option value="20252026" selected>20252026</option>';
-    rateData = [];
-    document.getElementById('rate_applied').value = '';
-}
-
-function addFarmer() {
-    const list = document.getElementById('farmer-list');
-    const row = document.createElement('div');
-    row.className = 'flex gap-2 items-center';
-    row.innerHTML = `<input type="text" name="farmer_name[]" placeholder="पूर्ण नाव टाका" class="flex-1 border p-2 rounded focus:ring-2 focus:ring-green-400">
-        <input type="text" name="total_area[]" placeholder="मूळ क्षेत्र (उदा. 1-65)" class="w-36 border p-2 rounded focus:ring-2 focus:ring-green-400">
-        <input type="text" name="potkharaba[]" placeholder="पोटखराबा (उदा. 0-53)" class="w-36 border p-2 rounded focus:ring-2 focus:ring-green-400">
-        <button type="button" onclick="removeFarmer(this)" class="text-red-500 font-bold px-2">✕</button>`;
-    list.appendChild(row);
-}
-
-function removeFarmer(btn) {
-    const list = document.getElementById('farmer-list');
-    if (list.children.length > 1) btn.parentElement.remove();
-}
-
-// File Upload Handler with Drag & Drop and Progress
-(function() {
-    const dropZone = document.getElementById('dropZone');
-    const fileInput = document.getElementById('documents');
-    const fileError = document.getElementById('file-error');
-    const filesList = document.getElementById('filesList');
-    const filesContainer = document.getElementById('filesContainer');
-    const maxSize = 5 * 1024 * 1024; // 5MB
-    let selectedFiles = [];
-
-    // Prevent default drag behaviors
-    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-        dropZone.addEventListener(eventName, preventDefaults, false);
-        document.body.addEventListener(eventName, preventDefaults, false);
+function addSelectOptions(selectEl, items = []) {
+    items.forEach(item => {
+        const value = typeof item === 'string' ? item : (item.value || '');
+        const label = typeof item === 'string' ? item : (item.label || item.value || '');
+        if (!value) return;
+        selectEl.add(new Option(label, value));
     });
+}
 
-    function preventDefaults(e) {
+async function loadDistrictsFor712() {
+    districtEl.innerHTML = '<option value="">जिल्हा निवडा</option>';
+    clearLowerDropdowns('district');
+    try {
+        const res = await fetch('/api/locations/?lang=mr');
+        const data = await res.json();
+        addSelectOptions(districtEl, data.data || []);
+    } catch {
+        showError('जिल्हा यादी load करताना समस्या आली.');
+    }
+}
+
+async function loadTalukasFor712(district) {
+    talukaEl.innerHTML = '<option value="">तालुका निवडा</option>';
+    clearLowerDropdowns('taluka');
+    if (!district) return;
+    try {
+        const res = await fetch(`/api/locations/?district=${encodeURIComponent(district)}&lang=mr`);
+        const data = await res.json();
+        addSelectOptions(talukaEl, data.data || []);
+    } catch {
+        showError('तालुका यादी load करताना समस्या आली.');
+    }
+}
+
+async function loadVillagesFor712(district, taluka) {
+    villageEl.innerHTML = '<option value="">गाव निवडा</option>';
+    clearLowerDropdowns('village');
+    if (!district || !taluka) return;
+    try {
+        const res = await fetch(`/api/locations/?district=${encodeURIComponent(district)}&taluka=${encodeURIComponent(taluka)}&lang=mr`);
+        const data = await res.json();
+        addSelectOptions(villageEl, data.data || []);
+    } catch {
+        showError('गाव यादी load करताना समस्या आली.');
+    }
+}
+districtEl.addEventListener('change', function () {
+    htmlDataValidated = false;
+    clearMessages();
+    setRows([]);
+    clearLowerDropdowns('district');
+
+    loadTalukasFor712(this.value);
+});
+
+talukaEl.addEventListener('change', function () {
+    htmlDataValidated = false;
+    clearMessages();
+    setRows([]);
+    clearLowerDropdowns('taluka');
+
+    loadVillagesFor712(districtEl.value, this.value);
+});
+
+villageEl.addEventListener('change', function () {
+    htmlDataValidated = false;
+    clearMessages();
+    setRows([]);
+    clearLowerDropdowns('village');
+
+    const district = districtEl.value;
+    const taluka = talukaEl.value;
+    const village = this.value;
+    if (!district || !taluka || !village) return;
+
+    fetch(`/api/locations/?district=${encodeURIComponent(district)}&taluka=${encodeURIComponent(taluka)}&village=${encodeURIComponent(village)}`)
+        .then(res => res.json())
+        .then(data => {
+            (data.data || []).forEach(g => gutEl.add(new Option(g, g)));
+        })
+        .catch(() => showError('गट क्रमांक load करताना समस्या आली.'));
+});
+
+gutEl.addEventListener('change', function () {
+    htmlDataValidated = false;
+    clearMessages();
+    setRows([]);
+});
+
+chooseFileBtnEl.addEventListener('click', () => fileInputEl.click());
+
+function applySelected712File(file) {
+    htmlDataValidated = false;
+    clearMessages();
+    setRows([]);
+
+    if (!file) {
+        fileNameEl.textContent = 'कोणतीही फाईल निवडलेली नाही';
+        viewUploadedFileBtnEl.classList.add('hidden');
+        return;
+    }
+
+    const dt = new DataTransfer();
+    dt.items.add(file);
+    fileInputEl.files = dt.files;
+
+    fileNameEl.textContent = file ? file.name : 'कोणतीही फाईल निवडलेली नाही';
+    if (file) viewUploadedFileBtnEl.classList.remove('hidden');
+    else viewUploadedFileBtnEl.classList.add('hidden');
+}
+
+fileInputEl.addEventListener('change', function () {
+    const file = this.files && this.files[0];
+    applySelected712File(file);
+});
+
+['dragenter', 'dragover'].forEach(evt => {
+    dropZone712El.addEventListener(evt, function (e) {
         e.preventDefault();
         e.stopPropagation();
+        dropZone712El.classList.add('dropzone-active');
+    });
+});
+['dragleave', 'drop'].forEach(evt => {
+    dropZone712El.addEventListener(evt, function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        dropZone712El.classList.remove('dropzone-active');
+    });
+});
+dropZone712El.addEventListener('drop', function (e) {
+    const dropped = e.dataTransfer?.files?.[0];
+    if (!dropped) return;
+    const name = dropped.name.toLowerCase();
+    if (!(name.endsWith('.html') || name.endsWith('.htm'))) {
+        showError('कृपया फक्त HTML फाईल ड्रॉप करा.');
+        return;
+    }
+    applySelected712File(dropped);
+});
+viewUploadedFileBtnEl.addEventListener('click', function () {
+    const file = fileInputEl.files && fileInputEl.files[0];
+    if (!file) {
+        showError('आधी HTML फाईल निवडा.');
+        return;
+    }
+    const fileUrl = URL.createObjectURL(file);
+    window.open(fileUrl, '_blank');
+});
+
+fetchBtnEl.addEventListener('click', async function () {
+    clearMessages();
+
+    const file = fileInputEl.files && fileInputEl.files[0];
+    if (!districtEl.value || !talukaEl.value || !villageEl.value || !gutEl.value) {
+        showError('कृपया आधी जिल्हा, तालुका, गाव आणि गट क्रमांक निवडा.');
+        return;
+    }
+    if (!file) {
+        showError('कृपया ७/१२ उतार नोंद HTML फाईल निवडा.');
+        return;
     }
 
-    // Highlight drop zone when dragging over it
-    ['dragenter', 'dragover'].forEach(eventName => {
-        dropZone.addEventListener(eventName, () => {
-            dropZone.classList.add('border-green-500', 'bg-green-50');
-        }, false);
-    });
+    const csrfToken = formEl.querySelector('input[name="csrfmiddlewaretoken"]').value;
+    const formData = new FormData();
+    formData.append('district', districtEl.value);
+    formData.append('taluka', talukaEl.value);
+    formData.append('village', villageEl.value);
+    formData.append('gut_number', gutEl.value);
+    formData.append('document_712', file);
 
-    ['dragleave', 'drop'].forEach(eventName => {
-        dropZone.addEventListener(eventName, () => {
-            dropZone.classList.remove('border-green-500', 'bg-green-50');
-        }, false);
-    });
+    setLoading(true);
 
-    // Handle dropped files
-    dropZone.addEventListener('drop', (e) => {
-        const dt = e.dataTransfer;
-        const files = dt.files;
-        handleFiles(files);
-    }, false);
-
-    // Handle selected files from input
-    fileInput.addEventListener('change', (e) => {
-        handleFiles(e.target.files);
-    });
-
-    function handleFiles(files) {
-        fileError.classList.add('hidden');
-        selectedFiles = [];
-        
-        // Validate and add files
-        for (let i = 0; i < files.length; i++) {
-            const file = files[i];
-            
-            if (file.size > maxSize) {
-                fileError.textContent = `"${file.name}" फाइल साइझ 5MB पेक्षा जास्त आहे.`;
-                fileError.classList.remove('hidden');
-                continue;
-            }
-            
-            selectedFiles.push(file);
-        }
-        
-        if (selectedFiles.length > 0) {
-            displayFiles();
-            filesList.classList.remove('hidden');
-        } else {
-            filesList.classList.add('hidden');
-        }
-    }
-
-    function displayFiles() {
-        filesContainer.innerHTML = '';
-        
-        selectedFiles.forEach((file, index) => {
-            const fileItem = createFileItem(file, index);
-            filesContainer.appendChild(fileItem);
+    try {
+        const response = await fetch('/api/land-record-712/parse/', {
+            method: 'POST',
+            headers: { 'X-CSRFToken': csrfToken },
+            body: formData
         });
-    }
 
-    function createFileItem(file, index) {
-        const div = document.createElement('div');
-        div.className = 'bg-white border border-gray-200 rounded-lg p-3 hover:shadow-md transition-shadow duration-200';
-        
-        const fileSize = formatFileSize(file.size);
-        const fileIcon = getFileIcon(file.name);
-        
-        div.innerHTML = `
-            <div class="flex items-center gap-3">
-                <!-- File Icon -->
-                <div class="flex-shrink-0 w-10 h-10 flex items-center justify-center bg-gray-100 rounded-lg">
-                    ${fileIcon}
-                </div>
-                
-                <!-- File Info -->
-                <div class="flex-1 min-w-0">
-                    <p class="text-sm font-medium text-gray-900 truncate">${file.name}</p>
-                    <p class="text-xs text-gray-500">${fileSize}</p>
-                </div>
-                
-                <!-- Remove Button -->
-                <button type="button" onclick="removeFile(${index})" 
-                    class="flex-shrink-0 w-8 h-8 flex items-center justify-center text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors duration-200">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                    </svg>
-                </button>
-            </div>
-            
-            <!-- Progress Bar (hidden initially) -->
-            <div class="mt-2 hidden" id="progress-${index}">
-                <div class="flex items-center gap-2 mb-1">
-                    <span class="text-xs text-gray-600">अपलोड होत आहे...</span>
-                    <span class="text-xs font-medium text-green-600" id="progress-percent-${index}">0%</span>
-                </div>
-                <div class="w-full bg-gray-200 rounded-full h-1.5">
-                    <div class="bg-green-600 h-1.5 rounded-full transition-all duration-300" id="progress-bar-${index}" style="width: 0%"></div>
-                </div>
-            </div>
-        `;
-        
-        return div;
-    }
-
-    function getFileIcon(filename) {
-        const ext = filename.split('.').pop().toLowerCase();
-        
-        const icons = {
-            'pdf': '<svg class="w-6 h-6 text-red-600" fill="currentColor" viewBox="0 0 20 20"><path d="M4 18h12V6h-4V2H4v16zm-2 1V0h12l4 4v16H2v-1z"/></svg>',
-            'doc': '<svg class="w-6 h-6 text-blue-600" fill="currentColor" viewBox="0 0 20 20"><path d="M4 18h12V6h-4V2H4v16zm-2 1V0h12l4 4v16H2v-1z"/></svg>',
-            'docx': '<svg class="w-6 h-6 text-blue-600" fill="currentColor" viewBox="0 0 20 20"><path d="M4 18h12V6h-4V2H4v16zm-2 1V0h12l4 4v16H2v-1z"/></svg>',
-            'jpg': '<svg class="w-6 h-6 text-green-600" fill="currentColor" viewBox="0 0 20 20"><path d="M4 3h12v14H4V3zm2 2v10h8V5H6z"/></svg>',
-            'jpeg': '<svg class="w-6 h-6 text-green-600" fill="currentColor" viewBox="0 0 20 20"><path d="M4 3h12v14H4V3zm2 2v10h8V5H6z"/></svg>',
-            'png': '<svg class="w-6 h-6 text-green-600" fill="currentColor" viewBox="0 0 20 20"><path d="M4 3h12v14H4V3zm2 2v10h8V5H6z"/></svg>',
-        };
-        
-        return icons[ext] || '<svg class="w-6 h-6 text-gray-600" fill="currentColor" viewBox="0 0 20 20"><path d="M4 18h12V6h-4V2H4v16zm-2 1V0h12l4 4v16H2v-1z"/></svg>';
-    }
-
-    function formatFileSize(bytes) {
-        if (bytes === 0) return '0 Bytes';
-        const k = 1024;
-        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-        const i = Math.floor(Math.log(bytes) / Math.log(k));
-        return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
-    }
-
-    // Make removeFile function global
-    window.removeFile = function(index) {
-        selectedFiles.splice(index, 1);
-        
-        // Update the file input
-        const dt = new DataTransfer();
-        selectedFiles.forEach(file => dt.items.add(file));
-        fileInput.files = dt.files;
-        
-        if (selectedFiles.length > 0) {
-            displayFiles();
-        } else {
-            filesList.classList.add('hidden');
+        const data = await response.json();
+        if (!response.ok || !data.success) {
+            throw new Error(data.error || 'HTML मधील डेटा fetch करताना समस्या आली.');
         }
-    };
 
-    // Simulate upload progress on form submit
-    const form = document.querySelector('form');
-    form.addEventListener('submit', function(e) {
-        if (selectedFiles.length > 0) {
-            // Show progress bars
-            selectedFiles.forEach((file, index) => {
-                const progressDiv = document.getElementById(`progress-${index}`);
-                if (progressDiv) {
-                    progressDiv.classList.remove('hidden');
-                    simulateProgress(index);
-                }
-            });
-        }
-    });
-
-    function simulateProgress(index) {
-        const progressBar = document.getElementById(`progress-bar-${index}`);
-        const progressPercent = document.getElementById(`progress-percent-${index}`);
-        
-        if (!progressBar || !progressPercent) return;
-        
-        let progress = 0;
-        const interval = setInterval(() => {
-            progress += Math.random() * 30;
-            if (progress > 100) progress = 100;
-            
-            progressBar.style.width = progress + '%';
-            progressPercent.textContent = Math.round(progress) + '%';
-            
-            if (progress >= 100) {
-                clearInterval(interval);
-            }
-        }, 200);
+        setRows(data.records || []);
+        htmlDataValidated = true;
+        showSuccess(`${data.count || 0} खाता नोंदी यशस्वीरित्या भरल्या.`);
+    } catch (error) {
+        htmlDataValidated = false;
+        setRows([]);
+        showError(error.message || 'डेटा fetch करताना त्रुटी आली.');
+    } finally {
+        setLoading(false);
     }
-})();
+});
 
+formEl.addEventListener('submit', function (e) {
+    const file = fileInputEl.files && fileInputEl.files[0];
+    const hasRows = document.getElementById('khata-rows').rows.length > 0;
+    if (!hasRows) {
+        e.preventDefault();
+        showError('कृपया HTML अपलोड करून "HTML मधून माहिती भरा" वर क्लिक करा.');
+        return;
+    }
+    if (file && !htmlDataValidated) {
+        e.preventDefault();
+        showError('फाईल निवडल्यानंतर आधी "HTML मधून माहिती भरा" करून डेटा validate करा.');
+    }
+});
 
+setRows([]);
+loadDistrictsFor712();
 </script>
-
+</div>
 {% endblock %}
+

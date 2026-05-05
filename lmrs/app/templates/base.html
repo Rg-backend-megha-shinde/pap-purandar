@@ -9,6 +9,8 @@
     <title>Purandar CMS</title>
 
     <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
     <!-- jQuery -->
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 
@@ -24,57 +26,131 @@
 
 <body class="bg-gray-100">
 
-    <!-- ✅ NAVBAR -->
-    <header class="flex justify-between items-center bg-white px-6 py-3 shadow">
-
-        <div class="flex items-center gap-3">
-            <div class="h-9 w-9 rounded-lg bg-white border border-slate-200 shadow-sm overflow-hidden flex items-center justify-center">
-                <img src="{% static 'logo/purandar_airport.png' %}" alt="Purandar Airport logo" class="h-full w-full object-contain p-1">
+    <header class="relative flex flex-wrap items-center justify-between gap-3 bg-white px-4 py-3 shadow sm:px-6">
+        <a href="/" class="flex min-w-0 items-center gap-3">
+            <div class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-blue-600/10 overflow-hidden">
+                <img src="{% static 'logo/ringroad.png' %}" alt="Pune Ring Road logo" class="w-full h-full object-contain p-1">
             </div>
-            <h2 class="font-bold text-lg text-blue-600">
-                Purandar Airport CMS
-            </h2>
+            <span class="min-w-0">
+                <span class="block truncate text-base font-bold text-gray-900 sm:text-lg">Pune Ring Road</span>
+                <span class="hidden text-xs font-medium text-gray-500 sm:block">Land Management System</span>
+            </span>
+        </a>
+
+        <button id="mobileMenuBtn" type="button"
+            class="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-100 md:hidden"
+            aria-label="Open menu" aria-expanded="false" aria-controls="mobileMenu">
+            <span class="material-symbols-outlined text-xl">menu</span>
+        </button>
+
+        <div class="hidden items-center gap-4 md:flex">
+            <nav class="flex items-center gap-2" aria-label="Primary navigation">
+                {% if request.user.is_superuser %}
+                <a href="/" class="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold
+           {% if request.path == '/' %}
+               bg-blue-50 text-blue-700
+           {% else %}
+               text-gray-600 hover:bg-gray-100
+           {% endif %}">
+                    <span class="material-symbols-outlined text-lg">dashboard</span>
+                    Dashboard
+                </a>
+                {% endif %}
+
+                {% if request.user.is_staff %}
+                <a href="/tools/" class="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold
+           {% if '/tools' in request.path %}
+               bg-blue-50 text-blue-700
+           {% else %}
+               text-gray-600 hover:bg-gray-100
+           {% endif %}">
+                    <span class="material-symbols-outlined text-lg">construction</span>
+                    Tools
+                </a>
+                {% endif %}
+            </nav>
+
+            <div class="relative">
+                <button id="accountMenuBtn" type="button"
+                    class="flex items-center gap-3 rounded-lg border border-gray-200 bg-white px-3 py-2 text-left hover:bg-gray-50"
+                    aria-label="Open account menu" aria-expanded="false" aria-controls="accountMenu">
+                    <span
+                        class="flex h-8 w-8 items-center justify-center rounded-full bg-blue-600 text-sm font-bold text-white">
+                        {{ request.user.username|first|upper }}
+                    </span>
+                    <span class="flex flex-col leading-tight">
+                        <span class="max-w-32 truncate text-sm font-semibold text-gray-800">{{ request.user.username }}</span>
+                        {% if request.user.is_superuser %}
+                        <span class="text-[11px] font-medium text-green-700">Admin</span>
+                        {% elif request.user.is_staff %}
+                        <span class="text-[11px] font-medium text-yellow-700">Staff</span>
+                        {% else %}
+                        <span class="text-[11px] font-medium text-gray-500">User</span>
+                        {% endif %}
+                    </span>
+                    <span class="material-symbols-outlined text-lg text-gray-400">expand_more</span>
+                </button>
+
+                <div id="accountMenu"
+                    class="hidden absolute right-0 mt-2 w-44 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-lg">
+                    <a href="/logout/"
+                        class="flex items-center gap-2 px-4 py-3 text-sm font-medium text-red-600 hover:bg-red-50">
+                        <span class="material-symbols-outlined text-lg">logout</span>
+                        Logout
+                    </a>
+                </div>
+            </div>
         </div>
 
-        <div class="flex items-center gap-5">
-
-            <!-- Role Based -->
-            <!-- 🔥 NAV TABS -->
-            <!-- 🔥 NAV TABS -->
-            <div class="flex items-center gap-4">
-
-                <!-- Dashboard → ONLY ADMIN -->
+        <div id="mobileMenu" class="hidden w-full border-t border-gray-100 pt-3 md:hidden">
+            <div class="flex flex-col gap-2">
                 {% if request.user.is_superuser %}
-                <a href="/" class="px-4 py-1 rounded-full text-sm font-semibold
+                <a href="/" class="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold
            {% if request.path == '/' %}
-               bg-blue-600 text-white
+               bg-blue-50 text-blue-700
            {% else %}
-               text-gray-600 hover:bg-gray-200
+               text-gray-600 hover:bg-gray-100
            {% endif %}">
+                    <span class="material-symbols-outlined text-lg">dashboard</span>
                     Dashboard
                 </a>
                 {% endif %}
 
                 <!-- Tools → ADMIN + STAFF -->
                 {% if request.user.is_staff %}
-                <a href="/tools/" class="px-4 py-1 rounded-full text-sm font-semibold
+                <a href="/tools/" class="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold
            {% if '/tools' in request.path %}
-               bg-blue-600 text-white
+               bg-blue-50 text-blue-700
            {% else %}
-               text-gray-600 hover:bg-gray-200
+               text-gray-600 hover:bg-gray-100
            {% endif %}">
+                    <span class="material-symbols-outlined text-lg">construction</span>
                     Tools
                 </a>
                 {% endif %}
 
+                <div class="flex items-center justify-between gap-3 border-t border-gray-100 pt-3">
+                    <div class="flex min-w-0 items-center gap-3">
+                        <span
+                            class="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-blue-600 text-sm font-bold text-white">
+                            {{ request.user.username|first|upper }}
+                        </span>
+                        <span class="min-w-0">
+                            <span class="block truncate text-sm font-semibold text-gray-800">{{ request.user.username }}</span>
+                            {% if request.user.is_superuser %}
+                            <span class="block text-[11px] font-medium text-green-700">Admin</span>
+                            {% elif request.user.is_staff %}
+                            <span class="block text-[11px] font-medium text-yellow-700">Staff</span>
+                            {% endif %}
+                        </span>
+                    </div>
+                    <a href="/logout/" class="inline-flex items-center gap-1 text-sm font-medium text-red-500">
+                        <span class="material-symbols-outlined text-base">logout</span>
+                        Logout
+                    </a>
+                </div>
             </div>
-            <!-- User -->
-            <span>{{ request.user.username }}</span>
-
-            <a href="/logout/" class="text-red-500">Logout</a>
-
         </div>
-
     </header>
 
     <!-- ✅ PAGE CONTENT -->
@@ -84,17 +160,29 @@
     </div>
 
     <script>
-        const menuBtn = document.getElementById("menuBtn");
-        const dropdown = document.getElementById("menuDropdown");
+        const mobileMenuBtn = document.getElementById("mobileMenuBtn");
+        const mobileMenu = document.getElementById("mobileMenu");
 
-        if (menuBtn && dropdown) {
-            menuBtn.addEventListener("click", () => {
-                dropdown.classList.toggle("hidden");
+        if (mobileMenuBtn && mobileMenu) {
+            mobileMenuBtn.addEventListener("click", () => {
+                const isOpen = !mobileMenu.classList.toggle("hidden");
+                mobileMenuBtn.setAttribute("aria-expanded", isOpen ? "true" : "false");
+            });
+        }
+
+        const accountMenuBtn = document.getElementById("accountMenuBtn");
+        const accountMenu = document.getElementById("accountMenu");
+
+        if (accountMenuBtn && accountMenu) {
+            accountMenuBtn.addEventListener("click", () => {
+                const isOpen = !accountMenu.classList.toggle("hidden");
+                accountMenuBtn.setAttribute("aria-expanded", isOpen ? "true" : "false");
             });
 
             document.addEventListener("click", (e) => {
-                if (!menuBtn.contains(e.target) && !dropdown.contains(e.target)) {
-                    dropdown.classList.add("hidden");
+                if (!accountMenuBtn.contains(e.target) && !accountMenu.contains(e.target)) {
+                    accountMenu.classList.add("hidden");
+                    accountMenuBtn.setAttribute("aria-expanded", "false");
                 }
             });
         }

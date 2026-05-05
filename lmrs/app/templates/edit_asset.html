@@ -3,11 +3,14 @@
 
 {% block content %}
 
-<div class="max-w-4xl mx-auto bg-white p-6 border border-gray-300 mt-6 rounded-lg shadow">
+<div class="w-full bg-white p-6 border border-gray-300 mt-6 rounded-lg shadow">
 
     <h2 class="text-center font-bold text-xl underline">
         मालमत्ता संपादन (Edit Asset)
     </h2>
+    {% if village_mr %}
+    <p class="text-center text-sm text-gray-600 mt-2">गाव: {{ village_mr }}</p>
+    {% endif %}
 
     <form method="POST" enctype="multipart/form-data" class="mt-6">
         {% csrf_token %}
@@ -198,71 +201,132 @@
      class="hidden"></div>
 
 <script>
-    let fullData = [];
-
     const assetLocationData = document.getElementById("asset-location-data");
     const selectedDistrict = assetLocationData?.dataset.district || "";
     const selectedTaluka = assetLocationData?.dataset.taluka || "";
     const selectedVillage = assetLocationData?.dataset.village || "";
     const selectedGut = assetLocationData?.dataset.gut || "";
 
-    fetch('/api/location-data/')
-        .then(res => res.json())
-        .then(data => {
-            fullData = data.villages || [];
-            const districtDropdown = document.getElementById("district");
-            const districts = [...new Set(fullData.map(v => v.district))];
-            districtDropdown.innerHTML = '<option value="">जिल्हा निवडा</option>';
-            districts.forEach(d => { if (d) districtDropdown.add(new Option(d, d)); });
-            if (selectedDistrict) {
-                districtDropdown.value = selectedDistrict;
-                loadTalukas(selectedDistrict, selectedTaluka, selectedVillage, selectedGut);
-            }
-        });
+    // Load districts with Marathi names
+    function loadLocationData() {
+        fetch('/api/locations/?lang=mr')
+            .then(res => res.json())
+            .then(data => {
+                const districtDropdown = document.getElementById("district");
+                districtDropdown.innerHTML = '<option value="">जिल्हा निवडा</option>';
+                
+                if (data.level === 'districts' && data.data) {
+                    data.data.forEach(item => {
+                        const option = new Option(item.label, item.value);
+                        districtDropdown.add(option);
+                    });
+                }
+                
+                if (selectedDistrict) {
+                    districtDropdown.value = selectedDistrict;
+                    populateTalukas(selectedDistrict, selectedTaluka, selectedVillage, selectedGut);
+                }
+            })
+            .catch(err => console.error('Error loading districts:', err));
+    }
 
-    function loadTalukas(district, preselectTaluka = "", preselectVillage = "", preselectGut = "") {
+    function populateTalukas(district, preselectTaluka = "", preselectVillage = "", preselectGut = "") {
         const talukaDropdown = document.getElementById("taluka");
         const villageDropdown = document.getElementById("village");
         const gutDropdown = document.getElementById("gut");
+        
         talukaDropdown.innerHTML = '<option value="">तालुका निवडा</option>';
         villageDropdown.innerHTML = '<option value="">गाव निवडा</option>';
         gutDropdown.innerHTML = '<option value="">गट क्रमांक निवडा</option>';
-        const talukas = [...new Set(fullData.filter(v => v.district === district).map(v => v.taluka))];
-        talukas.forEach(t => { if (t) talukaDropdown.add(new Option(t, t)); });
-        if (preselectTaluka) {
-            talukaDropdown.value = preselectTaluka;
-            loadVillages(district, preselectTaluka, preselectVillage, preselectGut);
-        }
-    }
-
-    function loadVillages(district, taluka, preselectVillage = "", preselectGut = "") {
-        const villageDropdown = document.getElementById("village");
-        const gutDropdown = document.getElementById("gut");
-        villageDropdown.innerHTML = '<option value="">गाव निवडा</option>';
-        gutDropdown.innerHTML = '<option value="">गट क्रमांक निवडा</option>';
-        const uniqueVillages = [...new Set(fullData.filter(v => v.district === district && v.taluka === taluka).map(v => v.village_name))];
-        uniqueVillages.forEach(v => { if (v) villageDropdown.add(new Option(v, v)); });
-        if (preselectVillage) {
-            villageDropdown.value = preselectVillage;
-            loadGuts(preselectVillage, preselectGut);
-        }
-    }
-
-    function loadGuts(village, preselectGut = "") {
-        const gutDropdown = document.getElementById("gut");
-        gutDropdown.innerHTML = '<option value="">गट क्रमांक निवडा</option>';
-        if (!village) return;
-        fetch(`/api/gut-numbers/${village}/`)
+        
+        if (!district) return;
+        
+        fetch(`/api/locations/?district=${encodeURIComponent(district)}&lang=mr`)
             .then(res => res.json())
             .then(data => {
-                (data.gut_numbers || []).forEach(g => gutDropdown.add(new Option(g, g)));
-                if (preselectGut) gutDropdown.value = preselectGut;
-            });
+                if (data.level === 'talukas' && data.data) {
+                    data.data.forEach(item => {
+                        const option = new Option(item.label, item.value);
+                        talukaDropdown.add(option);
+                    });
+                }
+                
+                if (preselectTaluka) {
+                    talukaDropdown.value = preselectTaluka;
+                    populateVillages(district, preselectTaluka, preselectVillage, preselectGut);
+                }
+            })
+            .catch(err => console.error('Error loading talukas:', err));
     }
 
-    document.getElementById("district").addEventListener("change", function () { loadTalukas(this.value); });
-    document.getElementById("taluka").addEventListener("change", function () { loadVillages(document.getElementById("district").value, this.value); });
-    document.getElementById("village").addEventListener("change", function () { loadGuts(this.value); });
+    function populateVillages(district, taluka, preselectVillage = "", preselectGut = "") {
+        const villageDropdown = document.getElementById("village");
+        const gutDropdown = document.getElementById("gut");
+        
+        villageDropdown.innerHTML = '<option value="">गाव निवडा</option>';
+        gutDropdown.innerHTML = '<option value="">गट क्रमांक निवडा</option>';
+        
+        if (!district || !taluka) return;
+        
+        fetch(`/api/locations/?district=${encodeURIComponent(district)}&taluka=${encodeURIComponent(taluka)}&lang=mr`)
+            .then(res => res.json())
+            .then(data => {
+                if (data.level === 'villages' && data.data) {
+                    data.data.forEach(item => {
+                        const option = new Option(item.label, item.value);
+                        villageDropdown.add(option);
+                    });
+                }
+                
+                if (preselectVillage) {
+                    villageDropdown.value = preselectVillage;
+                    loadGutNumbers(district, taluka, preselectVillage, preselectGut);
+                }
+            })
+            .catch(err => console.error('Error loading villages:', err));
+    }
+
+    function loadGutNumbers(district, taluka, village, preselectGut = "") {
+        const gutDropdown = document.getElementById("gut");
+        gutDropdown.innerHTML = '<option value="">गट क्रमांक निवडा</option>';
+        
+        if (!district || !taluka || !village) return;
+        
+        fetch(`/api/locations/?district=${encodeURIComponent(district)}&taluka=${encodeURIComponent(taluka)}&village=${encodeURIComponent(village)}`)
+            .then(res => res.json())
+            .then(data => {
+                if (data.level === 'guts' && data.data) {
+                    data.data.forEach(gut => {
+                        const option = new Option(gut, gut);
+                        gutDropdown.add(option);
+                    });
+                }
+                
+                if (preselectGut) {
+                    gutDropdown.value = preselectGut;
+                }
+            })
+            .catch(err => console.error('Error loading guts:', err));
+    }
+
+    // Event listeners
+    document.getElementById("district").addEventListener("change", function() {
+        populateTalukas(this.value);
+    });
+    
+    document.getElementById("taluka").addEventListener("change", function() {
+        const district = document.getElementById("district").value;
+        populateVillages(district, this.value);
+    });
+    
+    document.getElementById("village").addEventListener("change", function() {
+        const district = document.getElementById("district").value;
+        const taluka = document.getElementById("taluka").value;
+        loadGutNumbers(district, taluka, this.value);
+    });
+    
+    // Initialize on page load
+    loadLocationData();
     document.getElementById("documents-browse-btn").addEventListener("click", function () {
         document.getElementById("documents").click();
     });
