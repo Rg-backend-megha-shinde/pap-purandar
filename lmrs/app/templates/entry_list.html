@@ -55,7 +55,7 @@
                                 <span class="ml-1 bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded-full text-[10px]">{{ item.files_count }}</span>
                             </button>
                             <script type="application/json" id="docs-data-{{ item.id }}" class="hidden">
-                            [{% for doc_master in item.documents.all %}{% for attachment in doc_master.attachments.all %}{"url":"{{ attachment.file.url }}","name":"{{ attachment.file.name|display_filename|escapejs }}","date":"{{ attachment.uploaded_at|date:'d/m/Y H:i' }}","size":{{ attachment.file.size }}}{% if not forloop.last or not forloop.parentloop.last %},{% endif %}{% endfor %}{% endfor %}]
+                            [{% for doc_master in item.documents.all %}{% for attachment in doc_master.attachments.all %}{"url":"{{ attachment.file.url }}","name":"{{ attachment.file.name|display_filename|escapejs }}","date":"{{ attachment.uploaded_at|date:'d/m/Y H:i' }}","size":{{ attachment.safe_file_size }}}{% if not forloop.last or not forloop.parentloop.last %},{% endif %}{% endfor %}{% endfor %}]
                             </script>
                         {% else %}
                             <span class="text-gray-400 text-xs">-</span>
