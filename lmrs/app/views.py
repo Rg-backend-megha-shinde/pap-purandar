@@ -314,6 +314,24 @@ def get_land_record_api_headers():
 def normalize_match_text(value):
     return re.sub(r'\s+', ' ', str(value or '')).strip().casefold()
 
+
+def resolve_project_table_name(cursor, *table_candidates, schemas=("purandar_airport", "purandar_airport")):
+    for schema_name in schemas:
+        for table_name in table_candidates:
+            cursor.execute(
+                """
+                SELECT 1
+                FROM information_schema.tables
+                WHERE table_schema = %s
+                  AND table_name = %s
+                LIMIT 1;
+                """,
+                [schema_name, table_name],
+            )
+            if cursor.fetchone():
+                return f"{schema_name}.{table_name}"
+    return None
+
 def build_location_aliases(district, taluka, village):
     """
     Build normalized aliases (English + Marathi) for a selected location.
@@ -2146,7 +2164,7 @@ def login_view(request):
 
         user = authenticate(request, username=username, password=password)
 
-        if user:
+        if user and user.pk:
             active_session = ActiveUserSession.objects.filter(user=user).first()
             if active_session:
                 Session.objects.filter(session_key=active_session.session_key).delete()
@@ -2191,16 +2209,27 @@ def get_locations(request):
         taluka_id = request.GET.get('taluka_id', '').strip()
         village_id = request.GET.get('village_id', '').strip()
         use_marathi = request.GET.get('lang', '').strip().lower() == 'mr'
-        
+
         with connection.cursor() as cursor:
-            # Level 4: Return guts for selected village
+            district_table = resolve_project_table_name(cursor, "prj_district")
+            taluka_table = resolve_project_table_name(cursor, "prj_taluka")
+            village_table = resolve_project_table_name(cursor, "prj_village")
+            gut_table = resolve_project_table_name(cursor, "prj_gut_bd", "prj_gut")
+
+            if not (district_table and taluka_table and village_table):
+                return JsonResponse({'level': 'districts', 'data': []})
+
+            gut_join = f"JOIN {gut_table} e ON d.village_id = e.village_id" if gut_table else ""
+
             if village_id or (district and taluka and village):
-                cursor.execute("""
+                if not gut_table:
+                    return JsonResponse({'level': 'guts', 'data': []})
+                cursor.execute(f"""
                     SELECT DISTINCT e.gut_no
-                    FROM purandar_airport.prj_district a
-                    JOIN purandar_airport.prj_taluka c ON a.district_id = c.district_id
-                    JOIN purandar_airport.prj_village d ON c.taluka_id = d.taluka_id
-                    JOIN purandar_airport.prj_gut_bd e ON d.village_id = e.village_id
+                    FROM {district_table} a
+                    JOIN {taluka_table} c ON a.district_id = c.district_id
+                    JOIN {village_table} d ON c.taluka_id = d.taluka_id
+                    {gut_join}
                     WHERE (
                             (%s <> '' AND d.village_id::text = %s)
                             OR (
@@ -2213,21 +2242,19 @@ def get_locations(request):
                       AND e.gut_no IS NOT NULL
                     ORDER BY e.gut_no;
                 """, [village_id, village_id, village_id, district, taluka, village])
-                guts = [row[0] for row in cursor.fetchall()]
-                return JsonResponse({'level': 'guts', 'data': guts})
-            
-            # Level 3: Return villages for selected taluka
-            elif taluka_id or (district and taluka):
+                return JsonResponse({'level': 'guts', 'data': [row[0] for row in cursor.fetchall()]})
+
+            if taluka_id or (district and taluka):
                 if use_marathi:
-                    cursor.execute("""
+                    cursor.execute(f"""
                         SELECT DISTINCT
                             d.village_id AS id,
                             d.village AS value,
                             COALESCE(NULLIF(vm.village_name_m, ''), d.village) AS label
-                        FROM purandar_airport.prj_district a
-                        JOIN purandar_airport.prj_taluka c ON a.district_id = c.district_id
-                        JOIN purandar_airport.prj_village d ON c.taluka_id = d.taluka_id
-                        JOIN purandar_airport.prj_gut_bd e ON d.village_id = e.village_id
+                        FROM {district_table} a
+                        JOIN {taluka_table} c ON a.district_id = c.district_id
+                        JOIN {village_table} d ON c.taluka_id = d.taluka_id
+                        {gut_join}
                         LEFT JOIN public.village_master vm ON d.village_id = vm.id
                         WHERE (
                                 (%s <> '' AND c.taluka_id::text = %s)
@@ -2242,12 +2269,12 @@ def get_locations(request):
                     """, [taluka_id, taluka_id, taluka_id, district, taluka])
                     villages = [{'id': row[0], 'value': row[1], 'label': row[2]} for row in cursor.fetchall()]
                 else:
-                    cursor.execute("""
+                    cursor.execute(f"""
                         SELECT DISTINCT d.village_id, d.village
-                        FROM purandar_airport.prj_district a
-                        JOIN purandar_airport.prj_taluka c ON a.district_id = c.district_id
-                        JOIN purandar_airport.prj_village d ON c.taluka_id = d.taluka_id
-                        JOIN purandar_airport.prj_gut_bd e ON d.village_id = e.village_id
+                        FROM {district_table} a
+                        JOIN {taluka_table} c ON a.district_id = c.district_id
+                        JOIN {village_table} d ON c.taluka_id = d.taluka_id
+                        {gut_join}
                         WHERE (
                                 (%s <> '' AND c.taluka_id::text = %s)
                                 OR (
@@ -2261,19 +2288,18 @@ def get_locations(request):
                     """, [taluka_id, taluka_id, taluka_id, district, taluka])
                     villages = [{'id': row[0], 'value': row[1], 'label': row[1]} for row in cursor.fetchall()]
                 return JsonResponse({'level': 'villages', 'data': villages})
-            
-            # Level 2: Return talukas for selected district
-            elif district_id or district:
+
+            if district_id or district:
                 if use_marathi:
-                    cursor.execute("""
+                    cursor.execute(f"""
                         SELECT DISTINCT
                             c.taluka_id AS id,
                             c.taluka AS value,
                             COALESCE(NULLIF(tm.taluka_name_m, ''), c.taluka) AS label
-                        FROM purandar_airport.prj_district a
-                        JOIN purandar_airport.prj_taluka c ON a.district_id = c.district_id
-                        JOIN purandar_airport.prj_village d ON c.taluka_id = d.taluka_id
-                        JOIN purandar_airport.prj_gut_bd e ON d.village_id = e.village_id
+                        FROM {district_table} a
+                        JOIN {taluka_table} c ON a.district_id = c.district_id
+                        JOIN {village_table} d ON c.taluka_id = d.taluka_id
+                        {gut_join}
                         LEFT JOIN public.taluka_master tm ON c.taluka_id = tm.id
                         WHERE (
                                 (%s <> '' AND a.district_id::text = %s)
@@ -2284,12 +2310,12 @@ def get_locations(request):
                     """, [district_id, district_id, district_id, district])
                     talukas = [{'id': row[0], 'value': row[1], 'label': row[2]} for row in cursor.fetchall()]
                 else:
-                    cursor.execute("""
+                    cursor.execute(f"""
                         SELECT DISTINCT c.taluka_id, c.taluka
-                        FROM purandar_airport.prj_district a
-                        JOIN purandar_airport.prj_taluka c ON a.district_id = c.district_id
-                        JOIN purandar_airport.prj_village d ON c.taluka_id = d.taluka_id
-                        JOIN purandar_airport.prj_gut_bd e ON d.village_id = e.village_id
+                        FROM {district_table} a
+                        JOIN {taluka_table} c ON a.district_id = c.district_id
+                        JOIN {village_table} d ON c.taluka_id = d.taluka_id
+                        {gut_join}
                         WHERE (
                                 (%s <> '' AND a.district_id::text = %s)
                                 OR (%s = '' AND UPPER(TRIM(a.name)) = UPPER(TRIM(%s)))
@@ -2299,37 +2325,34 @@ def get_locations(request):
                     """, [district_id, district_id, district_id, district])
                     talukas = [{'id': row[0], 'value': row[1], 'label': row[1]} for row in cursor.fetchall()]
                 return JsonResponse({'level': 'talukas', 'data': talukas})
-            
-            # Level 1: Return all districts
+
+            if use_marathi:
+                cursor.execute(f"""
+                    SELECT DISTINCT
+                        a.district_id AS id,
+                        a.name AS value,
+                        COALESCE(NULLIF(dm.district_name_m, ''), a.name) AS label
+                    FROM {district_table} a
+                    JOIN {taluka_table} c ON a.district_id = c.district_id
+                    JOIN {village_table} d ON c.taluka_id = d.taluka_id
+                    {gut_join}
+                    LEFT JOIN public.district_master dm ON a.district_id = dm.id
+                    WHERE a.name IS NOT NULL
+                    ORDER BY value;
+                """)
+                districts = [{'id': row[0], 'value': row[1], 'label': row[2]} for row in cursor.fetchall()]
             else:
-                if use_marathi:
-                    cursor.execute("""
-                        SELECT DISTINCT
-                            a.district_id AS id,
-                            a.name AS value,
-                            COALESCE(NULLIF(dm.district_name_m, ''), a.name) AS label
-                        FROM purandar_airport.prj_district a
-                        JOIN purandar_airport.prj_taluka c ON a.district_id = c.district_id
-                        JOIN purandar_airport.prj_village d ON c.taluka_id = d.taluka_id
-                        JOIN purandar_airport.prj_gut_bd e ON d.village_id = e.village_id
-                        LEFT JOIN public.district_master dm ON a.district_id = dm.id
-                        WHERE a.name IS NOT NULL
-                        ORDER BY value;
-                    """)
-                    districts = [{'id': row[0], 'value': row[1], 'label': row[2]} for row in cursor.fetchall()]
-                else:
-                    cursor.execute("""
-                        SELECT DISTINCT a.district_id, a.name
-                        FROM purandar_airport.prj_district a
-                        JOIN purandar_airport.prj_taluka c ON a.district_id = c.district_id
-                        JOIN purandar_airport.prj_village d ON c.taluka_id = d.taluka_id
-                        JOIN purandar_airport.prj_gut_bd e ON d.village_id = e.village_id
-                        WHERE a.name IS NOT NULL
-                        ORDER BY a.name;
-                    """)
-                    districts = [{'id': row[0], 'value': row[1], 'label': row[1]} for row in cursor.fetchall()]
-                return JsonResponse({'level': 'districts', 'data': districts})
-                
+                cursor.execute(f"""
+                    SELECT DISTINCT a.district_id, a.name
+                    FROM {district_table} a
+                    JOIN {taluka_table} c ON a.district_id = c.district_id
+                    JOIN {village_table} d ON c.taluka_id = d.taluka_id
+                    {gut_join}
+                    WHERE a.name IS NOT NULL
+                    ORDER BY a.name;
+                """)
+                districts = [{'id': row[0], 'value': row[1], 'label': row[1]} for row in cursor.fetchall()]
+            return JsonResponse({'level': 'districts', 'data': districts})
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
 
@@ -2368,18 +2391,26 @@ def get_locations(request):
 def get_location_data(request):
     try:
         with connection.cursor() as cursor:
-            cursor.execute("""
+            district_table = resolve_project_table_name(cursor, "prj_district")
+            taluka_table = resolve_project_table_name(cursor, "prj_taluka")
+            village_table = resolve_project_table_name(cursor, "prj_village")
+            gut_table = resolve_project_table_name(cursor, "prj_gut_bd", "prj_gut")
+
+            if not (district_table and taluka_table and village_table):
+                return JsonResponse({"status": "success", "count": 0, "villages": []})
+
+            gut_join = f"JOIN {gut_table} e ON d.village_id = e.village_id" if gut_table else ""
+            cursor.execute(f"""
                 SELECT DISTINCT
                     a.name AS district,
                     c.taluka AS taluka,
                     d.village AS village_name
-                FROM purandar_airport.prj_district a
-                JOIN purandar_airport.prj_taluka c 
+                FROM {district_table} a
+                JOIN {taluka_table} c 
                     ON a.district_id = c.district_id
-                JOIN purandar_airport.prj_village d 
+                JOIN {village_table} d 
                     ON c.taluka_id = d.taluka_id
-                JOIN purandar_airport.prj_gut_bd e 
-                    ON d.village_id = e.village_id
+                {gut_join}
                 WHERE 
                     a.name IS NOT NULL
                     AND c.taluka IS NOT NULL

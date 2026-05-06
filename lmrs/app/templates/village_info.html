@@ -2876,7 +2876,13 @@
 
         function wireRecordListActions() {
             addNewBtn.addEventListener('click', async () => {
-                if (locationInitPromise) await locationInitPromise;
+                if (locationInitPromise) {
+                    try {
+                        await locationInitPromise;
+                    } catch (err) {
+                        showStatus(err?.message || 'Location data load failed', true);
+                    }
+                }
                 isEditingRecord = false;
                 try { sessionStorage.removeItem('vi_form_state'); } catch (e) { /* ignore */ }
                 clearVillageForm();
