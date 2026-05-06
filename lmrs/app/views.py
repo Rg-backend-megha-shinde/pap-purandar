@@ -433,7 +433,14 @@ def clean_holder_name_list(value):
 
 def handle_document_upload(user, tool_name, files, district=None, taluka=None, village=None, gut_number=None,
                           inspection=None, rr_info=None, land_record=None, asset=None, entry=None, document_tool_record=None):
-    tool, created = ToolMaster.objects.get_or_create(tool_name=tool_name, defaults={'is_active': True})
+    tool = ToolMaster.objects.filter(tool_name=tool_name, pk__isnull=False).first()
+    if tool is None:
+        tool = ToolMaster(tool_name=tool_name, is_active=True)
+        tool.save()
+
+    if not tool.pk:
+        raise ValueError(f"Tool '{tool_name}' could not be persisted. Please repair app_toolmaster primary key.")
+
     doc_master_kwargs = {'user': user, 'tool': tool, 'district': district, 'taluka': taluka, 'village': village, 'gut_number': gut_number}
     if inspection:
         doc_master_kwargs['inspection'] = inspection
