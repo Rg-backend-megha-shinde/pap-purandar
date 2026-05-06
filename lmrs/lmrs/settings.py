@@ -92,7 +92,7 @@ DATABASES = {
             'PORT': os.environ.get('DB_PORT', '5432'),
 
             'OPTIONS': {
-                'options': '-c search_path=purandar_airport,public'
+                'options': '-c search_path=purandar_airport_new,public'
             }
         }
     }
