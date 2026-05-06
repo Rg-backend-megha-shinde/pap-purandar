@@ -315,23 +315,6 @@ def normalize_match_text(value):
     return re.sub(r'\s+', ' ', str(value or '')).strip().casefold()
 
 
-def resolve_project_table_name(cursor, *table_candidates, schemas=("purandar_airport", "purandar_airport")):
-    for schema_name in schemas:
-        for table_name in table_candidates:
-            cursor.execute(
-                """
-                SELECT 1
-                FROM information_schema.tables
-                WHERE table_schema = %s
-                  AND table_name = %s
-                LIMIT 1;
-                """,
-                [schema_name, table_name],
-            )
-            if cursor.fetchone():
-                return f"{schema_name}.{table_name}"
-    return None
-
 def build_location_aliases(district, taluka, village):
     """
     Build normalized aliases (English + Marathi) for a selected location.
@@ -433,7 +416,14 @@ def clean_holder_name_list(value):
 
 def handle_document_upload(user, tool_name, files, district=None, taluka=None, village=None, gut_number=None,
                           inspection=None, rr_info=None, land_record=None, asset=None, entry=None, document_tool_record=None):
-    tool, created = ToolMaster.objects.get_or_create(tool_name=tool_name, defaults={'is_active': True})
+    tool = ToolMaster.objects.filter(tool_name=tool_name, pk__isnull=False).first()
+    if tool is None:
+        tool = ToolMaster(tool_name=tool_name, is_active=True)
+        tool.save()
+
+    if not tool.pk:
+        raise ValueError(f"Tool '{tool_name}' could not be persisted. Please repair app_toolmaster primary key.")
+
     doc_master_kwargs = {'user': user, 'tool': tool, 'district': district, 'taluka': taluka, 'village': village, 'gut_number': gut_number}
     if inspection:
         doc_master_kwargs['inspection'] = inspection
@@ -2211,13 +2201,10 @@ def get_locations(request):
         use_marathi = request.GET.get('lang', '').strip().lower() == 'mr'
 
         with connection.cursor() as cursor:
-            district_table = resolve_project_table_name(cursor, "prj_district")
-            taluka_table = resolve_project_table_name(cursor, "prj_taluka")
-            village_table = resolve_project_table_name(cursor, "prj_village")
-            gut_table = resolve_project_table_name(cursor, "prj_gut_bd", "prj_gut")
-
-            if not (district_table and taluka_table and village_table):
-                return JsonResponse({'level': 'districts', 'data': []})
+            district_table = "purandar_airport.prj_district"
+            taluka_table = "purandar_airport.prj_taluka"
+            village_table = "purandar_airport.prj_village"
+            gut_table = "purandar_airport.prj_gut_bd"
 
             gut_join = f"JOIN {gut_table} e ON d.village_id = e.village_id" if gut_table else ""
 
@@ -2391,13 +2378,10 @@ def get_locations(request):
 def get_location_data(request):
     try:
         with connection.cursor() as cursor:
-            district_table = resolve_project_table_name(cursor, "prj_district")
-            taluka_table = resolve_project_table_name(cursor, "prj_taluka")
-            village_table = resolve_project_table_name(cursor, "prj_village")
-            gut_table = resolve_project_table_name(cursor, "prj_gut_bd", "prj_gut")
-
-            if not (district_table and taluka_table and village_table):
-                return JsonResponse({"status": "success", "count": 0, "villages": []})
+            district_table = "purandar_airport.prj_district"
+            taluka_table = "purandar_airport.prj_taluka"
+            village_table = "purandar_airport.prj_village"
+            gut_table = "purandar_airport.prj_gut_bd"
 
             gut_join = f"JOIN {gut_table} e ON d.village_id = e.village_id" if gut_table else ""
             cursor.execute(f"""
