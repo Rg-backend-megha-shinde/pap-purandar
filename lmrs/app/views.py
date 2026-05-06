@@ -3483,7 +3483,7 @@ _VILLAGE_SCALAR_FIELDS = [
     'sec2_adhisuchana_kramank', 'sec2_date',
     'sec2_paper1_name', 'sec2_paper1_date',
     'sec2_paper2_name', 'sec2_paper2_date',
-    'sec3_adhisuchana_kramank', 'sec3_date',
+    'sec3_upvibhag_name', 'sec3_adhisuchana_kramank', 'sec3_date',
     'sec5_prastaav_kramank', 'sec5_date',
     'sec6_register_number', 'sec6_date',
     'sec7_aakshep_details',
@@ -3759,6 +3759,8 @@ def village_info(request):
             }, status=400)
 
         for field in _VILLAGE_SCALAR_FIELDS:
+            if field not in request.POST:
+                continue
             raw_val = request.POST.get(field)
             if field.endswith('_date'):
                 setattr(village_data, field, parse_date(raw_val) if raw_val else None)

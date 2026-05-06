@@ -838,6 +838,7 @@ class VillageData(models.Model):
     sec2_paper2_files = models.TextField(blank=True)
 
     # --- ३. प्राधिकृत भूसंपादन अधिकारी नियुक्ती ---
+    sec3_upvibhag_name = models.TextField(blank=True)
     sec3_adhisuchana_kramank = models.TextField(blank=True)
     sec3_date = models.DateField(null=True, blank=True)
     sec3_files = models.TextField(blank=True)
