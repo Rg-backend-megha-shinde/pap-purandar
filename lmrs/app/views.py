@@ -1002,6 +1002,8 @@ def land_record_712(request):
             for row in rows_to_save:
                 LandRecord712.objects.create(
                     user=request.user,
+                    document_712=uploaded_html,
+                    original_document_name=uploaded_html.name if uploaded_html else None,
                     district=district,
                     taluka=taluka,
                     village=village,

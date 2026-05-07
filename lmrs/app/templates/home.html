@@ -53,12 +53,16 @@
             <div class="flex min-w-0 items-center gap-4 lg:flex-1">
                 <div class="flex items-center gap-4 text-primary">
                     <div class="size-10 flex items-center justify-center bg-primary/10 rounded-lg overflow-hidden">
-                        <img src="{% static 'logo/purandar_airport.png' %}" alt="Purandar Airport logo" class="w-full h-full object-contain p-1">
+                        <img src="{% static 'logo/purandar_airport.png' %}" alt="Purandar Airport logo"
+                            class="w-full h-full object-contain p-1">
                     </div>
-                    <h2 class="truncate text-base font-bold leading-tight tracking-tight text-slate-900 dark:text-white sm:text-lg">Purandar Airport</h2>
+                    <h2
+                        class="truncate text-base font-bold leading-tight tracking-tight text-slate-900 dark:text-white sm:text-lg">
+                        Purandar Airport</h2>
                 </div>
             </div>
-            <div class="order-3 grid w-full grid-cols-1 gap-2 sm:grid-cols-2 lg:order-none lg:absolute lg:left-1/2 lg:-translate-x-1/2 lg:flex lg:w-auto lg:items-center lg:justify-center lg:gap-2">
+            <div
+                class="order-3 grid w-full grid-cols-1 gap-2 sm:grid-cols-2 lg:order-none lg:absolute lg:left-1/2 lg:-translate-x-1/2 lg:flex lg:w-auto lg:items-center lg:justify-center lg:gap-2">
                 <select id="districtSelect"
                     class="form-select h-10 w-full rounded-lg border-none bg-slate-100 px-3 pr-8 text-xs font-medium focus:ring-primary dark:bg-slate-800 lg:w-40">
                     <option value="">Select District</option>
@@ -303,7 +307,10 @@
 
         // GeoServer configuration
         const GEOSERVER_URL = "https://purandar-airport.rottengrapes.tech/geoserver/wms";
-        const WORKSPACE = "Purandar_New";
+        const WORKSPACE = "pune_rr";
+        const PROJECT_NAME = "Purandar Airport";
+        const PROJECT_SCHEMA = "purandar_airport";
+        const GEOSERVER_VIEWPARAMS = `a:${PROJECT_SCHEMA};project_name:${PROJECT_NAME}`;
 
         // WMS layer options
         const wmsOptions = {
@@ -339,6 +346,12 @@
         }
 
         const initialUrlState = parseUrlState();
+        const hasInitialLocationFilter = Boolean(
+            initialUrlState.district || initialUrlState.taluka || initialUrlState.village || initialUrlState.gut
+        );
+        if (!hasInitialLocationFilter) {
+            initialUrlState.layers = ['prj_bd'];
+        }
 
         function getSelectedLayers() {
             return [...document.querySelectorAll('.asset-layer-toggle:checked')]
@@ -591,10 +604,9 @@
             // Load districts on page load
             loadDistricts();
 
-            // Load default boundary layers only when URL has no location filters.
+            // Load only default project boundary when URL has no location filters.
             if (!initialUrlState.district && !initialUrlState.taluka && !initialUrlState.village && !initialUrlState.gut) {
                 loadDefaultProjectBoundary();
-                loadDefaultAllTalukas();
             }
 
             // District selection
@@ -641,13 +653,8 @@
                     talukaSelect.innerHTML = '<option value="">Select Taluka</option>';
                     villageSelect.innerHTML = '<option value="">Select Village</option>';
                     gutSelect.innerHTML = '<option value="">Select Gut Number</option>';
-                    // Reload default layers when deselecting
+                    // Reload only default project boundary when deselecting
                     loadDefaultProjectBoundary();
-                    loadDefaultAllTalukas();
-                    // Reset to default view
-                    const view = map.getView();
-                    view.setCenter(ol.proj.fromLonLat([73.8567, 18.5204]));
-                    view.setZoom(10);
                     // Reload active asset layers without filters
                     reloadActiveAssetLayers();
                 }
@@ -824,6 +831,7 @@
 
             // Load Default Project Boundary (prj_bd) - Shows at startup
             function loadDefaultProjectBoundary() {
+
                 console.log('🔄 Loading default project boundary (prj_bd)...');
 
                 if (defaultProjectBoundaryLayer) {
@@ -834,6 +842,7 @@
                     url: GEOSERVER_URL,
                     params: {
                         'LAYERS': `${WORKSPACE}:prj_bd`,
+                        'viewparams': GEOSERVER_VIEWPARAMS,
                         'FORMAT': 'image/png',
                         'TRANSPARENT': true,
                         'VERSION': '1.1.0',
@@ -844,13 +853,6 @@
                     transition: 0
                 });
 
-                source.on('tileloadstart', showMapLoading);
-                source.on('tileloadend', hideMapLoading);
-                source.on('tileloaderror', (event) => {
-                    console.error('❌ Error loading project boundary:', event);
-                    hideMapLoading();
-                });
-
                 defaultProjectBoundaryLayer = new ol.layer.Tile({
                     source: source,
                     zIndex: 5,
@@ -858,9 +860,54 @@
                 });
 
                 map.addLayer(defaultProjectBoundaryLayer);
-                console.log('✅ Default project boundary (prj_bd) layer added');
+                fitMapToProjectBoundary();
+
+                console.log('✅ Purandar project boundary loaded');
             }
 
+            function fitMapToProjectBoundary() {
+                fitLayerExtentFromWFS('prj_bd', null, 14, [80, 80, 80, 80]);
+            }
+
+            function fitLayerExtentFromWFS(layerName, cqlFilter = null, maxZoom = 14, padding = [60, 60, 60, 60]) {
+                const typeName = `${WORKSPACE}:${layerName}`;
+                const params = new URLSearchParams({
+                    service: 'WFS',
+                    version: '1.1.0',
+                    request: 'GetFeature',
+                    typeName: typeName,
+                    outputFormat: 'application/json',
+                    srsName: 'EPSG:4326',
+                    viewparams: GEOSERVER_VIEWPARAMS
+                });
+                if (cqlFilter) params.set('cql_filter', cqlFilter);
+
+                const wfsUrl = `${GEOSERVER_URL.replace('/wms', '/ows')}?${params.toString()}`;
+
+                fetch(wfsUrl)
+                    .then(response => response.ok ? response.json() : null)
+                    .then(data => {
+                        if (!data || !data.features || data.features.length === 0) return;
+
+                        const features = new ol.format.GeoJSON().readFeatures(data, {
+                            dataProjection: 'EPSG:4326',
+                            featureProjection: 'EPSG:3857'
+                        });
+                        if (!features.length) return;
+
+                        const extent = ol.extent.createEmpty();
+                        features.forEach(feature => ol.extent.extend(extent, feature.getGeometry().getExtent()));
+
+                        if (!ol.extent.isEmpty(extent)) {
+                            map.getView().fit(extent, {
+                                padding: padding,
+                                duration: 700,
+                                maxZoom: maxZoom
+                            });
+                        }
+                    })
+                    .catch(() => {});
+            }
             // Load Default All Talukas (prj_taluka_bd) - Shows at startup
             function loadDefaultAllTalukas() {
                 console.log('🔄 Loading default all talukas (prj_taluka_bd)...');
@@ -873,6 +920,7 @@
                     url: GEOSERVER_URL,
                     params: {
                         'LAYERS': `${WORKSPACE}:prj_taluka_bd`,
+                        'viewparams': GEOSERVER_VIEWPARAMS,
                         'FORMAT': 'image/png',
                         'TRANSPARENT': true,
                         'VERSION': '1.1.0',
@@ -1190,6 +1238,7 @@
                     url: GEOSERVER_URL,
                     params: {
                         'LAYERS': `${WORKSPACE}:prj_vlg_bd`,
+                        'viewparams': GEOSERVER_VIEWPARAMS,
                         'CQL_FILTER': cqlFilter,
                         'FORMAT': 'image/png',
                         'TRANSPARENT': true,
@@ -1210,6 +1259,9 @@
                     preload: Infinity
                 });
                 map.addLayer(villagesBoundaryLayer);
+
+                // Zoom directly to selected village boundary from GeoServer.
+                fitLayerExtentFromWFS('prj_vlg_bd', cqlFilter, 16, [70, 70, 70, 70]);
 
                 // Load gut boundaries for this village
                 loadVillageGutBoundaries(district, taluka, village, districtId, talukaId, villageId);
@@ -1254,6 +1306,7 @@
                         url: GEOSERVER_URL,
                         params: {
                             'LAYERS': `${WORKSPACE}:prj_gut_bd`,
+                            'viewparams': GEOSERVER_VIEWPARAMS,
                             'CQL_FILTER': gutCqlFilter,
                             'FORMAT': 'image/png',
                             'TRANSPARENT': true,
@@ -1312,6 +1365,7 @@
                         url: GEOSERVER_URL,
                         params: {
                             'LAYERS': `${WORKSPACE}:prj_gut_bd`,
+                            'viewparams': GEOSERVER_VIEWPARAMS,
                             'CQL_FILTER': cqlFilter,
                             'FORMAT': 'image/png',
                             'TRANSPARENT': true,
@@ -2416,6 +2470,10 @@
                     'STYLES': ''
                 };
 
+                if (assetName === 'prj_bd') {
+                    wmsParams['viewparams'] = GEOSERVER_VIEWPARAMS;
+                }
+
                 // Add CQL filter if applicable
                 if (cqlFilter) {
                     wmsParams['CQL_FILTER'] = cqlFilter;
@@ -2582,4 +2640,5 @@
 </body>
 
 </html>
+
 

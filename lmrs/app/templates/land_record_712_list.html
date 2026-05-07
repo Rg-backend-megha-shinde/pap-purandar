@@ -101,6 +101,7 @@
                     <th>आकार</th>
                     <th>भोगवटादारांचे नांव</th>
                     <th>कुळ, खंड व इतर अधिकार</th>
+                    <th>दस्तऐवज</th>
                     <th>Actions</th>
                 </tr>
             </thead>
@@ -143,6 +144,24 @@
                                 type="button"
                                 class="kul-khand-btn inline-flex items-center px-2 py-1 text-xs font-semibold bg-green-100 text-green-700 rounded hover:bg-green-200"
                                 data-kul-khand-info="{{ item.kul_khand_other_rights|escapejs }}">
+                                View
+                            </button>
+                        {% else %}
+                            उपलब्ध नाही
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if item.document_712 %}
+                            <button
+                                type="button"
+                                class="view-712-doc-btn text-blue-600 hover:text-blue-800 hover:underline text-xs font-medium flex items-center gap-1"
+                                data-file-url="{{ item.document_712.url }}"
+                                data-file-name="{{ item.original_document_name|default:item.document_712.name|escapejs }}"
+                                data-file-date="{{ item.updated_at|date:'d/m/Y H:i' }}">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                </svg>
                                 View
                             </button>
                         {% else %}
@@ -206,6 +225,23 @@
     </div>
 </div>
 
+<!-- File Preview Modal -->
+<div id="filePreviewModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-2 sm:p-4">
+    <div class="bg-white rounded-lg shadow-xl w-full flex flex-col" style="max-width:96vw; height:94vh;">
+        <div class="flex items-center justify-between p-4 border-b border-gray-200">
+            <div>
+                <h3 id="previewTitle" class="text-lg font-bold text-gray-900">दस्तऐवज पूर्वावलोकन</h3>
+                <p id="previewSubtitle" class="text-sm text-gray-500 mt-1"></p>
+            </div>
+            <div class="flex items-center gap-2">
+                <a id="previewDownload" href="#" target="_blank" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded text-sm font-medium">डाउनलोड</a>
+                <button type="button" onclick="close712FilePreview()" class="text-gray-400 hover:text-gray-600 transition-colors text-2xl leading-none">&times;</button>
+            </div>
+        </div>
+        <div id="previewContent" class="flex-1 bg-white overflow-hidden" style="min-height:0;"></div>
+    </div>
+</div>
+
 <script>
 $(document).ready(function () {
     // Destroy existing DataTable if it exists
@@ -227,7 +263,8 @@ $(document).ready(function () {
             { targets: 0, width: '50px' }, // ID column
             { targets: 14, orderable: false, searchable: false }, // Owner info column
             { targets: 15, orderable: false, searchable: false }, // Kul Khand column
-            { targets: 16, orderable: false, searchable: false, width: '100px' } // Actions column
+            { targets: 16, orderable: false, searchable: false }, // 7/12 file column
+            { targets: 17, orderable: false, searchable: false, width: '100px' } // Actions column
         ],
         language: {
             emptyTable: "कोणतीही नोंद उपलब्ध नाही.",
@@ -337,6 +374,72 @@ $(document).ready(function () {
     document.addEventListener('keydown', function (e) {
         if (e.key === 'Escape' && !kulKhandModal.classList.contains('hidden')) {
             closeKulKhandModal();
+        }
+    });
+
+    function getFileExtension(nameOrUrl) {
+        const source = String(nameOrUrl || '').split('?')[0];
+        const parts = source.split('.');
+        return parts.length > 1 ? parts.pop().toLowerCase() : '';
+    }
+
+    function getBaseName(path) {
+        const cleaned = decodeUnicodeEscapes(String(path || '')).split('?')[0];
+        const parts = cleaned.split('/');
+        return parts.length ? parts[parts.length - 1] : cleaned;
+    }
+
+    function open712FilePreview(url, filename, dateText) {
+        if (!url) {
+            alert('फाईल उपलब्ध नाही');
+            return;
+        }
+
+        const fileNameOnly = getBaseName(filename || url);
+        const ext = getFileExtension(fileNameOnly || url);
+        $('#previewTitle').text(fileNameOnly || 'दस्तऐवज');
+        $('#previewSubtitle').text((ext ? ext.toUpperCase() : 'FILE') + ' • ' + (dateText || ''));
+        $('#previewDownload').attr('href', url).attr('download', fileNameOnly || 'document');
+
+        const $content = $('#previewContent');
+        if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg'].includes(ext)) {
+            $content.html('<img src="' + url + '" style="max-width:100%;max-height:100%;object-fit:contain;margin:auto;display:block;" alt="' + fileNameOnly + '">');
+        } else if (ext === 'pdf') {
+            $content.html('<iframe src="' + url + '" style="width:100%;height:100%;border:none;" title="' + fileNameOnly + '"></iframe>');
+        } else if (ext === 'html' || ext === 'htm') {
+            $content.html('<iframe src="' + url + '" style="width:100%;height:100%;border:none;background:#fff;" title="' + fileNameOnly + '"></iframe>');
+        } else if (['doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx'].includes(ext)) {
+            const fullUrl = window.location.origin + url;
+            $content.html('<iframe src="https://docs.google.com/viewer?url=' + encodeURIComponent(fullUrl) + '&embedded=true" style="width:100%;height:100%;border:none;" title="' + fileNameOnly + '"></iframe>');
+        } else {
+            $content.html('<div class="h-full w-full flex items-center justify-center text-gray-600 text-sm">या फाईल प्रकाराचे पूर्वावलोकन समर्थित नाही.</div>');
+        }
+
+        $('#filePreviewModal').removeClass('hidden');
+        document.body.style.overflow = 'hidden';
+    }
+
+    window.close712FilePreview = function() {
+        $('#filePreviewModal').addClass('hidden');
+        $('#previewContent').html('');
+        document.body.style.overflow = '';
+    };
+
+    $(document).on('click', '.view-712-doc-btn', function () {
+        open712FilePreview(
+            $(this).data('file-url'),
+            $(this).data('file-name'),
+            $(this).data('file-date')
+        );
+    });
+
+    $('#filePreviewModal').on('click', function(e) {
+        if (e.target === this) window.close712FilePreview();
+    });
+
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && !document.getElementById('filePreviewModal').classList.contains('hidden')) {
+            window.close712FilePreview();
         }
     });
 });
