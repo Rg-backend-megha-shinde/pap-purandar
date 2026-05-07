@@ -53,12 +53,16 @@
             <div class="flex min-w-0 items-center gap-4 lg:flex-1">
                 <div class="flex items-center gap-4 text-primary">
                     <div class="size-10 flex items-center justify-center bg-primary/10 rounded-lg overflow-hidden">
-                        <img src="{% static 'logo/purandar_airport.png' %}" alt="Purandar Airport logo" class="w-full h-full object-contain p-1">
+                        <img src="{% static 'logo/purandar_airport.png' %}" alt="Purandar Airport logo"
+                            class="w-full h-full object-contain p-1">
                     </div>
-                    <h2 class="truncate text-base font-bold leading-tight tracking-tight text-slate-900 dark:text-white sm:text-lg">Purandar Airport</h2>
+                    <h2
+                        class="truncate text-base font-bold leading-tight tracking-tight text-slate-900 dark:text-white sm:text-lg">
+                        Purandar Airport</h2>
                 </div>
             </div>
-            <div class="order-3 grid w-full grid-cols-1 gap-2 sm:grid-cols-2 lg:order-none lg:absolute lg:left-1/2 lg:-translate-x-1/2 lg:flex lg:w-auto lg:items-center lg:justify-center lg:gap-2">
+            <div
+                class="order-3 grid w-full grid-cols-1 gap-2 sm:grid-cols-2 lg:order-none lg:absolute lg:left-1/2 lg:-translate-x-1/2 lg:flex lg:w-auto lg:items-center lg:justify-center lg:gap-2">
                 <select id="districtSelect"
                     class="form-select h-10 w-full rounded-lg border-none bg-slate-100 px-3 pr-8 text-xs font-medium focus:ring-primary dark:bg-slate-800 lg:w-40">
                     <option value="">Select District</option>
@@ -303,7 +307,8 @@
 
         // GeoServer configuration
         const GEOSERVER_URL = "https://purandar-airport.rottengrapes.tech/geoserver/wms";
-        const WORKSPACE = "Purandar_New";
+        const WORKSPACE = "pune_rr";
+        const PROJECT_NAME = "Purandar Airport";
 
         // WMS layer options
         const wmsOptions = {
@@ -824,6 +829,7 @@
 
             // Load Default Project Boundary (prj_bd) - Shows at startup
             function loadDefaultProjectBoundary() {
+
                 console.log('🔄 Loading default project boundary (prj_bd)...');
 
                 if (defaultProjectBoundaryLayer) {
@@ -834,6 +840,7 @@
                     url: GEOSERVER_URL,
                     params: {
                         'LAYERS': `${WORKSPACE}:prj_bd`,
+                        'viewparams': `project_name:${PROJECT_NAME}`,
                         'FORMAT': 'image/png',
                         'TRANSPARENT': true,
                         'VERSION': '1.1.0',
@@ -844,13 +851,6 @@
                     transition: 0
                 });
 
-                source.on('tileloadstart', showMapLoading);
-                source.on('tileloadend', hideMapLoading);
-                source.on('tileloaderror', (event) => {
-                    console.error('❌ Error loading project boundary:', event);
-                    hideMapLoading();
-                });
-
                 defaultProjectBoundaryLayer = new ol.layer.Tile({
                     source: source,
                     zIndex: 5,
@@ -858,7 +858,8 @@
                 });
 
                 map.addLayer(defaultProjectBoundaryLayer);
-                console.log('✅ Default project boundary (prj_bd) layer added');
+
+                console.log('✅ Purandar project boundary loaded');
             }
 
             // Load Default All Talukas (prj_taluka_bd) - Shows at startup
@@ -873,6 +874,7 @@
                     url: GEOSERVER_URL,
                     params: {
                         'LAYERS': `${WORKSPACE}:prj_taluka_bd`,
+                        'viewparams': `project_name:${PROJECT_NAME}`,
                         'FORMAT': 'image/png',
                         'TRANSPARENT': true,
                         'VERSION': '1.1.0',
@@ -2582,4 +2584,3 @@
 </body>
 
 </html>
-
