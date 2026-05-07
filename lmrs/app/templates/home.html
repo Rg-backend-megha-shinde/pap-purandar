@@ -777,23 +777,8 @@
                     // Reload village gut boundaries to update styling
                     loadVillageGutBoundaries(currentDistrict, currentTaluka, currentVillage, currentDistrictId, currentTalukaId, currentVillageId);
 
-                    // Zoom to selected gut using API bounds
-                    fetch(`/api/layer-bounds/prj_gut_bd/?district_id=${encodeURIComponent(currentDistrictId || '')}&taluka_id=${encodeURIComponent(currentTalukaId || '')}&village_id=${encodeURIComponent(currentVillageId || '')}&gut_number=${encodeURIComponent(this.value)}`)
-                        .then(r => r.json())
-                        .then(data => {
-                            if (data.bounds) {
-                                const extent = ol.proj.transformExtent(
-                                    [data.bounds.minLng, data.bounds.minLat, data.bounds.maxLng, data.bounds.maxLat],
-                                    'EPSG:4326',
-                                    'EPSG:3857'
-                                );
-                                map.getView().fit(extent, {
-                                    padding: [80, 80, 80, 80],
-                                    maxZoom: 18
-                                });
-                            }
-                        })
-                        .catch(err => console.log('⚠️ Bounds API not available:', err));
+                    const gutFilter = `village_id=${Number(currentVillageId)} AND gut_no='${String(this.value).replace(/'/g, "''")}'`;
+                    fitLayerExtentFromWFS('prj_gut_bd', gutFilter, 18, [90, 90, 90, 90]);
 
                     // Fetch gut-wise statistics
                     fetchProjectStats(currentDistrict, currentTaluka, currentVillage, this.value);
@@ -1266,20 +1251,7 @@
                 // Load gut boundaries for this village
                 loadVillageGutBoundaries(district, taluka, village, districtId, talukaId, villageId);
 
-                // Zoom to village extent using API bounds
-                fetch(`/api/layer-bounds/prj_vlg_bd/?district_id=${encodeURIComponent(districtId || '')}&taluka_id=${encodeURIComponent(talukaId || '')}&village_id=${encodeURIComponent(villageId || '')}&district=${encodeURIComponent(district)}&taluka=${encodeURIComponent(taluka)}&village=${encodeURIComponent(village)}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.bounds) {
-                            const extent = ol.proj.transformExtent(
-                                [data.bounds.minLng, data.bounds.minLat, data.bounds.maxLng, data.bounds.maxLat],
-                                'EPSG:4326',
-                                'EPSG:3857'
-                            );
-                            map.getView().fit(extent, { padding: [50, 50, 50, 50] });
-                        }
-                    })
-                    .catch(error => console.error('Error fetching village bounds:', error));
+                // Intentionally skip legacy bounds API fit to avoid overriding centered WFS fit.
             }
 
             // Load All Gut Boundaries for a Village from WMS
@@ -1295,7 +1267,7 @@
                 const escapedVillage = village.replace(/'/g, "''");
                 const baseVillageFilter = villageId
                     ? `village_id=${Number(villageId)}`
-                    : `village='${escapedVillage}'`;
+                    : `(village='${escapedVillage}' OR village_name='${escapedVillage}')`;
 
                 // If a specific gut is selected, show ONLY that gut
                 if (currentGutNumber) {
@@ -1339,23 +1311,7 @@
 
                     console.log(`✅ Selected gut boundary loaded: ${currentGutNumber}`);
 
-                    // Zoom to selected gut using API bounds
-                    fetch(`/api/layer-bounds/prj_gut_bd/?district_id=${encodeURIComponent(districtId || '')}&taluka_id=${encodeURIComponent(talukaId || '')}&village_id=${encodeURIComponent(villageId || '')}&district=${encodeURIComponent(district)}&taluka=${encodeURIComponent(taluka)}&village=${encodeURIComponent(village)}&gut_number=${encodeURIComponent(currentGutNumber)}`)
-                        .then(r => r.json())
-                        .then(data => {
-                            if (data.bounds) {
-                                const extent = ol.proj.transformExtent(
-                                    [data.bounds.minLng, data.bounds.minLat, data.bounds.maxLng, data.bounds.maxLat],
-                                    'EPSG:4326',
-                                    'EPSG:3857'
-                                );
-                                map.getView().fit(extent, {
-                                    padding: [80, 80, 80, 80],
-                                    maxZoom: 18
-                                });
-                            }
-                        })
-                        .catch(err => console.log('⚠️ Bounds API not available:', err));
+                    fitLayerExtentFromWFS('prj_gut_bd', gutCqlFilter, 18, [90, 90, 90, 90]);
                 } else {
                     // No gut selected, show all gut boundaries in the village
                     const cqlFilter = baseVillageFilter;
@@ -1398,20 +1354,7 @@
 
                     console.log(`✅ All gut boundaries loaded for village: ${village}`);
 
-                    // Zoom to all village guts using API bounds
-                    fetch(`/api/layer-bounds/prj_gut_bd/?district_id=${encodeURIComponent(districtId || '')}&taluka_id=${encodeURIComponent(talukaId || '')}&village_id=${encodeURIComponent(villageId || '')}&district=${encodeURIComponent(district)}&taluka=${encodeURIComponent(taluka)}&village=${encodeURIComponent(village)}`)
-                        .then(r => r.json())
-                        .then(data => {
-                            if (data.bounds) {
-                                const extent = ol.proj.transformExtent(
-                                    [data.bounds.minLng, data.bounds.minLat, data.bounds.maxLng, data.bounds.maxLat],
-                                    'EPSG:4326',
-                                    'EPSG:3857'
-                                );
-                                map.getView().fit(extent, { padding: [50, 50, 50, 50] });
-                            }
-                        })
-                        .catch(err => console.log('⚠️ Bounds API not available:', err));
+                    // Keep village-centered view when no specific gut is selected.
                 }
 
                 // Enable click detection using GetFeatureInfo
@@ -1436,7 +1379,7 @@
                 const escapedVillage = currentVillage.replace(/'/g, "''");
                 const cqlFilter = currentVillageId
                     ? `village_id=${Number(currentVillageId)}`
-                    : `village='${escapedVillage}'`;
+                    : `(village='${escapedVillage}' OR village_name='${escapedVillage}')`;
 
                 const url = source.getFeatureInfoUrl(
                     coordinate,
@@ -1473,23 +1416,8 @@
                                     // Show notification
                                     showNotification(`Selected Gut ${gutNumber} in ${currentVillage}`, 'success');
 
-                                    // Zoom to selected gut using API bounds
-                                    fetch(`/api/layer-bounds/prj_gut_bd/?district_id=${encodeURIComponent(currentDistrictId || '')}&taluka_id=${encodeURIComponent(currentTalukaId || '')}&village_id=${encodeURIComponent(currentVillageId || '')}&district=${encodeURIComponent(currentDistrict)}&taluka=${encodeURIComponent(currentTaluka)}&village=${encodeURIComponent(currentVillage)}&gut_number=${encodeURIComponent(currentGutNumber)}`)
-                                        .then(r => r.json())
-                                        .then(data => {
-                                            if (data.bounds) {
-                                                const extent = ol.proj.transformExtent(
-                                                    [data.bounds.minLng, data.bounds.minLat, data.bounds.maxLng, data.bounds.maxLat],
-                                                    'EPSG:4326',
-                                                    'EPSG:3857'
-                                                );
-                                                map.getView().fit(extent, {
-                                                    padding: [80, 80, 80, 80],
-                                                    maxZoom: 18
-                                                });
-                                            }
-                                        })
-                                        .catch(err => console.log('⚠️ Bounds API not available:', err));
+                                    const clickedGutFilter = `village_id=${Number(currentVillageId)} AND gut_no='${String(currentGutNumber).replace(/'/g, "''")}'`;
+                                    fitLayerExtentFromWFS('prj_gut_bd', clickedGutFilter, 18, [90, 90, 90, 90]);
                                 }
                             } else {
                                 console.log('🔍 No gut found at clicked location');
