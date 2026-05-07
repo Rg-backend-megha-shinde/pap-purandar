@@ -344,6 +344,12 @@
         }
 
         const initialUrlState = parseUrlState();
+        const hasInitialLocationFilter = Boolean(
+            initialUrlState.district || initialUrlState.taluka || initialUrlState.village || initialUrlState.gut
+        );
+        if (!hasInitialLocationFilter) {
+            initialUrlState.layers = ['prj_bd'];
+        }
 
         function getSelectedLayers() {
             return [...document.querySelectorAll('.asset-layer-toggle:checked')]
@@ -596,10 +602,9 @@
             // Load districts on page load
             loadDistricts();
 
-            // Load default boundary layers only when URL has no location filters.
+            // Load only default project boundary when URL has no location filters.
             if (!initialUrlState.district && !initialUrlState.taluka && !initialUrlState.village && !initialUrlState.gut) {
                 loadDefaultProjectBoundary();
-                loadDefaultAllTalukas();
             }
 
             // District selection
@@ -646,13 +651,8 @@
                     talukaSelect.innerHTML = '<option value="">Select Taluka</option>';
                     villageSelect.innerHTML = '<option value="">Select Village</option>';
                     gutSelect.innerHTML = '<option value="">Select Gut Number</option>';
-                    // Reload default layers when deselecting
+                    // Reload only default project boundary when deselecting
                     loadDefaultProjectBoundary();
-                    loadDefaultAllTalukas();
-                    // Reset to default view
-                    const view = map.getView();
-                    view.setCenter(ol.proj.fromLonLat([73.8567, 18.5204]));
-                    view.setZoom(10);
                     // Reload active asset layers without filters
                     reloadActiveAssetLayers();
                 }
@@ -858,10 +858,42 @@
                 });
 
                 map.addLayer(defaultProjectBoundaryLayer);
+                fitMapToProjectBoundary();
 
                 console.log('✅ Purandar project boundary loaded');
             }
 
+            function fitMapToProjectBoundary() {
+                const typeName = `${WORKSPACE}:prj_bd`;
+                const viewparams = `project_name:${PROJECT_NAME}`;
+                const wfsUrl = `${GEOSERVER_URL.replace('/wms', '/ows')}?service=WFS&version=1.1.0&request=GetFeature&typeName=${encodeURIComponent(typeName)}&outputFormat=application/json&srsName=EPSG:3857&viewparams=${encodeURIComponent(viewparams)}`;
+
+                fetch(wfsUrl)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (!data || !data.features || data.features.length === 0) return;
+
+                        const features = new ol.format.GeoJSON().readFeatures(data, {
+                            dataProjection: 'EPSG:3857',
+                            featureProjection: 'EPSG:3857'
+                        });
+                        if (!features.length) return;
+
+                        const extent = ol.extent.createEmpty();
+                        features.forEach(feature => ol.extent.extend(extent, feature.getGeometry().getExtent()));
+
+                        if (!ol.extent.isEmpty(extent)) {
+                            map.getView().fit(extent, {
+                                padding: [80, 80, 80, 80],
+                                duration: 700,
+                                maxZoom: 14
+                            });
+                        }
+                    })
+                    .catch(() => {
+                        // keep current view if WFS query fails
+                    });
+            }
             // Load Default All Talukas (prj_taluka_bd) - Shows at startup
             function loadDefaultAllTalukas() {
                 console.log('🔄 Loading default all talukas (prj_taluka_bd)...');
@@ -2418,6 +2450,10 @@
                     'STYLES': ''
                 };
 
+                if (assetName === 'prj_bd') {
+                    wmsParams['viewparams'] = `project_name:${PROJECT_NAME}`;
+                }
+
                 // Add CQL filter if applicable
                 if (cqlFilter) {
                     wmsParams['CQL_FILTER'] = cqlFilter;
@@ -2584,3 +2620,5 @@
 </body>
 
 </html>
+
+
