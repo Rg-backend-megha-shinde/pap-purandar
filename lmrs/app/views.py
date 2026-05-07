@@ -3477,7 +3477,7 @@ _VILLAGE_SCALAR_FIELDS = [
     'sec11_date',
     'sec12_zone_details', 'sec12_date',
     'sec13_kharedi_vikri_details',
-    'sec14_meeting_details', 'sec14_date',
+    'sec14_meeting_details', 'sec14_date', 'sec14_approved_rate_details',
     'sec16_letter_details', 'sec16_date',
     'sec17_letter_details', 'sec17_date',
     'sec18_letter_details', 'sec18_date',

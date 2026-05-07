@@ -887,6 +887,7 @@ class VillageData(models.Model):
     # --- १४. जिल्हास्तरीय समितीच्या बैठकीचा तपशील ---
     sec14_meeting_details = models.TextField(blank=True)
     sec14_date = models.DateField(null=True, blank=True)
+    sec14_approved_rate_details = models.TextField(blank=True)
     sec14_files = models.TextField(blank=True)
 
     # --- १६. वन विभाग ---
