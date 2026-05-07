@@ -866,17 +866,31 @@
             }
 
             function fitMapToProjectBoundary() {
-                const typeName = `${WORKSPACE}:prj_bd`;
-                const viewparams = GEOSERVER_VIEWPARAMS;
-                const wfsUrl = `${GEOSERVER_URL.replace('/wms', '/ows')}?service=WFS&version=1.1.0&request=GetFeature&typeName=${encodeURIComponent(typeName)}&outputFormat=application/json&srsName=EPSG:3857&viewparams=${encodeURIComponent(viewparams)}`;
+                fitLayerExtentFromWFS('prj_bd', null, 14, [80, 80, 80, 80]);
+            }
+
+            function fitLayerExtentFromWFS(layerName, cqlFilter = null, maxZoom = 14, padding = [60, 60, 60, 60]) {
+                const typeName = `${WORKSPACE}:${layerName}`;
+                const params = new URLSearchParams({
+                    service: 'WFS',
+                    version: '1.1.0',
+                    request: 'GetFeature',
+                    typeName: typeName,
+                    outputFormat: 'application/json',
+                    srsName: 'EPSG:4326',
+                    viewparams: GEOSERVER_VIEWPARAMS
+                });
+                if (cqlFilter) params.set('cql_filter', cqlFilter);
+
+                const wfsUrl = `${GEOSERVER_URL.replace('/wms', '/ows')}?${params.toString()}`;
 
                 fetch(wfsUrl)
-                    .then(response => response.json())
+                    .then(response => response.ok ? response.json() : null)
                     .then(data => {
                         if (!data || !data.features || data.features.length === 0) return;
 
                         const features = new ol.format.GeoJSON().readFeatures(data, {
-                            dataProjection: 'EPSG:3857',
+                            dataProjection: 'EPSG:4326',
                             featureProjection: 'EPSG:3857'
                         });
                         if (!features.length) return;
@@ -886,15 +900,13 @@
 
                         if (!ol.extent.isEmpty(extent)) {
                             map.getView().fit(extent, {
-                                padding: [80, 80, 80, 80],
+                                padding: padding,
                                 duration: 700,
-                                maxZoom: 14
+                                maxZoom: maxZoom
                             });
                         }
                     })
-                    .catch(() => {
-                        // keep current view if WFS query fails
-                    });
+                    .catch(() => {});
             }
             // Load Default All Talukas (prj_taluka_bd) - Shows at startup
             function loadDefaultAllTalukas() {
@@ -1247,6 +1259,9 @@
                     preload: Infinity
                 });
                 map.addLayer(villagesBoundaryLayer);
+
+                // Zoom directly to selected village boundary from GeoServer.
+                fitLayerExtentFromWFS('prj_vlg_bd', cqlFilter, 16, [70, 70, 70, 70]);
 
                 // Load gut boundaries for this village
                 loadVillageGutBoundaries(district, taluka, village, districtId, talukaId, villageId);
