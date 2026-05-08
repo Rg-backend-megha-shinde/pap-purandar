@@ -9,27 +9,27 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.AddField(
-            model_name='villagedata18_1row',
+            model_name='VillageData32_1Row',
             name='paper1_date',
             field=models.DateField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='villagedata18_1row',
+            model_name='VillageData32_1Row',
             name='paper1_name',
             field=models.TextField(blank=True),
         ),
         migrations.AddField(
-            model_name='villagedata18_1row',
+            model_name='VillageData32_1Row',
             name='paper2_date',
             field=models.DateField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='villagedata18_1row',
+            model_name='VillageData32_1Row',
             name='paper2_name',
             field=models.TextField(blank=True),
         ),
         migrations.AddField(
-            model_name='villagedata18_1rowfile',
+            model_name='VillageData32_1Rowfile',
             name='field_key',
             field=models.CharField(default='main', max_length=40),
         ),

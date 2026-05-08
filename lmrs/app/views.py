@@ -5,7 +5,7 @@ from django.db import connection
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.sessions.models import Session
-from .models import Inspection, ReadyReckonerInfo, ReadyReckonerRate, LandRecord712, FarmerNames,TreeMaster, Asset, AssetMeasurement, AssetTypeMaster, AssetFieldMaster, AssetFormulaMaster, Document, ToolMaster, DocumentMaster, DocumentAttachment, Entry, VillageData, VillageData8ARecord, VillageDataSec15Rate, VillageDataFile, VillageData8AFile, VillageData15_2Row, VillageData15_2RowFile, VillageData18_1Row, VillageData18_1RowFile, ActiveUserSession, AssetDetail
+from .models import Inspection, ReadyReckonerInfo, ReadyReckonerRate, LandRecord712, FarmerNames,TreeMaster, Asset, AssetMeasurement, AssetTypeMaster, AssetFieldMaster, AssetFormulaMaster, Document, ToolMaster, DocumentMaster, DocumentAttachment, Entry, VillageData, VillageData8ARecord, VillageDataSec15Rate, VillageDataFile, VillageData8AFile, VillageData32_2Row, VillageData32_2RowFile, villagedata32_1row as VillageData32_1Row, villagedata32_1rowFile as VillageData32_1RowFile, ActiveUserSession, AssetDetail
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponseForbidden
 from django.db import connection
@@ -3793,7 +3793,7 @@ def village_info(request):
                 row.paper2_date = parse_date(paper2_date_raw) if paper2_date_raw else None
                 row.save()
             else:
-                row = VillageData15_2Row.objects.create(
+                row = VillageData32_2Row.objects.create(
                     village_data=village_data,
                     adhisuchana_kramank=adhisuchana_kramank,
                     adhisuchana_date=parse_date(adhisuchana_date_raw) if adhisuchana_date_raw else None,
@@ -3804,11 +3804,11 @@ def village_info(request):
                 )
 
             for f in request.FILES.getlist(f'sec4_row_files_{i}'):
-                VillageData15_2RowFile.objects.create(row_15_2=row, field_key='main', file=f)
+                VillageData32_2RowFile.objects.create(row_15_2=row, field_key='main', file=f)
             for f in request.FILES.getlist(f'sec4_row_paper1_files_{i}'):
-                VillageData15_2RowFile.objects.create(row_15_2=row, field_key='paper1', file=f)
+                VillageData32_2RowFile.objects.create(row_15_2=row, field_key='paper1', file=f)
             for f in request.FILES.getlist(f'sec4_row_paper2_files_{i}'):
-                VillageData15_2RowFile.objects.create(row_15_2=row, field_key='paper2', file=f)
+                VillageData32_2RowFile.objects.create(row_15_2=row, field_key='paper2', file=f)
 
         # sec8 18/1 rows - rebuild rows; keep existing files and append new unique-name uploads
         for old_row in existing_sec8_rows[sec8_row_count:]:
@@ -3832,7 +3832,7 @@ def village_info(request):
                 row.paper2_date = parse_date(paper2_date_raw) if paper2_date_raw else None
                 row.save()
             else:
-                row = VillageData18_1Row.objects.create(
+                row = VillageData32_1Row.objects.create(
                     village_data=village_data,
                     adhisuchana_kramank=adhisuchana_kramank,
                     adhisuchana_date=parse_date(adhisuchana_date_raw) if adhisuchana_date_raw else None,
@@ -3843,11 +3843,11 @@ def village_info(request):
                 )
 
             for f in request.FILES.getlist(f'sec8_row_files_{i}'):
-                VillageData18_1RowFile.objects.create(row_18_1=row, field_key='main', file=f)
+                VillageData32_1RowFile.objects.create(row_18_1=row, field_key='main', file=f)
             for f in request.FILES.getlist(f'sec8_row_paper1_files_{i}'):
-                VillageData18_1RowFile.objects.create(row_18_1=row, field_key='paper1', file=f)
+                VillageData32_1RowFile.objects.create(row_18_1=row, field_key='paper1', file=f)
             for f in request.FILES.getlist(f'sec8_row_paper2_files_{i}'):
-                VillageData18_1RowFile.objects.create(row_18_1=row, field_key='paper2', file=f)
+                VillageData32_1RowFile.objects.create(row_18_1=row, field_key='paper2', file=f)
 
         # sec26 8A records - rebuild rows; keep existing files and append new unique-name uploads
         # Delete rows that were removed (count shrank)
@@ -3927,7 +3927,7 @@ def delete_village_8a_file(request, file_id):
 @login_required
 @require_http_methods(["POST"])
 def delete_village_sec4_row_file(request, file_id):
-    vf = get_object_or_404(VillageData15_2RowFile, id=file_id)
+    vf = get_object_or_404(VillageData32_2RowFile, id=file_id)
     vf.file.delete(save=False)
     vf.delete()
     return JsonResponse({'success': True})
@@ -3936,7 +3936,7 @@ def delete_village_sec4_row_file(request, file_id):
 @login_required
 @require_http_methods(["POST"])
 def delete_village_sec8_row_file(request, file_id):
-    vf = get_object_or_404(VillageData18_1RowFile, id=file_id)
+    vf = get_object_or_404(VillageData32_1RowFile, id=file_id)
     vf.file.delete(save=False)
     vf.delete()
     return JsonResponse({'success': True})

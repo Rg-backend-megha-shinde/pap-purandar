@@ -974,7 +974,7 @@ class VillageData8ARecord(models.Model):
         verbose_name_plural = "8A Records"
 
 
-class VillageData15_2Row(models.Model):
+class VillageData32_2Row(models.Model):
     # --- ४. कलम 15(2) प्राथमिक अधिसूचना (repeatable rows) ---
     village_data = models.ForeignKey(
         VillageData,
@@ -996,7 +996,7 @@ class VillageData15_2Row(models.Model):
         verbose_name_plural = "VillageData15(2) Rows"
 
 
-class VillageData18_1Row(models.Model):
+class villagedata32_1row(models.Model):
     # --- ८. कलम 18/1 अंतिम अधिसूचना (repeatable rows) ---
     village_data = models.ForeignKey(
         VillageData,
@@ -1102,10 +1102,10 @@ class VillageData8AFile(models.Model):
         verbose_name_plural = "8A Files"
 
 
-class VillageData15_2RowFile(models.Model):
-    """Stores multiple uploaded files for a VillageData15_2Row."""
+class VillageData32_2RowFile(models.Model):
+    """Stores multiple uploaded files for a VillageData32_2Row."""
     row_15_2 = models.ForeignKey(
-        VillageData15_2Row,
+        VillageData32_2Row,
         on_delete=models.CASCADE,
         related_name='files_15_2'
     )
@@ -1121,10 +1121,10 @@ class VillageData15_2RowFile(models.Model):
         verbose_name_plural = "VillageData15(2) Row Files"
 
 
-class VillageData18_1RowFile(models.Model):
-    """Stores multiple uploaded files for a VillageData18_1Row."""
+class villagedata32_1rowFile(models.Model):
+    """Stores multiple uploaded files for a villagedata32_1row."""
     row_18_1 = models.ForeignKey(
-        VillageData18_1Row,
+        villagedata32_1row,
         on_delete=models.CASCADE,
         related_name='files_18_1'
     )
@@ -1141,7 +1141,7 @@ class VillageData18_1RowFile(models.Model):
 
 
 class VillageDataSec15Rate(models.Model):
-    # --- १५. जिल्हास्तरीय समितीने मंजूर केलेला अंतिम दर ---
+    # --- १५. संपादनाखालील जमिनींसाठी जिल्हास्तरीय समितीने मंजूर केलेला अंतिम दर ---
     # मूल्य विभाग प्रकार, Assessment Range, रेडी रेकनर दर, एकक → from ReadyReckonerRate
     # जिल्हास्तरीय समितीने मंजूर केलेला दर → stored here (only new input)
     village_data = models.ForeignKey(
