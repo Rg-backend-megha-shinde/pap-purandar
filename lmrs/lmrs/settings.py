@@ -30,7 +30,7 @@ SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-9it2izpri@eg+03%e5*+whwuoe
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
-ALLOWED_HOSTS = ["*"]
+ALLOWED_HOSTS = ["*","https://purandar-airport.rottengrapes.tech"]
 
 
 # Application definition
@@ -144,4 +144,11 @@ LOGIN_URL = '/login/'
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/login/'
 
+<<<<<<< Updated upstream
 X_FRAME_OPTIONS = 'SAMEORIGIN'
+=======
+CSRF_TRUSTED_ORIGINS = [
+    "https://pune-ringroad.rottengrapes.tech",
+    "https://purandar-airport.rottengrapes.tech",
+]
+>>>>>>> Stashed changes
