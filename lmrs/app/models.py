@@ -258,6 +258,8 @@ class ReadyReckonerRate(models.Model):
 
 class LandRecord712(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="land_records")
+    document_712 = models.FileField(upload_to="land_record_712/", null=True, blank=True)
+    original_document_name = models.CharField(max_length=255, null=True, blank=True)
 
     # Already existing (DO NOT TOUCH)
     district = models.CharField(max_length=100)  # "जिल्हा"
