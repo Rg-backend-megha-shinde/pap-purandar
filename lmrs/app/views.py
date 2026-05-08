@@ -3647,20 +3647,25 @@ def village_info(request):
             if i >= len(existing_sec8_rows):
                 continue
             row = existing_sec8_rows[i]
-            uploaded_sec8_files = request.FILES.getlist(f'sec8_row_files_{i}')
-            if not uploaded_sec8_files:
-                continue
-            existing_names = {
-                _norm_name(f18.file.name)
-                for f18 in row.files_18_1.all()
-                if getattr(f18, 'file', None) and f18.file.name
-            }
-            for f in uploaded_sec8_files:
-                incoming_name = _norm_name(getattr(f, 'name', ''))
-                if incoming_name and incoming_name in existing_names:
-                    duplicate_conflicts.append(f"sec8_row_{i + 1}: {os.path.basename(f.name)}")
-                elif incoming_name:
-                    existing_names.add(incoming_name)
+            for sec8_field_key, upload_key in (
+                ('main', f'sec8_row_files_{i}'),
+                ('paper1', f'sec8_row_paper1_files_{i}'),
+                ('paper2', f'sec8_row_paper2_files_{i}'),
+            ):
+                uploaded_sec8_files = request.FILES.getlist(upload_key)
+                if not uploaded_sec8_files:
+                    continue
+                existing_names = {
+                    _norm_name(f18.file.name)
+                    for f18 in row.files_18_1.filter(field_key=sec8_field_key)
+                    if getattr(f18, 'file', None) and f18.file.name
+                }
+                for f in uploaded_sec8_files:
+                    incoming_name = _norm_name(getattr(f, 'name', ''))
+                    if incoming_name and incoming_name in existing_names:
+                        duplicate_conflicts.append(f"sec8_row_{i + 1}_{sec8_field_key}: {os.path.basename(f.name)}")
+                    elif incoming_name:
+                        existing_names.add(incoming_name)
 
         if duplicate_conflicts:
             return JsonResponse({
@@ -3719,20 +3724,25 @@ def village_info(request):
             if i >= len(existing_sec8_rows):
                 continue
             row = existing_sec8_rows[i]
-            uploaded_sec8_files = request.FILES.getlist(f'sec8_row_files_{i}')
-            if not uploaded_sec8_files:
-                continue
-            existing_names = {
-                _norm_name(f18.file.name)
-                for f18 in row.files_18_1.all()
-                if getattr(f18, 'file', None) and f18.file.name
-            }
-            for f in uploaded_sec8_files:
-                incoming_name = _norm_name(getattr(f, 'name', ''))
-                if incoming_name and incoming_name in existing_names:
-                    duplicate_conflicts.append(f"sec8_row_{i + 1}: {os.path.basename(f.name)}")
-                elif incoming_name:
-                    existing_names.add(incoming_name)
+            for sec8_field_key, upload_key in (
+                ('main', f'sec8_row_files_{i}'),
+                ('paper1', f'sec8_row_paper1_files_{i}'),
+                ('paper2', f'sec8_row_paper2_files_{i}'),
+            ):
+                uploaded_sec8_files = request.FILES.getlist(upload_key)
+                if not uploaded_sec8_files:
+                    continue
+                existing_names = {
+                    _norm_name(f18.file.name)
+                    for f18 in row.files_18_1.filter(field_key=sec8_field_key)
+                    if getattr(f18, 'file', None) and f18.file.name
+                }
+                for f in uploaded_sec8_files:
+                    incoming_name = _norm_name(getattr(f, 'name', ''))
+                    if incoming_name and incoming_name in existing_names:
+                        duplicate_conflicts.append(f"sec8_row_{i + 1}_{sec8_field_key}: {os.path.basename(f.name)}")
+                    elif incoming_name:
+                        existing_names.add(incoming_name)
 
         if duplicate_conflicts:
             return JsonResponse({
@@ -3807,21 +3817,37 @@ def village_info(request):
         for i in range(sec8_row_count):
             adhisuchana_kramank = (request.POST.get(f'sec8_row_adhisuchana_{i}') or '').strip()
             adhisuchana_date_raw = request.POST.get(f'sec8_row_date_{i}')
+            paper1_name = (request.POST.get(f'sec8_row_paper1_name_{i}') or '').strip()
+            paper1_date_raw = request.POST.get(f'sec8_row_paper1_date_{i}')
+            paper2_name = (request.POST.get(f'sec8_row_paper2_name_{i}') or '').strip()
+            paper2_date_raw = request.POST.get(f'sec8_row_paper2_date_{i}')
 
             if i < len(existing_sec8_rows):
                 row = existing_sec8_rows[i]
                 row.adhisuchana_kramank = adhisuchana_kramank
                 row.adhisuchana_date = parse_date(adhisuchana_date_raw) if adhisuchana_date_raw else None
+                row.paper1_name = paper1_name
+                row.paper1_date = parse_date(paper1_date_raw) if paper1_date_raw else None
+                row.paper2_name = paper2_name
+                row.paper2_date = parse_date(paper2_date_raw) if paper2_date_raw else None
                 row.save()
             else:
                 row = VillageData18_1Row.objects.create(
                     village_data=village_data,
                     adhisuchana_kramank=adhisuchana_kramank,
                     adhisuchana_date=parse_date(adhisuchana_date_raw) if adhisuchana_date_raw else None,
+                    paper1_name=paper1_name,
+                    paper1_date=parse_date(paper1_date_raw) if paper1_date_raw else None,
+                    paper2_name=paper2_name,
+                    paper2_date=parse_date(paper2_date_raw) if paper2_date_raw else None,
                 )
 
             for f in request.FILES.getlist(f'sec8_row_files_{i}'):
-                VillageData18_1RowFile.objects.create(row_18_1=row, file=f)
+                VillageData18_1RowFile.objects.create(row_18_1=row, field_key='main', file=f)
+            for f in request.FILES.getlist(f'sec8_row_paper1_files_{i}'):
+                VillageData18_1RowFile.objects.create(row_18_1=row, field_key='paper1', file=f)
+            for f in request.FILES.getlist(f'sec8_row_paper2_files_{i}'):
+                VillageData18_1RowFile.objects.create(row_18_1=row, field_key='paper2', file=f)
 
         # sec26 8A records - rebuild rows; keep existing files and append new unique-name uploads
         # Delete rows that were removed (count shrank)
@@ -4074,11 +4100,21 @@ def get_village_info_data(request):
 
     sec8_rows = []
     for row in village_data.sec8_rows.prefetch_related('files_18_1').order_by('id'):
+        files_by_key = {'main': [], 'paper1': [], 'paper2': []}
+        for f in row.files_18_1.all():
+            key = (getattr(f, 'field_key', '') or 'main').strip() or 'main'
+            if key not in files_by_key:
+                key = 'main'
+            files_by_key[key].append({'id': f.id, 'url': f.file.url, 'name': f.file.name.split('/')[-1]})
         sec8_rows.append({
             'id': row.id,
             'adhisuchana_kramank': row.adhisuchana_kramank,
             'adhisuchana_date': row.adhisuchana_date.isoformat() if row.adhisuchana_date else '',
-            'files': [{'id': f.id, 'url': f.file.url, 'name': f.file.name.split('/')[-1]} for f in row.files_18_1.all()],
+            'paper1_name': row.paper1_name,
+            'paper1_date': row.paper1_date.isoformat() if row.paper1_date else '',
+            'paper2_name': row.paper2_name,
+            'paper2_date': row.paper2_date.isoformat() if row.paper2_date else '',
+            'files': files_by_key,
         })
 
     sec15 = []

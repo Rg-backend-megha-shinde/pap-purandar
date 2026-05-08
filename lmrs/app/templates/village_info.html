@@ -474,6 +474,48 @@
                                         <input type="file" multiple
                                             class="block w-full rounded-xl border border-dashed border-[#c5d6ec] bg-white px-4 py-3 text-sm text-[#60708a] file:mr-4 file:rounded-lg file:border-0 file:bg-[#125fcb] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white">
                                     </div>
+                                    <div class="md:col-span-2 space-y-3">
+                                        <div class="rounded-xl border border-[#dfe8f5] bg-white p-3">
+                                            <p class="mb-2 text-sm font-semibold text-[#44597a]">१. वर्तमानपत्र</p>
+                                            <div class="grid gap-3 md:grid-cols-3 md:items-end">
+                                                <div>
+                                                    <label class="mb-2 block text-sm font-semibold text-[#44597a]">नाव</label>
+                                                    <input type="text" placeholder="वर्तमानपत्र 1 चे नाव"
+                                                        class="w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
+                                                </div>
+                                                <div>
+                                                    <label class="mb-2 block text-sm font-semibold text-[#44597a]">दिनांक</label>
+                                                    <input type="date"
+                                                        class="w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
+                                                </div>
+                                                <div>
+                                                    <label class="mb-2 block text-sm font-semibold text-[#44597a]">अपलोड</label>
+                                                    <input type="file" multiple
+                                                        class="block w-full rounded-xl border border-dashed border-[#c5d6ec] bg-white px-4 py-3 text-sm text-[#60708a] file:mr-4 file:rounded-lg file:border-0 file:bg-[#125fcb] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white">
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="rounded-xl border border-[#dfe8f5] bg-white p-3">
+                                            <p class="mb-2 text-sm font-semibold text-[#44597a]">२. वर्तमानपत्र</p>
+                                            <div class="grid gap-3 md:grid-cols-3 md:items-end">
+                                                <div>
+                                                    <label class="mb-2 block text-sm font-semibold text-[#44597a]">नाव</label>
+                                                    <input type="text" placeholder="वर्तमानपत्र 2 चे नाव"
+                                                        class="w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
+                                                </div>
+                                                <div>
+                                                    <label class="mb-2 block text-sm font-semibold text-[#44597a]">दिनांक</label>
+                                                    <input type="date"
+                                                        class="w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
+                                                </div>
+                                                <div>
+                                                    <label class="mb-2 block text-sm font-semibold text-[#44597a]">अपलोड</label>
+                                                    <input type="file" multiple
+                                                        class="block w-full rounded-xl border border-dashed border-[#c5d6ec] bg-white px-4 py-3 text-sm text-[#60708a] file:mr-4 file:rounded-lg file:border-0 file:bg-[#125fcb] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white">
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 
@@ -1341,13 +1383,17 @@
                     return;
                 }
 
-                // sec8_row_N  (1-based)
-                const sec8Match = key.match(/^sec8_row_(\d+)$/);
+                // sec8_row_N_main / sec8_row_N_paper1 / sec8_row_N_paper2 (1-based)
+                const sec8Match = key.match(/^sec8_row_(\d+)(?:_(main|paper1|paper2))?$/);
                 if (sec8Match) {
                     const idx = parseInt(sec8Match[1]) - 1;
+                    const subkey = sec8Match[2] || 'main';
                     const rows = document.querySelectorAll('#record-sec8-rows .record-sec8-row');
                     const row = rows[idx];
-                    if (row) markInput(row.querySelector('.vi-sec8-files'));
+                    if (row) {
+                        const selMap = { main: '.vi-sec8-files', paper1: '.vi-sec8-paper1-files', paper2: '.vi-sec8-paper2-files' };
+                        markInput(row.querySelector(selMap[subkey]));
+                    }
                     return;
                 }
 
@@ -1967,7 +2013,9 @@
 
             return {
                 sec1_adesh_kramank: p1[0], sec1_date: p1[1], sec1_files: p1[2],
-                sec3_upvibhag_name: p1[3], sec3_adhisuchana_kramank: p1[4], sec3_date: p1[5], sec3_files: p1[6],
+                sec2_paper1_name: p1[3], sec2_paper1_date: p1[4], sec2_paper1_files: p1[5],
+                sec2_paper2_name: p1[6], sec2_paper2_date: p1[7], sec2_paper2_files: p1[8],
+                sec3_upvibhag_name: p1[9], sec3_adhisuchana_kramank: p1[10], sec3_date: p1[11], sec3_files: p1[12],
 
                 sec5_prastaav_kramank: p2[0], sec5_date: p2[1], sec5_files: p2[2],
                 sec6_register_number: p2[3], sec6_date: p2[4], sec6_parishisht16_files: p2[5], sec6_nakasha_files: p2[6],
@@ -2287,17 +2335,68 @@
                             class="vi-sec8-files vi-sec8-row-input block w-full rounded-xl border border-dashed border-[#c5d6ec] bg-white px-4 py-3 text-sm text-[#60708a] file:mr-4 file:rounded-lg file:border-0 file:bg-[#125fcb] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white">
                     </div>
                 </div>
+                <div class="mt-4 space-y-3">
+                    <div class="rounded-xl border border-[#dfe8f5] bg-white p-3">
+                        <p class="mb-2 text-sm font-semibold text-[#44597a]">१. वर्तमानपत्र</p>
+                        <div class="grid gap-3 md:grid-cols-3 md:items-end">
+                            <div>
+                                <label class="mb-2 block text-sm font-semibold text-[#44597a]">नाव</label>
+                                <input type="text" placeholder="वर्तमानपत्र 1 चे नाव"
+                                    class="vi-sec8-paper1-name vi-sec8-row-input w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
+                            </div>
+                            <div>
+                                <label class="mb-2 block text-sm font-semibold text-[#44597a]">दिनांक</label>
+                                <input type="date"
+                                    class="vi-sec8-paper1-date vi-sec8-row-input w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
+                            </div>
+                            <div>
+                                <label class="mb-2 block text-sm font-semibold text-[#44597a]">अपलोड</label>
+                                <input type="file" multiple
+                                    class="vi-sec8-paper1-files vi-sec8-row-input block w-full rounded-xl border border-dashed border-[#c5d6ec] bg-white px-4 py-3 text-sm text-[#60708a] file:mr-4 file:rounded-lg file:border-0 file:bg-[#125fcb] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="rounded-xl border border-[#dfe8f5] bg-white p-3">
+                        <p class="mb-2 text-sm font-semibold text-[#44597a]">२. वर्तमानपत्र</p>
+                        <div class="grid gap-3 md:grid-cols-3 md:items-end">
+                            <div>
+                                <label class="mb-2 block text-sm font-semibold text-[#44597a]">नाव</label>
+                                <input type="text" placeholder="वर्तमानपत्र 2 चे नाव"
+                                    class="vi-sec8-paper2-name vi-sec8-row-input w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
+                            </div>
+                            <div>
+                                <label class="mb-2 block text-sm font-semibold text-[#44597a]">दिनांक</label>
+                                <input type="date"
+                                    class="vi-sec8-paper2-date vi-sec8-row-input w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
+                            </div>
+                            <div>
+                                <label class="mb-2 block text-sm font-semibold text-[#44597a]">अपलोड</label>
+                                <input type="file" multiple
+                                    class="vi-sec8-paper2-files vi-sec8-row-input block w-full rounded-xl border border-dashed border-[#c5d6ec] bg-white px-4 py-3 text-sm text-[#60708a] file:mr-4 file:rounded-lg file:border-0 file:bg-[#125fcb] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white">
+                            </div>
+                        </div>
+                    </div>
+                </div>
             `;
         }
 
         function renderSec8SavedFiles(lineEl, files = []) {
-            const fileInput = lineEl.querySelector('.vi-sec8-files');
-            const container = ensureSavedFilesContainer(fileInput, 'vi-sec8-saved-files');
-            renderSavedFilesInContainer(
-                container,
-                Array.isArray(files) ? files : [],
-                (id) => `/api/village-info/delete-sec8-row-file/${id}/`
-            );
+            const filesMap = (files && typeof files === 'object') ? files : {};
+            const buckets = [
+                ['main', '.vi-sec8-files'],
+                ['paper1', '.vi-sec8-paper1-files'],
+                ['paper2', '.vi-sec8-paper2-files'],
+            ];
+            buckets.forEach(([key, selector]) => {
+                const fileInput = lineEl.querySelector(selector);
+                if (!fileInput) return;
+                const container = ensureSavedFilesContainer(fileInput, 'vi-sec8-saved-files');
+                renderSavedFilesInContainer(
+                    container,
+                    Array.isArray(filesMap[key]) ? filesMap[key] : [],
+                    (id) => `/api/village-info/delete-sec8-row-file/${id}/`
+                );
+            });
         }
 
         function renderSec8Rows(rows = []) {
@@ -2311,6 +2410,10 @@
                 line.innerHTML = buildSec8RowHtml();
                 line.querySelector('.vi-sec8-kramank').value = row.adhisuchana_kramank || '';
                 line.querySelector('.vi-sec8-date').value = row.adhisuchana_date || '';
+                line.querySelector('.vi-sec8-paper1-name').value = row.paper1_name || '';
+                line.querySelector('.vi-sec8-paper1-date').value = row.paper1_date || '';
+                line.querySelector('.vi-sec8-paper2-name').value = row.paper2_name || '';
+                line.querySelector('.vi-sec8-paper2-date').value = row.paper2_date || '';
                 renderSec8SavedFiles(line, row.files || []);
                 initAllDropzones(line);
                 initDateValidation(line);
@@ -2547,7 +2650,13 @@
                 return {
                     adhisuchana_kramank: line.querySelector('.vi-sec8-kramank')?.value?.trim() || '',
                     adhisuchana_date: line.querySelector('.vi-sec8-date')?.value || '',
-                    filesInput: line.querySelector('.vi-sec8-files')
+                    paper1_name: line.querySelector('.vi-sec8-paper1-name')?.value?.trim() || '',
+                    paper1_date: line.querySelector('.vi-sec8-paper1-date')?.value || '',
+                    paper2_name: line.querySelector('.vi-sec8-paper2-name')?.value?.trim() || '',
+                    paper2_date: line.querySelector('.vi-sec8-paper2-date')?.value || '',
+                    filesInput: line.querySelector('.vi-sec8-files'),
+                    paper1FilesInput: line.querySelector('.vi-sec8-paper1-files'),
+                    paper2FilesInput: line.querySelector('.vi-sec8-paper2-files')
                 };
             });
         }
@@ -2619,7 +2728,11 @@
                 })),
                 sec8_rows: collectSec8Rows().map((row) => ({
                     adhisuchana_kramank: row.adhisuchana_kramank || '',
-                    adhisuchana_date: row.adhisuchana_date || ''
+                    adhisuchana_date: row.adhisuchana_date || '',
+                    paper1_name: row.paper1_name || '',
+                    paper1_date: row.paper1_date || '',
+                    paper2_name: row.paper2_name || '',
+                    paper2_date: row.paper2_date || ''
                 })),
                 sec26_rows: collect8ARecords().map((row) => ({
                     khate_kramank: row.khate_kramank || '',
@@ -2757,8 +2870,18 @@
             sec8Rows.forEach((row, i) => {
                 formData.append(`sec8_row_adhisuchana_${i}`, row.adhisuchana_kramank);
                 formData.append(`sec8_row_date_${i}`, row.adhisuchana_date);
+                formData.append(`sec8_row_paper1_name_${i}`, row.paper1_name);
+                formData.append(`sec8_row_paper1_date_${i}`, row.paper1_date);
+                formData.append(`sec8_row_paper2_name_${i}`, row.paper2_name);
+                formData.append(`sec8_row_paper2_date_${i}`, row.paper2_date);
                 Array.from(row.filesInput?.files || []).forEach((file) => {
                     formData.append(`sec8_row_files_${i}`, file);
+                });
+                Array.from(row.paper1FilesInput?.files || []).forEach((file) => {
+                    formData.append(`sec8_row_paper1_files_${i}`, file);
+                });
+                Array.from(row.paper2FilesInput?.files || []).forEach((file) => {
+                    formData.append(`sec8_row_paper2_files_${i}`, file);
                 });
             });
 

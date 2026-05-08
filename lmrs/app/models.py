@@ -1005,6 +1005,10 @@ class VillageData18_1Row(models.Model):
     )
     adhisuchana_kramank = models.TextField(blank=True)
     adhisuchana_date = models.DateField(null=True, blank=True)
+    paper1_name = models.TextField(blank=True)
+    paper1_date = models.DateField(null=True, blank=True)
+    paper2_name = models.TextField(blank=True)
+    paper2_date = models.DateField(null=True, blank=True)
 
     def __str__(self):
         return f"{self.adhisuchana_kramank} ({self.adhisuchana_date or '-'})"
@@ -1124,6 +1128,7 @@ class VillageData18_1RowFile(models.Model):
         on_delete=models.CASCADE,
         related_name='files_18_1'
     )
+    field_key = models.CharField(max_length=40, default='main')
     file = models.FileField(upload_to=village_18_1_row_file_upload_to, max_length=1000)
     uploaded_at = models.DateTimeField(auto_now_add=True)
 
