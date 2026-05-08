@@ -144,11 +144,32 @@ LOGIN_URL = '/login/'
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/login/'
 
-<<<<<<< Updated upstream
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'ERROR',
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console'],
+            'level': 'ERROR',
+            'propagate': False,
+        },
+    },
+}
+
+
 X_FRAME_OPTIONS = 'SAMEORIGIN'
-=======
+
 CSRF_TRUSTED_ORIGINS = [
     "https://pune-ringroad.rottengrapes.tech",
     "https://purandar-airport.rottengrapes.tech",
 ]
->>>>>>> Stashed changes
+
