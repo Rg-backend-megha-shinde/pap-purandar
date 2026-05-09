@@ -54,6 +54,12 @@
 <div class="w-full mx-auto bg-white p-3 sm:p-4 md:p-6 border border-gray-300 mt-4 sm:mt-6 rounded-lg shadow">
     <h2 class="text-center font-bold text-xl underline">७/१२ उतारा संपादन</h2>
 
+    {% if error_message %}
+        <div class="mt-4 rounded border border-red-300 bg-red-50 p-3 text-sm font-semibold text-red-700">
+            {{ error_message }}
+        </div>
+    {% endif %}
+
     <form method="POST" class="mt-6">
         {% csrf_token %}
 
