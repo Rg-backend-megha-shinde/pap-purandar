@@ -445,17 +445,36 @@
             const assetClassificationDetails = document.getElementById('assetClassificationDetails');
             const assetLayersDetails = document.getElementById('assetLayersDetails');
 
-            assetClassificationDetails.addEventListener('toggle', function () {
-                if (this.open) {
-                    assetLayersDetails.removeAttribute('open');
-                }
-            });
-
-            assetLayersDetails.addEventListener('toggle', function () {
-                if (this.open) {
+            function closeAssetPanels() {
+                if (assetClassificationDetails) {
+                    assetClassificationDetails.open = false;
                     assetClassificationDetails.removeAttribute('open');
                 }
-            });
+                if (assetLayersDetails) {
+                    assetLayersDetails.open = false;
+                    assetLayersDetails.removeAttribute('open');
+                }
+            }
+
+            if (assetClassificationDetails) {
+                assetClassificationDetails.addEventListener('toggle', function () {
+                    if (this.open) {
+                        assetLayersDetails?.removeAttribute('open');
+                    }
+                });
+            }
+
+            if (assetLayersDetails) {
+                assetLayersDetails.addEventListener('toggle', function () {
+                    if (this.open) {
+                        assetClassificationDetails?.removeAttribute('open');
+                    }
+                });
+            }
+
+            closeAssetPanels();
+            requestAnimationFrame(closeAssetPanels);
+            window.addEventListener('load', closeAssetPanels);
 
             // Initialize map centered on Purandar, Pune
             map = new ol.Map({
