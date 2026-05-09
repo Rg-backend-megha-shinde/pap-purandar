@@ -436,7 +436,8 @@ $(document).ready(function () {
     const kulKhandInfoContent = document.getElementById('kulKhandInfoContent');
 
     function openKulKhandModal(kulKhandInfo) {
-        kulKhandInfoContent.textContent = kulKhandInfo || 'Not available';
+        const decodedText = decodeUnicodeEscapes(kulKhandInfo || '');
+        kulKhandInfoContent.textContent = decodedText || 'Not available';
         kulKhandModal.classList.remove('hidden');
         document.body.style.overflow = 'hidden';
     }
