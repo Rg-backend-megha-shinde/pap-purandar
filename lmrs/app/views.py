@@ -758,6 +758,25 @@ def delete_ready_reckoner(request, id):
     
     return redirect('ready_reckoner_list')
 
+
+@login_required
+@require_http_methods(["POST"])
+def delete_selected_ready_reckoner(request):
+    selected_ids = request.POST.getlist('selected_ids')
+    if not selected_ids:
+        return redirect('ready_reckoner_list')
+
+    anchors = ReadyReckonerInfo.objects.filter(id__in=selected_ids).only('village', 'year')
+    groups_to_delete = {(obj.village, obj.year) for obj in anchors}
+
+    for village, year in groups_to_delete:
+        village_records = ReadyReckonerInfo.objects.filter(village=village, year=year)
+        if 'app_villagedatasec15rate' in connection.introspection.table_names():
+            VillageDataSec15Rate.objects.filter(rr_rate__rr__in=village_records).delete()
+        village_records.delete()
+
+    return redirect('ready_reckoner_list')
+
 @login_required
 def download_all_ready_reckoner_csv(request):
     from itertools import groupby

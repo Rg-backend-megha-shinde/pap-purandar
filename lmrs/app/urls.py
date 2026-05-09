@@ -15,6 +15,7 @@ urlpatterns = [
     path('tools/ready-reckoner/download-all/', views.download_all_ready_reckoner_csv, name='download_all_ready_reckoner_csv'),
     path('tools/ready-reckoner/edit/<int:id>/', views.edit_ready_reckoner, name='edit_ready_reckoner'),
     path('tools/ready-reckoner/delete/<int:id>/', views.delete_ready_reckoner, name='delete_ready_reckoner'),
+    path('tools/ready-reckoner/delete-selected/', views.delete_selected_ready_reckoner, name='delete_selected_ready_reckoner'),
     path('tools/delete-document-attachment/<int:attachment_id>/', views.delete_document_attachment, name='delete_document_attachment'),
     path('tools/712/', views.land_record_712),
     path('tools/712/list/', views.land_record_712_list, name='land_record_712_list'),
