@@ -467,12 +467,76 @@ function renumberBlocks() {
 })();
 
 // ── Form submit: inject block-index separators ─────────────────────────────
+function clearInlineErrors(formEl) {
+    formEl.querySelectorAll('.rr-inline-error').forEach(el => el.remove());
+    formEl.querySelectorAll('.rr-error-field').forEach(el => {
+        el.classList.remove('rr-error-field', 'border-red-500', 'focus:ring-red-400');
+    });
+}
+
+function showInlineError(inputEl, message) {
+    if (!inputEl || !inputEl.parentElement) return;
+    const old = inputEl.parentElement.querySelector('.rr-inline-error');
+    if (old) old.remove();
+    const msg = document.createElement('div');
+    msg.className = 'rr-inline-error text-red-600 text-xs mb-1';
+    msg.textContent = message;
+    inputEl.parentElement.insertBefore(msg, inputEl);
+    inputEl.classList.add('rr-error-field', 'border-red-500', 'focus:ring-red-400');
+}
+
+function validateReadyReckonerForm(formEl) {
+    clearInlineErrors(formEl);
+    let isValid = true;
+
+    formEl.querySelectorAll('input[required][type="text"], .assessment-type-input[required]').forEach(input => {
+        if ((input.value || '').trim() === '') {
+            showInlineError(input, 'ही माहिती भरणे आवश्यक आहे.');
+            isValid = false;
+        }
+    });
+
+    const vt = (document.getElementById('village_type')?.value || '').trim();
+    if (vt === 'gramin') {
+        formEl.querySelectorAll('.rate-row').forEach(row => {
+            const minInput = row.querySelector('input[name^="assessment_range_min"]');
+            const maxInput = row.querySelector('input[name^="assessment_range_max"]');
+            if (!minInput || !maxInput) return;
+
+            const minVal = (minInput.value || '').trim();
+            const maxVal = (maxInput.value || '').trim();
+            if (!minVal || !maxVal) return;
+
+            const minNum = Number(minVal);
+            const maxNum = Number(maxVal);
+
+            if (minNum < 0) {
+                showInlineError(minInput, 'किमान मर्यादा ऋण (minus) असू शकत नाही.');
+                isValid = false;
+            }
+            if (maxNum < 0) {
+                showInlineError(maxInput, 'कमाल मर्यादा ऋण (minus) असू शकत नाही.');
+                isValid = false;
+            }
+            if (!Number.isNaN(minNum) && !Number.isNaN(maxNum) && maxNum < minNum) {
+                showInlineError(maxInput, 'कमाल मर्यादा किमान मर्यादेपेक्षा कमी असू शकत नाही.');
+                isValid = false;
+            }
+        });
+    }
+    return isValid;
+}
+
 document.getElementById('rrForm').addEventListener('submit', function (e) {
     // Validate at least one assessment block
     const blocks = document.querySelectorAll('.assessment-block');
     if (blocks.length === 0) {
         e.preventDefault();
         alert('किमान एक मूल्यांकन प्रकार जोडा.');
+        return;
+    }
+    if (!validateReadyReckonerForm(this)) {
+        e.preventDefault();
         return;
     }
     // Inject hidden block_count so backend knows how many blocks
