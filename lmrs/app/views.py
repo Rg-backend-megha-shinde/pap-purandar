@@ -821,7 +821,7 @@ def download_all_ready_reckoner_csv(request):
                         rate.assessment_range_max if rate.village_type != 'prabhav' else '',
                         rate.shighrasiddha_vibhag if rate.village_type == 'prabhav' else '',
                         rate.rate,
-                        anchor.updated_at.strftime('%d/%m/%Y %H:%M') if anchor.updated_at else '',
+                        timezone.localtime(anchor.updated_at).strftime('%d %b %Y, %I:%M %p') if anchor.updated_at else '',
                         anchor.user.username if anchor.user else ''
                     ]
                     writer.writerow(row)
@@ -839,7 +839,7 @@ def download_all_ready_reckoner_csv(request):
                     '',  # max range
                     '',  # shighrasiddha
                     '',  # rate
-                    anchor.updated_at.strftime('%d/%m/%Y %H:%M') if anchor.updated_at else '',
+                    timezone.localtime(anchor.updated_at).strftime('%d %b %Y, %I:%M %p') if anchor.updated_at else '',
                     anchor.user.username if anchor.user else ''
                 ]
                 writer.writerow(row)
