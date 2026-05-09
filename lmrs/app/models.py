@@ -996,7 +996,7 @@ class VillageData32_2Row(models.Model):
         verbose_name_plural = "VillageData15(2) Rows"
 
 
-class villagedata32_1row(models.Model):
+class VillageData32_1Row(models.Model):
     # --- ८. कलम 18/1 अंतिम अधिसूचना (repeatable rows) ---
     village_data = models.ForeignKey(
         VillageData,
@@ -1121,10 +1121,10 @@ class VillageData32_2RowFile(models.Model):
         verbose_name_plural = "VillageData15(2) Row Files"
 
 
-class villagedata32_1rowFile(models.Model):
-    """Stores multiple uploaded files for a villagedata32_1row."""
+class VillageData32_1RowFile(models.Model):
+    """Stores multiple uploaded files for a VillageData32_1Row."""
     row_18_1 = models.ForeignKey(
-        villagedata32_1row,
+        VillageData32_1Row,
         on_delete=models.CASCADE,
         related_name='files_18_1'
     )

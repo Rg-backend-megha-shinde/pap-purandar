@@ -5,7 +5,7 @@ from django.db import connection
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.sessions.models import Session
-from .models import Inspection, ReadyReckonerInfo, ReadyReckonerRate, LandRecord712, FarmerNames,TreeMaster, Asset, AssetMeasurement, AssetTypeMaster, AssetFieldMaster, AssetFormulaMaster, Document, ToolMaster, DocumentMaster, DocumentAttachment, Entry, VillageData, VillageData8ARecord, VillageDataSec15Rate, VillageDataFile, VillageData8AFile, VillageData32_2Row, VillageData32_2RowFile, villagedata32_1row as VillageData32_1Row, villagedata32_1rowFile as VillageData32_1RowFile, ActiveUserSession, AssetDetail
+from .models import Inspection, ReadyReckonerInfo, ReadyReckonerRate, LandRecord712, FarmerNames,TreeMaster, Asset, AssetMeasurement, AssetTypeMaster, AssetFieldMaster, AssetFormulaMaster, Document, ToolMaster, DocumentMaster, DocumentAttachment, Entry, VillageData, VillageData8ARecord, VillageDataSec15Rate, VillageDataFile, VillageData8AFile, VillageData32_2Row, VillageData32_2RowFile, VillageData32_1Row, VillageData32_1RowFile, ActiveUserSession, AssetDetail
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponseForbidden
 from django.db import connection
