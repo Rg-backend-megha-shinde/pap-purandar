@@ -94,7 +94,8 @@
             </div>
             <div>
                 <label class="font-semibold text-sm">मूल्यदरसाठी गावाचा प्रकार</label>
-                <select id="village_type" name="village_type" required class="w-full border p-2 rounded focus:ring-2 focus:ring-orange-400 text-sm mt-1" onchange="onVillageTypeChange()">
+                <input type="hidden" name="village_type" value="{% if anchor.rates.all.0.village_type == 'prabhav' %}prabhav{% else %}gramin{% endif %}">
+                <select id="village_type" required disabled class="w-full border p-2 rounded bg-gray-100 text-gray-500 cursor-not-allowed text-sm mt-1" onchange="onVillageTypeChange()">
                     <option value="gramin" {% if anchor.rates.all.0.village_type != 'prabhav' %}selected{% endif %}>ग्रामीण</option>
                     <option value="prabhav" {% if anchor.rates.all.0.village_type == 'prabhav' %}selected{% endif %}>प्रभाव</option>
                 </select>
