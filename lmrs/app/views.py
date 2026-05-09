@@ -898,44 +898,48 @@ def download_all_ready_reckoner_csv(request):
             first_rate = item_list[0].rates.first()
             village_type = 'प्रभाव' if first_rate.village_type == 'prabhav' else 'ग्रामीण'
         
-        # Write each assessment type and its rates
+        # Export exactly one row per village+year group (same as list row count).
+        assessment_parts = []
+        unit_parts = []
+        range_parts = []
+        shighrasiddha_parts = []
+        rate_parts = []
+
         for record in item_list:
-            if record.rates.exists():
-                for rate in record.rates.all():
-                    row = [
-                        district_mr,
-                        taluka_mr,
-                        village_mr,
-                        record.year,
-                        village_type,
-                        record.assessment_type,
-                        record.unit,
-                        rate.assessment_range_min if rate.village_type != 'prabhav' else '',
-                        rate.assessment_range_max if rate.village_type != 'prabhav' else '',
-                        rate.shighrasiddha_vibhag if rate.village_type == 'prabhav' else '',
-                        rate.rate,
-                        timezone.localtime(anchor.updated_at).strftime('%d %b %Y, %I:%M %p') if anchor.updated_at else '',
-                        anchor.user.username if anchor.user else ''
-                    ]
-                    writer.writerow(row)
+            assessment_parts.append(record.assessment_type or '')
+            unit_parts.append(record.unit or '')
+
+            rates_qs = record.rates.all()
+            if rates_qs.exists():
+                for rate in rates_qs:
+                    if rate.village_type == 'prabhav':
+                        shighrasiddha_parts.append(rate.shighrasiddha_vibhag or '')
+                        range_parts.append('')
+                    else:
+                        range_parts.append(f"{rate.assessment_range_min} - {rate.assessment_range_max}")
+                        shighrasiddha_parts.append('')
+                    rate_parts.append(str(rate.rate))
             else:
-                # Record without rates
-                row = [
-                    district_mr,
-                    taluka_mr, 
-                    village_mr,
-                    record.year,
-                    village_type,
-                    record.assessment_type,
-                    record.unit,
-                    '',  # min range
-                    '',  # max range
-                    '',  # shighrasiddha
-                    '',  # rate
-                    timezone.localtime(anchor.updated_at).strftime('%d %b %Y, %I:%M %p') if anchor.updated_at else '',
-                    anchor.user.username if anchor.user else ''
-                ]
-                writer.writerow(row)
+                range_parts.append('')
+                shighrasiddha_parts.append('')
+                rate_parts.append('')
+
+        row = [
+            district_mr,
+            taluka_mr,
+            village_mr,
+            anchor.year,
+            village_type,
+            " | ".join([p for p in assessment_parts if p]),
+            " | ".join([p for p in unit_parts if p]),
+            " | ".join([p for p in range_parts if p]),
+            '',  # Max Range kept blank because min/max are combined in one per-list-row export
+            " | ".join([p for p in shighrasiddha_parts if p]),
+            " | ".join([p for p in rate_parts if p]),
+            timezone.localtime(anchor.updated_at).strftime('%d %b %Y, %I:%M %p') if anchor.updated_at else '',
+            anchor.user.username if anchor.user else ''
+        ]
+        writer.writerow(row)
     
     return response
 
