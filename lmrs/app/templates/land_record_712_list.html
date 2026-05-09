@@ -102,6 +102,7 @@
                     <th>भोगवटादारांचे नांव</th>
                     <th>कुळ, खंड व इतर अधिकार</th>
                     <th>दस्तऐवज</th>
+                    <th>Updated</th>
                     <th>Actions</th>
                 </tr>
             </thead>
@@ -167,6 +168,12 @@
                         {% else %}
                             उपलब्ध नाही
                         {% endif %}
+                    </td>
+                    <td>
+                        <div class="text-xs text-gray-600">
+                            <div>{{ item.updated_at|date:"d M Y, h:i a" }}</div>
+                            <div class="text-gray-500">Updated by {{ item.user.username }}</div>
+                        </div>
                     </td>
                     <td style="white-space: nowrap;">
                         <a href="{% url 'edit_land_record_712' item.id %}" title="Edit" style="display:inline-flex; align-items:center; justify-content:center;
@@ -264,7 +271,7 @@ $(document).ready(function () {
             { targets: 14, orderable: false, searchable: false }, // Owner info column
             { targets: 15, orderable: false, searchable: false }, // Kul Khand column
             { targets: 16, orderable: false, searchable: false }, // 7/12 file column
-            { targets: 17, orderable: false, searchable: false, width: '100px' } // Actions column
+            { targets: 18, orderable: false, searchable: false, width: '100px' } // Actions column
         ],
         language: {
             emptyTable: "कोणतीही नोंद उपलब्ध नाही.",
