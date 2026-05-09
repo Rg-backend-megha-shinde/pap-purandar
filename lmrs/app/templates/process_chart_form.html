@@ -175,6 +175,19 @@
         font-weight: 700;
     }
 
+    .pc-table-view-btn {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.35rem 0.7rem;
+        border-radius: 0.4rem;
+        background: #dcfce7;
+        color: #166534;
+        font-size: 0.82rem;
+        font-weight: 700;
+        border: 0;
+        cursor: pointer;
+    }
+
     .pc-step-dot.is-active span {
         border-color: #125fcb;
         background: #125fcb;
@@ -248,8 +261,8 @@
                         <p class="mt-1 text-sm text-[#6b7d99]">महाराष्ट्र महामार्ग अधिनियम प्रक्रियेसाठी पान 1 ते 16 प्रमाणे स्थिर नमुना फॉर्म.</p>
                     </div>
                     <div class="flex gap-2">
-                        <button type="button" class="rounded-xl border border-[#ccdbef] bg-white px-4 py-2 text-sm font-semibold text-[#4a6488]">Save Draft</button>
-                        <button type="button" class="rounded-xl bg-[#125fcb] px-4 py-2 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(18,95,203,0.2)]">Submit</button>
+                        <button type="button" id="pcSaveDraftBtn" class="rounded-xl border border-[#ccdbef] bg-white px-4 py-2 text-sm font-semibold text-[#4a6488]">Save Draft</button>
+                        <button type="button" id="pcSubmitBtn" class="rounded-xl bg-[#125fcb] px-4 py-2 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(18,95,203,0.2)]">Submit</button>
                     </div>
                 </div>
 
@@ -258,7 +271,7 @@
                     <div class="pc-stepper-grid">
                         <button type="button" class="pc-step-dot relative z-10 flex flex-col items-center gap-1 text-center" data-pc-step="1"><span class="flex items-center justify-center rounded-full border-2 border-[#cad8ea] bg-white font-bold text-[#8a99ad]">1</span><small class="font-semibold text-[#8897ab]">मूलभूत</small></button>
                         <button type="button" class="pc-step-dot relative z-10 flex flex-col items-center gap-1 text-center" data-pc-step="2"><span class="flex items-center justify-center rounded-full border-2 border-[#cad8ea] bg-white font-bold text-[#8a99ad]">2</span><small class="font-semibold text-[#8897ab]">अधिसूचना</small></button>
-                        <button type="button" class="pc-step-dot relative z-10 flex flex-col items-center gap-1 text-center" data-pc-step="3"><span class="flex items-center justify-center rounded-full border-2 border-[#cad8ea] bg-white font-bold text-[#8a99ad]">3</span><small class="font-semibold text-[#8897ab]">15(2)/आक्षेप</small></button>
+                        <button type="button" class="pc-step-dot relative z-10 flex flex-col items-center gap-1 text-center" data-pc-step="3"><span class="flex items-center justify-center rounded-full border-2 border-[#cad8ea] bg-white font-bold text-[#8a99ad]">3</span><small class="font-semibold text-[#8897ab]">32(2)/आक्षेप</small></button>
                         <button type="button" class="pc-step-dot relative z-10 flex flex-col items-center gap-1 text-center" data-pc-step="4"><span class="flex items-center justify-center rounded-full border-2 border-[#cad8ea] bg-white font-bold text-[#8a99ad]">4</span><small class="font-semibold text-[#8897ab]">संयुक्त मोजणी</small></button>
                         <button type="button" class="pc-step-dot relative z-10 flex flex-col items-center gap-1 text-center" data-pc-step="5"><span class="flex items-center justify-center rounded-full border-2 border-[#cad8ea] bg-white font-bold text-[#8a99ad]">5</span><small class="font-semibold text-[#8897ab]">नोटीस</small></button>
                         <button type="button" class="pc-step-dot relative z-10 flex flex-col items-center gap-1 text-center" data-pc-step="6"><span class="flex items-center justify-center rounded-full border-2 border-[#cad8ea] bg-white font-bold text-[#8a99ad]">6</span><small class="font-semibold text-[#8897ab]">समिती</small></button>
@@ -267,7 +280,7 @@
                         <button type="button" class="pc-step-dot relative z-10 flex flex-col items-center gap-1 text-center" data-pc-step="9"><span class="flex items-center justify-center rounded-full border-2 border-[#cad8ea] bg-white font-bold text-[#8a99ad]">9</span><small class="font-semibold text-[#8897ab]">संमती</small></button>
                         <button type="button" class="pc-step-dot relative z-10 flex flex-col items-center gap-1 text-center" data-pc-step="10"><span class="flex items-center justify-center rounded-full border-2 border-[#cad8ea] bg-white font-bold text-[#8a99ad]">10</span><small class="font-semibold text-[#8897ab]">प्रदान</small></button>
                         <button type="button" class="pc-step-dot relative z-10 flex flex-col items-center gap-1 text-center" data-pc-step="11"><span class="flex items-center justify-center rounded-full border-2 border-[#cad8ea] bg-white font-bold text-[#8a99ad]">11</span><small class="font-semibold text-[#8897ab]">निवाडा</small></button>
-                        <button type="button" class="pc-step-dot relative z-10 flex flex-col items-center gap-1 text-center" data-pc-step="12"><span class="flex items-center justify-center rounded-full border-2 border-[#cad8ea] bg-white font-bold text-[#8a99ad]">12</span><small class="font-semibold text-[#8897ab]">कब्जा/नोंद</small></button>
+                        <button type="button" class="pc-step-dot relative z-10 flex flex-col items-center gap-1 text-center" data-pc-step="12"><span class="flex items-center justify-center rounded-full border-2 border-[#cad8ea] bg-white font-bold text-[#8a99ad]">12</span><small class="font-semibold text-[#8897ab]">ताबा/नोंद</small></button>
                     </div>
                 </div>
 
@@ -284,10 +297,10 @@
                                     <div>
                                         <label class="pc-label">प्रयोजन निवडा</label>
                                         <select class="pc-input" name="project_purpose">
+                                            <option>विमानतळ बांधकाम करणे</option>
                                             <option value="">प्रयोजन निवडा</option>
                                             <option>महामार्गाचे बांधकाम करणे</option>
                                             <option>नवनगराचा विकास करणे</option>
-                                            <option>विमानतळ बांधकाम करणे</option>
                                         </select>
                                     </div>
                                     <div>
@@ -295,18 +308,33 @@
                                         <select class="pc-input" name="acquisition_type">
                                             <option>महाराष्ट्र महामार्ग अधिनियम</option>
                                             <option>राष्ट्रीय महामार्ग अधिनियम</option>
-                                            <option>MIDC act</option>
+                                            <option>महाराष्ट्र औद्योगिक विकास अधिनियम MIDC act 1961</option>
                                         </select>
                                     </div>
                                 </div>
                             </div>
                             <div class="pc-section">
                                 <h3 class="mb-4 text-lg font-bold text-[#244271]">स्थान माहिती</h3>
-                                <div class="grid gap-4 md:grid-cols-4">
-                                    <div><label class="pc-label">विभाग</label><input class="pc-input" name="division" type="text"></div>
-                                    <div><label class="pc-label">जिल्हा</label><select class="pc-input" name="district"><option>जिल्हा निवडा</option></select></div>
-                                    <div><label class="pc-label">तालुका</label><select class="pc-input" name="taluka"><option>तालुका निवडा</option></select></div>
-                                    <div><label class="pc-label">गाव</label><select class="pc-input" name="village"><option>गाव निवडा</option></select></div>
+                                <div class="grid gap-4 md:grid-cols-5">
+                                    <div><label class="pc-label">विभाग</label><select class="pc-input" name="division"><option value="">विभाग निवडा</option><option value="कोकण">कोकण</option>
+                                    <option value="पुणे">पुणे</option>
+                                    <option value="नाशिक">नाशिक</option>
+                                    <option value="औरंगाबाद (छत्रपती संभाजीनगर)">औरंगाबाद (छत्रपती संभाजीनगर)</option>
+                                    <option value="अमरावती">अमरावती</option>
+                                    <option value="नागपूर">नागपूर</option>
+                                    </select>
+                                    </div>
+
+                                    <div><label class="pc-label">जिल्हा</label><select class="pc-input" id="pcDistrict" name="district"><option value="">जिल्हा निवडा</option></select></div>
+                                    <div><label class="pc-label">तालुका</label><select class="pc-input" id="pcTaluka" name="taluka"><option value="">तालुका निवडा</option></select></div>
+                                    <div><label class="pc-label">गाव</label><select class="pc-input" id="pcVillage" name="village"><option value="">गाव निवडा</option></select></div>
+                                    <div>
+                                        <label class="pc-label">गट / सर्वे क्रमांक</label>
+                                        <select class="pc-input" id="pcGutNumber" name="gut_number">
+                                            <option value="">गट / सर्वे क्रमांक निवडा</option>
+                                        </select>
+                                        <p class="mt-2 text-sm text-[#6b7d99]" id="pcGutNumberHelp">गाव निवडल्यानंतर गट / सर्वे क्रमांक दिसतील.</p>
+                                    </div>
                                 </div>
                             </div>
                             <div class="pc-section">
@@ -314,10 +342,8 @@
                                 <div class="grid gap-4 md:grid-cols-3">
                                     <div><label class="pc-label">जमीन प्रकार</label><select class="pc-input"><option>खाजगी</option><option>सरकारी</option><option>वनविभाग</option><option>इतर विभाग</option></select></div>
                                     <div><label class="pc-label">भोगवटदार वर्ग</label><select class="pc-input"><option>वर्ग 1</option><option>वर्ग 2</option></select></div>
-                                    <div><label class="pc-label">गट / सर्वे क्रमांक</label><input class="pc-input" type="text"></div>
-                                    <div><label class="pc-label">सर्वे / गट / नगर भूमापन क्रमांक</label><input class="pc-input" type="text"></div>
-                                    <div><label class="pc-label">हिस्सा क्रमांक</label><input class="pc-input" type="text"></div>
-                                    <div><label class="pc-label">खाते क्रमांक</label><input class="pc-input" type="text"></div>
+                                    
+                                    
                                 </div>
                             </div>
                             <div class="pc-section">
@@ -325,14 +351,31 @@
                                     <h3 class="text-lg font-bold text-[#244271]">जमीन मालक / हितसंबंधी व्यक्ती माहिती</h3>
                                     <button type="button" class="rounded-lg bg-[#125fcb] px-3 py-2 text-sm font-semibold text-white">+ Add Row</button>
                                 </div>
+                                <p class="mb-3 text-sm text-[#6b7d99]" id="pcOwnerInfoStatus">7/12 मधून माहिती उपलब्ध झाल्यावर ही सारणी स्वयंरित्या भरेल.</p>
                                 <div class="overflow-x-auto">
                                     <table class="pc-table">
                                         <thead>
                                             <tr>
-                                                <th>भूधारकाचे नाव ७/१२ अभिलेखाप्रमाणे</th><th>आधार कार्ड क्रमांक</th><th>आधार कार्ड प्रत</th><th>पॅन कार्ड क्रमांक</th><th>पॅन कार्ड प्रत</th><th>मोबाईल नंबर</th><th>पत्ता</th><th>लागवडी योग्य</th><th>पोट खराब</th><th>एकूण क्षेत्र</th>
+                                                <th rowspan="2">भूधारकाचे नाव</th>
+                                                <th rowspan="2">आधार कार्ड क्रमांक</th>
+                                                <th rowspan="2">आधार कार्ड प्रत</th>
+                                                <th rowspan="2">पॅन कार्ड क्रमांक</th>
+                                                <th rowspan="2">पॅन कार्ड प्रत</th>
+                                                <th rowspan="2">मोबाईल नंबर</th>
+                                                <th rowspan="2">पत्ता</th>
+                                                <th colspan="2">क्षेत्र (हेक्टर / आर) 7/12 प्रमाणे</th>
+                                                <th rowspan="2">एकूण क्षेत्र</th>
+                                                <th rowspan="2">खाते क्रमांक</th>
+                                                <th rowspan="2">आकारणी</th>
+                                                <th rowspan="2">इतर अधिकार, कूळ व इतर</th>
+                                            </tr>
+                                            <tr>
+                                                <th>लागवडी योग्य</th>
+                                                
+                                                <th>पोट खराब</th>
                                             </tr>
                                         </thead>
-                                        <tbody>
+                                        <tbody id="pcOwnerInfoBody">
                                             <tr>
                                                 <td><input class="pc-input" type="text"></td>
                                                 <td><input class="pc-input" type="text"></td>
@@ -344,6 +387,9 @@
                                                 <td><input class="pc-input" type="text" placeholder="हे.आर"></td>
                                                 <td><input class="pc-input" type="text" placeholder="हे.आर"></td>
                                                 <td><input class="pc-input" type="text" placeholder="हे.आर"></td>
+                                                <td><input class="pc-input" type="text"></td>
+                                                <td><input class="pc-input" type="text"></td>
+                                                <td><button type="button" class="pc-table-view-btn pc-other-rights-btn" data-other-rights="">View</button></td>
                                             </tr>
                                         </tbody>
                                     </table>
@@ -364,17 +410,17 @@
                 <section class="pc-step-panel" data-pc-panel="2">
                     <div class="pc-form-card">
                         <div class="border-b border-[#dbe8f8] bg-[#edf5ff] px-6 py-5">
-                            <h2 class="text-xl font-bold text-[#214a8b]">टप्पा 2: महामार्ग अधिसूचना</h2>
-                            <p class="mt-1 text-sm text-[#5c78a5]">महामार्ग अधिसूचना, अतिरिक्त अधिसूचना आणि प्राधिकृत अधिकारी नियुक्ती तपशील.</p>
+                            <h2 class="text-xl font-bold text-[#214a8b]">टप्पा 2: महाराष्ट्र औद्योगिक विकास अधिनियम</h2>
+                            <p class="mt-1 text-sm text-[#5c78a5]">१. महामार्ग अधिसूचना, अतिरिक्त अधिसूचना आणि प्राधिकृत अधिकारी नियुक्ती तपशील.</p>
                         </div>
                         <div class="space-y-6 px-6 py-7 md:px-8">
                             <div class="pc-section">
-                                <h3 class="mb-4 text-lg font-bold text-[#244271]">महामार्ग अधिसूचना तपशिल</h3>
+                                <h3 class="mb-4 text-lg font-bold text-[#244271]">म. ओ. वि. अ.- प्रकरण ६ (जमीन संपादन करणे व तिचा विनियोग करणे) अन्वये औद्योगिक क्षेत्र जाहीर केलेल्या अधिसूचनेचा तपशील</h3>
                                 <div class="grid gap-4 md:grid-cols-3">
-                                    <div><label class="pc-label">अधिसूचना क्रमांक</label><input class="pc-input" type="text" placeholder="क्रमांक प्रविष्ट करा"></div>
-                                    <div><label class="pc-label">दिनांक</label><input class="pc-input" type="text" placeholder="dd-mm-yyyy"></div>
+                                    <div><label class="pc-label">अधिसूचना क्रमांक</label><input class="pc-input" id="pcSec2AdhisuchanaKramank" name="sec2_adhisuchana_kramank" type="text" placeholder="क्रमांक प्रविष्ट करा" readonly></div>
+                                    <div><label class="pc-label">दिनांक</label><input class="pc-input" id="pcSec2Date" name="sec2_date" type="text" placeholder="dd-mm-yyyy" readonly></div>
                                     <div class="pc-eye-col">
-                                        <button type="button" class="pc-eye-view" aria-label="View Documents" title="View Documents">
+                                        <button type="button" id="pcSec2FilesViewBtn" class="pc-eye-view" aria-label="View Documents" title="View Documents">
                                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                                                 <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"></path>
                                                 <circle cx="12" cy="12" r="3"></circle>
@@ -387,10 +433,10 @@
                                     <div class="rounded-xl border border-[#d7e5f6] bg-[#f8fbff] p-4">
                                         <h4 class="mb-3 text-base font-bold text-[#244271]">वर्तमानपत्र १</h4>
                                         <div class="grid gap-4 md:grid-cols-3">
-                                            <div><label class="pc-label">नाव</label><input class="pc-input" type="text" placeholder="वर्तमानपत्र 1 चे नाव"></div>
-                                            <div><label class="pc-label">दिनांक</label><input class="pc-input" type="text" placeholder="dd-mm-yyyy"></div>
+                                            <div><label class="pc-label">नाव</label><input class="pc-input" id="pcSec2Paper1Name" name="sec2_paper1_name" type="text" placeholder="वर्तमानपत्र 1 चे नाव" readonly></div>
+                                            <div><label class="pc-label">दिनांक</label><input class="pc-input" id="pcSec2Paper1Date" name="sec2_paper1_date" type="text" placeholder="dd-mm-yyyy" readonly></div>
                                             <div class="pc-eye-col">
-                                                <button type="button" class="pc-eye-view" aria-label="View Documents" title="View Documents">
+                                                <button type="button" id="pcSec2Paper1FilesViewBtn" class="pc-eye-view" aria-label="View Documents" title="View Documents">
                                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                                                         <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"></path>
                                                         <circle cx="12" cy="12" r="3"></circle>
@@ -403,10 +449,10 @@
                                     <div class="rounded-xl border border-[#d7e5f6] bg-[#f8fbff] p-4">
                                         <h4 class="mb-3 text-base font-bold text-[#244271]">वर्तमानपत्र २</h4>
                                         <div class="grid gap-4 md:grid-cols-3">
-                                            <div><label class="pc-label">नाव</label><input class="pc-input" type="text" placeholder="वर्तमानपत्र 2 चे नाव"></div>
-                                            <div><label class="pc-label">दिनांक</label><input class="pc-input" type="text" placeholder="dd-mm-yyyy"></div>
+                                            <div><label class="pc-label">नाव</label><input class="pc-input" id="pcSec2Paper2Name" name="sec2_paper2_name" type="text" placeholder="वर्तमानपत्र 2 चे नाव" readonly></div>
+                                            <div><label class="pc-label">दिनांक</label><input class="pc-input" id="pcSec2Paper2Date" name="sec2_paper2_date" type="text" placeholder="dd-mm-yyyy" readonly></div>
                                             <div class="pc-eye-col">
-                                                <button type="button" class="pc-eye-view" aria-label="View Documents" title="View Documents">
+                                                <button type="button" id="pcSec2Paper2FilesViewBtn" class="pc-eye-view" aria-label="View Documents" title="View Documents">
                                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                                                         <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"></path>
                                                         <circle cx="12" cy="12" r="3"></circle>
@@ -428,18 +474,40 @@
                                     </div>
                                 </div>
                             </div>
-
                             <div class="pc-section">
-                                <h3 class="mb-4 text-lg font-bold text-[#244271]">२. प्रशासकीय मान्यता</h3>
+                                <h3 class="mb-4 text-lg font-bold text-[#244271]">
+                                   २ . अधिनियमाचे कलम ३२, ३६ व ३८ अन्वये प्राधिकृत भूसंपादन अधिकारी नियुक्ती
+                                </h3>
+
                                 <div class="grid gap-4 md:grid-cols-3 md:items-end">
+
+                                    <!-- उपविभागाचे नाव -->
                                     <div>
-                                        <label class="pc-label">आदेश/अधिसूचना क्रमांक</label>
-                                        <input class="pc-input" type="text" placeholder="क्रमांक प्रविष्ट करा">
+                                        <label class="pc-label">उपविभागाचे नाव</label>
+                                        <input class="pc-input" id="pcSec3UpvibhagName" name="sec3_upvibhag_name" type="text" placeholder="उपविभागाचे नाव प्रविष्ट करा">
                                     </div>
+
+                                    <!-- अधिसूचना/पत्र क्रमांक -->
                                     <div>
-                                        <label class="pc-label">दिनांक</label>
-                                        <input class="pc-input" type="text" placeholder="dd-mm-yyyy">
+                                        <label class="pc-label">अधिसूचना/पत्र क्रमांक</label>
+                                        <input class="pc-input" id="pcSec3AdhisuchanaKramank" name="sec3_adhisuchana_kramank" type="text" placeholder="क्रमांक प्रविष्ट करा">
                                     </div>
+
+                                    <!-- अधिसूचना दिनांक -->
+                                    <div>
+                                        <label class="pc-label">अधिसूचना दिनांक</label>
+                                        <input class="pc-input" id="pcSec3Date" name="sec3_date" type="text" placeholder="dd-mm-yyyy">
+                                    </div>
+
+                                    <!-- अधिसूचना/पत्र प्रत अपलोड -->
+                                    <div>
+                                        <label class="pc-label">
+                                            अधिसूचना/पत्र प्रत येथे अपलोड करा
+                                        </label>
+                                        <input class="pc-input" type="file">
+                                    </div>
+
+                                    <!-- Original Eye View Button kept unchanged -->
                                     <div class="pc-eye-col">
                                         <button type="button" class="pc-eye-view" aria-label="View Documents" title="View Documents">
                                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
@@ -448,28 +516,7 @@
                                             </svg>
                                         </button>
                                     </div>
-                                </div>
-                            </div>
 
-                            <div class="pc-section">
-                                <h3 class="mb-4 text-lg font-bold text-[#244271]">३. कलम १५(४) अन्वये प्राधिकृत भूसंपादन अधिकारी नियुक्ती</h3>
-                                <div class="grid gap-4 md:grid-cols-3 md:items-end">
-                                    <div>
-                                        <label class="pc-label">अधिसूचना क्रमांक</label>
-                                        <input class="pc-input" type="text" placeholder="क्रमांक प्रविष्ट करा">
-                                    </div>
-                                    <div>
-                                        <label class="pc-label">दिनांक</label>
-                                        <input class="pc-input" type="text" placeholder="dd-mm-yyyy">
-                                    </div>
-                                    <div class="pc-eye-col">
-                                        <button type="button" class="pc-eye-view" aria-label="View Documents" title="View Documents">
-                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                                                <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"></path>
-                                                <circle cx="12" cy="12" r="3"></circle>
-                                            </svg>
-                                        </button>
-                                    </div>
                                 </div>
                             </div>
 
@@ -480,15 +527,23 @@
                 <section class="pc-step-panel" data-pc-panel="3">
                     <div class="pc-form-card">
                         <div class="border-b border-[#dbe8f8] bg-[#edf5ff] px-6 py-5">
-                            <h2 class="text-xl font-bold text-[#214a8b]">टप्पा 3: कलम 15(2), प्रस्ताव व आक्षेप</h2>
-                            <p class="mt-1 text-sm text-[#5c78a5]">कलम 15(2) अधिसूचना, भूसंपादन प्रस्ताव आणि कलम 17(2) दाखल आक्षेप तपशील.</p>
+                            <h2 class="text-xl font-bold text-[#214a8b]">टप्पा 3: कलम 32(2), प्रस्ताव व आक्षेप</h2>
+                            <p class="mt-1 text-sm text-[#5c78a5]">कलम 32(2) अधिसूचना, भूसंपादन प्रस्ताव आणि कलम 17(2) दाखल आक्षेप तपशील.</p>
                         </div>
                         <div class="space-y-6 px-6 py-7 md:px-8">
                             <div class="pc-section">
-                                <h3 class="mb-4 text-lg font-bold text-[#244271]">४. कलम 15(2) नुसार संपादनाचा उद्देश घोषित </h3>
-                                <div class="grid gap-4 md:grid-cols-3 md:items-end">
-                                    <div><label class="pc-label">अधिसूचना क्रमांक</label><input class="pc-input" type="text" placeholder="कलम 15 अधिसूचना क्रमांक"></div>
-                                    <div><label class="pc-label">दिनांक</label><input class="pc-input" type="text" placeholder="dd-mm-yyyy"></div>
+                                <h3 class="mb-4 text-lg font-bold text-[#244271]">३. कलम ३२ (२) नुसार जमिनीच्या वापराबाबत हितसंबंधीत व्यक्तींचे म्हणणे ऐकून घेण्यासाठी जाहीर नोटीस प्रसिद्धी (कलम ५३ अन्वये)</h3>
+                                <div class="grid gap-4 md:grid-cols-2 md:items-end">
+                                    <div>
+                                        <label class="pc-label">अधिसूचना क्रमांक</label>
+                                        <input class="pc-input" type="text" placeholder="अधिसूचना क्रमांक">
+                                    </div>
+                                    <div>
+                                        <label class="pc-label">दिनांक</label>
+                                        <input class="pc-input" type="text" placeholder="Select Date">
+                                    </div>
+                                </div>
+                                <div class="mt-4 flex items-center gap-3">
                                     <div class="pc-eye-col">
                                         <button type="button" class="pc-eye-view" aria-label="View Documents" title="View Documents">
                                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
@@ -498,46 +553,23 @@
                                         </button>
                                     </div>
                                 </div>
-
-                                <div class="mt-5 space-y-4">
-                                    <div class="rounded-xl border border-[#d7e5f6] bg-[#f8fbff] p-4">
-                                        <h4 class="mb-3 text-base font-bold text-[#244271]">वर्तमानपत्र १</h4>
-                                        <div class="grid gap-4 md:grid-cols-3 md:items-end">
-                                            <div><label class="pc-label">नाव</label><input class="pc-input" type="text" placeholder="वर्तमानपत्र 1 चे नाव"></div>
-                                            <div><label class="pc-label">दिनांक</label><input class="pc-input" type="text" placeholder="dd-mm-yyyy"></div>
-                                            <div class="pc-eye-col">
-                                                <button type="button" class="pc-eye-view" aria-label="View Documents" title="View Documents">
-                                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                                                        <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"></path>
-                                                        <circle cx="12" cy="12" r="3"></circle>
-                                                    </svg>
-                                                </button>
-                                            </div>
-                                        </div>
+                                <div class="mt-4">
+                                    <span class="pc-label">अधिसूचनेमध्ये सर्वे क्रमांक किंवा गट क्रमांक समाविष्ट आहे का?</span>
+                                    <div class="mt-2 flex gap-4">
+                                        <label><input type="radio" name="notice_publication_included"> होय</label>
+                                        <label><input type="radio" name="notice_publication_included"> नाही</label>
                                     </div>
-
-                                    <div class="rounded-xl border border-[#d7e5f6] bg-[#f8fbff] p-4">
-                                        <h4 class="mb-3 text-base font-bold text-[#244271]">वर्तमानपत्र २</h4>
-                                        <div class="grid gap-4 md:grid-cols-3 md:items-end">
-                                            <div><label class="pc-label">नाव</label><input class="pc-input" type="text" placeholder="वर्तमानपत्र 2 चे नाव"></div>
-                                            <div><label class="pc-label">दिनांक</label><input class="pc-input" type="text" placeholder="dd-mm-yyyy"></div>
-                                            <div class="pc-eye-col">
-                                                <button type="button" class="pc-eye-view" aria-label="View Documents" title="View Documents">
-                                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                                                        <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"></path>
-                                                        <circle cx="12" cy="12" r="3"></circle>
-                                                    </svg>
-                                                </button>
-                                            </div>
-                                        </div>
+                                    <div class="mt-4">
+                                        <label class="pc-label">असल्यास अधिसूचित क्षेत्र नमूद करा</label>
+                                        <input class="pc-input mt-2" type="text" placeholder="नमूद करण्यासाठी जागा ठेवावी.">
                                     </div>
                                 </div>
                             </div>
                             <div class="pc-section">
                                 <h3 class="mb-4 text-lg font-bold text-[#244271]">भूसंपादन प्रस्ताव तपशील</h3>
                                 <div class="grid gap-4 md:grid-cols-3 md:items-end">
-                                    <div><label class="pc-label">प्रस्ताव पत्र क्रमांक</label><input class="pc-input" type="text" placeholder="प्रस्ताव पत्र क्रमांक"></div>
-                                    <div><label class="pc-label">दिनांक</label><input class="pc-input" type="text" placeholder="dd-mm-yyyy"></div>
+                                    <div><label class="pc-label">प्रस्ताव पत्र क्रमांक</label><input class="pc-input" id="pcSec5PrastaavKramank" name="sec5_prastaav_kramank" type="text" placeholder="प्रस्ताव पत्र क्रमांक"></div>
+                                    <div><label class="pc-label">दिनांक</label><input class="pc-input" id="pcSec5Date" name="sec5_date" type="text" placeholder="dd-mm-yyyy"></div>
                                     <div class="pc-eye-col">
                                         <button type="button" class="pc-eye-view" aria-label="View Documents" title="View Documents">
                                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
@@ -547,23 +579,34 @@
                                         </button>
                                     </div>
                                 </div>
-                                <div class="mt-4 grid gap-4 md:grid-cols-2 md:items-end">
-                                    <div>
-                                        <span class="pc-label">उक्त गट भूसंपादन प्रस्ताव आहे काय</span>
-                                        <div class="flex gap-4">
-                                            <label><input type="radio" name="acquisition_proposal_included"> होय</label>
-                                            <label><input type="radio" name="acquisition_proposal_included"> नाही</label>
+                            </div>
+                            <div class="pc-section">
+                                <h3 class="mb-5 text-lg font-bold text-[#244271]">कलम 32 (2) नुसार जमिनीच्या वापराबाबत हितसंबंधीत व्यक्तींचे म्हणणे ऐकून घेण्यासाठी व्यक्तिगत<br>नोटीस</h3>
+                                <div class="space-y-5 rounded-xl border border-[#d7e5f6] bg-[#f8fbff] p-5">
+                                    <div class="pt-5">
+                                        <div>
+                                            <label class="pc-label">नोटीस देण्यात आलेल्या भूधारकाचे नाव :</label>
+                                            <input class="pc-input mt-3" type="text">
                                         </div>
                                     </div>
                                     <div>
-                                        <label class="pc-label">असल्यास क्षेत्र नमूद करा</label>
-                                        <input class="pc-input" type="text" placeholder="नमूद करण्यासाठी जागा ठेवावी.">
+                                        <div>
+                                            <label class="pc-label">नोटीस बजावण्याचा दिनांक :</label>
+                                            <input class="pc-input mt-3" type="text" placeholder="dd-mm-yyyy">
+                                        </div>
                                     </div>
+                                    <div>
+                                        <div>
+                                            <label class="pc-label">नोटीस तामील प्रत :</label>
+                                            <input class="pc-upload mt-3" type="file">
+                                        </div>
+                                    </div>
+                                    <button type="button" class="pc-generate-notice-btn">Generate Notice</button>
                                 </div>
                             </div>
                             <div class="pc-section">
                                 <div class="mb-4 flex items-center justify-between gap-3">
-                                    <h3 class="text-lg font-bold text-[#244271]">कलम 17(1) दाखल आक्षेप</h3>
+                                    <h3 class="text-lg font-bold text-[#244271]">३२(२) अन्वये दाखल आक्षेप/भूधारकाचे म्हणणे तपशील</h3>
                                     <button type="button" class="pc-generate-notice-btn">Generate Notice</button>
                                 </div>
                                 <div class="mb-4 grid gap-4 md:grid-cols-3 md:items-end">
@@ -600,6 +643,54 @@
                             <p class="mt-1 text-sm text-[#5c78a5]">PDF पान 6 नुसार संयुक्त मोजणी तपशील.</p>
                         </div>
                         <div class="space-y-6 px-6 py-7 md:px-8">
+                            <div class="pc-section">
+                                <h3 class="mb-5 text-lg font-bold text-[#244271]">कलम 32(3) अन्वये सुनावणीसाठी नोटीस दिली आहे काय? असल्यास</h3>
+                                <div class="space-y-5 rounded-xl border border-[#d7e5f6] bg-[#f8fbff] p-5">
+                                    <div>
+                                        <label class="pc-label">नोटीस दिल्याचा दिनांक:</label>
+                                        <input class="pc-input mt-3" type="text" placeholder="dd-mm-yyyy">
+                                    </div>
+                                    <div>
+                                        <label class="pc-label">नोटीस तामील प्रत :</label>
+                                        <input class="pc-upload mt-3" type="file">
+                                    </div>
+                                    <div class="flex justify-end">
+                                        <button type="button" class="pc-generate-notice-btn">Generate Notice</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="pc-section">
+                                <div class="space-y-6 rounded-xl border border-[#d7e5f6] bg-[#f8fbff] p-5">
+                                    <div>
+                                        <h3 class="text-lg font-bold text-[#244271]">32(2) अन्वये नोटीस चे अनुषंगाने प्राप्त हरकतींचा अहवाल शासनास सादर झाला आहे काय?</h3>
+                                        <p class="mt-4 text-lg font-bold text-[#244271]">असल्यास,</p>
+                                        <div class="mt-5 space-y-5">
+                                            <div>
+                                                <label class="pc-label">सादर दिनांक :</label>
+                                                <input class="pc-input mt-3" type="text" placeholder="dd-mm-yyyy">
+                                            </div>
+                                            <div>
+                                                <label class="pc-label">प्रत अपलोड करा :</label>
+                                                <input class="pc-upload mt-3" type="file">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="pt-2">
+                                        <h3 class="text-lg font-bold text-[#244271]">संपादन प्रस्तावित असलेल्या क्षेत्रावर महामंडळाचे भूमापकामार्फत पक्के दगड लावून सिमांकन केले आहे का?</h3>
+                                        <p class="mt-4 text-lg font-bold text-[#244271]">असल्यास,</p>
+                                        <div class="mt-5 space-y-5">
+                                            <div>
+                                                <label class="pc-label">दिनांक :</label>
+                                                <input class="pc-input mt-3" type="text" placeholder="dd-mm-yyyy">
+                                            </div>
+                                            <div>
+                                                <label class="pc-label">प्रादेशिक अधिकारी यांचा सिमांकन दाखला अपलोड करा :</label>
+                                                <input class="pc-upload mt-3" type="file">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                             <div class="pc-section">
                                 <h3 class="mb-4 text-lg font-bold text-[#244271]">संयुक्त मोजणी तपशील</h3>
                                 <div class="grid gap-4 md:grid-cols-4 md:items-end">
@@ -688,6 +779,12 @@
                                 </div>
                                 <div class="grid gap-4 md:grid-cols-3 md:items-end">
                                     <div>
+                                        <label class="pc-label">भूधारकाचे नाव</label>
+                                        <select class="pc-input owner-name-dropdown" multiple size="3">
+                                            <option value="">भूधारकाचे नाव लोड होत आहे...</option>
+                                        </select>
+                                    </div>
+                                    <div>
                                         <label class="pc-label">मूल्यांकन सादर केलेल्या पत्राचा तपशील</label>
                                         <input class="pc-input" type="text" placeholder="मूल्यांकन सादर केलेल्या पत्राचा तपशील">
                                     </div>
@@ -716,6 +813,12 @@
                                     <button type="button" class="rounded-lg bg-[#125fcb] px-3 py-2 text-sm font-semibold text-white">ओळ जोडा</button>
                                 </div>
                                 <div class="grid gap-4 md:grid-cols-3 md:items-end">
+                                    <div>
+                                        <label class="pc-label">भूधारकाचे नाव</label>
+                                        <select class="pc-input owner-name-dropdown" multiple size="3">
+                                            <option value="">भूधारकाचे नाव लोड होत आहे...</option>
+                                        </select>
+                                    </div>
                                     <div>
                                         <label class="pc-label">मूल्यांकन सादर केलेल्या पत्राचा तपशील</label>
                                         <input class="pc-input" type="text" placeholder="मूल्यांकन सादर केलेल्या पत्राचा तपशील">
@@ -746,6 +849,12 @@
                                 </div>
                                 <div class="grid gap-4 md:grid-cols-3 md:items-end">
                                     <div>
+                                        <label class="pc-label">भूधारकाचे नाव</label>
+                                        <select class="pc-input owner-name-dropdown" multiple size="3">
+                                            <option value="">भूधारकाचे नाव लोड होत आहे...</option>
+                                        </select>
+                                    </div>
+                                    <div>
                                         <label class="pc-label">मूल्यांकन सादर केलेल्या पत्राचा तपशील</label>
                                         <input class="pc-input" type="text" placeholder="मूल्यांकन सादर केलेल्या पत्राचा तपशील">
                                     </div>
@@ -775,6 +884,12 @@
                                 </div>
                                 <div class="grid gap-4 md:grid-cols-3 md:items-end">
                                     <div>
+                                        <label class="pc-label">भूधारकाचे नाव</label>
+                                        <select class="pc-input owner-name-dropdown" multiple size="3">
+                                            <option value="">भूधारकाचे नाव लोड होत आहे...</option>
+                                        </select>
+                                    </div>
+                                    <div>
                                         <label class="pc-label">मूल्यांकन सादर केलेल्या पत्राचा तपशील</label>
                                         <input class="pc-input" type="text" placeholder="मूल्यांकन सादर केलेल्या पत्राचा तपशील">
                                     </div>
@@ -803,6 +918,12 @@
                                     <button type="button" class="rounded-lg bg-[#125fcb] px-3 py-2 text-sm font-semibold text-white">ओळ जोडा</button>
                                 </div>
                                 <div class="grid gap-4 md:grid-cols-3 md:items-end">
+                                    <div>
+                                        <label class="pc-label">भूधारकाचे नाव</label>
+                                        <select class="pc-input owner-name-dropdown" multiple size="3">
+                                            <option value="">भूधारकाचे नाव लोड होत आहे...</option>
+                                        </select>
+                                    </div>
                                     <div>
                                         <label class="pc-label">मूल्यांकन सादर केलेल्या पत्राचा तपशील</label>
                                         <input class="pc-input" type="text" placeholder="मूल्यांकन सादर केलेल्या पत्राचा तपशील">
@@ -840,50 +961,75 @@
                 <section class="pc-step-panel" data-pc-panel="5">
                     <div class="pc-form-card">
                         <div class="border-b border-[#dbe8f8] bg-[#edf5ff] px-6 py-5">
-                            <h2 class="text-xl font-bold text-[#214a8b]">टप्पा 5: 18(1), 19 नोटीस व नोटीस बजावणी</h2>
+                            <h2 class="text-xl font-bold text-[#214a8b]">टप्पा 5: 32(1) नोटीस बजावणी</h2>
                             <p class="mt-1 text-sm text-[#5c78a5]">PDF पान 11 आणि 12 नुसार अधिसूचना व नोटीस.</p>
                         </div>
                         <div class="space-y-6 px-6 py-7 md:px-8">
                             <div class="pc-section">
-                                <h3 class="mb-4 text-lg font-bold text-[#244271]">कलम 18/1 अंतिम अधिसूचना</h3>
-                                <div class="grid gap-4 md:grid-cols-3 md:items-end">
-                                    <div><label class="pc-label">अधिसूचना क्रमांक</label><input class="pc-input" type="text"></div>
-                                    <div><label class="pc-label">दिनांक</label><input class="pc-input" type="text" placeholder="dd-mm-yyyy"></div>
-                                    <div class="pc-eye-col">
-                                        <button type="button" class="pc-eye-view" aria-label="View Documents" title="View Documents">
-                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                                                <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"></path>
-                                                <circle cx="12" cy="12" r="3"></circle>
-                                            </svg>
-                                        </button>
+                                <h3 class="mb-4 text-lg font-bold text-[#244271]">अधिनियमाचे कलम ३२ (१) नुसार संपादनाच्या घोषणेबाबत अधिसूचना</h3>
+                                <div class="space-y-5 rounded-xl border border-[#d7e5f6] bg-[#f8fbff] p-5">
+                                    <div class="border-t border-[#b9c8dc] pt-5">
+                                        <h3 class="mb-4 text-lg font-bold text-[#244271]">अधिसूचना तपशील</h3>
+                                        <div class="mt-5 grid gap-4 xl:grid-cols-[1.2fr_1.1fr_1.2fr_1.3fr] md:grid-cols-2 md:items-end">
+                                            <div>
+                                                <label class="pc-label">अधिसूचना क्रमांक</label>
+                                                <input class="pc-input" type="text">
+                                            </div>
+                                            <div>
+                                                <label class="pc-label">दिनांक</label>
+                                                <input class="pc-input" type="text" placeholder="दिनांक निवडा">
+                                            </div>
+                                            <div>
+                                                <label class="pc-label">अधिसूचित क्षेत्र (हेक्टर.आर)</label>
+                                                <div class="grid grid-cols-2 gap-2">
+                                                    <input class="pc-input" type="text" placeholder="हेक्टर">
+                                                    <input class="pc-input" type="text" placeholder="आर">
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <label class="pc-label">अधिसूचना प्रत येथे अपलोड करा (scanned copy)</label>
+                                                <input class="pc-upload" type="file">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="grid gap-6">
+                                        <div>
+                                            <span class="pc-label">अधिसूचनेमध्ये सर्वे क्रमांक किंवा गट क्रमांक समाविष्ट आहे का?</span>
+                                            <div class="mt-3 flex gap-6 text-sm text-[#394d6c]">
+                                                <label><input type="radio" name="group_in_clause_one_included"> होय</label>
+                                                <label><input type="radio" name="group_in_clause_one_included"> नाही</label>
+                                            </div>
+                                        </div>
+                                        <span class="pc-label">असल्यास, अधिसूचित क्षेत्र</span>
+                                                <div>
+                                                    <label class="pc-label">हेक्टर</label>
+                                                    <input class="pc-input" type="text">
+                                                </div>
+                                                <div>
+                                                    <label class="pc-label">आर</label>
+                                                    <input class="pc-input" type="text">
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
-                                <div class="mt-5 space-y-4">
+                            </div>
+                            <div class="pc-section">
+                                <div class="space-y-5 rounded-xl border border-[#d7e5f6] bg-[#f8fbff] p-5">
+                                    <h3 class="mb-4 text-lg font-bold text-[#244271]">कलम 32(5) अन्वये नोटीस</h3>
                                     <div class="grid gap-4 md:grid-cols-2 md:items-end">
                                         <div>
-                                            <span class="pc-label">उक्त गट कलम (1) मध्ये आहे काय ?</span>
-                                            <div class="flex gap-4 text-sm text-[#394d6c]">
-                                                <label><input type="radio" name="group_in_clause_one_1"> होय</label>
-                                                <label><input type="radio" name="group_in_clause_one_1"> नाही</label>
-                                            </div>
+                                            <label class="pc-label">नोटीस बजावण्याचा दिनांक</label>
+                                            <input class="pc-input" type="text" placeholder="dd-mm-yyyy">
                                         </div>
                                         <div>
-                                            <label class="pc-label">असल्यास क्षेत्र नमूद करा</label>
-                                            <input class="pc-input" type="text" placeholder="नमूद करण्यासाठी जागा ठेवावी.">
+                                            <label class="pc-label">तामील प्रत</label>
+                                            <input class="pc-upload" type="file">
                                         </div>
                                     </div>
-                                    <div class="grid gap-4 md:grid-cols-2 md:items-end">
-                                        <div>
-                                            <span class="pc-label">उक्त गट कलम (1) मध्ये आहे काय ?</span>
-                                            <div class="flex gap-4 text-sm text-[#394d6c]">
-                                                <label><input type="radio" name="group_in_clause_one_2"> होय</label>
-                                                <label><input type="radio" name="group_in_clause_one_2"> नाही</label>
-                                            </div>
-                                        </div>
-                                        <div>
-                                            <label class="pc-label">असल्यास क्षेत्र नमूद करा</label>
-                                            <input class="pc-input" type="text" placeholder="नमूद करण्यासाठी जागा ठेवावी.">
-                                        </div>
+                                    <div class="flex justify-end">
+                                        
+                                        <button type="button" class="pc-generate-notice-btn">Generate Notice</button>
                                     </div>
                                 </div>
                             </div>
@@ -962,19 +1108,86 @@
                                 </div>
                             </div>
                             <div class="pc-section">
-                                <h3 class="mb-4 text-lg font-bold text-[#244271]">जिल्हास्तरीय समिती दर विवरण</h3>
-                                <div class="grid gap-4 md:grid-cols-3">
-                                    <div><label class="pc-label">बैठकी दिनांक</label><input class="pc-input" type="date" readonly></div>
-                                    <div class="md:col-span-2">
-                                        <label class="pc-label">बैठक इतिवृत्त</label>
-                                        <div class="pc-eye-col">
-                                            <button type="button" class="pc-eye-view" aria-label="View Documents" title="View Documents">
-                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                                                    <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"></path>
-                                                    <circle cx="12" cy="12" r="3"></circle>
-                                                </svg>
-                                            </button>
+                                <div class="space-y-5 rounded-xl border border-[#d7e5f6] bg-[#f8fbff] p-5">
+                                    <div>
+                                        <h3 class="mb-4 text-lg font-bold text-[#244271]">शिक्षेसिद्ध गणकाचा प्रकार (नविन नोंद करणे)</h3>
+                                        <div class="grid gap-4 md:grid-cols-3">
+                                            <div><label class="pc-label">ग्रामीण</label><input class="pc-input" type="text" placeholder="ग्रामीण तपशील"></div>
+                                            <div><label class="pc-label">प्रभाव</label><input class="pc-input" type="text" placeholder="प्रभाव तपशील"></div>
+                                            <div><label class="pc-label">नागरी</label><input class="pc-input" type="text" placeholder="नागरी तपशील"></div>
                                         </div>
+                                    </div>
+                                    <div>
+                                        <h3 class="mb-4 text-lg font-bold text-[#244271]">ड्रोन दाखला माहिती (गावाची माहिती मधून घ्यावे)</h3>
+                                        <div class="flex flex-wrap items-center gap-4">
+                                            <input class="pc-input min-w-[280px]" type="text" placeholder="ड्रोन दाखला तपशील">
+                                            <div class="pc-eye-col">
+                                                <button type="button" class="pc-eye-view" aria-label="View Documents" title="View Documents">
+                                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                                        <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"></path>
+                                                        <circle cx="12" cy="12" r="3"></circle>
+                                                    </svg>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <h3 class="mb-4 text-lg font-bold text-[#244271]">दर निश्चितीसाठी खरेदी विक्री तपशील (गावाची माहिती मधून घ्यावे)</h3>
+                                        <div class="flex flex-wrap items-center gap-4">
+                                            <input class="pc-input min-w-[280px]" type="text" placeholder="खरेदी विक्री तपशील">
+                                            <div class="pc-eye-col">
+                                                <button type="button" class="pc-eye-view" aria-label="View Documents" title="View Documents">
+                                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                                        <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"></path>
+                                                        <circle cx="12" cy="12" r="3"></circle>
+                                                    </svg>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <h3 class="mb-4 text-lg font-bold text-[#244271]">जमीन मूल्यांकन (नविन नोंद करणे) (गावाची माहिती मधून घ्यावे)</h3>
+                                        <div class="grid gap-4 md:grid-cols-3 md:items-end">
+                                            <div><label class="pc-label">प्राधिकृत अधिकारी यांचा प्रस्ताव क्रमांक</label><input class="pc-input" type="text"></div>
+                                            <div><label class="pc-label">दिनांक</label><input class="pc-input" type="text" placeholder="dd-mm-yyyy"></div>
+                                            <div class="pc-eye-col">
+                                                <button type="button" class="pc-eye-view" aria-label="View Documents" title="View Documents">
+                                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                                        <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"></path>
+                                                        <circle cx="12" cy="12" r="3"></circle>
+                                                    </svg>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <h3 class="mb-4 text-lg font-bold text-[#244271]">नगर रचना विभागाचे अभिप्राय (गावाची माहिती मधून घ्यावे)</h3>
+                                        <div class="grid gap-4 md:grid-cols-2 md:items-end">
+                                            <div><label class="pc-label">पत्र दिनांक</label><input class="pc-input" type="text" placeholder="dd-mm-yyyy"></div>
+                                            <div class="pc-eye-col">
+                                                <button type="button" class="pc-eye-view" aria-label="View Documents" title="View Documents">
+                                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                                        <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"></path>
+                                                        <circle cx="12" cy="12" r="3"></circle>
+                                                    </svg>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="pc-section">
+                                <h3 class="mb-4 text-lg font-bold text-[#244271]">कलम 33(2) अन्वये दर निश्चितीसाठी उच्चाधिकर समितीचे कामकाज</h3>
+                                <div class="grid gap-4 md:grid-cols-3">
+                                    <div><label class="pc-label">बैठक दिनांक :</label><input class="pc-input" type="date" readonly></div>
+                                    <div class="md:col-span-2">
+                                        
+                                        <label class="pc-label">बैठक इतिवृत्त पत्र येथे अपलोड करा:</label>
+                                        <input class="pc-upload" type="file">
+                                    </div>
+                                    <div class="md:col-span-3">
+                                        <label class="pc-label">मा. उच्च अधिकार समितीने मंजूर केलेल्या दराचे विवरण :</label>
+                                        <input class="pc-input" type="text">
                                     </div>
                                 </div>
                                 <div class="mt-5 overflow-x-auto">
@@ -986,6 +1199,15 @@
                                             <tr><td>हायवेवरील विकसित जमीन</td><td>0.00 - 3.00</td><td><input class="pc-input" readonly></td><td><input class="pc-input" readonly></td><td><input class="pc-input"></td><td><input class="pc-input" readonly></td></tr>
                                             <tr><td>इतर</td><td><input class="pc-input"></td><td><input class="pc-input"></td><td><input class="pc-input"></td><td><input class="pc-input"></td><td><input class="pc-input"></td></tr>
                                         </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <div class="pc-section">
+                                <h3 class="mb-4 text-lg font-bold text-[#244271]">संपादनाचा तपशील</h3>
+                                <div class="overflow-x-auto">
+                                    <table class="pc-table">
+                                        <thead><tr><th>भूधारकाचे नाव</th><th>जिरायत क्षेत्र</th><th>हंगामातले क्षेत्र</th><th>बागायत क्षेत्र</th><th>अकृषक/फळझाडे क्षेत्र</th><th>संभाव्य बिनशेती क्षेत्र (महामार्ग सन्मुख, गावठाण, इत्यादी)</th><th>एकूण क्षेत्र</th><th>संपादन क्षेत्र</th></tr></thead>
+                                        <tbody><tr><td><input class="pc-input" readonly></td><td><input class="pc-input"></td><td><input class="pc-input"></td><td><input class="pc-input"></td><td><input class="pc-input"></td><td><input class="pc-input"></td><td><input class="pc-input" readonly></td><td><input class="pc-input" readonly></td></tr></tbody>
                                     </table>
                                 </div>
                             </div>
@@ -1020,19 +1242,10 @@
                 <section class="pc-step-panel" data-pc-panel="8">
                     <div class="pc-form-card">
                         <div class="border-b border-[#dbe8f8] bg-[#edf5ff] px-6 py-5">
-                            <h2 class="text-xl font-bold text-[#214a8b]">टप्पा 8: संपादन तपशील व मोबदला गणना</h2>
+                            <h2 class="text-xl font-bold text-[#214a8b]">टप्पा 8: मोबदला गणना</h2>
                             <p class="mt-1 text-sm text-[#5c78a5]">PDF पान 14 आणि 15 मधील मोबदला गणना घटक.</p>
                         </div>
                         <div class="space-y-6 px-6 py-7 md:px-8">
-                            <div class="pc-section">
-                                <h3 class="mb-4 text-lg font-bold text-[#244271]">संपादनाचा तपशील</h3>
-                                <div class="overflow-x-auto">
-                                    <table class="pc-table">
-                                        <thead><tr><th>भूधारकाचे नाव</th><th>जिरायत क्षेत्र</th><th>हंगामातले क्षेत्र</th><th>बागायत क्षेत्र</th><th>अकृषक/फळझाडे क्षेत्र</th><th>एकूण क्षेत्र</th><th>संपादन क्षेत्र</th></tr></thead>
-                                        <tbody><tr><td><input class="pc-input" readonly></td><td><input class="pc-input"></td><td><input class="pc-input"></td><td><input class="pc-input"></td><td><input class="pc-input"></td><td><input class="pc-input" readonly></td><td><input class="pc-input" readonly></td></tr></tbody>
-                                    </table>
-                                </div>
-                            </div>
                             <div class="pc-section">
                                 <h3 class="mb-4 text-lg font-bold text-[#244271]">मोबदला संबंधित माहिती</h3>
                                 <div class="grid gap-4 md:grid-cols-2">
@@ -1044,7 +1257,7 @@
                                     <div><label class="pc-label">Solatium 100%</label><input class="pc-input" readonly></div>
                                     <div><label class="pc-label">12% अतिरिक्त घटक रक्कम</label><input class="pc-input" readonly></div>
                                     <div><label class="pc-label">एकूण निर्धारित मोबदला</label><input class="pc-input" readonly></div>
-                                    <div><label class="pc-label">संमतीसाठी 25% वाढीव मोबदला</label><input class="pc-input" readonly></div>
+                                    <div><label class="pc-label">10. म.औ.वि. मंडळाचे पुनर्वसन व पुनर्वसली धोरण 2019 प्रमाणे 10% भूखंड परतावा रक्कम (5 वर) (स्वयंरिया आले पाहिजे)</label><input class="pc-input" readonly></div>
                                     <div><label class="pc-label">संमती निवाड्यासाठी एकूण मोबदला</label><input class="pc-input" readonly></div>
                                     <div><label class="pc-label">नजराणा / अधिनियम रक्कम</label><input class="pc-input" readonly></div>
                                     <div><label class="pc-label">अक्षरी एकूण रक्कम रुपये</label><input class="pc-input" readonly></div>
@@ -1062,10 +1275,10 @@
                         </div>
                         <div class="space-y-6 px-6 py-7 md:px-8">
                             <div class="pc-section">
-                                <h3 class="mb-4 text-lg font-bold text-[#244271]">कलम 19(6) संमती तपशील</h3>
+                                <h3 class="mb-4 text-lg font-bold text-[#244271]">कलम 32(5),33(2) व 36(1) अन्वये करारांत संमती निर्णय घोषित करण्यासाठी दाखल संमतीपत्राचा तपशील</h3>
                                 <div class="mb-5">
                                     <div class="mb-2 flex flex-wrap items-center justify-between gap-3">
-                                        <span class="pc-label mb-0">संमती दाखल केले आहे का?</span>
+                                        <span class="pc-label mb-0">कराराद्वारे संमती निर्णय घोषित करण्यासाठी संमतीपत्र दाखल केले आहे का?</span>
                                         <button type="button" class="pc-generate-notice-btn" title="Notice will be generated" aria-label="Generate Notice">
                                             Generate Notice
                                         </button>
@@ -1080,9 +1293,7 @@
                                     <div><label class="pc-label">संमती पत्र</label><input class="pc-upload" type="file"></div>
                                     <div><label class="pc-label">संमतीचा निर्णय</label><select class="pc-input"><option>स्वीकार</option><option>अस्वीकार</option></select></div>
                                     <div><label class="pc-label">निर्णय पत्र</label><input class="pc-upload" type="file"></div>
-                                    <div><label class="pc-label">संमती करारनामा क्रमांक</label><input class="pc-input" type="text"></div>
-                                    <div><label class="pc-label">दिनांक</label><input class="pc-input" type="date"></div>
-                                    <div><label class="pc-label">करारनामा पत्र</label><input class="pc-upload" type="file"></div>
+                                   
                                 </div>
                                 <div class="mt-4 flex gap-2">
                                     <button type="button" class="rounded-lg bg-[#125fcb] px-3 py-2 text-sm font-semibold text-white">+ Add Row</button>
@@ -1090,12 +1301,17 @@
                                 </div>
                             </div>
                             <div class="pc-section">
-                                <h3 class="mb-4 text-lg font-bold text-[#244271]">कलम 19(6) संपादनाचा करारनामा</h3>
+                                <h3 class="mb-4 text-lg font-bold text-[#244271]">कलम 32(5),33(2) व 36(1) संपादनाचा करारनामा</h3>
                                 <div class="grid gap-4 md:grid-cols-2">
-                                    <div><label class="pc-label">करारनामा झाल्याचा दिनांक</label><input class="pc-input" type="date"></div>
+                                    <div><label class="pc-label">संमती करारनामा क्रमांक</label><input class="pc-input" id="pcAgreementNumber" type="text"></div>
+                                    <div><label class="pc-label">करारनामा पत्र</label><input class="pc-upload" type="file"></div>
+                                    <div><label class="pc-label">करारनामा झाल्याचा दिनांक</label><input class="pc-input" id="pcAgreementDate" type="date"></div>
                                     <div><label class="pc-label">करारनामा अपलोड करा</label><input class="pc-upload" type="file"></div>
                                 </div>
-                                <p class="mt-3 text-sm font-semibold text-red-600">निर्गमित करारनामा Draft स्वयंरिया निर्गमित झाला पाहिजे.</p>
+                                <div class="mt-4 flex flex-wrap justify-end gap-3">
+                                    <button type="button" id="pcAgreementDraftViewBtn" class="hidden rounded-xl border border-[#ccdbef] bg-white px-4 py-2 text-sm font-semibold text-[#4a6488]">View Draft</button>
+                                    <button type="button" id="pcAgreementDraftGenerateBtn" class="pc-generate-notice-btn">करारनामा Draft तयार करा</button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -1104,7 +1320,7 @@
                 <section class="pc-step-panel" data-pc-panel="10">
                     <div class="pc-form-card">
                         <div class="border-b border-[#dbe8f8] bg-[#edf5ff] px-6 py-5">
-                            <h2 class="text-xl font-bold text-[#214a8b]">टप्पा 10: मोबदला प्रदान तपशील</h2>
+                            <h2 class="text-xl font-bold text-[#214a8b]">टप्पा 10: कलम 33(1) अन्वये संपादनाचा मोबदला प्रदान तपशील</h2>
                             <p class="mt-1 text-sm text-[#5c78a5]">PDF पान 17 नुसार भूधारक, बँक आणि मोबदला प्रदान माहिती.</p>
                         </div>
                         <div class="space-y-6 px-6 py-7 md:px-8">
@@ -1141,7 +1357,14 @@
                                     <div><label class="pc-label">संपादन क्षेत्र</label><input class="pc-input" type="text" placeholder="हेक्टर.आर."></div>
                                     <div><label class="pc-label">मोबदला रक्कम</label><input class="pc-input" type="number" step="0.01"></div>
                                     <div><label class="pc-label">दिनांक</label><input class="pc-input" type="date"></div>
-                                    <div><label class="pc-label">मोबदला पत्र</label><input class="pc-upload" type="file"></div>
+                                    <div><label class="pc-label">UTR क्रमांक</label><input class="pc-input" type="text"></div>
+                                </div>
+                            </div>
+                            <div class="pc-section">
+                                <div class="space-y-3">
+                                    <label class="pc-label">मोबदला पत्र येथे अपलोड करा (scanned copy)</label>
+                                    <input class="pc-upload" type="file">
+                                    
                                 </div>
                             </div>
                         </div>
@@ -1156,23 +1379,29 @@
                         </div>
                         <div class="space-y-6 px-6 py-7 md:px-8">
                             <div class="pc-section">
-                                <h3 class="mb-4 text-lg font-bold text-[#244271]">संपादनाचा निवाडा (संमती / विनासंमती)</h3>
+                                <h3 class="mb-4 text-lg font-bold text-[#244271]">अधिनियमाचे कलम 32(5),33(2) व 36(1) अन्वये संपादनाचा निवाडा (संमती / विनासंमती)</h3>
                                 <div class="grid gap-4 md:grid-cols-3">
                                     <div><label class="pc-label">निवाडा क्रमांक</label><input class="pc-input" type="text"></div>
                                     <div><label class="pc-label">दिनांक</label><input class="pc-input" type="date"></div>
                                     <div><label class="pc-label">निवाडा पत्र</label><input class="pc-upload" type="file"></div>
                                 </div>
+                                <div class="mt-4 flex justify-end">
+                                    <button type="button" class="pc-generate-notice-btn">संपादनाचा निवाडा Generate करा.</button>
+                                </div>
+                            </div>
+                            <div class="pc-section">
+                                <h3 class="mb-4 text-lg font-bold text-[#244271]">विनासंमतीचा मोबदला स्वीकारता ताबा सोडून देण्याबाबतची नोटीस</h3>
+                                <div class="grid gap-4 md:grid-cols-3">
+                                    <div><label class="pc-label">नोटीस क्रमांक :</label><input class="pc-input" type="text"></div>
+                                    <div><label class="pc-label">नोटीस तामील केल्याचा दिनांक :</label><input class="pc-input" type="date"></div>
+                                    <div><label class="pc-label">तामील प्रत अपलोड करा :</label><input class="pc-upload" type="file"></div>
+                                </div>
+                                <div class="mt-4 flex justify-end">
+                                    <button type="button" class="pc-generate-notice-btn">सक्तीची नोटीस निर्गमित करा</button>
+                                </div>
                             </div>
 
-                            <div class="pc-section">
-                                <h3 class="mb-4 text-lg font-bold text-[#244271]">नमुना-6 नोटीस</h3>
-                                <div class="grid gap-4 md:grid-cols-3">
-                                    <div><label class="pc-label">नोटीस क्रमांक</label><input class="pc-input" type="text"></div>
-                                    <div><label class="pc-label">नोटीस दाखल केल्याचा दिनांक</label><input class="pc-input" type="date"></div>
-                                    <div><label class="pc-label">नोटीस पत्र</label><input class="pc-upload" type="file"></div>
-                                </div>
-                                <p class="mt-3 text-sm font-semibold text-red-600">नमुना-6 नोटीस निर्गमित करा: स्वयंरिया निर्गमित झाले पाहिजे.</p>
-                            </div>
+                            
 
                             <div class="pc-section">
                                 <h3 class="mb-4 text-lg font-bold text-[#244271]">मोबदला न्यायालयात जमा करणे</h3>
@@ -1185,7 +1414,7 @@
                                     <div><label class="pc-label">प्रकरण क्रमांक</label><input class="pc-input" type="text"></div>
                                     <div><label class="pc-label">दिनांक</label><input class="pc-input" type="date"></div>
                                     <div><label class="pc-label">रक्कम भरलेली पावती</label><input class="pc-upload" type="file"></div>
-                                    <div><label class="pc-label">संबंधित विविध बाब तपशील</label><input class="pc-input" type="text"></div>
+                                    <div><label class="pc-label">संबंधित विधिज्ञ बाब तपशील</label><input class="pc-input" type="text"></div>
                                 </div>
                             </div>
                         </div>
@@ -1195,12 +1424,12 @@
                 <section class="pc-step-panel" data-pc-panel="12">
                     <div class="pc-form-card">
                         <div class="border-b border-[#dbe8f8] bg-[#edf5ff] px-6 py-5">
-                            <h2 class="text-xl font-bold text-[#214a8b]">टप्पा 12: कब्जा, अभिलेख व करार कार्यवाही</h2>
-                            <p class="mt-1 text-sm text-[#5c78a5]">PDF पान 19 ते 22 नुसार कब्जा, अभिलेख अद्ययावतकरण आणि नव्याने करार कार्यवाही.</p>
+                            <h2 class="text-xl font-bold text-[#214a8b]">टप्पा 12: ताबा, अभिलेख व करार कार्यवाही</h2>
+                            <p class="mt-1 text-sm text-[#5c78a5]">PDF पान 19 ते 22 नुसार ताबा, अभिलेख अद्ययावतकरण आणि नव्याने करार कार्यवाही.</p>
                         </div>
                         <div class="space-y-6 px-6 py-7 md:px-8">
                             <div class="pc-section">
-                                <h3 class="mb-4 text-lg font-bold text-[#244271]">संपादित जमिनीचा कब्जा घेण्याबाबत नोटीस</h3>
+                                <h3 class="mb-4 text-lg font-bold text-[#244271]">संपादित जमिनीचा ताबा घेण्याबाबत नोटीस</h3>
                                 <div class="grid gap-4 md:grid-cols-3">
                                     <div><label class="pc-label">नोटीस बजावण्यात आलेल्या भूधारकाचे नाव</label><input class="pc-input" type="text"></div>
                                     <div><label class="pc-label">नोटीस क्रमांक</label><input class="pc-input" type="text"></div>
@@ -1209,24 +1438,24 @@
                                     <div><label class="pc-label">कार्यालयाचे नाव</label><input class="pc-input" type="text"></div>
                                     <div><label class="pc-label">कार्यालय पत्र</label><input class="pc-upload" type="file"></div>
                                     <div class="md:col-span-3">
-                                        <span class="pc-label">सक्षम प्राधिकारी संपादित जमिनीचा कब्जा घेण्यात आला आहे का?</span>
+                                        <span class="pc-label">सक्षम प्राधिकारी संपादित जमिनीचा ताबा घेण्यात आला आहे का?</span>
                                         <div class="flex gap-4"><label><input type="radio" name="possession_taken"> होय</label><label><input type="radio" name="possession_taken"> नाही</label></div>
                                     </div>
                                 </div>
                             </div>
 
                             <div class="pc-section">
-                                <h3 class="mb-4 text-lg font-bold text-[#244271]">कब्जा मंडळाकडून सुपूर्द करणे</h3>
+                                <h3 class="mb-4 text-lg font-bold text-[#244271]">संपादित जमिनीचा ताबा सक्षम प्राधिकरणामार्फत महामंडळास सुपुर्द करणे</h3>
                                 <div class="grid gap-4 md:grid-cols-5">
                                     <div class="md:col-span-5">
-                                        <span class="pc-label">कब्जा मंडळाकडून सुपूर्द करण्यात आले आहे काय?</span>
+                                        <span class="pc-label">संपादित जमिनीचा ताबा महामंडळास सुपुर्द करण्यात आले आहे काय ?</span>
                                         <div class="flex gap-4"><label><input type="radio" name="possession_handed"> होय</label><label><input type="radio" name="possession_handed"> नाही</label></div>
                                     </div>
                                     <div><label class="pc-label">भूधारकाचे नाव</label><input class="pc-input" type="text"></div>
                                     <div><label class="pc-label">क्षेत्र</label><input class="pc-input" type="text" placeholder="हेक्टर.आर."></div>
-                                    <div><label class="pc-label">कब्जा पावती क्रमांक</label><input class="pc-input" type="text"></div>
+                                    <div><label class="pc-label">ताबा पावती क्रमांक</label><input class="pc-input" type="text"></div>
                                     <div><label class="pc-label">दिनांक</label><input class="pc-input" type="date"></div>
-                                    <div><label class="pc-label">कब्जा पावती</label><input class="pc-upload" type="file"></div>
+                                    <div><label class="pc-label">ताबा पावती</label><input class="pc-upload" type="file"></div>
                                 </div>
                             </div>
 
@@ -1235,15 +1464,22 @@
                                 <div class="grid gap-4 md:grid-cols-2">
                                     <div class="md:col-span-2">
                                         <span class="pc-label">अभिलेखामध्ये योजना / विभागाचे नाव दाखल करण्यात आले आहे काय?</span>
-                                        <div class="flex gap-4"><label><input type="radio" name="record_updated"> होय</label><label><input type="radio" name="record_updated"> नाही</label></div>
+                                        <div class="flex gap-4"><label><input type="radio" name="record_updated" value="yes"> होय</label><label><input type="radio" name="record_updated" value="no"> नाही</label></div>
                                     </div>
-                                    <div><label class="pc-label">नोंद दाखल न घेण्याचे कारण</label><input class="pc-input" type="text"></div>
-                                    <div><label class="pc-label">नोंद मंजूर न होण्याचे कारण</label><input class="pc-input" type="text"></div>
+                                    <div class="md:col-span-2 hidden" id="recordUpdatedYesFields">
+                                        <div class="grid gap-4 md:grid-cols-3">
+                                            <div><label class="pc-label">फेरफार नोंद दिनांक</label><input class="pc-input" type="date"></div>
+                                            <div><label class="pc-label">क्षेत्र</label><input class="pc-input" type="text" placeholder="हेक्टर.आर."></div>
+                                            <div><label class="pc-label">7/12 अपलोड करा</label><input class="pc-upload" type="file"></div>
+                                        </div>
+                                    </div>
+                                    <div class="hidden" id="recordUpdatedNoFields"><label class="pc-label">नोंद दाखल न घेण्याचे कारण</label><input class="pc-input" type="text"></div>
+                                    <div class="hidden" id="recordUpdatedNoFieldsApproval"><label class="pc-label">नोंद मंजूर न होण्याचे कारण</label><input class="pc-input" type="text"></div>
                                 </div>
                             </div>
 
                             <div class="pc-section">
-                                <h3 class="mb-4 text-lg font-bold text-[#244271]">कलम 19 क(9) नुसार नव्याने करार कार्यवाही</h3>
+                                <h3 class="mb-4 text-lg font-bold text-[#244271]">लवादासमोर कार्यवाही करण्यात आले आहे काय ?</h3>
                                 <div class="grid gap-4 md:grid-cols-3">
                                     <div class="md:col-span-3">
                                         <span class="pc-label">नव्याने कार्यवाही करण्यात आले आहे काय?</span>
@@ -1261,7 +1497,7 @@
                                     <div><label class="pc-label">आदेश दिनांक</label><input class="pc-input" type="date"></div>
                                     <div><label class="pc-label">रक्कम अदा नोंदवही धनादेश क्र.</label><input class="pc-input" type="text"></div>
                                     <div><label class="pc-label">बाकी मोबदला रक्कम</label><input class="pc-input" type="number" step="0.01" readonly placeholder="स्वयंरिया"></div>
-                                    <div class="md:col-span-3"><label class="pc-label">पत्ता</label><input class="pc-input" type="text"></div>
+                                    
                                     <div class="md:col-span-3"><label class="pc-label">पत्र अपलोड करा</label><input class="pc-upload" type="file"></div>
                                 </div>
                             </div>
@@ -1272,7 +1508,7 @@
                 <div class="flex flex-col gap-3 border-t border-[#d8e4f2] pt-5 sm:flex-row sm:items-center sm:justify-between">
                     <button type="button" id="pcPrevBtn" class="rounded-xl border border-[#ccdbef] bg-white px-5 py-3 text-sm font-semibold text-[#4a6488]">Save & Previous</button>
                     <div class="flex gap-3">
-                        <button type="button" class="rounded-xl border border-[#ccdbef] bg-white px-5 py-3 text-sm font-semibold text-[#4a6488]">Save</button>
+                        <button type="button" id="pcSaveBtn" class="rounded-xl border border-[#ccdbef] bg-white px-5 py-3 text-sm font-semibold text-[#4a6488]">Save</button>
                         <button type="button" id="pcNextBtn" class="rounded-xl bg-[#125fcb] px-5 py-3 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(18,95,203,0.2)]">Save & Next</button>
                     </div>
                 </div>
@@ -1281,14 +1517,700 @@
     </div>
 </div>
 
+<div id="pcOtherRightsModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 p-4">
+    <div class="bg-white w-full max-w-4xl rounded-lg shadow-xl">
+        <div class="flex items-center justify-between border-b px-4 py-3">
+            <h3 class="text-base font-semibold">इतर अधिकार, कूळ व इतर</h3>
+            <button type="button" id="closePcOtherRightsModalBtn" class="text-gray-500 hover:text-gray-700 text-lg leading-none">&times;</button>
+        </div>
+        <div class="px-4 py-4">
+            <div class="bg-gray-50 p-4 rounded border">
+                <div id="pcOtherRightsContent" class="text-sm text-gray-800 whitespace-pre-line break-words max-h-[50vh] overflow-y-auto"></div>
+            </div>
+        </div>
+        <div class="border-t px-4 py-3 flex justify-end">
+            <button type="button" id="closePcOtherRightsModalFooterBtn" class="px-3 py-1.5 bg-gray-700 hover:bg-gray-800 text-white rounded text-sm">बंद करा</button>
+        </div>
+    </div>
+</div>
+
+<div id="pcFilesModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 p-4">
+    <div class="bg-white w-full max-w-3xl rounded-lg shadow-xl">
+        <div class="flex items-center justify-between border-b px-4 py-3">
+            <h3 class="text-base font-semibold">दस्तऐवज</h3>
+            <button type="button" id="closePcFilesModalBtn" class="text-gray-500 hover:text-gray-700 text-lg leading-none">&times;</button>
+        </div>
+        <div class="px-4 py-4">
+            <div id="pcFilesModalContent" class="space-y-3 max-h-[50vh] overflow-y-auto"></div>
+        </div>
+        <div class="border-t px-4 py-3 flex justify-end">
+            <button type="button" id="closePcFilesModalFooterBtn" class="px-3 py-1.5 bg-gray-700 hover:bg-gray-800 text-white rounded text-sm">बंद करा</button>
+        </div>
+    </div>
+</div>
+
+<div id="pcAgreementDraftModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 p-4">
+    <div class="bg-white w-full max-w-4xl rounded-lg shadow-xl">
+        <div class="flex items-center justify-between border-b px-4 py-3">
+            <h3 class="text-base font-semibold">करारनामा Draft</h3>
+            <button type="button" id="closePcAgreementDraftModalBtn" class="text-gray-500 hover:text-gray-700 text-lg leading-none">&times;</button>
+        </div>
+        <div class="px-4 py-4">
+            <iframe id="pcAgreementDraftFrame" class="h-[70vh] w-full rounded border border-[#dbe8f8] bg-white"></iframe>
+        </div>
+        <div class="border-t px-4 py-3 flex justify-end">
+            <button type="button" id="closePcAgreementDraftModalFooterBtn" class="px-3 py-1.5 bg-gray-700 hover:bg-gray-800 text-white rounded text-sm">बंद करा</button>
+        </div>
+    </div>
+</div>
+
 <script>
     (() => {
+        const processChartForm = document.getElementById('processChartForm');
+        const districtSelect = document.getElementById('pcDistrict');
+        const talukaSelect = document.getElementById('pcTaluka');
+        const villageSelect = document.getElementById('pcVillage');
+        const gutSelect = document.getElementById('pcGutNumber');
+        const gutHelp = document.getElementById('pcGutNumberHelp');
+        const ownerInfoBody = document.getElementById('pcOwnerInfoBody');
+        const ownerInfoStatus = document.getElementById('pcOwnerInfoStatus');
+        const otherRightsModal = document.getElementById('pcOtherRightsModal');
+        const otherRightsContent = document.getElementById('pcOtherRightsContent');
+        const closeOtherRightsModalBtn = document.getElementById('closePcOtherRightsModalBtn');
+        const closeOtherRightsModalFooterBtn = document.getElementById('closePcOtherRightsModalFooterBtn');
+        const filesModal = document.getElementById('pcFilesModal');
+        const filesModalContent = document.getElementById('pcFilesModalContent');
+        const closeFilesModalBtn = document.getElementById('closePcFilesModalBtn');
+        const closeFilesModalFooterBtn = document.getElementById('closePcFilesModalFooterBtn');
+        const agreementDraftModal = document.getElementById('pcAgreementDraftModal');
+        const agreementDraftFrame = document.getElementById('pcAgreementDraftFrame');
+        const closeAgreementDraftModalBtn = document.getElementById('closePcAgreementDraftModalBtn');
+        const closeAgreementDraftModalFooterBtn = document.getElementById('closePcAgreementDraftModalFooterBtn');
+        const agreementNumberInput = document.getElementById('pcAgreementNumber');
+        const agreementDateInput = document.getElementById('pcAgreementDate');
+        const agreementDraftGenerateBtn = document.getElementById('pcAgreementDraftGenerateBtn');
+        const agreementDraftViewBtn = document.getElementById('pcAgreementDraftViewBtn');
+        const sec2FilesViewBtn = document.getElementById('pcSec2FilesViewBtn');
+        const sec2Paper1FilesViewBtn = document.getElementById('pcSec2Paper1FilesViewBtn');
+        const sec2Paper2FilesViewBtn = document.getElementById('pcSec2Paper2FilesViewBtn');
+        const ownerDropdowns = Array.from(document.querySelectorAll('.owner-name-dropdown'));
+        const recordUpdatedRadios = Array.from(document.querySelectorAll('input[name="record_updated"]'));
+        const recordUpdatedYesFields = document.getElementById('recordUpdatedYesFields');
+        const recordUpdatedNoFields = document.getElementById('recordUpdatedNoFields');
+        const recordUpdatedNoFieldsApproval = document.getElementById('recordUpdatedNoFieldsApproval');
+
         const dots = Array.from(document.querySelectorAll('[data-pc-step]'));
         const panels = Array.from(document.querySelectorAll('[data-pc-panel]'));
         const prevBtn = document.getElementById('pcPrevBtn');
         const nextBtn = document.getElementById('pcNextBtn');
+        const saveBtn = document.getElementById('pcSaveBtn');
+        const saveDraftBtn = document.getElementById('pcSaveDraftBtn');
+        const submitBtn = document.getElementById('pcSubmitBtn');
+        const initialCaseId = '{{ case_id|default:""|escapejs }}';
+        let currentCaseId = initialCaseId || '';
+        let isSavingProcessChart = false;
         let currentStep = 1;
         const totalSteps = 12;
+        let currentVillageFiles = {};
+        let currentAgreementDraftHtml = '';
+
+        function getCookie(name) {
+            const value = `; ${document.cookie}`;
+            const parts = value.split(`; ${name}=`);
+            if (parts.length === 2) {
+                return parts.pop().split(';').shift();
+            }
+            return '';
+        }
+
+        function addSelectOptions(selectEl, items = []) {
+            items.forEach((item) => {
+                const value = item.value || item.label || item.name || '';
+                const label = item.label || item.value || item.name || '';
+                if (!value) return;
+                const option = document.createElement('option');
+                option.value = value;
+                option.textContent = label;
+                selectEl.appendChild(option);
+            });
+        }
+
+        function fillOwnerDropdowns(names = []) {
+            ownerDropdowns.forEach((selectEl) => {
+                const selectedValues = Array.from(selectEl.selectedOptions).map((option) => option.value);
+                selectEl.innerHTML = '';
+
+                if (!names.length) {
+                    const option = document.createElement('option');
+                    option.value = '';
+                    option.textContent = 'भूधारकाचे नाव उपलब्ध नाही';
+                    selectEl.appendChild(option);
+                    return;
+                }
+
+                names.forEach((name) => {
+                    const option = document.createElement('option');
+                    option.value = name;
+                    option.textContent = name;
+                    if (selectedValues.includes(name)) {
+                        option.selected = true;
+                    }
+                    selectEl.appendChild(option);
+                });
+            });
+        }
+
+        async function loadProcessChartDistricts() {
+            if (!districtSelect) return;
+            districtSelect.innerHTML = '<option value="">जिल्हा निवडा</option>';
+            talukaSelect.innerHTML = '<option value="">तालुका निवडा</option>';
+            villageSelect.innerHTML = '<option value="">गाव निवडा</option>';
+            gutSelect.innerHTML = '<option value="">गट / सर्वे क्रमांक निवडा</option>';
+            try {
+                const res = await fetch('/api/locations/?lang=mr');
+                const data = await res.json();
+                addSelectOptions(districtSelect, data.data || []);
+            } catch (error) {
+                console.error(error);
+            }
+        }
+
+        async function populateProcessChartTalukas(district) {
+            talukaSelect.innerHTML = '<option value="">तालुका निवडा</option>';
+            villageSelect.innerHTML = '<option value="">गाव निवडा</option>';
+            gutSelect.innerHTML = '<option value="">गट / सर्वे क्रमांक निवडा</option>';
+            if (!district) return;
+            try {
+                const res = await fetch(`/api/locations/?district=${encodeURIComponent(district)}&lang=mr`);
+                const data = await res.json();
+                addSelectOptions(talukaSelect, data.data || []);
+            } catch (error) {
+                console.error(error);
+            }
+        }
+
+        async function populateProcessChartVillages(district, taluka) {
+            villageSelect.innerHTML = '<option value="">गाव निवडा</option>';
+            gutSelect.innerHTML = '<option value="">गट / सर्वे क्रमांक निवडा</option>';
+            if (!district || !taluka) return;
+            try {
+                const res = await fetch(`/api/locations/?district=${encodeURIComponent(district)}&taluka=${encodeURIComponent(taluka)}&lang=mr`);
+                const data = await res.json();
+                addSelectOptions(villageSelect, data.data || []);
+            } catch (error) {
+                console.error(error);
+            }
+        }
+
+        async function loadProcessChartGuts(district, taluka, village) {
+            gutSelect.innerHTML = '<option value="">गट / सर्वे क्रमांक निवडा</option>';
+            if (gutHelp) {
+                gutHelp.textContent = 'गाव निवडल्यानंतर गट / सर्वे क्रमांक दिसतील.';
+            }
+            if (!district || !taluka || !village) return;
+            try {
+                const res = await fetch(`/api/land-record-gut-numbers/?district=${encodeURIComponent(district)}&taluka=${encodeURIComponent(taluka)}&village=${encodeURIComponent(village)}`);
+                const data = await res.json();
+                const gutItems = data.gut_numbers || [];
+                gutItems.forEach((item) => {
+                    const option = document.createElement('option');
+                    option.value = item;
+                    option.textContent = item;
+                    gutSelect.appendChild(option);
+                });
+                if (gutHelp) {
+                    gutHelp.textContent = gutItems.length
+                        ? `7/12 मधून ${gutItems.length} गट / सर्वे क्रमांक उपलब्ध आहेत.`
+                        : 'या गावासाठी 7/12 गट / सर्वे क्रमांक उपलब्ध नाहीत.';
+                }
+            } catch (error) {
+                console.error(error);
+                if (gutHelp) {
+                    gutHelp.textContent = 'गट / सर्वे क्रमांक लोड करता आले नाहीत.';
+                }
+            }
+        }
+
+        async function loadOwnerNamesFrom712() {
+            if (!districtSelect || !talukaSelect || !villageSelect) return;
+            if (!districtSelect.value || !talukaSelect.value || !villageSelect.value) {
+                fillOwnerDropdowns([]);
+                return;
+            }
+
+            const url = `/api/land-record-owner-names/?district=${encodeURIComponent(districtSelect.value)}&taluka=${encodeURIComponent(talukaSelect.value)}&village=${encodeURIComponent(villageSelect.value)}&gut_number=${encodeURIComponent(gutSelect.value || '')}`;
+
+            try {
+                const res = await fetch(url);
+                const data = await res.json();
+                fillOwnerDropdowns(data.owners || []);
+            } catch (error) {
+                console.error(error);
+                fillOwnerDropdowns([]);
+            }
+        }
+
+        function buildOwnerInfoRow(rowData = {}) {
+            const otherRights = String(rowData.other_rights || '')
+                .replace(/&/g, '&amp;')
+                .replace(/"/g, '&quot;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;');
+            return `
+                <tr>
+                    <td><input class="pc-input" type="text" value="${rowData.owner_name || ''}"></td>
+                    <td><input class="pc-input" type="text" value="${rowData.aadhaar_number || ''}"></td>
+                    <td><input class="pc-upload" type="file"></td>
+                    <td><input class="pc-input" type="text" value="${rowData.pan_number || ''}"></td>
+                    <td><input class="pc-upload" type="file"></td>
+                    <td><input class="pc-input" type="tel" value="${rowData.mobile_number || ''}"></td>
+                    <td><textarea class="pc-input" rows="2">${rowData.address || ''}</textarea></td>
+                    <td><input class="pc-input" type="text" placeholder="हे.आर" value="${rowData.cultivable_area || ''}"></td>
+                    <td><input class="pc-input" type="text" placeholder="हे.आर" value="${rowData.potkharaba || ''}"></td>
+                    <td><input class="pc-input" type="text" placeholder="हे.आर" value="${rowData.total_area || ''}"></td>
+                    <td><input class="pc-input" type="text" value="${rowData.khata_number || ''}"></td>
+                    <td><input class="pc-input" type="text" value="${rowData.aakarni || ''}"></td>
+                    <td>
+                        <button type="button" class="pc-table-view-btn pc-other-rights-btn" data-other-rights="${otherRights}">
+                            View
+                        </button>
+                    </td>
+                </tr>
+            `;
+        }
+
+        function populateOwnerInfoTable(payload = {}) {
+            if (!ownerInfoBody) return;
+
+            const ownerRows = Array.isArray(payload.owner_rows) ? payload.owner_rows : [];
+            const landRecord = payload.land_record || null;
+            const farmers = Array.isArray(payload.farmers) ? payload.farmers : [];
+            const rows = [];
+
+            if (ownerRows.length) {
+                ownerRows.forEach((row) => {
+                    rows.push({
+                        owner_name: row.owner_name || '',
+                        cultivable_area: row.cultivable_area || '',
+                        potkharaba: row.potkharaba || '',
+                        total_area: row.total_area || '',
+                        khata_number: row.khata_number || '',
+                        aakarni: row.aakarni || '',
+                        other_rights: row.other_rights || '',
+                    });
+                });
+            } else if (farmers.length) {
+                farmers.forEach((farmer) => {
+                    rows.push({
+                        owner_name: farmer.farmer_name || '',
+                        cultivable_area: (landRecord && (landRecord.jirayit || landRecord.bagayat)) || '',
+                        potkharaba: farmer.potkharaba || (landRecord && landRecord.potkharaba) || '',
+                        total_area: farmer.total_area || (landRecord && landRecord.total_area) || '',
+                        khata_number: (landRecord && landRecord.khata_number) || '',
+                        aakarni: (landRecord && landRecord.aakarni) || '',
+                        other_rights: (landRecord && landRecord.kul_khand_other_rights) || '',
+                    });
+                });
+            } else if (landRecord && landRecord.holder_name) {
+                const names = String(landRecord.holder_name)
+                    .split(/\n|,|;|\||\u0964|\/+/)
+                    .map((item) => item.trim())
+                    .filter(Boolean);
+
+                (names.length ? names : ['']).forEach((name) => {
+                    rows.push({
+                        owner_name: name,
+                        cultivable_area: landRecord.jirayit || landRecord.bagayat || '',
+                        potkharaba: landRecord.potkharaba || '',
+                        total_area: landRecord.total_area || '',
+                        khata_number: landRecord.khata_number || '',
+                        aakarni: landRecord.aakarni || '',
+                        other_rights: landRecord.kul_khand_other_rights || '',
+                    });
+                });
+            }
+
+            ownerInfoBody.innerHTML = rows.length
+                ? rows.map((row) => buildOwnerInfoRow(row)).join('')
+                : buildOwnerInfoRow();
+
+            if (ownerInfoStatus) {
+                ownerInfoStatus.textContent = rows.length
+                    ? `निवडलेल्या गटासाठी 7/12 मधून ${rows.length} भूधारकांची माहिती भरली गेली.`
+                    : 'निवडलेल्या 7/12 नोंदीत भूधारकांची माहिती उपलब्ध नाही.';
+            }
+        }
+
+        async function loadOwnerInfoFrom712() {
+            if (!districtSelect || !talukaSelect || !villageSelect || !gutSelect || !ownerInfoBody) return;
+            if (!districtSelect.value || !talukaSelect.value || !villageSelect.value || !gutSelect.value) {
+                populateOwnerInfoTable();
+                if (ownerInfoStatus) {
+                    ownerInfoStatus.textContent = '7/12 मधून माहिती उपलब्ध झाल्यावर ही सारणी स्वयंरित्या भरेल.';
+                }
+                return;
+            }
+
+            try {
+                const res = await fetch(`/api/process-chart-form/data/?district=${encodeURIComponent(districtSelect.value)}&taluka=${encodeURIComponent(talukaSelect.value)}&village=${encodeURIComponent(villageSelect.value)}&gut_number=${encodeURIComponent(gutSelect.value)}`);
+                const data = await res.json();
+                populateOwnerInfoTable(data.prefill || {});
+                applyVillageDataPrefill(data.prefill?.village_data);
+            } catch (error) {
+                console.error(error);
+                populateOwnerInfoTable();
+                if (ownerInfoStatus) {
+                    ownerInfoStatus.textContent = '7/12 मधून माहिती लोड करता आली नाही.';
+                }
+            }
+        }
+
+        function toggleRecordUpdatedFields() {
+            const selectedValue = recordUpdatedRadios.find((radio) => radio.checked)?.value;
+            if (!recordUpdatedYesFields || !recordUpdatedNoFields || !recordUpdatedNoFieldsApproval) return;
+
+            if (selectedValue === 'yes') {
+                recordUpdatedYesFields.classList.remove('hidden');
+                recordUpdatedNoFields.classList.add('hidden');
+                recordUpdatedNoFieldsApproval.classList.add('hidden');
+                return;
+            }
+
+            if (selectedValue === 'no') {
+                recordUpdatedYesFields.classList.add('hidden');
+                recordUpdatedNoFields.classList.remove('hidden');
+                recordUpdatedNoFieldsApproval.classList.remove('hidden');
+                return;
+            }
+
+            recordUpdatedYesFields.classList.add('hidden');
+            recordUpdatedNoFields.classList.add('hidden');
+            recordUpdatedNoFieldsApproval.classList.add('hidden');
+        }
+
+        function openOtherRightsModal(content) {
+            if (!otherRightsModal || !otherRightsContent) return;
+            otherRightsContent.textContent = content || 'माहिती उपलब्ध नाही.';
+            otherRightsModal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeOtherRightsModal() {
+            if (!otherRightsModal) return;
+            otherRightsModal.classList.add('hidden');
+            document.body.style.overflow = '';
+        }
+
+        function applyVillageDataPrefill(villageDataPayload) {
+            const villageData = villageDataPayload?.data || {};
+            currentVillageFiles = villageDataPayload?.files || {};
+            const fieldMap = {
+                pcSec2AdhisuchanaKramank: villageData.sec2_adhisuchana_kramank || '',
+                pcSec2Date: villageData.sec2_date || '',
+                pcSec2Paper1Name: villageData.sec2_paper1_name || '',
+                pcSec2Paper1Date: villageData.sec2_paper1_date || '',
+                pcSec2Paper2Name: villageData.sec2_paper2_name || '',
+                pcSec2Paper2Date: villageData.sec2_paper2_date || '',
+                pcSec3UpvibhagName: villageData.sec3_upvibhag_name || '',
+                pcSec3AdhisuchanaKramank: villageData.sec3_adhisuchana_kramank || '',
+                pcSec3Date: villageData.sec3_date || '',
+                pcSec5PrastaavKramank: villageData.sec5_prastaav_kramank || '',
+                pcSec5Date: villageData.sec5_date || '',
+            };
+
+            Object.entries(fieldMap).forEach(([id, value]) => {
+                const field = document.getElementById(id);
+                if (field && !field.value) {
+                    field.value = value;
+                }
+            });
+        }
+
+        function openFilesModal(files = []) {
+            if (!filesModal || !filesModalContent) return;
+
+            if (!files.length) {
+                filesModalContent.innerHTML = '<div class="text-sm text-gray-600">दस्तऐवज उपलब्ध नाहीत.</div>';
+            } else {
+                filesModalContent.innerHTML = files.map((file) => `
+                    <div class="flex items-center justify-between gap-3 rounded border border-[#dbe8f8] bg-[#f8fbff] px-3 py-3">
+                        <div class="min-w-0">
+                            <div class="truncate text-sm font-semibold text-[#244271]">${file.name || 'Document'}</div>
+                        </div>
+                        <a href="${file.url}" target="_blank" rel="noopener noreferrer" class="rounded-lg bg-[#125fcb] px-3 py-2 text-xs font-semibold text-white">
+                            Open
+                        </a>
+                    </div>
+                `).join('');
+            }
+
+            filesModal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeFilesModal() {
+            if (!filesModal) return;
+            filesModal.classList.add('hidden');
+            document.body.style.overflow = '';
+        }
+
+        function buildAgreementDraftHtml() {
+            const agreementNumber = agreementNumberInput?.value?.trim() || '________';
+            const agreementDate = agreementDateInput?.value?.trim() || '________';
+            const divisionSelect = document.querySelector('select[name="division"]');
+            const division = divisionSelect?.selectedOptions?.[0]?.textContent?.trim() || divisionSelect?.value?.trim() || '________';
+            const district = districtSelect?.selectedOptions?.[0]?.textContent?.trim() || districtSelect?.value?.trim() || '________';
+            const taluka = talukaSelect?.selectedOptions?.[0]?.textContent?.trim() || talukaSelect?.value?.trim() || '________';
+            const village = villageSelect?.selectedOptions?.[0]?.textContent?.trim() || villageSelect?.value?.trim() || '________';
+            const gutNumber = gutSelect?.selectedOptions?.[0]?.textContent?.trim() || gutSelect?.value?.trim() || '________';
+
+            return `
+                <!DOCTYPE html>
+                <html lang="mr">
+                <head>
+                    <meta charset="utf-8">
+                    <title>करारनामा Draft</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; padding: 32px; color: #1d2f4f; line-height: 1.7; }
+                        h1 { font-size: 24px; margin-bottom: 24px; color: #214a8b; }
+                        .meta { margin-bottom: 28px; }
+                        .meta p { margin: 6px 0; }
+                        .content { border: 1px solid #d7e5f6; border-radius: 16px; padding: 24px; background: #f8fbff; }
+                    </style>
+                </head>
+                <body>
+                    <h1>कलम 32(5), 33(2) व 36(1) अन्वये संपादनाचा करारनामा Draft</h1>
+                    <div class="meta">
+                        <p><strong>संमती करारनामा क्रमांक:</strong> ${agreementNumber}</p>
+                        <p><strong>करारनामा दिनांक:</strong> ${agreementDate}</p>
+                        <p><strong>विभाग:</strong> ${division}</p>
+                        <p><strong>जिल्हा:</strong> ${district}</p>
+                        <p><strong>तालुका:</strong> ${taluka}</p>
+                        <p><strong>गाव:</strong> ${village}</p>
+                        <p><strong>गट / सर्वे क्रमांक:</strong> ${gutNumber}</p>
+                    </div>
+                    <div class="content">
+                        <p>वरील तपशीलानुसार संबंधित संपादन प्रकरणासाठी संमती करारनामा Draft स्वयंरित्या तयार करण्यात आला आहे.</p>
+                        <p>अंतिम करारनामा तयार करण्यापूर्वी तपशील पडताळून घेणे अपेक्षित आहे.</p>
+                    </div>
+                </body>
+                </html>
+            `;
+        }
+
+        function openAgreementDraft(html) {
+            if (!agreementDraftModal || !agreementDraftFrame) return;
+            agreementDraftFrame.srcdoc = html;
+            agreementDraftModal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeAgreementDraftModal() {
+            if (!agreementDraftModal || !agreementDraftFrame) return;
+            agreementDraftModal.classList.add('hidden');
+            agreementDraftFrame.srcdoc = '';
+            document.body.style.overflow = '';
+        }
+
+        function getCurrentPanel() {
+            return panels.find((panel) => Number(panel.dataset.pcPanel) === currentStep) || null;
+        }
+
+        function serializeFieldValue(field) {
+            if (field.type === 'checkbox') {
+                return field.checked;
+            }
+            if (field.type === 'radio') {
+                return field.checked ? field.value : null;
+            }
+            if (field.multiple && field.options) {
+                return Array.from(field.selectedOptions).map((option) => option.value);
+            }
+            return field.value;
+        }
+
+        function collectPanelData(panel) {
+            if (!panel) return {};
+            const data = {};
+            const radioNames = new Set();
+
+            panel.querySelectorAll('input, select, textarea').forEach((field) => {
+                const key = field.name || field.id;
+                if (!key || field.disabled || field.type === 'file') return;
+
+                if (field.type === 'radio') {
+                    radioNames.add(key);
+                    return;
+                }
+
+                data[key] = serializeFieldValue(field);
+            });
+
+            radioNames.forEach((name) => {
+                const checked = panel.querySelector(`input[name="${name}"]:checked`);
+                data[name] = checked ? checked.value : '';
+            });
+
+            return data;
+        }
+
+        function applyFieldValue(field, value) {
+            if (!field || field.type === 'file' || value === undefined || value === null) return;
+
+            if (field.type === 'radio') {
+                field.checked = field.value === String(value);
+                return;
+            }
+
+            if (field.type === 'checkbox') {
+                field.checked = Boolean(value);
+                return;
+            }
+
+            if (field.multiple && Array.isArray(value)) {
+                Array.from(field.options || []).forEach((option) => {
+                    option.selected = value.includes(option.value);
+                });
+                return;
+            }
+
+            field.value = value;
+        }
+
+        function applyStepDataToForm(stepData = {}) {
+            Object.values(stepData || {}).forEach((sectionData) => {
+                if (!sectionData || typeof sectionData !== 'object') return;
+
+                Object.entries(sectionData).forEach(([key, value]) => {
+                    const fieldsByName = processChartForm?.querySelectorAll(`[name="${CSS.escape(key)}"]`) || [];
+                    const fieldsById = processChartForm?.querySelectorAll(`#${CSS.escape(key)}`) || [];
+                    const matchedFields = new Set([...fieldsByName, ...fieldsById]);
+
+                    matchedFields.forEach((field) => applyFieldValue(field, value));
+                });
+            });
+        }
+
+        async function loadExistingProcessChartCase() {
+            if (!currentCaseId) return;
+
+            try {
+                const response = await fetch(`/api/process-chart-form/data/?case_id=${encodeURIComponent(currentCaseId)}`);
+                const result = await response.json();
+                if (!response.ok || !result.success) {
+                    throw new Error(result.error || 'Existing process chart could not be loaded.');
+                }
+
+                const caseData = result.case || {};
+                const prefill = result.prefill || {};
+                setStep(caseData.current_step || 1);
+
+                if (caseData.division) {
+                    const divisionField = processChartForm?.querySelector('[name="division"]');
+                    if (divisionField) divisionField.value = caseData.division;
+                }
+                if (caseData.project_purpose) {
+                    const projectPurposeField = processChartForm?.querySelector('[name="project_purpose"]');
+                    if (projectPurposeField) projectPurposeField.value = caseData.project_purpose;
+                }
+                if (caseData.acquisition_type) {
+                    const acquisitionTypeField = processChartForm?.querySelector('[name="acquisition_type"]');
+                    if (acquisitionTypeField) acquisitionTypeField.value = caseData.acquisition_type;
+                }
+
+                await loadProcessChartDistricts();
+                if (districtSelect && caseData.district) {
+                    districtSelect.value = caseData.district;
+                }
+                await populateProcessChartTalukas(caseData.district, caseData.taluka);
+                if (talukaSelect && caseData.taluka) {
+                    talukaSelect.value = caseData.taluka;
+                }
+                await populateProcessChartVillages(caseData.district, caseData.taluka);
+                if (villageSelect && caseData.village) {
+                    villageSelect.value = caseData.village;
+                }
+                await loadProcessChartGuts(caseData.district, caseData.taluka, caseData.village);
+                if (gutSelect && caseData.gut_number) {
+                    gutSelect.value = caseData.gut_number;
+                }
+
+                await loadOwnerNamesFrom712();
+                populateOwnerInfoTable(prefill);
+                applyVillageDataPrefill(prefill.village_data);
+                try {
+                    applyStepDataToForm(result.step_data || {});
+                } catch (stepDataError) {
+                    console.error('Step data apply failed:', stepDataError);
+                }
+            } catch (error) {
+                console.error(error);
+                setStep(1);
+                alert(error.message || 'Saved process chart load करता आले नाही.');
+            }
+        }
+
+        function buildSavePayload(statusValue) {
+            const divisionField = processChartForm?.querySelector('[name="division"]');
+            const projectPurposeField = processChartForm?.querySelector('[name="project_purpose"]');
+            const acquisitionTypeField = processChartForm?.querySelector('[name="acquisition_type"]');
+            const panel = getCurrentPanel();
+
+            return {
+                case_id: currentCaseId || undefined,
+                division: divisionField?.value || '',
+                district: districtSelect?.value || '',
+                taluka: talukaSelect?.value || '',
+                village: villageSelect?.value || '',
+                gut_number: gutSelect?.value || '',
+                project_purpose: projectPurposeField?.value || '',
+                acquisition_type: acquisitionTypeField?.value || '',
+                current_step: currentStep,
+                status: statusValue,
+                step_no: currentStep,
+                section_code: `step_${currentStep}`,
+                data: collectPanelData(panel),
+            };
+        }
+
+        async function saveProcessChart(statusValue = 'draft') {
+            if (isSavingProcessChart) return { success: false, error: 'Save already in progress.' };
+
+            const payload = buildSavePayload(statusValue);
+            if (!payload.district || !payload.taluka || !payload.village || !payload.gut_number) {
+                alert('जिल्हा, तालुका, गाव आणि गट / सर्वे क्रमांक निवडणे आवश्यक आहे.');
+                return { success: false, error: 'Missing required location fields.' };
+            }
+
+            isSavingProcessChart = true;
+            try {
+                const response = await fetch('/api/process-chart-form/save/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken'),
+                    },
+                    body: JSON.stringify(payload),
+                });
+                const result = await response.json();
+                if (!response.ok || !result.success) {
+                    throw new Error(result.error || 'Unable to save process chart.');
+                }
+
+                currentCaseId = result.case_id || currentCaseId;
+                const nextUrl = new URL(window.location.href);
+                nextUrl.searchParams.set('case_id', currentCaseId);
+                window.history.replaceState({}, '', nextUrl.toString());
+
+                return result;
+            } catch (error) {
+                console.error(error);
+                alert(error.message || 'Process chart save करता आले नाही.');
+                return { success: false, error: error.message };
+            } finally {
+                isSavingProcessChart = false;
+            }
+        }
 
         function setStep(step) {
             currentStep = Math.max(1, Math.min(totalSteps, Number(step) || 1));
@@ -1307,13 +2229,126 @@
         }
 
         dots.forEach((dot) => dot.addEventListener('click', () => setStep(dot.dataset.pcStep)));
-        prevBtn.addEventListener('click', () => setStep(currentStep - 1));
-        nextBtn.addEventListener('click', () => {
-            if (currentStep < totalSteps) {
-                setStep(currentStep + 1);
+        prevBtn.addEventListener('click', async () => {
+            const result = await saveProcessChart('draft');
+            if (result.success) {
+                setStep(currentStep - 1);
             }
         });
+        nextBtn.addEventListener('click', async () => {
+            const result = await saveProcessChart(currentStep === totalSteps ? 'submitted' : 'draft');
+            if (result.success && currentStep < totalSteps) {
+                setStep(currentStep + 1);
+                return;
+            }
+            if (result.success && currentStep === totalSteps) {
+                alert('Process chart submitted successfully.');
+            }
+        });
+        saveBtn?.addEventListener('click', async () => {
+            const result = await saveProcessChart('draft');
+            if (result.success) {
+                alert('Draft saved successfully.');
+            }
+        });
+        saveDraftBtn?.addEventListener('click', async () => {
+            const result = await saveProcessChart('draft');
+            if (result.success) {
+                alert('Draft saved successfully.');
+            }
+        });
+        submitBtn?.addEventListener('click', async () => {
+            const result = await saveProcessChart('submitted');
+            if (result.success) {
+                alert('Process chart submitted successfully.');
+            }
+        });
+
+        if (districtSelect && talukaSelect && villageSelect && gutSelect) {
+            districtSelect.addEventListener('change', async () => {
+                await populateProcessChartTalukas(districtSelect.value);
+                await loadOwnerNamesFrom712();
+                populateOwnerInfoTable();
+            });
+
+            talukaSelect.addEventListener('change', async () => {
+                await populateProcessChartVillages(districtSelect.value, talukaSelect.value);
+                await loadOwnerNamesFrom712();
+                populateOwnerInfoTable();
+            });
+
+            villageSelect.addEventListener('change', async () => {
+                await loadProcessChartGuts(districtSelect.value, talukaSelect.value, villageSelect.value);
+                await loadOwnerNamesFrom712();
+                await loadOwnerInfoFrom712();
+            });
+
+            gutSelect.addEventListener('change', async () => {
+                await loadOwnerNamesFrom712();
+                await loadOwnerInfoFrom712();
+            });
+        }
+
+        ownerInfoBody?.addEventListener('click', (event) => {
+            const trigger = event.target.closest('.pc-other-rights-btn');
+            if (!trigger) return;
+            const rawContent = trigger.dataset.otherRights || '';
+            const parsed = rawContent
+                .replace(/&quot;/g, '"')
+                .replace(/&lt;/g, '<')
+                .replace(/&gt;/g, '>')
+                .replace(/&amp;/g, '&');
+            openOtherRightsModal(parsed);
+        });
+
+        closeOtherRightsModalBtn?.addEventListener('click', closeOtherRightsModal);
+        closeOtherRightsModalFooterBtn?.addEventListener('click', closeOtherRightsModal);
+        otherRightsModal?.addEventListener('click', (event) => {
+            if (event.target === otherRightsModal) {
+                closeOtherRightsModal();
+            }
+        });
+
+        sec2FilesViewBtn?.addEventListener('click', () => openFilesModal(currentVillageFiles.sec2_files || []));
+        sec2Paper1FilesViewBtn?.addEventListener('click', () => openFilesModal(currentVillageFiles.sec2_paper1_files || []));
+        sec2Paper2FilesViewBtn?.addEventListener('click', () => openFilesModal(currentVillageFiles.sec2_paper2_files || []));
+        closeFilesModalBtn?.addEventListener('click', closeFilesModal);
+        closeFilesModalFooterBtn?.addEventListener('click', closeFilesModal);
+        agreementDraftGenerateBtn?.addEventListener('click', () => {
+            currentAgreementDraftHtml = buildAgreementDraftHtml();
+            agreementDraftViewBtn?.classList.remove('hidden');
+            openAgreementDraft(currentAgreementDraftHtml);
+        });
+        agreementDraftViewBtn?.addEventListener('click', () => {
+            if (!currentAgreementDraftHtml) {
+                currentAgreementDraftHtml = buildAgreementDraftHtml();
+            }
+            openAgreementDraft(currentAgreementDraftHtml);
+        });
+        closeAgreementDraftModalBtn?.addEventListener('click', closeAgreementDraftModal);
+        closeAgreementDraftModalFooterBtn?.addEventListener('click', closeAgreementDraftModal);
+        agreementDraftModal?.addEventListener('click', (event) => {
+            if (event.target === agreementDraftModal) {
+                closeAgreementDraftModal();
+            }
+        });
+        filesModal?.addEventListener('click', (event) => {
+            if (event.target === filesModal) {
+                closeFilesModal();
+            }
+        });
+
+        recordUpdatedRadios.forEach((radio) => radio.addEventListener('change', toggleRecordUpdatedFields));
+        toggleRecordUpdatedFields();
         setStep(1);
+
+        (async () => {
+            if (currentCaseId) {
+                await loadExistingProcessChartCase();
+            } else {
+                await loadProcessChartDistricts();
+            }
+        })();
     })();
 </script>
 {% endblock %}
