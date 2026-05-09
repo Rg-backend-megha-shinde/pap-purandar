@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect
 from django.http import JsonResponse, HttpResponse
 from django.urls import reverse
-from django.db import connection
+from django.db import connection, transaction
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.sessions.models import Session
@@ -914,6 +914,48 @@ def land_record_712(request):
             return None
         return text
 
+    def get_clean_khata_numbers(rows):
+        khata_numbers = []
+        for row in rows:
+            khata_number = clean_optional(row.get('khata_number'))
+            if khata_number:
+                khata_numbers.append(khata_number)
+        return khata_numbers
+
+    def validate_unique_khata_numbers(rows):
+        khata_numbers = get_clean_khata_numbers(rows)
+        duplicate_in_upload = sorted({
+            khata_number for khata_number in khata_numbers
+            if khata_numbers.count(khata_number) > 1
+        })
+        if duplicate_in_upload:
+            raise ValueError(
+                'Duplicate khata number found in uploaded HTML: '
+                + ', '.join(duplicate_in_upload)
+            )
+
+        existing_khata_numbers = set(
+            LandRecord712.objects
+            .filter(khata_number__in=khata_numbers)
+            .values_list('khata_number', flat=True)
+        )
+        if existing_khata_numbers:
+            raise ValueError(
+                'Khata number already exists: '
+                + ', '.join(sorted(existing_khata_numbers))
+            )
+
+    def lock_khata_numbers(rows):
+        khata_numbers = sorted(set(get_clean_khata_numbers(rows)))
+        if not khata_numbers:
+            return
+        with connection.cursor() as cursor:
+            for khata_number in khata_numbers:
+                cursor.execute(
+                    "SELECT pg_advisory_xact_lock(hashtext(%s))",
+                    [f"land_record_712.khata_number:{khata_number}"]
+                )
+
     def fetch_api_rows(uploaded_file):
         api_url = os.getenv(
             'LAND_RECORD_UPLOAD_API_URL',
@@ -1010,28 +1052,32 @@ def land_record_712(request):
             else:
                 raise ValueError('कृपया HTML फाइल अपलोड करा.')
 
-            for row in rows_to_save:
-                LandRecord712.objects.create(
-                    user=request.user,
-                    document_712=uploaded_html,
-                    original_document_name=uploaded_html.name if uploaded_html else None,
-                    district=district,
-                    taluka=taluka,
-                    village=village,
-                    gut_number=gut_number,
-                    khata_number=clean_optional(row.get('khata_number')),
-                    puid_ulip_no=clean_optional(row.get('puid_ulip_no')),
-                    hissa_number=clean_optional(row.get('hissa_number')),
-                    jirayit=clean_optional(row.get('jirayit')),
-                    bagayat=clean_optional(row.get('bagayat')),
-                    potkharaba=clean_optional(row.get('potkharaba')),
-                    total_area=clean_optional(row.get('total_area')),
-                    aakarni=clean_optional(row.get('aakarni')),
-                    khata_area=clean_optional(row.get('khata_area')),
-                    aakar=clean_optional(row.get('aakar')),
-                    holder_name=clean_optional(clean_holder_name_list(row.get('holder_name'))),
-                    kul_khand_other_rights=clean_optional(row.get('kul_khand_other_rights')),
-                )
+            with transaction.atomic():
+                lock_khata_numbers(rows_to_save)
+                validate_unique_khata_numbers(rows_to_save)
+
+                for row in rows_to_save:
+                    LandRecord712.objects.create(
+                        user=request.user,
+                        document_712=uploaded_html,
+                        original_document_name=uploaded_html.name if uploaded_html else None,
+                        district=district,
+                        taluka=taluka,
+                        village=village,
+                        gut_number=gut_number,
+                        khata_number=clean_optional(row.get('khata_number')),
+                        puid_ulip_no=clean_optional(row.get('puid_ulip_no')),
+                        hissa_number=clean_optional(row.get('hissa_number')),
+                        jirayit=clean_optional(row.get('jirayit')),
+                        bagayat=clean_optional(row.get('bagayat')),
+                        potkharaba=clean_optional(row.get('potkharaba')),
+                        total_area=clean_optional(row.get('total_area')),
+                        aakarni=clean_optional(row.get('aakarni')),
+                        khata_area=clean_optional(row.get('khata_area')),
+                        aakar=clean_optional(row.get('aakar')),
+                        holder_name=clean_optional(clean_holder_name_list(row.get('holder_name'))),
+                        kul_khand_other_rights=clean_optional(row.get('kul_khand_other_rights')),
+                    )
 
         except ValueError as ex:
             return render(request, "landrecord.html", {"error_message": str(ex)})
@@ -1281,7 +1327,23 @@ def edit_land_record_712(request, id):
         obj.holder_name = clean_optional(request.POST.get('holder_name'))
         obj.kul_khand_other_rights = clean_optional(request.POST.get('kul_khand_other_rights'))
         obj.user = request.user
-        obj.save()
+        with transaction.atomic():
+            if obj.khata_number:
+                with connection.cursor() as cursor:
+                    cursor.execute(
+                        "SELECT pg_advisory_xact_lock(hashtext(%s))",
+                        [f"land_record_712.khata_number:{obj.khata_number}"]
+                    )
+                if LandRecord712.objects.filter(khata_number=obj.khata_number).exclude(id=obj.id).exists():
+                    return render(
+                        request,
+                        'edit_land_record_712.html',
+                        {
+                            'obj': obj,
+                            'error_message': f'Khata number already exists: {obj.khata_number}'
+                        }
+                    )
+            obj.save()
         return redirect('land_record_712_list')
     return render(request, 'edit_land_record_712.html', {'obj': obj})
 
@@ -1290,6 +1352,16 @@ def delete_land_record_712(request, id):
     # Clear dependent document links first to satisfy DB foreign key constraints.
     DocumentMaster.objects.filter(land_record_id=id).update(land_record=None)
     LandRecord712.objects.filter(id=id).delete()
+    return redirect('land_record_712_list')
+
+@login_required
+@require_http_methods(["POST"])
+def delete_selected_land_record_712(request):
+    selected_ids = request.POST.getlist('selected_ids')
+    if selected_ids:
+        # Clear dependent document links first to satisfy DB foreign key constraints.
+        DocumentMaster.objects.filter(land_record_id__in=selected_ids).update(land_record=None)
+        LandRecord712.objects.filter(id__in=selected_ids).delete()
     return redirect('land_record_712_list')
 
 @api_login_required
