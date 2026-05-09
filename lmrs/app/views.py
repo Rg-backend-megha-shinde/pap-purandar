@@ -4576,6 +4576,3 @@ def get_village_sec15_rates(request):
         'rates': rates_payload,
         'message': '' if rates_payload else 'No ready reckoner rates found for selected village'
     })
-
-
-
