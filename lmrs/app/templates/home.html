@@ -20,12 +20,6 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ol@v10.2.1/ol.css" />
     <script src="https://cdn.jsdelivr.net/npm/ol@v10.2.1/dist/ol.js"></script>
 
-    <!-- Highcharts -->
-    <script src="https://unpkg.com/highcharts@11.4.0/highcharts.js"></script>
-    <script src="https://unpkg.com/highcharts@11.4.0/modules/exporting.js"></script>
-    <script src="https://unpkg.com/highcharts@11.4.0/modules/export-data.js"></script>
-    <script src="https://unpkg.com/highcharts@11.4.0/modules/accessibility.js"></script>
-
     <script id="tailwind-config">
         tailwind.config = {
             darkMode: "class",
@@ -301,8 +295,6 @@
         let currentGutNumber = null; // Track current selected gut number
         let defaultProjectBoundaryLayer = null; // Default project boundary layer
         let defaultAllTalukasLayer = null; // Default all talukas layer
-        let assetsDistributionChartInstance = null; // Store Highcharts instance
-
         let loadingTiles = 0;
 
         // GeoServer configuration
@@ -1756,24 +1748,12 @@
                 fetch(url)
                     .then(response => response.json())
                     .then(data => {
-                        // Calculate and display total assets from land classification
-                        if (data.land_classification) {
-                            const totalAssets = (data.land_classification.trees_total || 0) +
-                                (data.land_classification.structures_total || 0) +
-                                (data.land_classification.water_total || 0);
-                            const totalAssetsElement = document.getElementById('totalAssetsCount');
-                            if (totalAssetsElement) {
-                                totalAssetsElement.textContent = totalAssets.toLocaleString();
-                            }
-                        }
-
                         // Populate asset layers (always call to ensure prj_bd is shown)
                         populateAssetLayers(data.assets || {});
 
                         // Populate land classification
                         if (data.land_classification) {
                             populateLandClassification(data.land_classification);
-                            populateAssetsDistribution(data.land_classification);
                         }
                     })
                     .catch(error => console.error('Error loading project stats:', error));
@@ -1941,194 +1921,6 @@
                         ${otherCategoriesHTML}
                     </div>
                 `;
-            }
-
-            // Populate assets distribution pie chart
-            function populateAssetsDistribution(landData) {
-                const total = landData.trees_total + landData.other_total;
-
-                if (total === 0) return;
-
-                // Update HTML custom legend with individual categories
-                const fruitTreeEl = document.getElementById('fruitTreeCount');
-                const forestTreeEl = document.getElementById('forestTreeCount');
-                const structureEl = document.getElementById('structureCount');
-                const otherAssetEl = document.getElementById('otherAssetCount');
-
-                if (fruitTreeEl) fruitTreeEl.textContent = (landData.tree_categories?.['Fruit Tree']?.count || 0).toLocaleString();
-                if (forestTreeEl) forestTreeEl.textContent = (landData.tree_categories?.['Forest Tree']?.count || 0).toLocaleString();
-                if (structureEl) structureEl.textContent = (landData.other_categories?.['Structure']?.count || 0).toLocaleString();
-                if (otherAssetEl) otherAssetEl.textContent = (landData.other_categories?.['Other Asset']?.count || 0).toLocaleString();
-
-                // Store globally for custom export function
-                window.currentLandData = landData;
-
-                const isDarkMode = document.documentElement.classList.contains('dark');
-                const textColor = isDarkMode ? '#f8fafc' : '#0f172a';
-                const legendColor = isDarkMode ? '#cbd5e1' : '#475569';
-
-                // Build chart data from individual categories
-                const chartData = [];
-                const categoryColors = {
-                    'Fruit Tree': '#10b981',      // emerald
-                    'Forest Tree': '#059669',     // darker emerald
-                    'Structure': '#8b5cf6',       // purple
-                    'Other Asset': '#f59e0b'      // amber
-                };
-
-                // Add tree categories
-                if (landData.tree_categories) {
-                    Object.entries(landData.tree_categories).forEach(([category, data]) => {
-                        chartData.push({
-                            name: category,
-                            y: data.count,
-                            color: categoryColors[category] || '#10b981',
-                            valuation: data.valuation
-                        });
-                    });
-                }
-
-                // Add other categories
-                if (landData.other_categories) {
-                    Object.entries(landData.other_categories).forEach(([category, data]) => {
-                        chartData.push({
-                            name: category,
-                            y: data.count,
-                            color: categoryColors[category] || '#f59e0b',
-                            valuation: data.valuation
-                        });
-                    });
-                }
-
-                const totalAssetsDisplay = document.getElementById('totalAssetsDisplay');
-                if (totalAssetsDisplay) totalAssetsDisplay.textContent = total.toLocaleString();
-
-                if (assetsDistributionChartInstance) {
-                    assetsDistributionChartInstance.series[0].setData(chartData);
-                } else {
-                    assetsDistributionChartInstance = Highcharts.chart('assetsDistributionChart', {
-                        chart: {
-                            type: 'pie',
-                            backgroundColor: 'transparent',
-                            margin: [0, 0, 0, 0],
-                            spacingTop: 0,
-                            spacingBottom: 0,
-                            spacingLeft: 0,
-                            spacingRight: 0
-                        },
-                        title: {
-                            text: null
-                        },
-                        exporting: {
-                            enabled: false
-                        },
-                        tooltip: {
-                            useHTML: true,
-                            outside: true,
-                            backgroundColor: isDarkMode ? 'rgba(15, 23, 42, 0.95)' : 'rgba(255, 255, 255, 0.95)',
-                            style: {
-                                color: textColor,
-                                padding: 0,
-                                zIndex: 9999
-                            },
-                            borderWidth: 0,
-                            shadow: true,
-                            formatter: function () {
-                                let html = `<div style="padding: 8px; border-radius: 4px;">`;
-                                html += `<div style="font-size: 13px; font-weight: bold; margin-bottom: 5px;">
-                                            <span style="color:${this.point.color}">\u25CF</span> ${this.key}
-                                         </div>`;
-                                html += `<div style="font-size: 12px; display: flex; flex-direction: column; gap: 3px;">`;
-                                html += `<div style="display: flex; justify-content: space-between; gap: 12px;"><span>Count:</span> <b>${this.y.toLocaleString()}</b></div>`;
-                                if (this.point.valuation !== undefined) {
-                                    const valInCr = (this.point.valuation / 10000000).toFixed(2);
-                                    html += `<div style="display: flex; justify-content: space-between; gap: 12px;"><span>Valuation:</span> <b>₹${valInCr} Cr</b></div>`;
-                                }
-                                html += `</div>`;
-                                html += `</div>`;
-                                return html;
-                            }
-                        },
-                        plotOptions: {
-                            pie: {
-                                innerSize: '70%',
-                                size: '100%',
-                                dataLabels: {
-                                    enabled: false
-                                },
-                                showInLegend: false,
-                                borderWidth: 0
-                            }
-                        },
-                        legend: {
-                            enabled: false
-                        },
-                        credits: {
-                            enabled: false
-                        },
-                        series: [{
-                            name: 'Assets',
-                            data: chartData
-                        }]
-                    });
-                }
-            }
-
-            // Custom function for Assets Distribution CSV export perfectly formatted
-            window.downloadAssetsCSV = function () {
-                if (!window.currentLandData) return;
-
-                const d = window.currentLandData;
-                const total = d.trees_total + d.other_total;
-
-                // Get contextual filter state
-                const filterText = currentGutNumber
-                    ? `Gut ${currentGutNumber} in ${currentVillage}`
-                    : currentVillage
-                        ? `Village ${currentVillage}`
-                        : 'All Areas';
-
-                // Format current time properly
-                const now = new Date();
-                const dateStr = now.toLocaleDateString() + ' ' + now.toLocaleTimeString();
-
-                // Construct CSV exact template
-                let csv = `Assets Distribution Report\n`;
-                csv += `Filter:,${filterText}\n`;
-                csv += `Generated:,${dateStr}\n\n`;
-                csv += `Category,Count,Percentage,Subcategory,Subcount\n`;
-
-                const treePct = total ? (d.trees_total / total * 100).toFixed(2) + '%' : '0.00%';
-                csv += `Trees,${d.trees_total},${treePct},,\n`;
-
-                // Add tree subcategories
-                if (d.tree_categories) {
-                    Object.entries(d.tree_categories).forEach(([category, data]) => {
-                        csv += `Trees,${d.trees_total},${treePct},${category},${data.count}\n`;
-                    });
-                }
-
-                const otherPct = total ? (d.other_total / total * 100).toFixed(2) + '%' : '0.00%';
-                csv += `Other,${d.other_total},${otherPct},,\n`;
-
-                // Add other subcategories
-                if (d.other_categories) {
-                    Object.entries(d.other_categories).forEach(([category, data]) => {
-                        csv += `Other,${d.other_total},${otherPct},${category},${data.count}\n`;
-                    });
-                }
-
-                csv += `\nTotal Assets,${total},100%,,\n`;
-
-                // Download execution
-                const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-                const url = URL.createObjectURL(blob);
-                const link = document.createElement("a");
-                link.setAttribute("href", url);
-                link.setAttribute("download", `Assets_Distribution_${filterText.replace(/ /g, '_')}.csv`);
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
             }
 
             // Populate asset layers list - Project Boundary and Asset Layers
