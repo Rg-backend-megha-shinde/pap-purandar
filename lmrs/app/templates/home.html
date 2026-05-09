@@ -20,12 +20,6 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ol@v10.2.1/ol.css" />
     <script src="https://cdn.jsdelivr.net/npm/ol@v10.2.1/dist/ol.js"></script>
 
-    <!-- Highcharts -->
-    <script src="https://unpkg.com/highcharts@11.4.0/highcharts.js"></script>
-    <script src="https://unpkg.com/highcharts@11.4.0/modules/exporting.js"></script>
-    <script src="https://unpkg.com/highcharts@11.4.0/modules/export-data.js"></script>
-    <script src="https://unpkg.com/highcharts@11.4.0/modules/accessibility.js"></script>
-
     <script id="tailwind-config">
         tailwind.config = {
             darkMode: "class",
@@ -301,8 +295,6 @@
         let currentGutNumber = null; // Track current selected gut number
         let defaultProjectBoundaryLayer = null; // Default project boundary layer
         let defaultAllTalukasLayer = null; // Default all talukas layer
-        let assetsDistributionChartInstance = null; // Store Highcharts instance
-
         let loadingTiles = 0;
 
         // GeoServer configuration
@@ -453,17 +445,36 @@
             const assetClassificationDetails = document.getElementById('assetClassificationDetails');
             const assetLayersDetails = document.getElementById('assetLayersDetails');
 
-            assetClassificationDetails.addEventListener('toggle', function () {
-                if (this.open) {
-                    assetLayersDetails.removeAttribute('open');
-                }
-            });
-
-            assetLayersDetails.addEventListener('toggle', function () {
-                if (this.open) {
+            function closeAssetPanels() {
+                if (assetClassificationDetails) {
+                    assetClassificationDetails.open = false;
                     assetClassificationDetails.removeAttribute('open');
                 }
-            });
+                if (assetLayersDetails) {
+                    assetLayersDetails.open = false;
+                    assetLayersDetails.removeAttribute('open');
+                }
+            }
+
+            if (assetClassificationDetails) {
+                assetClassificationDetails.addEventListener('toggle', function () {
+                    if (this.open) {
+                        assetLayersDetails?.removeAttribute('open');
+                    }
+                });
+            }
+
+            if (assetLayersDetails) {
+                assetLayersDetails.addEventListener('toggle', function () {
+                    if (this.open) {
+                        assetClassificationDetails?.removeAttribute('open');
+                    }
+                });
+            }
+
+            closeAssetPanels();
+            requestAnimationFrame(closeAssetPanels);
+            window.addEventListener('load', closeAssetPanels);
 
             // Initialize map centered on Purandar, Pune
             map = new ol.Map({
@@ -1756,58 +1767,6 @@
                 fetch(url)
                     .then(response => response.json())
                     .then(data => {
-                        const affectedVillagesElement = document.getElementById('affectedVillagesCount');
-                        if (affectedVillagesElement) {
-                            affectedVillagesElement.textContent = String(data.affected_villages).padStart(2, '0');
-                        }
-
-                        const affectedFarmersElement = document.getElementById('affectedFarmersCount');
-                        if (affectedFarmersElement) {
-                            affectedFarmersElement.textContent = data.affected_farmers.toLocaleString();
-                        }
-
-                        const areaAcquiredElement = document.getElementById('areaAcquired');
-                        if (areaAcquiredElement) {
-                            areaAcquiredElement.textContent = data.area_acquired.toLocaleString('en-IN', { maximumFractionDigits: 2 }) + ' Ha';
-                        }
-
-                        const totalCompensationElement = document.getElementById('totalCompensation');
-                        if (totalCompensationElement) {
-                            totalCompensationElement.textContent = formatCurrency(data.total_compensation);
-                        }
-
-                        // Calculate and display total assets from land classification (matches Assets Distribution)
-                        if (data.land_classification) {
-                            const totalAssets = (data.land_classification.trees_total || 0) +
-                                (data.land_classification.structures_total || 0) +
-                                (data.land_classification.water_total || 0);
-                            const totalAssetsElement = document.getElementById('totalAssetsCount');
-                            if (totalAssetsElement) {
-                                totalAssetsElement.textContent = totalAssets.toLocaleString();
-                            }
-                        }
-
-                        // Update the compensation bar container
-                        const container = document.getElementById('villageCompensationBars');
-                        if (container) {
-                            if (village) {
-                                // Show ONLY selected village bar
-                                const comp = data.total_compensation || 0;
-                                const compensationCr = comp / 10000000;
-                                container.innerHTML = `
-                                    <div class="space-y-1">
-                                        <div class="flex justify-between text-[10px] text-slate-500 uppercase">
-                                            <span>${village}</span>
-                                            <span>₹${compensationCr.toFixed(2)} Cr</span>
-                                        </div>
-                                        <div class="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                                            <div class="bg-primary h-full" style="width:100%"></div>
-                                        </div>
-                                    </div>
-                                `;
-                            }
-                        }
-
                         // Populate asset layers (always call to ensure prj_bd is shown)
                         populateAssetLayers(data.assets || {});
 
@@ -1819,88 +1778,8 @@
                     })
                     .catch(error => console.error('Error loading project stats:', error));
 
-                // Fetch farmers data hierarchically based on current filters
-                fetchHierarchicalFarmers();
-
                 // Fetch documents for current filter level
                 fetchFilteredDocuments();
-            }
-
-            // Fetch and display farmers pie chart hierarchically
-            function fetchHierarchicalFarmers() {
-                // Build query params based on current filters
-                const params = new URLSearchParams();
-                if (currentDistrict) params.append('district', currentDistrict);
-                if (currentTaluka) params.append('taluka', currentTaluka);
-                if (currentVillage) params.append('village', currentVillage);
-
-                fetch(`/api/all-villages-farmers/?${params.toString()}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        if (!data.farmers || data.farmers.length === 0) {
-                            console.log('No farmers data available');
-                            // Clear the display
-                            const totalFarmersElement = document.getElementById('totalFarmersDisplay');
-                            if (totalFarmersElement) totalFarmersElement.textContent = '0';
-
-                            const svgChart = document.getElementById('farmersPieChart');
-                            if (svgChart) svgChart.innerHTML = '';
-
-                            const legendContainer = document.getElementById('farmersLegend');
-                            if (legendContainer) legendContainer.innerHTML = '<div class="text-[9px] text-slate-400 text-center py-2">No data available</div>';
-                            return;
-                        }
-
-                        const totalFarmers = data.farmers.reduce((sum, f) => sum + f.farmers_count, 0);
-                        const totalFarmersElement = document.getElementById('totalFarmersDisplay');
-                        if (totalFarmersElement) {
-                            totalFarmersElement.textContent = totalFarmers.toLocaleString();
-                        }
-
-                        const colors = ['#10b981', '#3b82f6', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#ef4444', '#84cc16', '#f97316', '#14b8a6'];
-                        const circumference = 251.2;
-                        let currentOffset = 0;
-
-                        const svgChart = document.getElementById('farmersPieChart');
-                        if (!svgChart) return;
-                        svgChart.innerHTML = '';
-
-                        const legendContainer = document.getElementById('farmersLegend');
-                        if (!legendContainer) return;
-                        legendContainer.innerHTML = '';
-
-                        data.farmers.forEach((item, index) => {
-                            const percentage = (item.farmers_count / totalFarmers * 100).toFixed(1);
-                            const segmentLength = (item.farmers_count / totalFarmers) * circumference;
-                            const color = colors[index % colors.length];
-
-                            const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-                            circle.setAttribute('cx', '50');
-                            circle.setAttribute('cy', '50');
-                            circle.setAttribute('r', '40');
-                            circle.setAttribute('fill', 'none');
-                            circle.setAttribute('stroke', color);
-                            circle.setAttribute('stroke-width', '20');
-                            circle.setAttribute('stroke-dasharray', `${segmentLength} ${circumference - segmentLength}`);
-                            circle.setAttribute('stroke-dashoffset', currentOffset);
-                            circle.setAttribute('class', 'transition-all duration-500');
-                            svgChart.appendChild(circle);
-
-                            currentOffset -= segmentLength;
-
-                            const legendItem = document.createElement('div');
-                            legendItem.className = 'flex items-center justify-between';
-                            legendItem.innerHTML = `
-                                <div class="flex items-center gap-2">
-                                    <span class="size-2 rounded-full" style="background-color: ${color}"></span>
-                                    <span class="text-[9px] text-slate-500">${item.name}</span>
-                                </div>
-                                <span class="text-[9px] font-medium text-slate-700 dark:text-slate-300">${item.farmers_count} (${percentage}%)</span>
-                            `;
-                            legendContainer.appendChild(legendItem);
-                        });
-                    })
-                    .catch(error => console.error('Error loading hierarchical farmers:', error));
             }
 
             // Fetch and display documents filtered by current selection
@@ -1974,7 +1853,8 @@
             // Populate land classification list
             function populateLandClassification(landData) {
                 const landClassificationList = document.getElementById('landClassificationList');
-                if (!landClassificationList) return;
+                const analyticsClassificationList = document.getElementById('assetClassificationAnalyticsList');
+                if (!landClassificationList && !analyticsClassificationList) return;
 
                 // Build tree categories HTML (Fruit Tree, Forest Tree)
                 let treeCategoriesHTML = '';
@@ -2031,7 +1911,8 @@
                     otherCategoriesHTML += '</div>';
                 }
 
-                landClassificationList.innerHTML = `
+                if (landClassificationList) {
+                    landClassificationList.innerHTML = `
                     <!-- Trees Category -->
                     <div class="mb-3">
                         <div class="flex justify-between items-center text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
@@ -2062,194 +1943,69 @@
                         ${otherCategoriesHTML}
                     </div>
                 `;
+                }
+
+                if (analyticsClassificationList) {
+                    const sortedTreeCategories = Object.entries(landData.tree_categories || {})
+                        .sort((a, b) => b[1].count - a[1].count);
+                    const sortedOtherCategories = Object.entries(landData.other_categories || {})
+                        .sort((a, b) => b[1].count - a[1].count);
+                    const rows = [...sortedTreeCategories, ...sortedOtherCategories];
+
+                    if (rows.length === 0) {
+                        analyticsClassificationList.innerHTML = '<p class="text-[10px] text-slate-400 text-center py-2">No data available</p>';
+                    } else {
+                        analyticsClassificationList.innerHTML = rows.map(([category, data]) => {
+                            const color = category === 'Fruit Tree'
+                                ? 'bg-emerald-500'
+                                : category === 'Forest Tree'
+                                    ? 'bg-green-700'
+                                    : category === 'Structure'
+                                        ? 'bg-purple-500'
+                                        : 'bg-amber-500';
+                            return `
+                                <div class="flex justify-between items-center text-xs py-1 border-b border-slate-100 dark:border-slate-800 last:border-0">
+                                    <span class="flex items-center gap-2 text-slate-600 dark:text-slate-400">
+                                        <span class="w-2 h-2 rounded-full ${color}"></span>
+                                        ${category}
+                                    </span>
+                                    <span class="font-medium text-slate-700 dark:text-slate-300">${(data.count || 0).toLocaleString()}</span>
+                                </div>
+                            `;
+                        }).join('');
+                    }
+                }
             }
 
-            // Populate assets distribution pie chart
             function populateAssetsDistribution(landData) {
-                const total = landData.trees_total + landData.other_total;
+                const assetsDistributionList = document.getElementById('assetsDistributionList');
+                const analyticsAssetsTotal = document.getElementById('analyticsAssetsTotal');
+                if (!assetsDistributionList || !analyticsAssetsTotal) return;
 
-                if (total === 0) return;
+                const categories = [
+                    { name: 'Fruit Tree', count: (landData.tree_categories && landData.tree_categories['Fruit Tree'] ? landData.tree_categories['Fruit Tree'].count : 0), dot: 'bg-emerald-500' },
+                    { name: 'Forest Tree', count: (landData.tree_categories && landData.tree_categories['Forest Tree'] ? landData.tree_categories['Forest Tree'].count : 0), dot: 'bg-green-700' },
+                    { name: 'Structure', count: landData.structures_total || 0, dot: 'bg-purple-500' },
+                    { name: 'Other Asset', count: landData.water_total || 0, dot: 'bg-amber-500' }
+                ];
 
-                // Update HTML custom legend with individual categories
-                const fruitTreeEl = document.getElementById('fruitTreeCount');
-                const forestTreeEl = document.getElementById('forestTreeCount');
-                const structureEl = document.getElementById('structureCount');
-                const otherAssetEl = document.getElementById('otherAssetCount');
+                const total = categories.reduce((sum, item) => sum + (item.count || 0), 0);
+                analyticsAssetsTotal.textContent = total.toLocaleString();
 
-                if (fruitTreeEl) fruitTreeEl.textContent = (landData.tree_categories?.['Fruit Tree']?.count || 0).toLocaleString();
-                if (forestTreeEl) forestTreeEl.textContent = (landData.tree_categories?.['Forest Tree']?.count || 0).toLocaleString();
-                if (structureEl) structureEl.textContent = (landData.other_categories?.['Structure']?.count || 0).toLocaleString();
-                if (otherAssetEl) otherAssetEl.textContent = (landData.other_categories?.['Other Asset']?.count || 0).toLocaleString();
-
-                // Store globally for custom export function
-                window.currentLandData = landData;
-
-                const isDarkMode = document.documentElement.classList.contains('dark');
-                const textColor = isDarkMode ? '#f8fafc' : '#0f172a';
-                const legendColor = isDarkMode ? '#cbd5e1' : '#475569';
-
-                // Build chart data from individual categories
-                const chartData = [];
-                const categoryColors = {
-                    'Fruit Tree': '#10b981',      // emerald
-                    'Forest Tree': '#059669',     // darker emerald
-                    'Structure': '#8b5cf6',       // purple
-                    'Other Asset': '#f59e0b'      // amber
-                };
-
-                // Add tree categories
-                if (landData.tree_categories) {
-                    Object.entries(landData.tree_categories).forEach(([category, data]) => {
-                        chartData.push({
-                            name: category,
-                            y: data.count,
-                            color: categoryColors[category] || '#10b981',
-                            valuation: data.valuation
-                        });
-                    });
+                if (total === 0) {
+                    assetsDistributionList.innerHTML = '<p class="text-[10px] text-slate-400 text-center py-2">No data available</p>';
+                    return;
                 }
 
-                // Add other categories
-                if (landData.other_categories) {
-                    Object.entries(landData.other_categories).forEach(([category, data]) => {
-                        chartData.push({
-                            name: category,
-                            y: data.count,
-                            color: categoryColors[category] || '#f59e0b',
-                            valuation: data.valuation
-                        });
-                    });
-                }
-
-                const totalAssetsDisplay = document.getElementById('totalAssetsDisplay');
-                if (totalAssetsDisplay) totalAssetsDisplay.textContent = total.toLocaleString();
-
-                if (assetsDistributionChartInstance) {
-                    assetsDistributionChartInstance.series[0].setData(chartData);
-                } else {
-                    assetsDistributionChartInstance = Highcharts.chart('assetsDistributionChart', {
-                        chart: {
-                            type: 'pie',
-                            backgroundColor: 'transparent',
-                            margin: [0, 0, 0, 0],
-                            spacingTop: 0,
-                            spacingBottom: 0,
-                            spacingLeft: 0,
-                            spacingRight: 0
-                        },
-                        title: {
-                            text: null
-                        },
-                        exporting: {
-                            enabled: false
-                        },
-                        tooltip: {
-                            useHTML: true,
-                            outside: true,
-                            backgroundColor: isDarkMode ? 'rgba(15, 23, 42, 0.95)' : 'rgba(255, 255, 255, 0.95)',
-                            style: {
-                                color: textColor,
-                                padding: 0,
-                                zIndex: 9999
-                            },
-                            borderWidth: 0,
-                            shadow: true,
-                            formatter: function () {
-                                let html = `<div style="padding: 8px; border-radius: 4px;">`;
-                                html += `<div style="font-size: 13px; font-weight: bold; margin-bottom: 5px;">
-                                            <span style="color:${this.point.color}">\u25CF</span> ${this.key}
-                                         </div>`;
-                                html += `<div style="font-size: 12px; display: flex; flex-direction: column; gap: 3px;">`;
-                                html += `<div style="display: flex; justify-content: space-between; gap: 12px;"><span>Count:</span> <b>${this.y.toLocaleString()}</b></div>`;
-                                if (this.point.valuation !== undefined) {
-                                    const valInCr = (this.point.valuation / 10000000).toFixed(2);
-                                    html += `<div style="display: flex; justify-content: space-between; gap: 12px;"><span>Valuation:</span> <b>₹${valInCr} Cr</b></div>`;
-                                }
-                                html += `</div>`;
-                                html += `</div>`;
-                                return html;
-                            }
-                        },
-                        plotOptions: {
-                            pie: {
-                                innerSize: '70%',
-                                size: '100%',
-                                dataLabels: {
-                                    enabled: false
-                                },
-                                showInLegend: false,
-                                borderWidth: 0
-                            }
-                        },
-                        legend: {
-                            enabled: false
-                        },
-                        credits: {
-                            enabled: false
-                        },
-                        series: [{
-                            name: 'Assets',
-                            data: chartData
-                        }]
-                    });
-                }
-            }
-
-            // Custom function for Assets Distribution CSV export perfectly formatted
-            window.downloadAssetsCSV = function () {
-                if (!window.currentLandData) return;
-
-                const d = window.currentLandData;
-                const total = d.trees_total + d.other_total;
-
-                // Get contextual filter state
-                const filterText = currentGutNumber
-                    ? `Gut ${currentGutNumber} in ${currentVillage}`
-                    : currentVillage
-                        ? `Village ${currentVillage}`
-                        : 'All Areas';
-
-                // Format current time properly
-                const now = new Date();
-                const dateStr = now.toLocaleDateString() + ' ' + now.toLocaleTimeString();
-
-                // Construct CSV exact template
-                let csv = `Assets Distribution Report\n`;
-                csv += `Filter:,${filterText}\n`;
-                csv += `Generated:,${dateStr}\n\n`;
-                csv += `Category,Count,Percentage,Subcategory,Subcount\n`;
-
-                const treePct = total ? (d.trees_total / total * 100).toFixed(2) + '%' : '0.00%';
-                csv += `Trees,${d.trees_total},${treePct},,\n`;
-
-                // Add tree subcategories
-                if (d.tree_categories) {
-                    Object.entries(d.tree_categories).forEach(([category, data]) => {
-                        csv += `Trees,${d.trees_total},${treePct},${category},${data.count}\n`;
-                    });
-                }
-
-                const otherPct = total ? (d.other_total / total * 100).toFixed(2) + '%' : '0.00%';
-                csv += `Other,${d.other_total},${otherPct},,\n`;
-
-                // Add other subcategories
-                if (d.other_categories) {
-                    Object.entries(d.other_categories).forEach(([category, data]) => {
-                        csv += `Other,${d.other_total},${otherPct},${category},${data.count}\n`;
-                    });
-                }
-
-                csv += `\nTotal Assets,${total},100%,,\n`;
-
-                // Download execution
-                const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-                const url = URL.createObjectURL(blob);
-                const link = document.createElement("a");
-                link.setAttribute("href", url);
-                link.setAttribute("download", `Assets_Distribution_${filterText.replace(/ /g, '_')}.csv`);
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
+                assetsDistributionList.innerHTML = categories.map(item => `
+                    <div class="flex justify-between items-center text-xs py-1 border-b border-slate-100 dark:border-slate-800 last:border-0">
+                        <span class="flex items-center gap-2 text-slate-600 dark:text-slate-400">
+                            <span class="w-2 h-2 rounded-full ${item.dot}"></span>
+                            ${item.name}
+                        </span>
+                        <span class="font-medium text-slate-700 dark:text-slate-300">${(item.count || 0).toLocaleString()}</span>
+                    </div>
+                `).join('');
             }
 
             // Populate asset layers list - Project Boundary and Asset Layers
