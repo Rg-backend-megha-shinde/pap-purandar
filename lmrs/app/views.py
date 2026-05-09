@@ -763,6 +763,7 @@ def download_all_ready_reckoner_csv(request):
     from itertools import groupby
     
     all_records = ReadyReckonerInfo.objects.prefetch_related('rates').all().order_by('district', 'taluka', 'village', 'year', 'id')
+    include_shighrasiddha_col = ReadyReckonerRate.objects.filter(rr__in=all_records, village_type='prabhav').exists()
     
     response = HttpResponse(content_type='text/csv; charset=utf-8-sig')
     response['Content-Disposition'] = 'attachment; filename="ready_reckoner_rates.csv"'
@@ -781,11 +782,12 @@ def download_all_ready_reckoner_csv(request):
         'एकक (Unit)',
         'आकारणी श्रेणी किमान (Min Range)',
         'आकारणी श्रेणी कमाल (Max Range)', 
-        'शिघ्रसिध्द विभाग (Shighrasiddha Vibhag)',
         'दर ₹ (Rate)',
         'Updated Date',
         'Updated By'
     ]
+    if include_shighrasiddha_col:
+        header.insert(9, 'शिघ्रसिध्द विभाग (Shighrasiddha Vibhag)')
     writer.writerow(header)
     
     # Group by village+year like in the list view
@@ -801,9 +803,11 @@ def download_all_ready_reckoner_csv(request):
         
         # Get village type from first rate if available
         village_type = ''
+        is_prabhav_village = False
         if item_list and item_list[0].rates.exists():
             first_rate = item_list[0].rates.first()
-            village_type = 'प्रभाव' if first_rate.village_type == 'prabhav' else 'ग्रामीण'
+            is_prabhav_village = first_rate.village_type == 'prabhav'
+            village_type = 'प्रभाव' if is_prabhav_village else 'ग्रामीण'
         
         # Export exactly one row per village+year group (same as list row count).
         assessment_parts = []
@@ -831,6 +835,8 @@ def download_all_ready_reckoner_csv(request):
                 shighrasiddha_parts.append('')
                 rate_parts.append('')
 
+        shighrasiddha_cell = " | ".join([p for p in shighrasiddha_parts if p]) if is_prabhav_village else ''
+
         row = [
             district_mr,
             taluka_mr,
@@ -841,11 +847,12 @@ def download_all_ready_reckoner_csv(request):
             " | ".join([p for p in unit_parts if p]),
             " | ".join([p for p in range_parts if p]),
             '',  # Max Range kept blank because min/max are combined in one per-list-row export
-            " | ".join([p for p in shighrasiddha_parts if p]),
             " | ".join([p for p in rate_parts if p]),
             timezone.localtime(anchor.updated_at).strftime('%d %b %Y, %I:%M %p') if anchor.updated_at else '',
             anchor.user.username if anchor.user else ''
         ]
+        if include_shighrasiddha_col:
+            row.insert(9, shighrasiddha_cell)
         writer.writerow(row)
     
     return response
