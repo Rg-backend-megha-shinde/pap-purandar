@@ -29,7 +29,6 @@ urlpatterns = [
     path('api/assessment-types/<str:village>/', views.get_assessment_types_by_village),
     path('api/years/<str:village>/<str:assessment_type>/', views.get_years_by_village_assessment),
     path('api/rates/<str:village>/<str:assessment_type>/', views.get_rates_by_village_assessment),
-    path('api/all-villages-farmers/', views.get_all_villages_farmers, name='all_villages_farmers'),
     path('api/project-stats/', views.get_project_stats, name='project_stats'),
     path('api/layer-bounds/<str:layer_name>/', views.get_layer_bounds, name='layer_bounds'),
     path('api/location-data/', views.get_location_data), ## All location API Fetch Marathi from public to project
