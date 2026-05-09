@@ -58,6 +58,11 @@
     </div>
 <div class="w-full bg-white p-3 sm:p-4 md:p-6 border border-gray-300 mt-4 sm:mt-6 rounded-lg shadow">
     <h2 class="text-center font-bold text-xl underline">रेडी रेकनर दर संपादन</h2>
+    {% if error_message %}
+    <div class="mt-4 rounded border border-red-200 bg-red-50 text-red-700 px-3 py-2 text-sm">
+        {{ error_message }}
+    </div>
+    {% endif %}
 
     <form method="POST" enctype="multipart/form-data" class="mt-6" id="editRRForm">
         {% csrf_token %}
@@ -94,7 +99,8 @@
             </div>
             <div>
                 <label class="font-semibold text-sm">मूल्यदरसाठी गावाचा प्रकार</label>
-                <select id="village_type" name="village_type" required class="w-full border p-2 rounded focus:ring-2 focus:ring-orange-400 text-sm mt-1" onchange="onVillageTypeChange()">
+                <input type="hidden" name="village_type" value="{% if anchor.rates.all.0.village_type == 'prabhav' %}prabhav{% else %}gramin{% endif %}">
+                <select id="village_type" required disabled class="w-full border p-2 rounded bg-gray-100 text-gray-500 cursor-not-allowed text-sm mt-1" onchange="onVillageTypeChange()">
                     <option value="gramin" {% if anchor.rates.all.0.village_type != 'prabhav' %}selected{% endif %}>ग्रामीण</option>
                     <option value="prabhav" {% if anchor.rates.all.0.village_type == 'prabhav' %}selected{% endif %}>प्रभाव</option>
                 </select>
@@ -447,9 +453,72 @@ function renumberBlocks() {
 }
 
 // -- Form submit: re-index all inputs --------------------------------------
+function clearInlineErrorsEdit(formEl) {
+    formEl.querySelectorAll('.rr-inline-error').forEach(el => el.remove());
+    formEl.querySelectorAll('.rr-error-field').forEach(el => {
+        el.classList.remove('rr-error-field', 'border-red-500', 'focus:ring-red-400');
+    });
+}
+
+function showInlineErrorEdit(inputEl, message) {
+    if (!inputEl || !inputEl.parentElement) return;
+    const old = inputEl.parentElement.querySelector('.rr-inline-error');
+    if (old) old.remove();
+    const msg = document.createElement('div');
+    msg.className = 'rr-inline-error text-red-600 text-xs mb-1';
+    msg.textContent = message;
+    inputEl.parentElement.insertBefore(msg, inputEl);
+    inputEl.classList.add('rr-error-field', 'border-red-500', 'focus:ring-red-400');
+}
+
+function validateEditReadyReckonerForm(formEl) {
+    clearInlineErrorsEdit(formEl);
+    let isValid = true;
+
+    formEl.querySelectorAll('input[required][type="text"]').forEach(input => {
+        if ((input.value || '').trim() === '') {
+            showInlineErrorEdit(input, 'ही माहिती भरणे आवश्यक आहे.');
+            isValid = false;
+        }
+    });
+
+    const vt = (document.getElementById('village_type')?.value || '').trim();
+    if (vt === 'gramin') {
+        formEl.querySelectorAll('.rate-row').forEach(row => {
+            const minInput = row.querySelector('input[name^="assessment_range_min"]');
+            const maxInput = row.querySelector('input[name^="assessment_range_max"]');
+            if (!minInput || !maxInput) return;
+
+            const minVal = (minInput.value || '').trim();
+            const maxVal = (maxInput.value || '').trim();
+            if (!minVal || !maxVal) return;
+
+            const minNum = Number(minVal);
+            const maxNum = Number(maxVal);
+
+            if (minNum < 0) {
+                showInlineErrorEdit(minInput, 'किमान मर्यादा ऋण (minus) असू शकत नाही.');
+                isValid = false;
+            }
+            if (maxNum < 0) {
+                showInlineErrorEdit(maxInput, 'कमाल मर्यादा ऋण (minus) असू शकत नाही.');
+                isValid = false;
+            }
+            if (!Number.isNaN(minNum) && !Number.isNaN(maxNum) && maxNum < minNum) {
+                showInlineErrorEdit(maxInput, 'कमाल मर्यादा किमान मर्यादेपेक्षा कमी असू शकत नाही.');
+                isValid = false;
+            }
+        });
+    }
+
+    return isValid;
+}
+
 document.getElementById('editRRForm').addEventListener('submit', function(e) {
     const blocks = document.querySelectorAll('.assessment-block');
     if (blocks.length === 0) { e.preventDefault(); alert('कृपया किमान एक मूल्यांकन प्रकार जोडा.'); return; }
+
+    if (!validateEditReadyReckonerForm(this)) { e.preventDefault(); return; }
 
     let inp = document.getElementById('block_count_input');
     if (!inp) { inp = document.createElement('input'); inp.type='hidden'; inp.name='block_count'; inp.id='block_count_input'; this.appendChild(inp); }
