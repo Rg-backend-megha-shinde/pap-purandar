@@ -1319,8 +1319,8 @@ def download_all_land_record_712_csv(request):
             record.aakar or 'उपलब्ध नाही',
             record.holder_name or 'उपलब्ध नाही',
             record.kul_khand_other_rights or 'उपलब्ध नाही',
-            record.created_at.strftime('%d/%m/%Y %H:%M') if record.created_at else '',
-            record.updated_at.strftime('%d/%m/%Y %H:%M') if record.updated_at else '',
+            timezone.localtime(record.created_at).strftime('%d/%m/%Y %H:%M') if record.created_at else '',
+            timezone.localtime(record.updated_at).strftime('%d/%m/%Y %H:%M') if record.updated_at else '',
             record.user.username if record.user else ''
         ]
         writer.writerow(row)
@@ -1362,6 +1362,7 @@ def edit_land_record_712(request, id):
         obj.aakar = clean_optional(request.POST.get('aakar'))
         obj.holder_name = clean_optional(request.POST.get('holder_name'))
         obj.kul_khand_other_rights = clean_optional(request.POST.get('kul_khand_other_rights'))
+        obj.user = request.user
         obj.save()
         return redirect('land_record_712_list')
     return render(request, 'edit_land_record_712.html', {'obj': obj})
