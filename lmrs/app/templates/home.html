@@ -1756,27 +1756,7 @@
                 fetch(url)
                     .then(response => response.json())
                     .then(data => {
-                        const affectedVillagesElement = document.getElementById('affectedVillagesCount');
-                        if (affectedVillagesElement) {
-                            affectedVillagesElement.textContent = String(data.affected_villages).padStart(2, '0');
-                        }
-
-                        const affectedFarmersElement = document.getElementById('affectedFarmersCount');
-                        if (affectedFarmersElement) {
-                            affectedFarmersElement.textContent = data.affected_farmers.toLocaleString();
-                        }
-
-                        const areaAcquiredElement = document.getElementById('areaAcquired');
-                        if (areaAcquiredElement) {
-                            areaAcquiredElement.textContent = data.area_acquired.toLocaleString('en-IN', { maximumFractionDigits: 2 }) + ' Ha';
-                        }
-
-                        const totalCompensationElement = document.getElementById('totalCompensation');
-                        if (totalCompensationElement) {
-                            totalCompensationElement.textContent = formatCurrency(data.total_compensation);
-                        }
-
-                        // Calculate and display total assets from land classification (matches Assets Distribution)
+                        // Calculate and display total assets from land classification
                         if (data.land_classification) {
                             const totalAssets = (data.land_classification.trees_total || 0) +
                                 (data.land_classification.structures_total || 0) +
@@ -1784,27 +1764,6 @@
                             const totalAssetsElement = document.getElementById('totalAssetsCount');
                             if (totalAssetsElement) {
                                 totalAssetsElement.textContent = totalAssets.toLocaleString();
-                            }
-                        }
-
-                        // Update the compensation bar container
-                        const container = document.getElementById('villageCompensationBars');
-                        if (container) {
-                            if (village) {
-                                // Show ONLY selected village bar
-                                const comp = data.total_compensation || 0;
-                                const compensationCr = comp / 10000000;
-                                container.innerHTML = `
-                                    <div class="space-y-1">
-                                        <div class="flex justify-between text-[10px] text-slate-500 uppercase">
-                                            <span>${village}</span>
-                                            <span>₹${compensationCr.toFixed(2)} Cr</span>
-                                        </div>
-                                        <div class="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                                            <div class="bg-primary h-full" style="width:100%"></div>
-                                        </div>
-                                    </div>
-                                `;
                             }
                         }
 
@@ -1819,88 +1778,8 @@
                     })
                     .catch(error => console.error('Error loading project stats:', error));
 
-                // Fetch farmers data hierarchically based on current filters
-                fetchHierarchicalFarmers();
-
                 // Fetch documents for current filter level
                 fetchFilteredDocuments();
-            }
-
-            // Fetch and display farmers pie chart hierarchically
-            function fetchHierarchicalFarmers() {
-                // Build query params based on current filters
-                const params = new URLSearchParams();
-                if (currentDistrict) params.append('district', currentDistrict);
-                if (currentTaluka) params.append('taluka', currentTaluka);
-                if (currentVillage) params.append('village', currentVillage);
-
-                fetch(`/api/all-villages-farmers/?${params.toString()}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        if (!data.farmers || data.farmers.length === 0) {
-                            console.log('No farmers data available');
-                            // Clear the display
-                            const totalFarmersElement = document.getElementById('totalFarmersDisplay');
-                            if (totalFarmersElement) totalFarmersElement.textContent = '0';
-
-                            const svgChart = document.getElementById('farmersPieChart');
-                            if (svgChart) svgChart.innerHTML = '';
-
-                            const legendContainer = document.getElementById('farmersLegend');
-                            if (legendContainer) legendContainer.innerHTML = '<div class="text-[9px] text-slate-400 text-center py-2">No data available</div>';
-                            return;
-                        }
-
-                        const totalFarmers = data.farmers.reduce((sum, f) => sum + f.farmers_count, 0);
-                        const totalFarmersElement = document.getElementById('totalFarmersDisplay');
-                        if (totalFarmersElement) {
-                            totalFarmersElement.textContent = totalFarmers.toLocaleString();
-                        }
-
-                        const colors = ['#10b981', '#3b82f6', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#ef4444', '#84cc16', '#f97316', '#14b8a6'];
-                        const circumference = 251.2;
-                        let currentOffset = 0;
-
-                        const svgChart = document.getElementById('farmersPieChart');
-                        if (!svgChart) return;
-                        svgChart.innerHTML = '';
-
-                        const legendContainer = document.getElementById('farmersLegend');
-                        if (!legendContainer) return;
-                        legendContainer.innerHTML = '';
-
-                        data.farmers.forEach((item, index) => {
-                            const percentage = (item.farmers_count / totalFarmers * 100).toFixed(1);
-                            const segmentLength = (item.farmers_count / totalFarmers) * circumference;
-                            const color = colors[index % colors.length];
-
-                            const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-                            circle.setAttribute('cx', '50');
-                            circle.setAttribute('cy', '50');
-                            circle.setAttribute('r', '40');
-                            circle.setAttribute('fill', 'none');
-                            circle.setAttribute('stroke', color);
-                            circle.setAttribute('stroke-width', '20');
-                            circle.setAttribute('stroke-dasharray', `${segmentLength} ${circumference - segmentLength}`);
-                            circle.setAttribute('stroke-dashoffset', currentOffset);
-                            circle.setAttribute('class', 'transition-all duration-500');
-                            svgChart.appendChild(circle);
-
-                            currentOffset -= segmentLength;
-
-                            const legendItem = document.createElement('div');
-                            legendItem.className = 'flex items-center justify-between';
-                            legendItem.innerHTML = `
-                                <div class="flex items-center gap-2">
-                                    <span class="size-2 rounded-full" style="background-color: ${color}"></span>
-                                    <span class="text-[9px] text-slate-500">${item.name}</span>
-                                </div>
-                                <span class="text-[9px] font-medium text-slate-700 dark:text-slate-300">${item.farmers_count} (${percentage}%)</span>
-                            `;
-                            legendContainer.appendChild(legendItem);
-                        });
-                    })
-                    .catch(error => console.error('Error loading hierarchical farmers:', error));
             }
 
             // Fetch and display documents filtered by current selection
