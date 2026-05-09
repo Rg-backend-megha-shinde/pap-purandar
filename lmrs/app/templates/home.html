@@ -1773,6 +1773,7 @@
                         // Populate land classification
                         if (data.land_classification) {
                             populateLandClassification(data.land_classification);
+                            populateAssetsDistribution(data.land_classification);
                         }
                     })
                     .catch(error => console.error('Error loading project stats:', error));
@@ -1852,7 +1853,8 @@
             // Populate land classification list
             function populateLandClassification(landData) {
                 const landClassificationList = document.getElementById('landClassificationList');
-                if (!landClassificationList) return;
+                const analyticsClassificationList = document.getElementById('assetClassificationAnalyticsList');
+                if (!landClassificationList && !analyticsClassificationList) return;
 
                 // Build tree categories HTML (Fruit Tree, Forest Tree)
                 let treeCategoriesHTML = '';
@@ -1909,7 +1911,8 @@
                     otherCategoriesHTML += '</div>';
                 }
 
-                landClassificationList.innerHTML = `
+                if (landClassificationList) {
+                    landClassificationList.innerHTML = `
                     <!-- Trees Category -->
                     <div class="mb-3">
                         <div class="flex justify-between items-center text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
@@ -1940,6 +1943,69 @@
                         ${otherCategoriesHTML}
                     </div>
                 `;
+                }
+
+                if (analyticsClassificationList) {
+                    const sortedTreeCategories = Object.entries(landData.tree_categories || {})
+                        .sort((a, b) => b[1].count - a[1].count);
+                    const sortedOtherCategories = Object.entries(landData.other_categories || {})
+                        .sort((a, b) => b[1].count - a[1].count);
+                    const rows = [...sortedTreeCategories, ...sortedOtherCategories];
+
+                    if (rows.length === 0) {
+                        analyticsClassificationList.innerHTML = '<p class="text-[10px] text-slate-400 text-center py-2">No data available</p>';
+                    } else {
+                        analyticsClassificationList.innerHTML = rows.map(([category, data]) => {
+                            const color = category === 'Fruit Tree'
+                                ? 'bg-emerald-500'
+                                : category === 'Forest Tree'
+                                    ? 'bg-green-700'
+                                    : category === 'Structure'
+                                        ? 'bg-purple-500'
+                                        : 'bg-amber-500';
+                            return `
+                                <div class="flex justify-between items-center text-xs py-1 border-b border-slate-100 dark:border-slate-800 last:border-0">
+                                    <span class="flex items-center gap-2 text-slate-600 dark:text-slate-400">
+                                        <span class="w-2 h-2 rounded-full ${color}"></span>
+                                        ${category}
+                                    </span>
+                                    <span class="font-medium text-slate-700 dark:text-slate-300">${(data.count || 0).toLocaleString()}</span>
+                                </div>
+                            `;
+                        }).join('');
+                    }
+                }
+            }
+
+            function populateAssetsDistribution(landData) {
+                const assetsDistributionList = document.getElementById('assetsDistributionList');
+                const analyticsAssetsTotal = document.getElementById('analyticsAssetsTotal');
+                if (!assetsDistributionList || !analyticsAssetsTotal) return;
+
+                const categories = [
+                    { name: 'Fruit Tree', count: (landData.tree_categories && landData.tree_categories['Fruit Tree'] ? landData.tree_categories['Fruit Tree'].count : 0), dot: 'bg-emerald-500' },
+                    { name: 'Forest Tree', count: (landData.tree_categories && landData.tree_categories['Forest Tree'] ? landData.tree_categories['Forest Tree'].count : 0), dot: 'bg-green-700' },
+                    { name: 'Structure', count: landData.structures_total || 0, dot: 'bg-purple-500' },
+                    { name: 'Other Asset', count: landData.water_total || 0, dot: 'bg-amber-500' }
+                ];
+
+                const total = categories.reduce((sum, item) => sum + (item.count || 0), 0);
+                analyticsAssetsTotal.textContent = total.toLocaleString();
+
+                if (total === 0) {
+                    assetsDistributionList.innerHTML = '<p class="text-[10px] text-slate-400 text-center py-2">No data available</p>';
+                    return;
+                }
+
+                assetsDistributionList.innerHTML = categories.map(item => `
+                    <div class="flex justify-between items-center text-xs py-1 border-b border-slate-100 dark:border-slate-800 last:border-0">
+                        <span class="flex items-center gap-2 text-slate-600 dark:text-slate-400">
+                            <span class="w-2 h-2 rounded-full ${item.dot}"></span>
+                            ${item.name}
+                        </span>
+                        <span class="font-medium text-slate-700 dark:text-slate-300">${(item.count || 0).toLocaleString()}</span>
+                    </div>
+                `).join('');
             }
 
             // Populate asset layers list - Project Boundary and Asset Layers

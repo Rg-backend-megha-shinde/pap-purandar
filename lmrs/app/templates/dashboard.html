@@ -149,13 +149,48 @@
                         <p class="text-slate-500 text-xs">Village-level distributions</p>
                     </div>
 
-                    <!-- Documents Card -->
-                    <div class="flex flex-col gap-2 rounded-xl p-4 bg-white dark:bg-slate-900 shadow-sm border border-slate-200 dark:border-slate-800">
-                        <h4 class="text-slate-700 dark:text-slate-300 text-xs font-bold uppercase">Documents</h4>
-                        <div id="filterDocsList" class="flex flex-col gap-1 max-h-48 overflow-y-auto">
+                    <details id="analyticsDocumentsDetails"
+                        class="group rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 overflow-hidden"
+                        open>
+                        <summary class="flex cursor-pointer items-center justify-between p-4 list-none">
+                            <p class="text-slate-700 dark:text-slate-300 text-xs font-bold uppercase">Documents</p>
+                            <span
+                                class="material-symbols-outlined group-open:rotate-180 transition-transform text-slate-400">expand_more</span>
+                        </summary>
+                        <div id="filterDocsList" class="px-4 pb-4 flex flex-col gap-1 max-h-48 overflow-y-auto">
                             <p class="text-[10px] text-slate-400 text-center py-3">Select a filter to view documents</p>
                         </div>
-                    </div>
+                    </details>
+
+                    <details id="analyticsClassificationDetails"
+                        class="group rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 overflow-hidden">
+                        <summary class="flex cursor-pointer items-center justify-between p-4 list-none">
+                            <p class="text-slate-700 dark:text-slate-300 text-xs font-bold uppercase">Asset Classification</p>
+                            <span
+                                class="material-symbols-outlined group-open:rotate-180 transition-transform text-slate-400">expand_more</span>
+                        </summary>
+                        <div id="assetClassificationAnalyticsList" class="px-4 pb-4 flex flex-col gap-1">
+                            <p class="text-[10px] text-slate-400 text-center py-2">No data available</p>
+                        </div>
+                    </details>
+
+                    <details id="analyticsDistributionDetails"
+                        class="group rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 overflow-hidden">
+                        <summary class="flex cursor-pointer items-center justify-between p-4 list-none">
+                            <p class="text-slate-700 dark:text-slate-300 text-xs font-bold uppercase">Assets Distribution</p>
+                            <span
+                                class="material-symbols-outlined group-open:rotate-180 transition-transform text-slate-400">expand_more</span>
+                        </summary>
+                        <div class="px-4 pb-4">
+                            <div class="py-2 text-center">
+                                <p id="analyticsAssetsTotal" class="text-slate-900 dark:text-white text-2xl font-bold leading-tight">--</p>
+                                <p class="text-[10px] text-slate-500">Total</p>
+                            </div>
+                            <div id="assetsDistributionList" class="flex flex-col gap-1">
+                                <p class="text-[10px] text-slate-400 text-center py-2">No data available</p>
+                            </div>
+                        </div>
+                    </details>
 
                 </div>
             </aside>
