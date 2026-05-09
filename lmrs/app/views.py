@@ -236,10 +236,10 @@ def get_valid_inspection_date(raw_date):
     try:
         inspection_date = datetime_date.fromisoformat(raw_date or "")
     except ValueError:
-        return None, "à¤•à¥ƒà¤ªà¤¯à¤¾ à¤µà¥ˆà¤§ à¤¤à¤ªà¤¾à¤¸à¤£à¥€ à¤¦à¤¿à¤¨à¤¾à¤‚à¤• à¤¨à¤¿à¤µà¤¡à¤¾."
+        return None, "कृपया वैध तपासणी दिनांक निवडा."
 
     if inspection_date > timezone.localdate():
-        return None, "à¤¤à¤ªà¤¾à¤¸à¤£à¥€ à¤¦à¤¿à¤¨à¤¾à¤‚à¤• à¤†à¤œà¤šà¥à¤¯à¤¾ à¤¦à¤¿à¤¨à¤¾à¤‚à¤•à¤¾à¤ªà¥‡à¤•à¥à¤·à¤¾ à¤ªà¥à¤¢à¥€à¤² à¤…à¤¸à¥‚ à¤¶à¤•à¤¤ à¤¨à¤¾à¤¹à¥€."
+        return None, "तपासणी दिनांक आजच्या दिनांकापेक्षा पुढील असू शकत नाही."
 
     return inspection_date, None
 
@@ -391,7 +391,7 @@ def text_matches_aliases(value, aliases, normalizer=normalize_match_text):
 def clean_holder_name_list(value):
     """
     Keep only valid holder names from noisy API strings like:
-    "[ Name1, Name2, ------à¤¸à¤¾à¤®à¤¾à¤ˆà¤• à¤•à¥à¤·à¥‡à¤¤à¥à¤°------ ]"
+    "[ Name1, Name2, ------सामाईक क्षेत्र------ ]"
     Rule: if an item starts with special character, ignore it.
     """
     text = str(value or '').strip()
@@ -553,7 +553,7 @@ def check_ready_reckoner_village_exists(request):
 
     return JsonResponse({
         'exists': exists,
-        'message': 'à¤¯à¤¾ à¤—à¤¾à¤µà¤¾à¤¸à¤¾à¤ à¥€ à¤°à¥‡à¤¡à¥€ à¤°à¥‡à¤•à¤¨à¤° à¤¨à¥‹à¤‚à¤¦ à¤†à¤§à¥€à¤š à¤…à¤¸à¥à¤¤à¤¿à¤¤à¥à¤µà¤¾à¤¤ à¤†à¤¹à¥‡.' if exists else ''
+        'message': 'या गावासाठी रेडी रेकनर नोंद आधीच अस्तित्वात आहे.' if exists else ''
     })
 
 def get_marathi_name(level, district=None, taluka=None, village=None):
@@ -689,7 +689,7 @@ def _parse_ready_reckoner_blocks(request, block_count, village_type):
 def ready_reckoner_list(request):
     all_records = ReadyReckonerInfo.objects.prefetch_related('rates').all().order_by('district', 'taluka', 'village', 'year', 'id')
 
-    # Group by village+year Ã¢â‚¬â€ one entry per village
+    # Group by village+year â€” one entry per village
     from itertools import groupby
     groups = []
     keyfunc = lambda r: (r.district, r.taluka, r.village, r.year)
@@ -728,6 +728,7 @@ def ready_reckoner_list(request):
 
 @login_required
 def edit_ready_reckoner(request, id):
+    # Use the clicked record to identify the village+year group
     anchor = ReadyReckonerInfo.objects.get(id=id)
     village_records = ReadyReckonerInfo.objects.prefetch_related('rates').filter(
         village=anchor.village, year=anchor.year
@@ -814,6 +815,7 @@ def edit_ready_reckoner(request, id):
                 files=files, district=district, taluka=taluka, village=village)
         return redirect('ready_reckoner_list')
 
+    # Collect all documents across all village records
     all_documents = []
     for rec in village_records:
         all_documents.extend(rec.get_documents())
@@ -879,21 +881,20 @@ def download_all_ready_reckoner_csv(request):
     
     # CSV Header
     header = [
-        'à¤œà¤¿à¤²à¥à¤¹à¤¾ (District)',
-        'à¤¤à¤¾à¤²à¥à¤•à¤¾ (Taluka)', 
-        'à¤—à¤¾à¤µ (Village)',
-        'à¤µà¤°à¥à¤· (Year)',
-        'à¤®à¥‚à¤²à¥à¤¯à¤¦à¤°à¤¾à¤¸à¤¾à¤ à¥€ à¤—à¤¾à¤µà¤¾à¤šà¤¾ à¤ªà¥à¤°à¤•à¤¾à¤° (Village Type)',
-        'à¤®à¥‚à¤²à¥à¤¯à¤¾à¤‚à¤•à¤¨ à¤ªà¥à¤°à¤•à¤¾à¤° (Assessment Type)',
-        'à¤à¤•à¤• (Unit)',
-        'à¤†à¤•à¤¾à¤°à¤£à¥€ à¤¶à¥à¤°à¥‡à¤£à¥€ à¤•à¤¿à¤®à¤¾à¤¨ (Min Range)',
-        'à¤†à¤•à¤¾à¤°à¤£à¥€ à¤¶à¥à¤°à¥‡à¤£à¥€ à¤•à¤®à¤¾à¤² (Max Range)', 
-        'à¤¦à¤° â‚¹ (Rate)',
+        'जिल्हा (District)',
+        'तालुका (Taluka)', 
+        'गाव (Village)',
+        'वर्ष (Year)',
+        'मूल्यदरासाठी गावाचा प्रकार (Village Type)',
+        'मूल्यांकन प्रकार (Assessment Type)',
+        'एकक (Unit)',
+        'आकारणी श्रेणी किमान (Min Range)',
+        'आकारणी श्रेणी कमाल (Max Range)', 
+        'शिघ्रसिध्द विभाग (Shighrasiddha Vibhag)',
+        'दर ₹ (Rate)',
         'Updated Date',
         'Updated By'
     ]
-    if include_shighrasiddha_col:
-        header.insert(9, 'à¤¶à¤¿à¤˜à¥à¤°à¤¸à¤¿à¤§à¥à¤¦ à¤µà¤¿à¤­à¤¾à¤— (Shighrasiddha Vibhag)')
     writer.writerow(header)
     
     # Group by village+year like in the list view
@@ -909,57 +910,48 @@ def download_all_ready_reckoner_csv(request):
         
         # Get village type from first rate if available
         village_type = ''
-        is_prabhav_village = False
         if item_list and item_list[0].rates.exists():
             first_rate = item_list[0].rates.first()
-            is_prabhav_village = first_rate.village_type == 'prabhav'
-            village_type = 'à¤ªà¥à¤°à¤­à¤¾à¤µ' if is_prabhav_village else 'à¤—à¥à¤°à¤¾à¤®à¥€à¤£'
+            village_type = 'प्रभाव' if first_rate.village_type == 'prabhav' else 'ग्रामीण'
         
-        # Export exactly one row per village+year group (same as list row count).
-        assessment_parts = []
-        unit_parts = []
-        range_parts = []
-        shighrasiddha_parts = []
-        rate_parts = []
-
+        # Write each assessment type and its rates
         for record in item_list:
-            assessment_parts.append(record.assessment_type or '')
-            unit_parts.append(record.unit or '')
-
-            rates_qs = record.rates.all()
-            if rates_qs.exists():
-                for rate in rates_qs:
-                    if rate.village_type == 'prabhav':
-                        shighrasiddha_parts.append(rate.shighrasiddha_vibhag or '')
-                        range_parts.append('')
-                    else:
-                        range_parts.append(f"{rate.assessment_range_min} - {rate.assessment_range_max}")
-                        shighrasiddha_parts.append('')
-                    rate_parts.append(str(rate.rate))
+            if record.rates.exists():
+                for rate in record.rates.all():
+                    row = [
+                        district_mr,
+                        taluka_mr,
+                        village_mr,
+                        record.year,
+                        village_type,
+                        record.assessment_type,
+                        record.unit,
+                        rate.assessment_range_min if rate.village_type != 'prabhav' else '',
+                        rate.assessment_range_max if rate.village_type != 'prabhav' else '',
+                        rate.shighrasiddha_vibhag if rate.village_type == 'prabhav' else '',
+                        rate.rate,
+                        anchor.updated_at.strftime('%d/%m/%Y %H:%M') if anchor.updated_at else '',
+                        anchor.user.username if anchor.user else ''
+                    ]
+                    writer.writerow(row)
             else:
-                range_parts.append('')
-                shighrasiddha_parts.append('')
-                rate_parts.append('')
-
-        shighrasiddha_cell = " | ".join([p for p in shighrasiddha_parts if p]) if is_prabhav_village else ''
-
-        row = [
-            district_mr,
-            taluka_mr,
-            village_mr,
-            anchor.year,
-            village_type,
-            " | ".join([p for p in assessment_parts if p]),
-            " | ".join([p for p in unit_parts if p]),
-            " | ".join([p for p in range_parts if p]),
-            '',  # Max Range kept blank because min/max are combined in one per-list-row export
-            " | ".join([p for p in rate_parts if p]),
-            timezone.localtime(anchor.updated_at).strftime('%d %b %Y, %I:%M %p') if anchor.updated_at else '',
-            anchor.user.username if anchor.user else ''
-        ]
-        if include_shighrasiddha_col:
-            row.insert(9, shighrasiddha_cell)
-        writer.writerow(row)
+                # Record without rates
+                row = [
+                    district_mr,
+                    taluka_mr, 
+                    village_mr,
+                    record.year,
+                    village_type,
+                    record.assessment_type,
+                    record.unit,
+                    '',  # min range
+                    '',  # max range
+                    '',  # shighrasiddha
+                    '',  # rate
+                    anchor.updated_at.strftime('%d/%m/%Y %H:%M') if anchor.updated_at else '',
+                    anchor.user.username if anchor.user else ''
+                ]
+                writer.writerow(row)
     
     return response
 
@@ -984,7 +976,7 @@ def delete_document_attachment(request, attachment_id):
 
 @login_required
 def land_record_712(request):
-    NA_TOKENS = {'', '-', 'na', 'n/a', 'à¤‰à¤ªà¤²à¤¬à¥à¤§ à¤¨à¤¾à¤¹à¥€'}
+    NA_TOKENS = {'', '-', 'na', 'n/a', 'उपलब्ध नाही'}
 
     def fix_encoding(text):
         try:
@@ -1008,9 +1000,9 @@ def land_record_712(request):
 
     def as_yes_no(value):
         val = normalize_text(value)
-        if val in {'yes', 'à¤¹à¥‹à¤¯', 'hoy'}:
+        if val in {'yes', 'होय', 'hoy'}:
             return 'Yes'
-        if val in {'no', 'à¤¨à¤¾à¤¹à¥€', 'nahi'}:
+        if val in {'no', 'नाही', 'nahi'}:
             return 'No'
         return None
 
@@ -1084,13 +1076,13 @@ def land_record_712(request):
         except requests.RequestException:
             raise ValueError('Service is not working.')
         except ValueError:
-            raise ValueError('7/12 API à¤•à¤¡à¥‚à¤¨ à¤µà¥ˆà¤§ JSON à¤®à¤¿à¤³à¤¾à¤²à¥‡ à¤¨à¤¾à¤¹à¥€.')
+            raise ValueError('7/12 API कडून वैध JSON मिळाले नाही.')
 
         rows = payload.get('eligible', [])
-        kul_khand_info = payload.get('à¤•à¥à¤³, à¤–à¤‚à¤¡ à¤µ à¤‡à¤¤à¤° à¤…à¤§à¤¿à¤•à¤¾à¤°', '')
+        kul_khand_info = payload.get('कुळ, खंड व इतर अधिकार', '')
         
         if not isinstance(rows, list) or not rows:
-            raise ValueError('à¤…à¤ªà¤²à¥‹à¤¡ à¤•à¥‡à¤²à¥‡à¤²à¥à¤¯à¤¾ HTML à¤®à¤§à¥‚à¤¨ à¤µà¥ˆà¤§ 7/12 à¤¡à¥‡à¤Ÿà¤¾ à¤®à¤¿à¤³à¤¾à¤²à¤¾ à¤¨à¤¾à¤¹à¥€.')
+            raise ValueError('अपलोड केलेल्या HTML मधून वैध 7/12 डेटा मिळाला नाही.')
 
         return rows, kul_khand_info
 
@@ -1101,14 +1093,14 @@ def land_record_712(request):
         selected_gut = normalize_gut(gut_number)
 
         for row in rows:
-            row_district = row_get(row, 'à¤œà¤¿à¤²à¥à¤¹à¤¾', 'district')
-            row_taluka = row_get(row, 'à¤¤à¤¾à¤²à¥à¤•à¤¾', 'taluka')
-            row_village = row_get(row, 'à¤—à¤¾à¤µà¤¾à¤šà¥‡ à¤¨à¤¾à¤µ', 'village', 'village_name')
+            row_district = row_get(row, 'जिल्हा', 'district')
+            row_taluka = row_get(row, 'तालुका', 'taluka')
+            row_village = row_get(row, 'गावाचे नाव', 'village', 'village_name')
             row_gut = row_get(
                 row,
-                'à¤—à¤Ÿ à¤¨à¤‚à¤¬à¤°/à¤¸à¤°à¥à¤µà¥‡ à¤¨à¤‚à¤¬à¤°',
-                'à¤¸à¤°à¥à¤µà¥‡ à¤¨à¤‚à¤¬à¤°', 'à¤¸à¤°à¥à¤µà¥à¤¹à¥‡ à¤¨à¤‚à¤¬à¤°', 'à¤—à¤Ÿ à¤•à¥à¤°à¤®à¤¾à¤‚à¤•', 'à¤—à¤Ÿ à¤¨à¤‚à¤¬à¤°',
-                'à¤¸_à¤¨à¤‚_à¤—_à¤¨', 'à¤¸_à¤¨à¤‚_à¤—_à¤¨_à¤¹à¤¿à¤¸à¥à¤¸à¤¾',
+                'गट नंबर/सर्वे नंबर',
+                'सर्वे नंबर', 'सर्व्हे नंबर', 'गट क्रमांक', 'गट नंबर',
+                'स_नं_ग_न', 'स_नं_ग_न_हिस्सा',
                 'gut_number', 'survey_number', 'survey_no', 'survey number', 'survey'
             )
 
@@ -1125,22 +1117,22 @@ def land_record_712(request):
 
             matched.append({
                 'gut_number': row_gut,
-                'khata_number': row_get(row, 'à¤–à¤¾à¤¤à¤¾ à¤•à¥à¤°à¤®à¤¾à¤‚à¤•', 'à¤–à¤¾à¤¤à¤¾_à¤¨à¤‚', 'khata_number'),
+                'khata_number': row_get(row, 'खाता क्रमांक', 'खाता_नं', 'khata_number'),
                 'puid_ulip_no': row_get(row, 'PUID_ULIP_No'),
-                'hissa_number': row_get(row, 'à¤¹à¤¿à¤¸à¥à¤¸à¤¾ à¤•à¥à¤°à¤®à¤¾à¤‚à¤•', 'à¤¸_à¤¨à¤‚_à¤—_à¤¨_à¤¹à¤¿à¤¸à¥à¤¸à¤¾', 'hissa_number'),
-                'jirayit': row_get(row, 'à¤œà¤¿à¤°à¤¾à¤¯à¤¤', 'à¤œà¤¿à¤°à¤¾à¤¯à¤¾à¤¤'),
-                'bagayat': row_get(row, 'à¤¬à¤¾à¤—à¤¾à¤¯à¤¤'),
-                'potkharaba': row_get(row, 'à¤ªà¥‹à¤Ÿà¤–à¤°à¤¾à¤¬'),
-                'total_area': row_get(row, 'à¤à¤•à¥‚à¤£ à¤•à¥à¤·à¥‡à¤¤à¥à¤°', 'à¤à¤•à¥‚à¤£_à¤•à¥à¤·à¥‡à¤¤à¥à¤°'),
-                'aakarni': row_get(row, 'à¤†à¤•à¤¾à¤°à¤£à¥€', 'à¤†à¤•à¤¾à¤°à¤£à¥€_à¤°à¥à¤ªà¤¯à¥‡'),
-                'khata_area': row_get(row, 'à¤–à¤¾à¤¤à¥‡ à¤•à¥à¤·à¥‡à¤¤à¥à¤°', 'à¤–à¤¾à¤¤à¤¾_à¤•à¥à¤·à¥‡à¤¤à¥à¤°'),
-                'aakar': row_get(row, 'à¤†à¤•à¤¾à¤°'),
-                'holder_name': clean_holder_name_list(row_get(row, 'à¤­à¥‹à¤—à¤µà¤Ÿà¤¾à¤¦à¤¾à¤°à¤¾à¤šà¥‡ à¤¨à¤¾à¤‚à¤µ', 'à¤§à¤¾à¤°à¤•à¤¾à¤šà¥‡ à¤¨à¤¾à¤µ', 'à¤§à¤¾à¤°à¤•à¤¾à¤šà¥‡_à¤¨à¤¾à¤µ')),
-                'kul_khand_other_rights': kul_khand_info,  # Add the same à¤•à¥à¤³, à¤–à¤‚à¤¡ à¤µ à¤‡à¤¤à¤° à¤…à¤§à¤¿à¤•à¤¾à¤° data to each record
+                'hissa_number': row_get(row, 'हिस्सा क्रमांक', 'स_नं_ग_न_हिस्सा', 'hissa_number'),
+                'jirayit': row_get(row, 'जिरायत', 'जिरायात'),
+                'bagayat': row_get(row, 'बागायत'),
+                'potkharaba': row_get(row, 'पोटखराब'),
+                'total_area': row_get(row, 'एकूण क्षेत्र', 'एकूण_क्षेत्र'),
+                'aakarni': row_get(row, 'आकारणी', 'आकारणी_रुपये'),
+                'khata_area': row_get(row, 'खाते क्षेत्र', 'खाता_क्षेत्र'),
+                'aakar': row_get(row, 'आकार'),
+                'holder_name': clean_holder_name_list(row_get(row, 'भोगवटादाराचे नांव', 'धारकाचे नाव', 'धारकाचे_नाव')),
+                'kul_khand_other_rights': kul_khand_info,  # Add the same कुळ, खंड व इतर अधिकार data to each record
             })
 
         if not matched:
-            raise ValueError('à¤¨à¤¿à¤µà¤¡à¤²à¥‡à¤²à¥à¤¯à¤¾ à¤ à¤¿à¤•à¤¾à¤£à¤¾à¤¶à¥€ HTML à¤®à¤§à¥€à¤² à¤®à¤¾à¤¹à¤¿à¤¤à¥€ à¤œà¥à¤³à¤¤ à¤¨à¤¾à¤¹à¥€.')
+            raise ValueError('निवडलेल्या ठिकाणाशी HTML मधील माहिती जुळत नाही.')
 
         return matched
 
@@ -1156,7 +1148,7 @@ def land_record_712(request):
                 rows, kul_khand_info = fetch_api_rows(uploaded_html)
                 rows_to_save = validate_and_map_rows(rows, district, taluka, village, gut_number, kul_khand_info)
             else:
-                raise ValueError('à¤•à¥ƒà¤ªà¤¯à¤¾ HTML à¤«à¤¾à¤‡à¤² à¤…à¤ªà¤²à¥‹à¤¡ à¤•à¤°à¤¾.')
+                raise ValueError('कृपया HTML फाइल अपलोड करा.')
 
             with transaction.atomic():
                 lock_khata_numbers(rows_to_save)
@@ -1224,10 +1216,10 @@ def parse_land_record_712_html(request):
     uploaded_html = request.FILES.get('document_712')
 
     if not all([district, taluka, village, gut_number]):
-        return JsonResponse({'success': False, 'error': 'à¤œà¤¿à¤²à¥à¤¹à¤¾, à¤¤à¤¾à¤²à¥à¤•à¤¾, à¤—à¤¾à¤µ à¤†à¤£à¤¿ à¤—à¤Ÿ à¤•à¥à¤°à¤®à¤¾à¤‚à¤• à¤¨à¤¿à¤µà¤¡à¤£à¥‡ à¤†à¤µà¤¶à¥à¤¯à¤• à¤†à¤¹à¥‡.'}, status=400)
+        return JsonResponse({'success': False, 'error': 'जिल्हा, तालुका, गाव आणि गट क्रमांक निवडणे आवश्यक आहे.'}, status=400)
 
     if not uploaded_html:
-        return JsonResponse({'success': False, 'error': 'à¤•à¥ƒà¤ªà¤¯à¤¾ HTML à¤«à¤¾à¤‡à¤² à¤…à¤ªà¤²à¥‹à¤¡ à¤•à¤°à¤¾.'}, status=400)
+        return JsonResponse({'success': False, 'error': 'कृपया HTML फाइल अपलोड करा.'}, status=400)
 
     api_url = os.getenv(
         'LAND_RECORD_UPLOAD_API_URL',
@@ -1251,13 +1243,13 @@ def parse_land_record_712_html(request):
     except requests.RequestException:
         return JsonResponse({'success': False, 'error': 'Service is not working.'}, status=502)
     except ValueError:
-        return JsonResponse({'success': False, 'error': 'API à¤•à¤¡à¥‚à¤¨ à¤µà¥ˆà¤§ JSON à¤®à¤¿à¤³à¤¾à¤²à¥‡ à¤¨à¤¾à¤¹à¥€.'}, status=502)
+        return JsonResponse({'success': False, 'error': 'API कडून वैध JSON मिळाले नाही.'}, status=502)
 
-    # Extract eligible records and à¤•à¥à¤³, à¤–à¤‚à¤¡ à¤µ à¤‡à¤¤à¤° à¤…à¤§à¤¿à¤•à¤¾à¤°
+    # Extract eligible records and कुळ, खंड व इतर अधिकार
     rows = payload.get('eligible', [])
-    kul_khand_info = payload.get('à¤•à¥à¤³, à¤–à¤‚à¤¡ à¤µ à¤‡à¤¤à¤° à¤…à¤§à¤¿à¤•à¤¾à¤°', '')
+    kul_khand_info = payload.get('कुळ, खंड व इतर अधिकार', '')
     if not rows:
-        return JsonResponse({'success': False, 'error': 'HTML à¤®à¤§à¥‚à¤¨ à¤¡à¥‡à¤Ÿà¤¾ à¤®à¤¿à¤³à¤¾à¤²à¤¾ à¤¨à¤¾à¤¹à¥€.'}, status=400)
+        return JsonResponse({'success': False, 'error': 'HTML मधून डेटा मिळाला नाही.'}, status=400)
 
     selected_district = normalize_text(district)
     selected_taluka = normalize_text(taluka)
@@ -1268,14 +1260,14 @@ def parse_land_record_712_html(request):
     records = []
 
     for row in rows:
-        row_district = row_get(row, 'à¤œà¤¿à¤²à¥à¤¹à¤¾', 'district')
-        row_taluka = row_get(row, 'à¤¤à¤¾à¤²à¥à¤•à¤¾', 'taluka')
-        row_village = row_get(row, 'à¤—à¤¾à¤µà¤¾à¤šà¥‡ à¤¨à¤¾à¤µ', 'village', 'village_name')
+        row_district = row_get(row, 'जिल्हा', 'district')
+        row_taluka = row_get(row, 'तालुका', 'taluka')
+        row_village = row_get(row, 'गावाचे नाव', 'village', 'village_name')
         row_gut = row_get(
             row,
-            'à¤—à¤Ÿ à¤¨à¤‚à¤¬à¤°/à¤¸à¤°à¥à¤µà¥‡ à¤¨à¤‚à¤¬à¤°',
-            'à¤¸à¤°à¥à¤µà¥‡ à¤¨à¤‚à¤¬à¤°', 'à¤¸à¤°à¥à¤µà¥à¤¹à¥‡ à¤¨à¤‚à¤¬à¤°', 'à¤—à¤Ÿ à¤•à¥à¤°à¤®à¤¾à¤‚à¤•', 'à¤—à¤Ÿ à¤¨à¤‚à¤¬à¤°',
-            'à¤¸_à¤¨à¤‚_à¤—_à¤¨', 'à¤¸_à¤¨à¤‚_à¤—_à¤¨_à¤¹à¤¿à¤¸à¥à¤¸à¤¾',
+            'गट नंबर/सर्वे नंबर',
+            'सर्वे नंबर', 'सर्व्हे नंबर', 'गट क्रमांक', 'गट नंबर',
+            'स_नं_ग_न', 'स_नं_ग_न_हिस्सा',
             'gut_number', 'survey_number', 'survey_no', 'survey number', 'survey'
         )
 
@@ -1292,31 +1284,31 @@ def parse_land_record_712_html(request):
 
         records.append({
             'gut_number': row_gut,
-            'khata_number': row_get(row, 'à¤–à¤¾à¤¤à¤¾ à¤•à¥à¤°à¤®à¤¾à¤‚à¤•', 'à¤–à¤¾à¤¤à¤¾_à¤¨à¤‚', 'khata_number'),
+            'khata_number': row_get(row, 'खाता क्रमांक', 'खाता_नं', 'khata_number'),
             'puid_ulip_no': row_get(row, 'PUID_ULIP_No'),
-            'hissa_number': row_get(row, 'à¤¹à¤¿à¤¸à¥à¤¸à¤¾ à¤•à¥à¤°à¤®à¤¾à¤‚à¤•', 'à¤¸_à¤¨à¤‚_à¤—_à¤¨_à¤¹à¤¿à¤¸à¥à¤¸à¤¾', 'hissa_number'),
-            'jirayit': row_get(row, 'à¤œà¤¿à¤°à¤¾à¤¯à¤¤', 'à¤œà¤¿à¤°à¤¾à¤¯à¤¾à¤¤'),
-            'bagayat': row_get(row, 'à¤¬à¤¾à¤—à¤¾à¤¯à¤¤'),
-            'potkharaba': row_get(row, 'à¤ªà¥‹à¤Ÿà¤–à¤°à¤¾à¤¬'),
-            'total_area': row_get(row, 'à¤à¤•à¥‚à¤£ à¤•à¥à¤·à¥‡à¤¤à¥à¤°', 'à¤à¤•à¥‚à¤£_à¤•à¥à¤·à¥‡à¤¤à¥à¤°'),
-            'aakarni': row_get(row, 'à¤†à¤•à¤¾à¤°à¤£à¥€', 'à¤†à¤•à¤¾à¤°à¤£à¥€_à¤°à¥à¤ªà¤¯à¥‡'),
-            'khata_area': row_get(row, 'à¤–à¤¾à¤¤à¥‡ à¤•à¥à¤·à¥‡à¤¤à¥à¤°', 'à¤–à¤¾à¤¤à¤¾_à¤•à¥à¤·à¥‡à¤¤à¥à¤°'),
-            'aakar': row_get(row, 'à¤†à¤•à¤¾à¤°'),
-            'holder_name': clean_holder_name_list(row_get(row, 'à¤­à¥‹à¤—à¤µà¤Ÿà¤¾à¤¦à¤¾à¤°à¤¾à¤šà¥‡ à¤¨à¤¾à¤‚à¤µ', 'à¤§à¤¾à¤°à¤•à¤¾à¤šà¥‡ à¤¨à¤¾à¤µ', 'à¤§à¤¾à¤°à¤•à¤¾à¤šà¥‡_à¤¨à¤¾à¤µ')),
-            'kul_khand_other_rights': kul_khand_info,  # Add the same à¤•à¥à¤³, à¤–à¤‚à¤¡ à¤µ à¤‡à¤¤à¤° à¤…à¤§à¤¿à¤•à¤¾à¤° data to each record
+            'hissa_number': row_get(row, 'हिस्सा क्रमांक', 'स_नं_ग_न_हिस्सा', 'hissa_number'),
+            'jirayit': row_get(row, 'जिरायत', 'जिरायात'),
+            'bagayat': row_get(row, 'बागायत'),
+            'potkharaba': row_get(row, 'पोटखराब'),
+            'total_area': row_get(row, 'एकूण क्षेत्र', 'एकूण_क्षेत्र'),
+            'aakarni': row_get(row, 'आकारणी', 'आकारणी_रुपये'),
+            'khata_area': row_get(row, 'खाते क्षेत्र', 'खाता_क्षेत्र'),
+            'aakar': row_get(row, 'आकार'),
+            'holder_name': clean_holder_name_list(row_get(row, 'भोगवटादाराचे नांव', 'धारकाचे नाव', 'धारकाचे_नाव')),
+            'kul_khand_other_rights': kul_khand_info,  # Add the same कुळ, खंड व इतर अधिकार data to each record
         })
 
     if not records:
         return JsonResponse({
             'success': False,
-            'error': 'HTML à¤®à¤§à¥‚à¤¨ à¤—à¤Ÿ à¤•à¥à¤°à¤®à¤¾à¤‚à¤• à¤•à¤¿à¤‚à¤µà¤¾ à¤¸à¥à¤¥à¤¾à¤¨ à¤œà¥à¤³à¤¤ à¤¨à¤¾à¤¹à¥€.'
+            'error': 'HTML मधून गट क्रमांक किंवा स्थान जुळत नाही.'
         }, status=400)
 
     return JsonResponse({
         'success': True, 
         'records': records, 
         'count': len(records),
-        'à¤•à¥à¤³, à¤–à¤‚à¤¡ à¤µ à¤‡à¤¤à¤° à¤…à¤§à¤¿à¤•à¤¾à¤°': kul_khand_info
+        'कुळ, खंड व इतर अधिकार': kul_khand_info
     })
 
 @login_required
@@ -1344,21 +1336,21 @@ def download_all_land_record_712_csv(request):
     # CSV Header
     header = [
         'ID',
-        'à¤œà¤¿à¤²à¥à¤¹à¤¾ (District)',
-        'à¤¤à¤¾à¤²à¥à¤•à¤¾ (Taluka)',
-        'à¤—à¤¾à¤µ (Village)',
-        'à¤—à¤Ÿ à¤•à¥à¤°à¤®à¤¾à¤‚à¤• (Gut Number)',
-        'à¤–à¤¾à¤¤à¤¾ à¤¨à¤‚à¤¬à¤° (Khata Number)',
-        'PUID/ULIP à¤¨à¤‚à¤¬à¤°',
-        'à¤œà¤¿à¤°à¤¾à¤¯à¤¤ (Jirayit)',
-        'à¤¬à¤¾à¤—à¤¾à¤¯à¤¤ (Bagayat)',
-        'à¤ªà¥‹à¤Ÿà¤–à¤°à¤¾à¤¬ (Potkharaba)',
-        'à¤à¤•à¥‚à¤£ à¤•à¥à¤·à¥‡à¤¤à¥à¤° (Total Area)',
-        'à¤†à¤•à¤¾à¤°à¤£à¥€ (Aakarni)',
-        'à¤–à¤¾à¤¤à¤¾ à¤•à¥à¤·à¥‡à¤¤à¥à¤° (Khata Area)',
-        'à¤†à¤•à¤¾à¤° (Aakar)',
-        'à¤­à¥‹à¤—à¤µà¤Ÿà¤¾à¤¦à¤¾à¤°à¤¾à¤‚à¤šà¥‡ à¤¨à¤¾à¤‚à¤µ (Holder Names)',
-        'à¤•à¥à¤³, à¤–à¤‚à¤¡ à¤µ à¤‡à¤¤à¤° à¤…à¤§à¤¿à¤•à¤¾à¤° (Kul Khand Other Rights)',
+        'जिल्हा (District)',
+        'तालुका (Taluka)',
+        'गाव (Village)',
+        'गट क्रमांक (Gut Number)',
+        'खाता नंबर (Khata Number)',
+        'PUID/ULIP नंबर',
+        'जिरायत (Jirayit)',
+        'बागायत (Bagayat)',
+        'पोटखराब (Potkharaba)',
+        'एकूण क्षेत्र (Total Area)',
+        'आकारणी (Aakarni)',
+        'खाता क्षेत्र (Khata Area)',
+        'आकार (Aakar)',
+        'भोगवटादारांचे नांव (Holder Names)',
+        'कुळ, खंड व इतर अधिकार (Kul Khand Other Rights)',
         'Created Date',
         'Updated Date',
         'Updated By'
@@ -1377,18 +1369,18 @@ def download_all_land_record_712_csv(request):
             district_mr,
             taluka_mr,
             village_mr,
-            record.gut_number or 'à¤‰à¤ªà¤²à¤¬à¥à¤§ à¤¨à¤¾à¤¹à¥€',
-            record.khata_number or 'à¤‰à¤ªà¤²à¤¬à¥à¤§ à¤¨à¤¾à¤¹à¥€',
-            record.puid_ulip_no or 'à¤‰à¤ªà¤²à¤¬à¥à¤§ à¤¨à¤¾à¤¹à¥€',
-            record.jirayit or 'à¤‰à¤ªà¤²à¤¬à¥à¤§ à¤¨à¤¾à¤¹à¥€',
-            record.bagayat or 'à¤‰à¤ªà¤²à¤¬à¥à¤§ à¤¨à¤¾à¤¹à¥€',
-            record.potkharaba or 'à¤‰à¤ªà¤²à¤¬à¥à¤§ à¤¨à¤¾à¤¹à¥€',
-            record.total_area or 'à¤‰à¤ªà¤²à¤¬à¥à¤§ à¤¨à¤¾à¤¹à¥€',
-            record.aakarni or 'à¤‰à¤ªà¤²à¤¬à¥à¤§ à¤¨à¤¾à¤¹à¥€',
-            record.khata_area or 'à¤‰à¤ªà¤²à¤¬à¥à¤§ à¤¨à¤¾à¤¹à¥€',
-            record.aakar or 'à¤‰à¤ªà¤²à¤¬à¥à¤§ à¤¨à¤¾à¤¹à¥€',
-            record.holder_name or 'à¤‰à¤ªà¤²à¤¬à¥à¤§ à¤¨à¤¾à¤¹à¥€',
-            record.kul_khand_other_rights or 'à¤‰à¤ªà¤²à¤¬à¥à¤§ à¤¨à¤¾à¤¹à¥€',
+            record.gut_number or 'उपलब्ध नाही',
+            record.khata_number or 'उपलब्ध नाही',
+            record.puid_ulip_no or 'उपलब्ध नाही',
+            record.jirayit or 'उपलब्ध नाही',
+            record.bagayat or 'उपलब्ध नाही',
+            record.potkharaba or 'उपलब्ध नाही',
+            record.total_area or 'उपलब्ध नाही',
+            record.aakarni or 'उपलब्ध नाही',
+            record.khata_area or 'उपलब्ध नाही',
+            record.aakar or 'उपलब्ध नाही',
+            record.holder_name or 'उपलब्ध नाही',
+            record.kul_khand_other_rights or 'उपलब्ध नाही',
             timezone.localtime(record.created_at).strftime('%d/%m/%Y %H:%M') if record.created_at else '',
             timezone.localtime(record.updated_at).strftime('%d/%m/%Y %H:%M') if record.updated_at else '',
             record.user.username if record.user else ''
@@ -1399,7 +1391,7 @@ def download_all_land_record_712_csv(request):
 
 @login_required
 def edit_land_record_712(request, id):
-    NA_TOKENS = {'', '-', 'na', 'n/a', 'Ã Â¤â€°Ã Â¤ÂªÃ Â¤Â²Ã Â¤Â¬Ã Â¥ÂÃ Â¤Â§ Ã Â¤Â¨Ã Â¤Â¾Ã Â¤Â¹Ã Â¥â‚¬'}
+    NA_TOKENS = {'', '-', 'na', 'n/a', 'à¤‰à¤ªà¤²à¤¬à¥à¤§ à¤¨à¤¾à¤¹à¥€'}
 
     def clean_optional(value):
         text = str(value or '').strip()
@@ -1409,9 +1401,9 @@ def edit_land_record_712(request, id):
 
     def clean_yes_no(value):
         val = str(value or '').strip().casefold()
-        if val in {'yes', 'Ã Â¤Â¹Ã Â¥â€¹Ã Â¤Â¯', 'hoy'}:
+        if val in {'yes', 'à¤¹à¥‹à¤¯', 'hoy'}:
             return 'Yes'
-        if val in {'no', 'Ã Â¤Â¨Ã Â¤Â¾Ã Â¤Â¹Ã Â¥â‚¬', 'nahi'}:
+        if val in {'no', 'à¤¨à¤¾à¤¹à¥€', 'nahi'}:
             return 'No'
         return None
 
@@ -2378,10 +2370,10 @@ def logout_view(request):
 def get_locations(request):
     """
     Unified location API that returns data based on provided parameters:
-    - No params â†’ districts
-    - district only â†’ talukas for that district  
-    - district + taluka â†’ villages for that taluka
-    - district + taluka + village â†’ guts for that village
+    - No params → districts
+    - district only → talukas for that district  
+    - district + taluka → villages for that taluka
+    - district + taluka + village → guts for that village
     """
     try:
         district = request.GET.get('district', '').strip()
@@ -2651,7 +2643,7 @@ def edit_inspection(request, id):
         if request.method == "POST":
             detail_rows = build_asset_detail_rows_from_request(request)
 
-            # ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦ Update main inspection
+            # Ã¢Å“â€¦ Update main inspection
             inspection.district = request.POST.get("district")
             inspection.taluka = request.POST.get("taluka")
             inspection.village = request.POST.get("village")
@@ -3333,20 +3325,20 @@ def download_all_assets_csv(request):
     # CSV Header
     header = [
         'ID',
-        'à¤®à¤¾à¤²à¤®à¤¤à¥à¤¤à¤¾ à¤¨à¤¾à¤µ (Asset Name)',
-        'à¤œà¤¿à¤²à¥à¤¹à¤¾ (District)',
-        'à¤¤à¤¾à¤²à¥à¤•à¤¾ (Taluka)',
-        'à¤—à¤¾à¤µ (Village)',
-        'à¤—à¤Ÿ à¤•à¥à¤°à¤®à¤¾à¤‚à¤• (Gut Number)',
-        'à¤®à¤¾à¤²à¤®à¤¤à¥à¤¤à¤¾ à¤ªà¥à¤°à¤•à¤¾à¤° (Asset Type)',
-        'à¤¸à¤°à¥à¤µà¥‡à¤•à¥à¤·à¤£ à¤¦à¤¿à¤¨à¤¾à¤‚à¤• (Survey Date)',
-        'à¤¦à¤° (Rate)',
-        'à¤¸à¤°à¤•à¤¾à¤°à¥€ à¤…à¤‚à¤¦à¤¾à¤œà¤¿à¤¤ à¤¦à¤° (Government Rate)',
-        'à¤à¤•à¥‚à¤£ à¤®à¥‹à¤œà¤®à¤¾à¤ª (Total Measurement)',
-        'à¤…à¤‚à¤¤à¤¿à¤® à¤—à¤£à¤¨à¤¾ (Final Calculation)',
-        'à¤…à¤‚à¤¤à¤¿à¤® à¤°à¤•à¥à¤•à¤® (Final Amount)',
-        'à¤¸à¤°à¤•à¤¾à¤°à¥€ à¤…à¤‚à¤¤à¤¿à¤® à¤°à¤•à¥à¤•à¤® (Government Final Amount)',
-        'à¤Ÿà¤¿à¤ªà¥à¤ªà¤£à¥€ (Remarks)',
+        'मालमत्ता नाव (Asset Name)',
+        'जिल्हा (District)',
+        'तालुका (Taluka)',
+        'गाव (Village)',
+        'गट क्रमांक (Gut Number)',
+        'मालमत्ता प्रकार (Asset Type)',
+        'सर्वेक्षण दिनांक (Survey Date)',
+        'दर (Rate)',
+        'सरकारी अंदाजित दर (Government Rate)',
+        'एकूण मोजमाप (Total Measurement)',
+        'अंतिम गणना (Final Calculation)',
+        'अंतिम रक्कम (Final Amount)',
+        'सरकारी अंतिम रक्कम (Government Final Amount)',
+        'टिप्पणी (Remarks)',
         'Created Date',
         'Updated Date',
         'Updated By'
@@ -3516,9 +3508,9 @@ def add_entry(request):
 
         if entry.committee_market_rate_12 is not None:
             multiplier = Decimal('1')
-            if entry.land_type_13 and 'Ã Â¤Â¬Ã Â¤Â¾Ã Â¤â€”Ã Â¤Â¾Ã Â¤Â¯Ã Â¤Â¤' in entry.land_type_13 and 'Ã Â¤Â¹Ã Â¤â€šÃ Â¤â€”Ã Â¤Â¾Ã Â¤Â®Ã Â¥â‚¬' in entry.land_type_13:
+            if entry.land_type_13 and 'à¤¬à¤¾à¤—à¤¾à¤¯à¤¤' in entry.land_type_13 and 'à¤¹à¤‚à¤—à¤¾à¤®à¥€' in entry.land_type_13:
                 multiplier = Decimal('1.10')
-            elif entry.land_type_13 and 'Ã Â¤Â¬Ã Â¤Â¾Ã Â¤â€”Ã Â¤Â¾Ã Â¤Â¯Ã Â¤Â¤' in entry.land_type_13:
+            elif entry.land_type_13 and 'à¤¬à¤¾à¤—à¤¾à¤¯à¤¤' in entry.land_type_13:
                 multiplier = Decimal('1.20')
             entry.considered_market_rate_14 = entry.committee_market_rate_12 * multiplier
         else:
@@ -4192,7 +4184,7 @@ def check_village_info_exists(request):
         
         return JsonResponse({
             'exists': exists,
-            'message': 'à¤¯à¤¾ à¤—à¤¾à¤µà¤¾à¤¸à¤¾à¤ à¥€ à¤—à¤¾à¤µà¤¾à¤šà¥€ à¤®à¤¾à¤¹à¤¿à¤¤à¥€ à¤¨à¥‹à¤‚à¤¦ à¤†à¤§à¥€à¤š à¤…à¤¸à¥à¤¤à¤¿à¤¤à¥à¤µà¤¾à¤¤ à¤†à¤¹à¥‡.' if exists else ''
+            'message': 'या गावासाठी गावाची माहिती नोंद आधीच अस्तित्वात आहे.' if exists else ''
         })
     except Exception as e:
         return JsonResponse({'exists': False, 'error': str(e)}, status=500)
