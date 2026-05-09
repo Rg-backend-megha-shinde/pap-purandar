@@ -21,6 +21,7 @@ urlpatterns = [
     path('tools/712/download-all/', views.download_all_land_record_712_csv, name='download_all_land_record_712_csv'),
     path('tools/712/edit/<int:id>/', views.edit_land_record_712, name='edit_land_record_712'),
     path('tools/712/delete/<int:id>/', views.delete_land_record_712, name='delete_land_record_712'),
+    path('tools/712/delete-selected/', views.delete_selected_land_record_712, name='delete_selected_land_record_712'),
     path('api/land-record-712/parse/', views.parse_land_record_712_html, name='parse_land_record_712_html'),
     path('api/land-record-gut-numbers/', views.get_land_record_gut_numbers, name='land_record_gut_numbers'),
     path('api/land-record-owner-names/', views.get_land_record_owner_names, name='land_record_owner_names'),
