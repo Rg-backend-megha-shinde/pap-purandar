@@ -840,7 +840,7 @@ class VillageData(models.Model):
     sec2_paper2_files = models.TextField(blank=True)
 
     # --- ३. प्राधिकृत भूसंपादन अधिकारी नियुक्ती ---
-    sec3_upvibhag_name = models.TextField(blank=True)
+    sec3_upvibhag_name = models.TextField(blank=True, default='')
     sec3_adhisuchana_kramank = models.TextField(blank=True)
     sec3_date = models.DateField(null=True, blank=True)
     sec3_files = models.TextField(blank=True)
@@ -889,7 +889,7 @@ class VillageData(models.Model):
     # --- १४. जिल्हास्तरीय समितीच्या बैठकीचा तपशील ---
     sec14_meeting_details = models.TextField(blank=True)
     sec14_date = models.DateField(null=True, blank=True)
-    sec14_approved_rate_details = models.TextField(blank=True)
+    sec14_approved_rate_details = models.TextField(blank=True, default='')
     sec14_files = models.TextField(blank=True)
 
     # --- १६. वन विभाग ---
@@ -1164,3 +1164,159 @@ class VillageDataSec15Rate(models.Model):
         verbose_name = "Sec15 Approved Rate"
         verbose_name_plural = "Sec15 Approved Rates"
         unique_together = ('village_data', 'rr_rate')
+
+
+class ProcessChartCase(models.Model):
+    STATUS_CHOICES = [
+        ("draft", "Draft"),
+        ("submitted", "Submitted"),
+        ("approved", "Approved"),
+    ]
+
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="process_chart_cases",
+    )
+
+    division = models.CharField(max_length=100, null=True, blank=True)
+    district = models.CharField(max_length=100)
+    taluka = models.CharField(max_length=100)
+    village = models.CharField(max_length=150)
+    gut_number = models.CharField(max_length=50)
+
+    project_purpose = models.CharField(max_length=255, null=True, blank=True)
+    acquisition_type = models.CharField(max_length=100, null=True, blank=True)
+
+    land_record_id_ref = models.BigIntegerField(null=True, blank=True)
+    village_data_id_ref = models.BigIntegerField(null=True, blank=True)
+    rr_info_id_ref = models.BigIntegerField(null=True, blank=True)
+    current_step = models.PositiveSmallIntegerField(default=1)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="draft")
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ("user", "district", "taluka", "village", "gut_number")
+
+    def __str__(self):
+        return f"{self.village} - {self.gut_number}"
+
+
+class ProcessChartStepData(models.Model):
+    case = models.ForeignKey(
+        ProcessChartCase,
+        on_delete=models.CASCADE,
+        related_name="step_data",
+    )
+    step_no = models.PositiveSmallIntegerField()
+    section_code = models.CharField(max_length=100)
+    data = models.JSONField(default=dict, blank=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ("case", "step_no", "section_code")
+
+    def __str__(self):
+        return f"{self.case} | Step {self.step_no} | {self.section_code}"
+
+
+class ProcessChartDocument(models.Model):
+    case = models.ForeignKey(
+        ProcessChartCase,
+        on_delete=models.CASCADE,
+        related_name="documents",
+    )
+    step_no = models.PositiveSmallIntegerField()
+    section_code = models.CharField(max_length=100)
+    document_type = models.CharField(max_length=100)
+    file = models.FileField(upload_to="process_chart/files/", max_length=1000)
+    remarks = models.TextField(null=True, blank=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.case} | {self.document_type}"
+
+
+class ProcessChartOwnerNotice(models.Model):
+    NOTICE_TYPE_CHOICES = [
+        ("personal_notice", "Personal Notice"),
+        ("public_notice", "Public Notice"),
+        ("award_notice", "Award Notice"),
+        ("sample_6", "Sample 6"),
+        ("forced_notice", "Forced Notice"),
+        ("possession_notice", "Possession Notice"),
+    ]
+
+    case = models.ForeignKey(
+        ProcessChartCase,
+        on_delete=models.CASCADE,
+        related_name="owner_notices",
+    )
+    source_farmer_id_ref = models.BigIntegerField(null=True, blank=True)
+
+    owner_name = models.CharField(max_length=255)
+    area = models.CharField(max_length=50, null=True, blank=True)
+    notice_type = models.CharField(max_length=30, choices=NOTICE_TYPE_CHOICES)
+    notice_number = models.CharField(max_length=100, null=True, blank=True)
+    notice_date = models.DateField(null=True, blank=True)
+    status = models.CharField(max_length=50, null=True, blank=True)
+    extra_data = models.JSONField(default=dict, blank=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.owner_name} - {self.notice_type}"
+
+
+class ProcessChartDepartmentRow(models.Model):
+    DEPARTMENT_CHOICES = [
+        ("panipurvatha", "पाणीपुरवठा"),
+        ("krushi", "कृषी विभाग"),
+        ("bandhakam", "बांधकाम विभाग"),
+        ("van", "वन विभाग"),
+        ("itar", "इतर विभाग"),
+    ]
+
+    case = models.ForeignKey(
+        ProcessChartCase,
+        on_delete=models.CASCADE,
+        related_name="department_rows",
+    )
+    department_type = models.CharField(max_length=30, choices=DEPARTMENT_CHOICES)
+    owner_name = models.CharField(max_length=255, null=True, blank=True)
+    details = models.TextField(null=True, blank=True)
+    date = models.DateField(null=True, blank=True)
+    valuation = models.DecimalField(max_digits=15, decimal_places=2, null=True, blank=True)
+    related_component_details = models.TextField(null=True, blank=True)
+    extra_data = models.JSONField(default=dict, blank=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.case} - {self.department_type}"
+
+
+class ProcessChartValuationRow(models.Model):
+    case = models.ForeignKey(
+        ProcessChartCase,
+        on_delete=models.CASCADE,
+        related_name="valuation_rows",
+    )
+
+    valuation_type = models.CharField(max_length=255)
+    assessment_range = models.CharField(max_length=100, null=True, blank=True)
+    value_division = models.CharField(max_length=100, null=True, blank=True)
+    ready_reckoner_rate = models.DecimalField(max_digits=15, decimal_places=2, null=True, blank=True)
+    committee_rate = models.DecimalField(max_digits=15, decimal_places=2, null=True, blank=True)
+    unit = models.CharField(max_length=50, null=True, blank=True)
+    extra_data = models.JSONField(default=dict, blank=True)
+
+    def __str__(self):
+        return f"{self.case} - {self.valuation_type}"

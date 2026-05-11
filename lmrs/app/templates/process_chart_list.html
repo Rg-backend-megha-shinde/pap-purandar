@@ -1,0 +1,162 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    .tool-tabs-shell {
+        border: 1px solid #d8e4f2;
+        background: #f8fbff;
+        border-radius: 0.65rem;
+        padding: 0.4rem 0.55rem 0;
+    }
+    .tool-tabs {
+        display: flex;
+        align-items: flex-end;
+        gap: 0.4rem;
+        flex-wrap: wrap;
+    }
+    .tool-tab-link {
+        display: inline-block;
+        margin-bottom: -1px;
+        padding: 0.7rem 1.1rem;
+        border: 1px solid transparent;
+        border-radius: 0.5rem 0.5rem 0 0;
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: #6b7d99;
+        line-height: 1;
+        transition: all 120ms ease;
+    }
+    .tool-tab-link:hover { color: #213a63; }
+    .tool-tab-link.is-active {
+        background: #ffffff;
+        color: #125fcb;
+        border-color: #cad8ea;
+        box-shadow: 0 1px 3px rgba(18, 95, 203, 0.15);
+    }
+    .pc-status-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 90px;
+        padding: 0.35rem 0.75rem;
+        border-radius: 999px;
+        font-size: 0.82rem;
+        font-weight: 700;
+        border: 1px solid;
+    }
+    .pc-status-draft {
+        background: #fff7ed;
+        color: #c2410c;
+        border-color: #fdba74;
+    }
+    .pc-status-submitted {
+        background: #eff6ff;
+        color: #1d4ed8;
+        border-color: #93c5fd;
+    }
+    .pc-status-approved {
+        background: #f0fdf4;
+        color: #15803d;
+        border-color: #86efac;
+    }
+    @media (max-width: 640px) {
+        .tool-tab-link {
+            padding: 0.6rem 0.85rem;
+            font-size: 0.85rem;
+        }
+    }
+</style>
+
+<div class="w-full px-2 sm:px-3 md:px-4 py-4">
+    <div class="overflow-hidden rounded-lg border border-slate-300 bg-white shadow-sm">
+        <div class="px-3 py-4 md:px-5 lg:px-6">
+            <div class="tool-tabs-shell mb-6">
+                <nav class="tool-tabs" aria-label="Tool views">
+                    <a href="{% url 'land_record_712_list' %}" class="tool-tab-link">७/१२ उतार नोंद</a>
+                    <a href="{% url 'ready_reckoner_list' %}" class="tool-tab-link">रेडी रेकनर दर</a>
+                    <a href="{% url 'village_info' %}" class="tool-tab-link">गावाची माहिती</a>
+                    <a href="{% url 'add_entry' %}" class="tool-tab-link">नुकसान भरपाई नोंद</a>
+                    <a href="{% url 'process_chart_form' %}" class="tool-tab-link is-active">भूसंपादन प्रक्रिया</a>
+                </nav>
+            </div>
+
+            <div class="rounded-2xl border border-[#d7e5f6] bg-[#fbfdff] p-3 sm:p-4 md:p-5">
+                <div class="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                    <h2 class="text-xl font-bold">भूसंपादन प्रक्रिया नोंदी</h2>
+                    <a href="{% url 'process_chart_form_entry' %}" class="rounded-xl bg-[#125fcb] px-4 py-2 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(18,95,203,0.2)]">
+                        Add New
+                    </a>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table id="processChartListTable" class="display w-full text-sm text-left" style="width:100%;">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>विभाग</th>
+                                <th>जिल्हा</th>
+                                <th>तालुका</th>
+                                <th>गाव</th>
+                                <th>गट क्रमांक</th>
+                                <th>स्थिती</th>
+                                <th>टप्पा</th>
+                                <th>Updated</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in cases %}
+                            <tr>
+                                <td>{{ item.id }}</td>
+                                <td>{{ item.division|default:"-" }}</td>
+                                <td>{{ item.district_mr|default:"-" }}</td>
+                                <td>{{ item.taluka_mr|default:"-" }}</td>
+                                <td>{{ item.village_mr|default:"-" }}</td>
+                                <td>{{ item.gut_number|default:"-" }}</td>
+                                <td>
+                                    <span class="pc-status-badge {% if item.status == 'submitted' %}pc-status-submitted{% elif item.status == 'approved' %}pc-status-approved{% else %}pc-status-draft{% endif %}">
+                                        {{ item.status|title }}
+                                    </span>
+                                </td>
+                                <td>{{ item.current_step }}</td>
+                                <td>
+                                    {{ item.updated_at|date:"d M Y, h:i a" }}
+                                    <div class="text-xs text-[#8091aa]">Updated by {{ item.user.username }}</div>
+                                </td>
+                                <td style="white-space: nowrap;">
+                                    <a href="{% url 'process_chart_form_entry' %}?case_id={{ item.id }}" title="Edit" style="display:inline-flex; align-items:center; justify-content:center; width:32px; height:32px; background:#2563eb; color:white; border-radius:6px; margin-right:6px; text-decoration:none;">✏️</a>
+                                    <a href="{% url 'delete_process_chart_case' item.id %}" title="Delete" style="display:inline-flex; align-items:center; justify-content:center; width:32px; height:32px; background:#dc2626; color:white; border-radius:6px; text-decoration:none;" onclick="return confirm('तुम्हाला ही नोंद हटवायची आहे का?');">🗑️</a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+$(document).ready(function () {
+    $('#processChartListTable').DataTable({
+        pageLength: 10,
+        scrollX: true,
+        columnDefs: [
+            { targets: -1, orderable: false, searchable: false }
+        ],
+        language: {
+            lengthMenu: "_MENU_ नोंदी दाखवा",
+            search: "शोध:",
+            info: "_TOTAL_ पैकी _START_ ते _END_ नोंदी",
+            infoEmpty: "0 नोंदी",
+            zeroRecords: "नोंदी आढळल्या नाहीत",
+            paginate: {
+                previous: "मागील",
+                next: "पुढील"
+            }
+        }
+    });
+});
+</script>
+{% endblock %}
