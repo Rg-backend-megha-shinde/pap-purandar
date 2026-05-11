@@ -3475,6 +3475,13 @@ def village_info_form(request):
 @login_required
 def process_chart_list(request):
     cases = ProcessChartCase.objects.filter(user=request.user).order_by('-updated_at', '-id')
+    for case in cases:
+        district_mr = get_marathi_name('district', case.district) if case.district else ''
+        taluka_mr = get_marathi_name('taluka', case.district, case.taluka) if case.district and case.taluka else ''
+        village_mr = get_marathi_name('village', case.district, case.taluka, case.village) if case.district and case.taluka and case.village else ''
+        case.district_mr = district_mr or case.district
+        case.taluka_mr = taluka_mr or case.taluka
+        case.village_mr = village_mr or case.village
     return render(request, 'process_chart_list.html', {
         'active_tab': 'process-chart',
         'cases': cases,
@@ -3644,6 +3651,14 @@ def _serialize_village_data_for_process_chart(village_data):
             'uploaded_at': file_obj.uploaded_at.isoformat() if file_obj.uploaded_at else '',
         })
 
+    sec4_rows = []
+    for row in village_data.sec4_rows.order_by('id'):
+        sec4_rows.append({
+            'id': row.id,
+            'adhisuchana_kramank': row.adhisuchana_kramank or '',
+            'adhisuchana_date': row.adhisuchana_date.isoformat() if row.adhisuchana_date else '',
+        })
+
     return {
         'id': village_data.id,
         'district': village_data.district,
@@ -3651,6 +3666,7 @@ def _serialize_village_data_for_process_chart(village_data):
         'village': village_data.village,
         'data': scalar_data,
         'files': files_map,
+        'sec4_rows': sec4_rows,
     }
 
 

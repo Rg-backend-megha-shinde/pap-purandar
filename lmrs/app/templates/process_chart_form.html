@@ -357,6 +357,7 @@
                                         <thead>
                                             <tr>
                                                 <th rowspan="2">भूधारकाचे नाव</th>
+                                                <th rowspan="2">खाते क्रमांक</th>
                                                 <th rowspan="2">आधार कार्ड क्रमांक</th>
                                                 <th rowspan="2">आधार कार्ड प्रत</th>
                                                 <th rowspan="2">पॅन कार्ड क्रमांक</th>
@@ -365,7 +366,6 @@
                                                 <th rowspan="2">पत्ता</th>
                                                 <th colspan="2">क्षेत्र (हेक्टर / आर) 7/12 प्रमाणे</th>
                                                 <th rowspan="2">एकूण क्षेत्र</th>
-                                                <th rowspan="2">खाते क्रमांक</th>
                                                 <th rowspan="2">आकारणी</th>
                                                 <th rowspan="2">इतर अधिकार, कूळ व इतर</th>
                                             </tr>
@@ -379,6 +379,7 @@
                                             <tr>
                                                 <td><input class="pc-input" type="text"></td>
                                                 <td><input class="pc-input" type="text"></td>
+                                                <td><input class="pc-input" type="text"></td>
                                                 <td><input class="pc-upload" type="file"></td>
                                                 <td><input class="pc-input" type="text"></td>
                                                 <td><input class="pc-upload" type="file"></td>
@@ -387,7 +388,6 @@
                                                 <td><input class="pc-input" type="text" placeholder="हे.आर"></td>
                                                 <td><input class="pc-input" type="text" placeholder="हे.आर"></td>
                                                 <td><input class="pc-input" type="text" placeholder="हे.आर"></td>
-                                                <td><input class="pc-input" type="text"></td>
                                                 <td><input class="pc-input" type="text"></td>
                                                 <td><button type="button" class="pc-table-view-btn pc-other-rights-btn" data-other-rights="">View</button></td>
                                             </tr>
@@ -536,7 +536,7 @@
                                 <div class="grid gap-4 md:grid-cols-2 md:items-end">
                                     <div>
                                         <label class="pc-label">अधिसूचना क्रमांक</label>
-                                        <input class="pc-input" type="text" placeholder="अधिसूचना क्रमांक">
+                                        <input class="pc-input" id="pcSec4AdhisuchanaKramank" type="text" placeholder="अधिसूचना क्रमांक">
                                     </div>
                                     <div>
                                         <label class="pc-label">दिनांक</label>
@@ -1759,6 +1759,7 @@
             return `
                 <tr>
                     <td><input class="pc-input" type="text" value="${rowData.owner_name || ''}"></td>
+                    <td><input class="pc-input" type="text" value="${rowData.khata_number || ''}"></td>
                     <td><input class="pc-input" type="text" value="${rowData.aadhaar_number || ''}"></td>
                     <td><input class="pc-upload" type="file"></td>
                     <td><input class="pc-input" type="text" value="${rowData.pan_number || ''}"></td>
@@ -1768,7 +1769,6 @@
                     <td><input class="pc-input" type="text" placeholder="हे.आर" value="${rowData.cultivable_area || ''}"></td>
                     <td><input class="pc-input" type="text" placeholder="हे.आर" value="${rowData.potkharaba || ''}"></td>
                     <td><input class="pc-input" type="text" placeholder="हे.आर" value="${rowData.total_area || ''}"></td>
-                    <td><input class="pc-input" type="text" value="${rowData.khata_number || ''}"></td>
                     <td><input class="pc-input" type="text" value="${rowData.aakarni || ''}"></td>
                     <td>
                         <button type="button" class="pc-table-view-btn pc-other-rights-btn" data-other-rights="${otherRights}">
@@ -1903,10 +1903,11 @@
 
         function applyVillageDataPrefill(villageDataPayload) {
             const villageData = villageDataPayload?.data || {};
+            const firstSec4Row = Array.isArray(villageDataPayload?.sec4_rows) ? villageDataPayload.sec4_rows[0] : null;
             currentVillageFiles = villageDataPayload?.files || {};
             const fieldMap = {
-                pcSec2AdhisuchanaKramank: villageData.sec2_adhisuchana_kramank || '',
-                pcSec2Date: villageData.sec2_date || '',
+                pcSec2AdhisuchanaKramank: villageData.sec2_adhisuchana_kramank || villageData.sec1_adesh_kramank || '',
+                pcSec2Date: villageData.sec2_date || villageData.sec1_date || '',
                 pcSec2Paper1Name: villageData.sec2_paper1_name || '',
                 pcSec2Paper1Date: villageData.sec2_paper1_date || '',
                 pcSec2Paper2Name: villageData.sec2_paper2_name || '',
@@ -1914,6 +1915,7 @@
                 pcSec3UpvibhagName: villageData.sec3_upvibhag_name || '',
                 pcSec3AdhisuchanaKramank: villageData.sec3_adhisuchana_kramank || '',
                 pcSec3Date: villageData.sec3_date || '',
+                pcSec4AdhisuchanaKramank: firstSec4Row?.adhisuchana_kramank || '',
                 pcSec5PrastaavKramank: villageData.sec5_prastaav_kramank || '',
                 pcSec5Date: villageData.sec5_date || '',
             };
@@ -2309,7 +2311,7 @@
             }
         });
 
-        sec2FilesViewBtn?.addEventListener('click', () => openFilesModal(currentVillageFiles.sec2_files || []));
+        sec2FilesViewBtn?.addEventListener('click', () => openFilesModal(currentVillageFiles.sec2_files || currentVillageFiles.sec1_files || []));
         sec2Paper1FilesViewBtn?.addEventListener('click', () => openFilesModal(currentVillageFiles.sec2_paper1_files || []));
         sec2Paper2FilesViewBtn?.addEventListener('click', () => openFilesModal(currentVillageFiles.sec2_paper2_files || []));
         closeFilesModalBtn?.addEventListener('click', closeFilesModal);
