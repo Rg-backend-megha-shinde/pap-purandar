@@ -5,7 +5,7 @@ from django.db import connection, transaction
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.sessions.models import Session
-from .models import Inspection, ReadyReckonerInfo, ReadyReckonerRate, LandRecord712, FarmerNames,TreeMaster, Asset, AssetMeasurement, AssetTypeMaster, AssetFieldMaster, AssetFormulaMaster, Document, ToolMaster, DocumentMaster, DocumentAttachment, Entry, VillageData, VillageData8ARecord, VillageDataSec15Rate, VillageDataFile, VillageData8AFile, VillageData15_2Row, VillageData15_2RowFile, VillageData18_1Row, VillageData18_1RowFile, ActiveUserSession, AssetDetail
+from .models import Inspection, ReadyReckonerInfo, ReadyReckonerRate, LandRecord712, FarmerNames,TreeMaster, Asset, AssetMeasurement, AssetTypeMaster, AssetFieldMaster, AssetFormulaMaster, Document, ToolMaster, DocumentMaster, DocumentAttachment, Entry, VillageData, VillageData8ARecord, VillageDataSec15Rate, VillageDataFile, VillageData8AFile, VillageData32_2Row, VillageData32_2RowFile, VillageData32_1Row, VillageData32_1RowFile, ActiveUserSession, AssetDetail
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponseForbidden
 from django.db import connection
@@ -17,7 +17,7 @@ import os
 import requests
 from io import BytesIO
 import unicodedata
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 from PIL import Image, ImageDraw, ImageFont, ImageOps
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
@@ -472,61 +472,63 @@ def tools(request):
 @login_required
 def ready_reckoner(request):
     if request.method == "POST":
-        district = request.POST.get('district')
-        taluka = request.POST.get('taluka')
-        village = request.POST.get('village')
-        year = request.POST.get('year')
+        district = (request.POST.get('district') or '').strip()
+        taluka = (request.POST.get('taluka') or '').strip()
+        village = (request.POST.get('village') or '').strip()
+        year = (request.POST.get('year') or '').strip()
         block_count = int(request.POST.get('block_count', 0))
         files = request.FILES.getlist('documents')
         first_info = None
-        village_type = request.POST.get('village_type', '')
+        village_type = (request.POST.get('village_type', '') or '').strip()
 
-        # Allow only one ready reckoner entry per district+taluka+village.
+        try:
+            district = _required_clean_text(district, 'District')
+            taluka = _required_clean_text(taluka, 'Taluka')
+            village = _required_clean_text(village, 'Village')
+            year = _required_clean_text(year, 'Year')
+            if village_type not in {'gramin', 'prabhav'}:
+                raise ValueError('Village Type is required.')
+            parsed_blocks = _parse_ready_reckoner_blocks(request, block_count, village_type)
+        except ValueError as ex:
+            return render(request, "readyreckoner.html", {"duplicate_error": str(ex)})
+
         duplicate_exists = ReadyReckonerInfo.objects.filter(
-            district__iexact=(district or '').strip(),
-            taluka__iexact=(taluka or '').strip(),
-            village__iexact=(village or '').strip()
+            district__iexact=district,
+            taluka__iexact=taluka,
+            village__iexact=village
         ).exists()
         if duplicate_exists:
             return render(request, "readyreckoner.html", {
                 "duplicate_error": "या गावासाठी रेडी रेकनर नोंद आधीच अस्तित्वात आहे."
             })
 
-        for bi in range(block_count):
-            assessment_type = request.POST.get(f'assessment_type[{bi}]')
-            unit = request.POST.get(f'unit[{bi}]')
-            if not assessment_type:
-                continue
+        for block in parsed_blocks:
             info = ReadyReckonerInfo.objects.create(
-                user=request.user, district=district, taluka=taluka,
-                village=village, year=year, assessment_type=assessment_type, unit=unit
+                user=request.user,
+                district=district,
+                taluka=taluka,
+                village=village,
+                year=year,
+                assessment_type=block['assessment_type'],
+                unit=block['unit']
             )
             if first_info is None:
                 first_info = info
-            ri = 0
-            while True:
-                rt = request.POST.get(f'rate[{bi}][{ri}]')
-                if rt is None:
-                    break
-                if village_type == 'prabhav':
-                    sv = request.POST.get(f'shighrasiddha_vibhag[{bi}][{ri}]', '')
-                    if sv and rt:
-                        ReadyReckonerRate.objects.create(
-                            rr=info, assessment_range_min=0, assessment_range_max=0,
-                            rate=rt, village_type=village_type, shighrasiddha_vibhag=sv
-                        )
-                else:
-                    mn = request.POST.get(f'assessment_range_min[{bi}][{ri}]')
-                    mx = request.POST.get(f'assessment_range_max[{bi}][{ri}]')
-                    if mn and mx and rt:
-                        ReadyReckonerRate.objects.create(
-                            rr=info, assessment_range_min=mn, assessment_range_max=mx,
-                            rate=rt, village_type=village_type
-                        )
-                ri += 1
+            for rate_row in block['rates']:
+                ReadyReckonerRate.objects.create(
+                    rr=info,
+                    assessment_range_min=rate_row['assessment_range_min'],
+                    assessment_range_max=rate_row['assessment_range_max'],
+                    rate=rate_row['rate'],
+                    village_type=village_type,
+                    shighrasiddha_vibhag=rate_row['shighrasiddha_vibhag'],
+                )
+
         if files and first_info:
-            handle_document_upload(user=request.user, tool_name='Ready Reckoner Rate', rr_info=first_info,
-                files=files, district=district, taluka=taluka, village=village)
+            handle_document_upload(
+                user=request.user, tool_name='Ready Reckoner Rate', rr_info=first_info,
+                files=files, district=district, taluka=taluka, village=village
+            )
         return redirect('ready_reckoner_list')
     return render(request, "readyreckoner.html")
 
@@ -598,6 +600,91 @@ def get_marathi_name(level, district=None, taluka=None, village=None):
         pass
     return district if level == 'district' else (taluka if level == 'taluka' else village)
 
+
+def _required_clean_text(value, field_label):
+    cleaned = (value or '').strip()
+    if not cleaned:
+        raise ValueError(f"{field_label} is required and cannot be only spaces.")
+    return cleaned
+
+
+def _parse_non_negative_decimal(value, field_label):
+    text = (value or '').strip()
+    if not text:
+        raise ValueError(f"{field_label} is required.")
+    try:
+        parsed = Decimal(text)
+    except (InvalidOperation, TypeError):
+        raise ValueError(f"{field_label} must be a valid number.")
+    if parsed < 0:
+        raise ValueError(f"{field_label} cannot be negative.")
+    return parsed
+
+
+def _parse_ready_reckoner_blocks(request, block_count, village_type):
+    parsed_blocks = []
+    for bi in range(block_count):
+        rec_id = request.POST.get(f'record_id[{bi}]')
+        assessment_type_raw = request.POST.get(f'assessment_type[{bi}]')
+        unit_raw = request.POST.get(f'unit[{bi}]')
+
+        if assessment_type_raw is None and unit_raw is None:
+            continue
+
+        assessment_type = _required_clean_text(assessment_type_raw, f"Assessment Type (block {bi + 1})")
+        unit = _required_clean_text(unit_raw, f"Unit (block {bi + 1})")
+
+        rates = []
+        ri = 0
+        while True:
+            mn = request.POST.get(f'assessment_range_min[{bi}][{ri}]')
+            mx = request.POST.get(f'assessment_range_max[{bi}][{ri}]')
+            rt = request.POST.get(f'rate[{bi}][{ri}]')
+            sv = request.POST.get(f'shighrasiddha_vibhag[{bi}][{ri}]')
+            if mn is None and mx is None and rt is None and sv is None:
+                break
+
+            has_any = any(((v or '').strip() for v in [mn, mx, rt, sv]))
+            if not has_any:
+                ri += 1
+                continue
+
+            rate_value = _parse_non_negative_decimal(rt, f"Rate (block {bi + 1}, row {ri + 1})")
+            if village_type == 'prabhav':
+                shighra = _required_clean_text(sv, f"Shighrasiddha Vibhag (block {bi + 1}, row {ri + 1})")
+                rates.append({
+                    'assessment_range_min': Decimal('0'),
+                    'assessment_range_max': Decimal('0'),
+                    'rate': rate_value,
+                    'shighrasiddha_vibhag': shighra,
+                })
+            else:
+                min_value = _parse_non_negative_decimal(mn, f"Min Range (block {bi + 1}, row {ri + 1})")
+                max_value = _parse_non_negative_decimal(mx, f"Max Range (block {bi + 1}, row {ri + 1})")
+                if max_value < min_value:
+                    raise ValueError(f"Max Range cannot be less than Min Range (block {bi + 1}, row {ri + 1}).")
+                rates.append({
+                    'assessment_range_min': min_value,
+                    'assessment_range_max': max_value,
+                    'rate': rate_value,
+                    'shighrasiddha_vibhag': '',
+                })
+            ri += 1
+
+        if not rates:
+            raise ValueError(f"At least one valid rate row is required in block {bi + 1}.")
+
+        parsed_blocks.append({
+            'rec_id': rec_id,
+            'assessment_type': assessment_type,
+            'unit': unit,
+            'rates': rates,
+        })
+
+    if not parsed_blocks:
+        raise ValueError("At least one assessment block with valid rates is required.")
+    return parsed_blocks
+
 @login_required
 def ready_reckoner_list(request):
     all_records = ReadyReckonerInfo.objects.prefetch_related('rates').all().order_by('district', 'taluka', 'village', 'year', 'id')
@@ -648,72 +735,74 @@ def edit_ready_reckoner(request, id):
     ).order_by('id')
 
     if request.method == "POST":
-        district = request.POST.get('district')
-        taluka = request.POST.get('taluka')
-        village = request.POST.get('village')
-        year = request.POST.get('year')
+        district = (request.POST.get('district') or '').strip()
+        taluka = (request.POST.get('taluka') or '').strip()
+        village = (request.POST.get('village') or '').strip()
+        year = (request.POST.get('year') or '').strip()
         block_count = int(request.POST.get('block_count', 0))
-        village_type = request.POST.get('village_type', 'gramin')
+        village_type = (request.POST.get('village_type', 'gramin') or 'gramin').strip()
 
-        # Collect submitted block IDs (existing) and new blocks
+        try:
+            district = _required_clean_text(district, 'District')
+            taluka = _required_clean_text(taluka, 'Taluka')
+            village = _required_clean_text(village, 'Village')
+            year = _required_clean_text(year, 'Year')
+            if village_type not in {'gramin', 'prabhav'}:
+                raise ValueError('Village Type is required.')
+            parsed_blocks = _parse_ready_reckoner_blocks(request, block_count, village_type)
+        except ValueError as ex:
+            all_documents = []
+            for rec in village_records:
+                all_documents.extend(rec.get_documents())
+            return render(request, 'edit_ready_reckoner.html', {
+                'anchor': anchor,
+                'village_records': village_records,
+                'all_documents': all_documents,
+                'error_message': str(ex),
+            })
+
         existing_ids_submitted = []
-        for bi in range(block_count):
-            rec_id = request.POST.get(f'record_id[{bi}]')
-            assessment_type = request.POST.get(f'assessment_type[{bi}]')
-            unit = request.POST.get(f'unit[{bi}]')
-            if not assessment_type:
-                continue
-
+        for block in parsed_blocks:
+            rec_id = block.get('rec_id')
             if rec_id:
-                # Update existing record
                 try:
                     info = ReadyReckonerInfo.objects.get(id=int(rec_id))
                     info.district = district
                     info.taluka = taluka
                     info.village = village
                     info.year = year
-                    info.assessment_type = assessment_type
-                    info.unit = unit
+                    info.assessment_type = block['assessment_type']
+                    info.unit = block['unit']
                     info.user = request.user
                     info.save()
-                    # Delete sec15 references before deleting rates (PROTECT FK)
                     VillageDataSec15Rate.objects.filter(rr_rate__rr=info).delete()
                     info.rates.all().delete()
                     existing_ids_submitted.append(info.id)
                 except ReadyReckonerInfo.DoesNotExist:
                     info = ReadyReckonerInfo.objects.create(
                         user=request.user, district=district, taluka=taluka,
-                        village=village, year=year, assessment_type=assessment_type, unit=unit
+                        village=village, year=year,
+                        assessment_type=block['assessment_type'], unit=block['unit']
                     )
                     existing_ids_submitted.append(info.id)
             else:
-                # New block
                 info = ReadyReckonerInfo.objects.create(
                     user=request.user, district=district, taluka=taluka,
-                    village=village, year=year, assessment_type=assessment_type, unit=unit
+                    village=village, year=year,
+                    assessment_type=block['assessment_type'], unit=block['unit']
                 )
                 existing_ids_submitted.append(info.id)
 
-            ri = 0
-            while True:
-                mn = request.POST.get(f'assessment_range_min[{bi}][{ri}]')
-                mx = request.POST.get(f'assessment_range_max[{bi}][{ri}]')
-                rt = request.POST.get(f'rate[{bi}][{ri}]')
-                sv = request.POST.get(f'shighrasiddha_vibhag[{bi}][{ri}]')
-                if mn is None and sv is None:
-                    break
-                if rt:
-                    ReadyReckonerRate.objects.create(
-                        rr=info,
-                        village_type=village_type,
-                        assessment_range_min=mn or 0,
-                        assessment_range_max=mx or 0,
-                        shighrasiddha_vibhag=sv or '',
-                        rate=rt
-                    )
-                ri += 1
+            for rate_row in block['rates']:
+                ReadyReckonerRate.objects.create(
+                    rr=info,
+                    village_type=village_type,
+                    assessment_range_min=rate_row['assessment_range_min'],
+                    assessment_range_max=rate_row['assessment_range_max'],
+                    shighrasiddha_vibhag=rate_row['shighrasiddha_vibhag'],
+                    rate=rate_row['rate']
+                )
 
-        # Delete records that were removed in the form
         removed_infos = ReadyReckonerInfo.objects.filter(
             village=village, year=year
         ).exclude(id__in=existing_ids_submitted)
@@ -758,11 +847,31 @@ def delete_ready_reckoner(request, id):
     
     return redirect('ready_reckoner_list')
 
+
+@login_required
+@require_http_methods(["POST"])
+def delete_selected_ready_reckoner(request):
+    selected_ids = request.POST.getlist('selected_ids')
+    if not selected_ids:
+        return redirect('ready_reckoner_list')
+
+    anchors = ReadyReckonerInfo.objects.filter(id__in=selected_ids).only('village', 'year')
+    groups_to_delete = {(obj.village, obj.year) for obj in anchors}
+
+    for village, year in groups_to_delete:
+        village_records = ReadyReckonerInfo.objects.filter(village=village, year=year)
+        if 'app_villagedatasec15rate' in connection.introspection.table_names():
+            VillageDataSec15Rate.objects.filter(rr_rate__rr__in=village_records).delete()
+        village_records.delete()
+
+    return redirect('ready_reckoner_list')
+
 @login_required
 def download_all_ready_reckoner_csv(request):
     from itertools import groupby
     
     all_records = ReadyReckonerInfo.objects.prefetch_related('rates').all().order_by('district', 'taluka', 'village', 'year', 'id')
+    include_shighrasiddha_col = ReadyReckonerRate.objects.filter(rr__in=all_records, village_type='prabhav').exists()
     
     response = HttpResponse(content_type='text/csv; charset=utf-8-sig')
     response['Content-Disposition'] = 'attachment; filename="ready_reckoner_rates.csv"'
@@ -1442,107 +1551,6 @@ def dashboard(request):
 
 
 @api_login_required
-def get_all_villages_farmers(request):
-    """Fetch affected farmers count hierarchically based on filters"""
-    district_name = request.GET.get('district', None)
-    taluka_name = request.GET.get('taluka', None)
-    village_name = request.GET.get('village', None)
-    
-    with connection.cursor() as cursor:
-        farmers_data = []
-        
-        try:
-            if village_name and taluka_name and district_name:
-                # Village selected - show gut-wise breakdown
-                cursor.execute("""
-                    SELECT 
-                        gut_no,
-                        COUNT(*) as farmers_count
-                    FROM purandar_airport.prj_farmer
-                    WHERE UPPER(TRIM(district)) = UPPER(TRIM(%s))
-                    AND UPPER(TRIM(taluka)) = UPPER(TRIM(%s))
-                    AND UPPER(TRIM(village)) = UPPER(TRIM(%s))
-                    GROUP BY gut_no
-                    ORDER BY farmers_count DESC;
-                """, [district_name, taluka_name, village_name])
-                
-                results = cursor.fetchall()
-                for row in results:
-                    farmers_data.append({
-                        'name': row[0] or 'Unknown Gut',
-                        'farmers_count': row[1],
-                        'level': 'gut'
-                    })
-                    
-            elif taluka_name and district_name:
-                # Taluka selected - show village-wise breakdown
-                cursor.execute("""
-                    SELECT 
-                        village,
-                        COUNT(*) as farmers_count
-                    FROM purandar_airport.prj_farmer
-                    WHERE UPPER(TRIM(district)) = UPPER(TRIM(%s))
-                    AND UPPER(TRIM(taluka)) = UPPER(TRIM(%s))
-                    GROUP BY village
-                    ORDER BY farmers_count DESC;
-                """, [district_name, taluka_name])
-                
-                results = cursor.fetchall()
-                for row in results:
-                    farmers_data.append({
-                        'name': row[0] or 'Unknown Village',
-                        'farmers_count': row[1],
-                        'level': 'village'
-                    })
-                    
-            elif district_name:
-                # District selected - show taluka-wise breakdown
-                cursor.execute("""
-                    SELECT 
-                        taluka,
-                        COUNT(*) as farmers_count
-                    FROM purandar_airport.prj_farmer
-                    WHERE UPPER(TRIM(district)) = UPPER(TRIM(%s))
-                    GROUP BY taluka
-                    ORDER BY farmers_count DESC;
-                """, [district_name])
-                
-                results = cursor.fetchall()
-                for row in results:
-                    farmers_data.append({
-                        'name': row[0] or 'Unknown Taluka',
-                        'farmers_count': row[1],
-                        'level': 'taluka'
-                    })
-                    
-            else:
-                # No filter - show district-wise breakdown
-                cursor.execute("""
-                    SELECT 
-                        district,
-                        COUNT(*) as farmers_count
-                    FROM purandar_airport.prj_farmer
-                    GROUP BY district
-                    ORDER BY farmers_count DESC;
-                """)
-                
-                results = cursor.fetchall()
-                for row in results:
-                    farmers_data.append({
-                        'name': row[0] or 'Unknown District',
-                        'farmers_count': row[1],
-                        'level': 'district'
-                    })
-                    
-        except Exception as e:
-            import traceback
-            traceback.print_exc()
-            return JsonResponse({'farmers': [], 'error': str(e)})
-        
-        return JsonResponse({'farmers': farmers_data})
-
-
-@api_login_required
 def get_project_stats(request):
     district_id = request.GET.get('district_id')
     taluka_id = request.GET.get('taluka_id')
@@ -1648,10 +1656,6 @@ def get_project_stats(request):
 
         if invalid_location:
             return JsonResponse({
-                "affected_villages": 0,
-                "affected_farmers": 0,
-                "area_acquired": 0,
-                "total_compensation": 0,
                 "land_classification": {
                     "trees_total": 0,
                     "trees_valuation": 0,
@@ -1755,209 +1759,7 @@ def get_project_stats(request):
             where_clause = " AND " + " AND ".join(conditions)
 
         # -----------------------------
-        # 1. AFFECTED VILLAGES
-        # -----------------------------
-        try:
-            if table_has_column('prj_gut_bd', 'affected'):
-                gut_conditions = ["affected = 1"]
-                gut_params = []
-
-                if village_id and table_has_column('prj_gut_bd', 'village_id'):
-                    gut_conditions.append("village_id = %s")
-                    gut_params.append(village_id)
-                else:
-                    if district_name:
-                        gut_conditions.append("""
-                            (
-                                UPPER(TRIM(COALESCE(district, ''))) = UPPER(TRIM(%s))
-                                OR UPPER(TRIM(COALESCE(district_m, ''))) = UPPER(TRIM(%s))
-                            )
-                        """)
-                        gut_params.extend([district_name, district_name])
-
-                    if taluka_name:
-                        gut_conditions.append("""
-                            (
-                                UPPER(TRIM(COALESCE(taluka, ''))) = UPPER(TRIM(%s))
-                                OR UPPER(TRIM(COALESCE(taluka_m, ''))) = UPPER(TRIM(%s))
-                            )
-                        """)
-                        gut_params.extend([taluka_name, taluka_name])
-
-                    if village_name:
-                        gut_conditions.append("""
-                            (
-                                UPPER(TRIM(COALESCE(village, ''))) = UPPER(TRIM(%s))
-                                OR UPPER(TRIM(COALESCE(village_m, ''))) = UPPER(TRIM(%s))
-                            )
-                        """)
-                        gut_params.extend([village_name, village_name])
-
-                if gut_number:
-                    if table_has_column('prj_gut_bd', 'gut_no'):
-                        gut_conditions.append("UPPER(TRIM(COALESCE(gut_no::text, ''))) = UPPER(TRIM(%s))")
-                        gut_params.append(str(gut_number))
-                    elif table_has_column('prj_gut_bd', 'gut_no_m'):
-                        gut_conditions.append("UPPER(TRIM(COALESCE(gut_no_m::text, ''))) = UPPER(TRIM(%s))")
-                        gut_params.append(str(gut_number))
-
-                gut_where = " WHERE " + " AND ".join(gut_conditions)
-                cursor.execute(f"""
-                    SELECT COUNT(DISTINCT COALESCE(village_id::text, NULLIF(TRIM(village_m), ''), NULLIF(TRIM(village), '')))
-                    FROM purandar_airport.prj_gut_bd
-                    {gut_where}
-                """, gut_params)
-                affected_villages = cursor.fetchone()[0] or 0
-            else:
-                if village_id:
-                    affected_villages = 1
-                else:
-                    cursor.execute(f"""
-                        SELECT COUNT(DISTINCT v.village_id)
-                        FROM purandar_airport.prj_vlg_bd v
-                        CROSS JOIN purandar_airport.prj_bd p
-                        WHERE ST_Intersects(v.geom, p.geom)
-                        {where_clause}
-                    """, params)
-                    affected_villages = cursor.fetchone()[0] or 0
-
-        except Exception:
-            affected_villages = 0
-
-        # -----------------------------
-        # 2. AFFECTED FARMERS
-        # -----------------------------
-        try:
-            query = f"""
-                SELECT COUNT(*)
-                FROM purandar_airport.prj_farmer
-                WHERE 1=1
-                {where_clause}
-            """
-
-            farmer_params = list(params)
-
-            if gut_number:
-                query += " AND gut_no = %s"
-                farmer_params.append(gut_number)
-
-            cursor.execute(query, farmer_params)
-            affected_farmers = cursor.fetchone()[0] or 0
-
-        except Exception:
-            affected_farmers = 0
-
-        # -----------------------------
-        # 3. AREA ACQUIRED
-        # -----------------------------
-        try:
-            if table_has_column('prj_gut_bd', 'affected'):
-                gut_conditions = ["affected = 1"]
-                gut_params = []
-
-                if village_id and table_has_column('prj_gut_bd', 'village_id'):
-                    gut_conditions.append("village_id = %s")
-                    gut_params.append(village_id)
-                else:
-                    if district_name:
-                        gut_conditions.append("""
-                            (
-                                UPPER(TRIM(COALESCE(district, ''))) = UPPER(TRIM(%s))
-                                OR UPPER(TRIM(COALESCE(district_m, ''))) = UPPER(TRIM(%s))
-                            )
-                        """)
-                        gut_params.extend([district_name, district_name])
-
-                    if taluka_name:
-                        gut_conditions.append("""
-                            (
-                                UPPER(TRIM(COALESCE(taluka, ''))) = UPPER(TRIM(%s))
-                                OR UPPER(TRIM(COALESCE(taluka_m, ''))) = UPPER(TRIM(%s))
-                            )
-                        """)
-                        gut_params.extend([taluka_name, taluka_name])
-
-                    if village_name:
-                        gut_conditions.append("""
-                            (
-                                UPPER(TRIM(COALESCE(village, ''))) = UPPER(TRIM(%s))
-                                OR UPPER(TRIM(COALESCE(village_m, ''))) = UPPER(TRIM(%s))
-                            )
-                        """)
-                        gut_params.extend([village_name, village_name])
-
-                if gut_number:
-                    if table_has_column('prj_gut_bd', 'gut_no'):
-                        gut_conditions.append("UPPER(TRIM(COALESCE(gut_no::text, ''))) = UPPER(TRIM(%s))")
-                        gut_params.append(str(gut_number))
-                    elif table_has_column('prj_gut_bd', 'gut_no_m'):
-                        gut_conditions.append("UPPER(TRIM(COALESCE(gut_no_m::text, ''))) = UPPER(TRIM(%s))")
-                        gut_params.append(str(gut_number))
-
-                gut_where = " WHERE " + " AND ".join(gut_conditions)
-                cursor.execute(f"""
-                    SELECT COALESCE(SUM(COALESCE("Shape_Area", area, 0)), 0)
-                    FROM purandar_airport.prj_gut_bd
-                    {gut_where}
-                """, gut_params)
-                total_area_sq_m = float(cursor.fetchone()[0] or 0)
-                area_acquired = round(total_area_sq_m / 10000.0, 2)
-            else:
-                cursor.execute(f"""
-                    SELECT COALESCE(SUM(v.area), 0)
-                    FROM purandar_airport.prj_vlg_bd v
-                    CROSS JOIN purandar_airport.prj_bd p
-                    WHERE ST_Intersects(v.geom, p.geom)
-                    {where_clause}
-                """, params)
-
-                area_acquired = round(float(cursor.fetchone()[0] or 0), 2)
-
-        except Exception:
-            area_acquired = 0
-
-        # -----------------------------
-        # 4. TOTAL COMPENSATION
-        # -----------------------------
-        total_compensation = 0
-
-        try:
-            val_expr = """
-                COALESCE(SUM(
-                    CASE 
-                        WHEN valuation ~ '^[0-9]+[.]?[0-9]*$'
-                        THEN CAST(valuation AS NUMERIC)
-                        ELSE 0 
-                    END
-                ), 0)
-            """
-
-            for table in ['prj_ass_pt', 'prj_ass_pl', 'prj_ass_poly']:
-                if gut_number and not table_has_column(table, 'gut_no'):
-                    continue
-
-                table_where, table_params = build_asset_filters(table)
-                query = f"""
-                    SELECT {val_expr}
-                    FROM purandar_airport.{table}
-                    WHERE 1=1
-                    {table_where}
-                """
-
-                comp_params = list(table_params)
-
-                if gut_number and table_has_column(table, 'gut_no'):
-                    query += " AND gut_no = %s"
-                    comp_params.append(gut_number)
-
-                cursor.execute(query, comp_params)
-                total_compensation += float(cursor.fetchone()[0] or 0)
-
-        except Exception:
-            total_compensation = 0
-
-        # -----------------------------
-        # 5. LAND CLASSIFICATION
+        # LAND CLASSIFICATION (Asset Classification)
         # -----------------------------
         land_classification = {
             "trees_total": 0,
@@ -2054,10 +1856,6 @@ def get_project_stats(request):
         # FINAL RESPONSE
         # -----------------------------
         return JsonResponse({
-            "affected_villages": affected_villages,
-            "affected_farmers": affected_farmers,
-            "area_acquired": area_acquired,
-            "total_compensation": total_compensation,
             "land_classification": land_classification
         })
 
@@ -3720,20 +3518,25 @@ def village_info(request):
             if i >= len(existing_sec8_rows):
                 continue
             row = existing_sec8_rows[i]
-            uploaded_sec8_files = request.FILES.getlist(f'sec8_row_files_{i}')
-            if not uploaded_sec8_files:
-                continue
-            existing_names = {
-                _norm_name(f18.file.name)
-                for f18 in row.files_18_1.all()
-                if getattr(f18, 'file', None) and f18.file.name
-            }
-            for f in uploaded_sec8_files:
-                incoming_name = _norm_name(getattr(f, 'name', ''))
-                if incoming_name and incoming_name in existing_names:
-                    duplicate_conflicts.append(f"sec8_row_{i + 1}: {os.path.basename(f.name)}")
-                elif incoming_name:
-                    existing_names.add(incoming_name)
+            for sec8_field_key, upload_key in (
+                ('main', f'sec8_row_files_{i}'),
+                ('paper1', f'sec8_row_paper1_files_{i}'),
+                ('paper2', f'sec8_row_paper2_files_{i}'),
+            ):
+                uploaded_sec8_files = request.FILES.getlist(upload_key)
+                if not uploaded_sec8_files:
+                    continue
+                existing_names = {
+                    _norm_name(f18.file.name)
+                    for f18 in row.files_18_1.filter(field_key=sec8_field_key)
+                    if getattr(f18, 'file', None) and f18.file.name
+                }
+                for f in uploaded_sec8_files:
+                    incoming_name = _norm_name(getattr(f, 'name', ''))
+                    if incoming_name and incoming_name in existing_names:
+                        duplicate_conflicts.append(f"sec8_row_{i + 1}_{sec8_field_key}: {os.path.basename(f.name)}")
+                    elif incoming_name:
+                        existing_names.add(incoming_name)
 
         if duplicate_conflicts:
             return JsonResponse({
@@ -3792,20 +3595,25 @@ def village_info(request):
             if i >= len(existing_sec8_rows):
                 continue
             row = existing_sec8_rows[i]
-            uploaded_sec8_files = request.FILES.getlist(f'sec8_row_files_{i}')
-            if not uploaded_sec8_files:
-                continue
-            existing_names = {
-                _norm_name(f18.file.name)
-                for f18 in row.files_18_1.all()
-                if getattr(f18, 'file', None) and f18.file.name
-            }
-            for f in uploaded_sec8_files:
-                incoming_name = _norm_name(getattr(f, 'name', ''))
-                if incoming_name and incoming_name in existing_names:
-                    duplicate_conflicts.append(f"sec8_row_{i + 1}: {os.path.basename(f.name)}")
-                elif incoming_name:
-                    existing_names.add(incoming_name)
+            for sec8_field_key, upload_key in (
+                ('main', f'sec8_row_files_{i}'),
+                ('paper1', f'sec8_row_paper1_files_{i}'),
+                ('paper2', f'sec8_row_paper2_files_{i}'),
+            ):
+                uploaded_sec8_files = request.FILES.getlist(upload_key)
+                if not uploaded_sec8_files:
+                    continue
+                existing_names = {
+                    _norm_name(f18.file.name)
+                    for f18 in row.files_18_1.filter(field_key=sec8_field_key)
+                    if getattr(f18, 'file', None) and f18.file.name
+                }
+                for f in uploaded_sec8_files:
+                    incoming_name = _norm_name(getattr(f, 'name', ''))
+                    if incoming_name and incoming_name in existing_names:
+                        duplicate_conflicts.append(f"sec8_row_{i + 1}_{sec8_field_key}: {os.path.basename(f.name)}")
+                    elif incoming_name:
+                        existing_names.add(incoming_name)
 
         if duplicate_conflicts:
             return JsonResponse({
@@ -3856,7 +3664,7 @@ def village_info(request):
                 row.paper2_date = parse_date(paper2_date_raw) if paper2_date_raw else None
                 row.save()
             else:
-                row = VillageData15_2Row.objects.create(
+                row = VillageData32_2Row.objects.create(
                     village_data=village_data,
                     adhisuchana_kramank=adhisuchana_kramank,
                     adhisuchana_date=parse_date(adhisuchana_date_raw) if adhisuchana_date_raw else None,
@@ -3867,11 +3675,11 @@ def village_info(request):
                 )
 
             for f in request.FILES.getlist(f'sec4_row_files_{i}'):
-                VillageData15_2RowFile.objects.create(row_15_2=row, field_key='main', file=f)
+                VillageData32_2RowFile.objects.create(row_15_2=row, field_key='main', file=f)
             for f in request.FILES.getlist(f'sec4_row_paper1_files_{i}'):
-                VillageData15_2RowFile.objects.create(row_15_2=row, field_key='paper1', file=f)
+                VillageData32_2RowFile.objects.create(row_15_2=row, field_key='paper1', file=f)
             for f in request.FILES.getlist(f'sec4_row_paper2_files_{i}'):
-                VillageData15_2RowFile.objects.create(row_15_2=row, field_key='paper2', file=f)
+                VillageData32_2RowFile.objects.create(row_15_2=row, field_key='paper2', file=f)
 
         # sec8 18/1 rows - rebuild rows; keep existing files and append new unique-name uploads
         for old_row in existing_sec8_rows[sec8_row_count:]:
@@ -3880,21 +3688,37 @@ def village_info(request):
         for i in range(sec8_row_count):
             adhisuchana_kramank = (request.POST.get(f'sec8_row_adhisuchana_{i}') or '').strip()
             adhisuchana_date_raw = request.POST.get(f'sec8_row_date_{i}')
+            paper1_name = (request.POST.get(f'sec8_row_paper1_name_{i}') or '').strip()
+            paper1_date_raw = request.POST.get(f'sec8_row_paper1_date_{i}')
+            paper2_name = (request.POST.get(f'sec8_row_paper2_name_{i}') or '').strip()
+            paper2_date_raw = request.POST.get(f'sec8_row_paper2_date_{i}')
 
             if i < len(existing_sec8_rows):
                 row = existing_sec8_rows[i]
                 row.adhisuchana_kramank = adhisuchana_kramank
                 row.adhisuchana_date = parse_date(adhisuchana_date_raw) if adhisuchana_date_raw else None
+                row.paper1_name = paper1_name
+                row.paper1_date = parse_date(paper1_date_raw) if paper1_date_raw else None
+                row.paper2_name = paper2_name
+                row.paper2_date = parse_date(paper2_date_raw) if paper2_date_raw else None
                 row.save()
             else:
-                row = VillageData18_1Row.objects.create(
+                row = VillageData32_1Row.objects.create(
                     village_data=village_data,
                     adhisuchana_kramank=adhisuchana_kramank,
                     adhisuchana_date=parse_date(adhisuchana_date_raw) if adhisuchana_date_raw else None,
+                    paper1_name=paper1_name,
+                    paper1_date=parse_date(paper1_date_raw) if paper1_date_raw else None,
+                    paper2_name=paper2_name,
+                    paper2_date=parse_date(paper2_date_raw) if paper2_date_raw else None,
                 )
 
             for f in request.FILES.getlist(f'sec8_row_files_{i}'):
-                VillageData18_1RowFile.objects.create(row_18_1=row, file=f)
+                VillageData32_1RowFile.objects.create(row_18_1=row, field_key='main', file=f)
+            for f in request.FILES.getlist(f'sec8_row_paper1_files_{i}'):
+                VillageData32_1RowFile.objects.create(row_18_1=row, field_key='paper1', file=f)
+            for f in request.FILES.getlist(f'sec8_row_paper2_files_{i}'):
+                VillageData32_1RowFile.objects.create(row_18_1=row, field_key='paper2', file=f)
 
         # sec26 8A records - rebuild rows; keep existing files and append new unique-name uploads
         # Delete rows that were removed (count shrank)
@@ -3974,7 +3798,7 @@ def delete_village_8a_file(request, file_id):
 @login_required
 @require_http_methods(["POST"])
 def delete_village_sec4_row_file(request, file_id):
-    vf = get_object_or_404(VillageData15_2RowFile, id=file_id)
+    vf = get_object_or_404(VillageData32_2RowFile, id=file_id)
     vf.file.delete(save=False)
     vf.delete()
     return JsonResponse({'success': True})
@@ -3983,7 +3807,7 @@ def delete_village_sec4_row_file(request, file_id):
 @login_required
 @require_http_methods(["POST"])
 def delete_village_sec8_row_file(request, file_id):
-    vf = get_object_or_404(VillageData18_1RowFile, id=file_id)
+    vf = get_object_or_404(VillageData32_1RowFile, id=file_id)
     vf.file.delete(save=False)
     vf.delete()
     return JsonResponse({'success': True})
@@ -4147,11 +3971,21 @@ def get_village_info_data(request):
 
     sec8_rows = []
     for row in village_data.sec8_rows.prefetch_related('files_18_1').order_by('id'):
+        files_by_key = {'main': [], 'paper1': [], 'paper2': []}
+        for f in row.files_18_1.all():
+            key = (getattr(f, 'field_key', '') or 'main').strip() or 'main'
+            if key not in files_by_key:
+                key = 'main'
+            files_by_key[key].append({'id': f.id, 'url': f.file.url, 'name': f.file.name.split('/')[-1]})
         sec8_rows.append({
             'id': row.id,
             'adhisuchana_kramank': row.adhisuchana_kramank,
             'adhisuchana_date': row.adhisuchana_date.isoformat() if row.adhisuchana_date else '',
-            'files': [{'id': f.id, 'url': f.file.url, 'name': f.file.name.split('/')[-1]} for f in row.files_18_1.all()],
+            'paper1_name': row.paper1_name,
+            'paper1_date': row.paper1_date.isoformat() if row.paper1_date else '',
+            'paper2_name': row.paper2_name,
+            'paper2_date': row.paper2_date.isoformat() if row.paper2_date else '',
+            'files': files_by_key,
         })
 
     sec15 = []
@@ -4224,4 +4058,6 @@ def get_village_sec15_rates(request):
         'rates': rates_payload,
         'message': '' if rates_payload else 'No ready reckoner rates found for selected village'
     })
+
+
 

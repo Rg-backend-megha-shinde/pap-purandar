@@ -426,7 +426,7 @@ class Migration(migrations.Migration):
             },
         ),
         migrations.CreateModel(
-            name='VillageData15_2Row',
+            name='VillageData32_2Row',
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('adhisuchana_kramank', models.TextField(blank=True)),
@@ -443,13 +443,13 @@ class Migration(migrations.Migration):
             },
         ),
         migrations.CreateModel(
-            name='VillageData15_2RowFile',
+            name='VillageData32_2RowFile',
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('field_key', models.CharField(default='main', max_length=40)),
                 ('file', models.FileField(max_length=1000, upload_to=app.models.village_15_2_row_file_upload_to)),
                 ('uploaded_at', models.DateTimeField(auto_now_add=True)),
-                ('row_15_2', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='files_15_2', to='app.villagedata15_2row')),
+                ('row_15_2', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='files_15_2', to='app.VillageData32_2Row')),
             ],
             options={
                 'verbose_name': 'VillageData15(2) Row File',
@@ -457,7 +457,7 @@ class Migration(migrations.Migration):
             },
         ),
         migrations.CreateModel(
-            name='VillageData18_1Row',
+            name='VillageData32_1Row',
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('adhisuchana_kramank', models.TextField(blank=True)),
@@ -470,12 +470,12 @@ class Migration(migrations.Migration):
             },
         ),
         migrations.CreateModel(
-            name='VillageData18_1RowFile',
+            name='VillageData32_1RowFile',
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('file', models.FileField(max_length=1000, upload_to=app.models.village_18_1_row_file_upload_to)),
                 ('uploaded_at', models.DateTimeField(auto_now_add=True)),
-                ('row_18_1', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='files_18_1', to='app.villagedata18_1row')),
+                ('row_18_1', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='files_18_1', to='app.VillageData32_1Row')),
             ],
             options={
                 'verbose_name': 'VillageData18(1) Row File',

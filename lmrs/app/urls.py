@@ -15,6 +15,7 @@ urlpatterns = [
     path('tools/ready-reckoner/download-all/', views.download_all_ready_reckoner_csv, name='download_all_ready_reckoner_csv'),
     path('tools/ready-reckoner/edit/<int:id>/', views.edit_ready_reckoner, name='edit_ready_reckoner'),
     path('tools/ready-reckoner/delete/<int:id>/', views.delete_ready_reckoner, name='delete_ready_reckoner'),
+    path('tools/ready-reckoner/delete-selected/', views.delete_selected_ready_reckoner, name='delete_selected_ready_reckoner'),
     path('tools/delete-document-attachment/<int:attachment_id>/', views.delete_document_attachment, name='delete_document_attachment'),
     path('tools/712/', views.land_record_712),
     path('tools/712/list/', views.land_record_712_list, name='land_record_712_list'),
@@ -26,7 +27,6 @@ urlpatterns = [
     path('api/assessment-types/<str:village>/', views.get_assessment_types_by_village),
     path('api/years/<str:village>/<str:assessment_type>/', views.get_years_by_village_assessment),
     path('api/rates/<str:village>/<str:assessment_type>/', views.get_rates_by_village_assessment),
-    path('api/all-villages-farmers/', views.get_all_villages_farmers, name='all_villages_farmers'),
     path('api/project-stats/', views.get_project_stats, name='project_stats'),
     path('api/layer-bounds/<str:layer_name>/', views.get_layer_bounds, name='layer_bounds'),
     path('api/location-data/', views.get_location_data), ## All location API Fetch Marathi from public to project
