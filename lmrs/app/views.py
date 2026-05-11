@@ -2342,54 +2342,10 @@ def get_locations(request):
 
 
 def get_location_data(request):
-    try:
-        with connection.cursor() as cursor:
-            district_table = "purandar_airport.prj_district"
-            taluka_table = "purandar_airport.prj_taluka"
-            village_table = "purandar_airport.prj_village"
-            gut_table = "purandar_airport.prj_gut_bd"
-
-            gut_join = f"JOIN {gut_table} e ON d.village_id = e.village_id" if gut_table else ""
-            cursor.execute(f"""
-                SELECT DISTINCT
-                    a.name AS district,
-                    c.taluka AS taluka,
-                    d.village AS village_name
-                FROM {district_table} a
-                JOIN {taluka_table} c 
-                    ON a.district_id = c.district_id
-                JOIN {village_table} d 
-                    ON c.taluka_id = d.taluka_id
-                {gut_join}
-                WHERE 
-                    a.name IS NOT NULL
-                    AND c.taluka IS NOT NULL
-                    AND d.village IS NOT NULL
-                ORDER BY 
-                    a.name, c.taluka, d.village;
-            """)
-
-            rows = cursor.fetchall()
-            data = [
-                {
-                    "district": row[0],
-                    "taluka": row[1],
-                    "village_name": row[2],
-                }
-                for row in rows
-            ]
-
-        return JsonResponse({
-            "status": "success",
-            "count": len(data),
-            "villages": data
-        })
-
-    except Exception as e:
-        return JsonResponse({
-            "status": "error",
-            "message": str(e)
-        }, status=500)
+    """
+    Backward-compatible alias for the unified hierarchical location API.
+    """
+    return get_locations(request)
 
 
 

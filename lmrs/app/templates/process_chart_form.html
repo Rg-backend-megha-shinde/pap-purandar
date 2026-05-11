@@ -333,7 +333,6 @@
                                         <select class="pc-input" id="pcGutNumber" name="gut_number">
                                             <option value="">गट / सर्वे क्रमांक निवडा</option>
                                         </select>
-                                        <p class="mt-2 text-sm text-[#6b7d99]" id="pcGutNumberHelp">गाव निवडल्यानंतर गट / सर्वे क्रमांक दिसतील.</p>
                                     </div>
                                 </div>
                             </div>
@@ -1625,6 +1624,15 @@
 
         function addSelectOptions(selectEl, items = []) {
             items.forEach((item) => {
+                if (typeof item === 'string' || typeof item === 'number') {
+                    const raw = String(item).trim();
+                    if (!raw) return;
+                    const option = document.createElement('option');
+                    option.value = raw;
+                    option.textContent = raw;
+                    selectEl.appendChild(option);
+                    return;
+                }
                 const value = item.value || item.label || item.name || '';
                 const label = item.label || item.value || item.name || '';
                 if (!value) return;
@@ -1667,7 +1675,7 @@
             villageSelect.innerHTML = '<option value="">गाव निवडा</option>';
             gutSelect.innerHTML = '<option value="">गट / सर्वे क्रमांक निवडा</option>';
             try {
-                const res = await fetch('/api/locations/?lang=mr');
+                const res = await fetch('/api/location-data/?lang=mr');
                 const data = await res.json();
                 addSelectOptions(districtSelect, data.data || []);
             } catch (error) {
@@ -1681,7 +1689,7 @@
             gutSelect.innerHTML = '<option value="">गट / सर्वे क्रमांक निवडा</option>';
             if (!district) return;
             try {
-                const res = await fetch(`/api/locations/?district=${encodeURIComponent(district)}&lang=mr`);
+                const res = await fetch(`/api/location-data/?district=${encodeURIComponent(district)}&lang=mr`);
                 const data = await res.json();
                 addSelectOptions(talukaSelect, data.data || []);
             } catch (error) {
@@ -1694,7 +1702,7 @@
             gutSelect.innerHTML = '<option value="">गट / सर्वे क्रमांक निवडा</option>';
             if (!district || !taluka) return;
             try {
-                const res = await fetch(`/api/locations/?district=${encodeURIComponent(district)}&taluka=${encodeURIComponent(taluka)}&lang=mr`);
+                const res = await fetch(`/api/location-data/?district=${encodeURIComponent(district)}&taluka=${encodeURIComponent(taluka)}&lang=mr`);
                 const data = await res.json();
                 addSelectOptions(villageSelect, data.data || []);
             } catch (error) {
@@ -1703,30 +1711,20 @@
         }
 
         async function loadProcessChartGuts(district, taluka, village) {
-            gutSelect.innerHTML = '<option value="">गट / सर्वे क्रमांक निवडा</option>';
+            gutSelect.innerHTML = '<option value="">\u0917\u091f / \u0938\u0930\u094d\u0935\u0947 \u0915\u094d\u0930\u092e\u093e\u0902\u0915 \u0928\u093f\u0935\u0921\u093e</option>';
             if (gutHelp) {
-                gutHelp.textContent = 'गाव निवडल्यानंतर गट / सर्वे क्रमांक दिसतील.';
+                gutHelp.textContent = '\u0917\u093e\u0935 \u0928\u093f\u0935\u0921\u0932\u094d\u092f\u093e\u0928\u0902\u0924\u0930 \u0917\u091f / \u0938\u0930\u094d\u0935\u0947 \u0915\u094d\u0930\u092e\u093e\u0902\u0915 \u0926\u093f\u0938\u0924\u0940\u0932.';
             }
             if (!district || !taluka || !village) return;
             try {
-                const res = await fetch(`/api/land-record-gut-numbers/?district=${encodeURIComponent(district)}&taluka=${encodeURIComponent(taluka)}&village=${encodeURIComponent(village)}`);
+                const res = await fetch(`/api/location-data/?district=${encodeURIComponent(district)}&taluka=${encodeURIComponent(taluka)}&village=${encodeURIComponent(village)}&lang=mr`);
                 const data = await res.json();
-                const gutItems = data.gut_numbers || [];
-                gutItems.forEach((item) => {
-                    const option = document.createElement('option');
-                    option.value = item;
-                    option.textContent = item;
-                    gutSelect.appendChild(option);
-                });
-                if (gutHelp) {
-                    gutHelp.textContent = gutItems.length
-                        ? `7/12 मधून ${gutItems.length} गट / सर्वे क्रमांक उपलब्ध आहेत.`
-                        : 'या गावासाठी 7/12 गट / सर्वे क्रमांक उपलब्ध नाहीत.';
-                }
+                const gutItems = data.data || [];
+                addSelectOptions(gutSelect, gutItems);
             } catch (error) {
                 console.error(error);
                 if (gutHelp) {
-                    gutHelp.textContent = 'गट / सर्वे क्रमांक लोड करता आले नाहीत.';
+                    gutHelp.textContent = '\u0917\u091f / \u0938\u0930\u094d\u0935\u0947 \u0915\u094d\u0930\u092e\u093e\u0902\u0915 \u0932\u094b\u0921 \u0915\u0930\u0924\u093e \u0906\u0932\u0947 \u0928\u093e\u0939\u0940\u0924.';
                 }
             }
         }
@@ -2354,3 +2352,6 @@
     })();
 </script>
 {% endblock %}
+
+
+
