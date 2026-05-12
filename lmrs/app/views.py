@@ -3385,6 +3385,10 @@ _VILLAGE_FILE_KEYS = [
 ]
 
 _VILLAGE_SCALAR_FIELDS = [
+    'land_acquisition_purpose',
+    'collector_name',
+    'collector_office_name',
+    'collector_office_address',
     'sec1_adesh_kramank', 'sec1_date',
     'sec2_adhisuchana_kramank', 'sec2_date',
     'sec2_paper1_name', 'sec2_paper1_date',

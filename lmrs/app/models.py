@@ -822,6 +822,10 @@ class VillageData(models.Model):
     district = models.TextField()
     taluka = models.TextField()
     village = models.TextField()
+    land_acquisition_purpose = models.TextField(blank=True)
+    collector_name = models.TextField(blank=True)
+    collector_office_name = models.TextField(blank=True)
+    collector_office_address = models.TextField(blank=True)
 
     # --- १. प्रशासकीय मान्यता ---
     sec1_adesh_kramank = models.TextField(blank=True)
