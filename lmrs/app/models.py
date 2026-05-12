@@ -831,6 +831,7 @@ class VillageData(models.Model):
     sec1_adesh_kramank = models.TextField(blank=True)
     sec1_date = models.DateField(null=True, blank=True)
     sec1_files = models.TextField(blank=True)
+    sec1_admin_approvals = models.JSONField(default=list, blank=True)
 
     # --- २. कलम 3 अधिसूचना ---
     sec2_adhisuchana_kramank = models.TextField(blank=True)

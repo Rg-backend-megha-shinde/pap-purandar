@@ -4127,9 +4127,52 @@ def village_info(request):
                 setattr(village_data, field, parse_date(raw_val) if raw_val else None)
             else:
                 setattr(village_data, field, (raw_val.strip() if raw_val else ''))
+
+        try:
+            sec1_admin_count = int(request.POST.get('sec1_admin_count') or 0)
+        except (TypeError, ValueError):
+            sec1_admin_count = 0
+
+        sec1_admin_rows = []
+        for i in range(sec1_admin_count):
+            sec1_admin_rows.append({
+                'adhisuchana_kramank': (request.POST.get(f'sec1_admin_adhisuchana_{i}') or '').strip(),
+                'date': (request.POST.get(f'sec1_admin_date_{i}') or '').strip(),
+                'files': [],
+            })
+        village_data.sec1_admin_approvals = sec1_admin_rows
+
         if final_submit:
             village_data.is_final_submitted = True
         village_data.save()
+
+        # Step 1 repeatable administrative approvals in JSON + file attachments in VillageDataFile.
+        existing_admin_files = VillageDataFile.objects.filter(
+            village_data=village_data,
+            field_key__startswith='sec1_admin_row_'
+        )
+        for old in existing_admin_files:
+            key = old.field_key or ''
+            m = re.match(r'^sec1_admin_row_(\d+)$', key)
+            if not m:
+                continue
+            old_index = int(m.group(1))
+            if old_index >= sec1_admin_count:
+                if old.file:
+                    old.file.delete(save=False)
+                old.delete()
+
+        for i in range(sec1_admin_count):
+            row_key = f'sec1_admin_row_{i}'
+            for f in request.FILES.getlist(f'sec1_admin_files_{i}'):
+                VillageDataFile.objects.create(village_data=village_data, field_key=row_key, file=f)
+
+            row_files = VillageDataFile.objects.filter(village_data=village_data, field_key=row_key)
+            village_data.sec1_admin_approvals[i]['files'] = [
+                {'id': rf.id, 'url': rf.file.url, 'name': rf.file.name.split('/')[-1]}
+                for rf in row_files
+            ]
+        village_data.save(update_fields=['sec1_admin_approvals', 'updated_at'])
 
         # Save uploaded files per field_key (append mode; duplicates already blocked above).
         for field_key in _VILLAGE_FILE_KEYS:
@@ -4427,6 +4470,7 @@ def get_village_info_data(request):
     for f in _VILLAGE_SCALAR_FIELDS:
         val = getattr(village_data, f)
         data[f] = val.isoformat() if hasattr(val, 'isoformat') and val else (val or '')
+    data['sec1_admin_approvals'] = village_data.sec1_admin_approvals or []
 
     # files per field_key
     files_map = {}
