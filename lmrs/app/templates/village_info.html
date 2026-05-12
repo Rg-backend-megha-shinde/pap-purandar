@@ -251,19 +251,19 @@
                 <div class="tool-tabs-shell mb-6">
                     <nav class="tool-tabs" aria-label="Tool views">
                         <a href="{% url 'land_record_712_list' %}" class="tool-tab-link">
-                            à¥­/à¥§à¥¨ à¤¨à¥‹à¤‚à¤¦
+                            ७/१२ नोंद
                         </a>
                         <a href="{% url 'ready_reckoner_list' %}" class="tool-tab-link">
-                            à¤°à¥‡à¤¡à¥€ à¤°à¥‡à¤•à¤¨à¤° à¤¦à¤°
+                            रेडी रेकनर दर
                         </a>
                         <a href="{% url 'village_info' %}" class="tool-tab-link {% if active_tab == 'village-info' %}is-active{% endif %}">
-                            à¤—à¤¾à¤µà¤¾à¤šà¥€ à¤®à¤¾à¤¹à¤¿à¤¤à¥€ 
+                            गावाची माहिती 
                         </a>
                         <a href="{% url 'add_entry' %}" class="tool-tab-link {% if active_tab == 'rate-calculator' %}is-active{% endif %}">
-                            à¤¨à¥à¤•à¤¸à¤¾à¤¨ à¤­à¤°à¤ªà¤¾à¤ˆ à¤¨à¥‹à¤‚à¤¦
+                            नुकसान भरपाई नोंद
                         </a>
                         <a href="{% url 'process_chart_form' %}" class="tool-tab-link {% if active_tab == 'process-chart' %}is-active{% endif %}">
-                            à¤­à¥‚à¤¸à¤‚à¤ªà¤¾à¤¦à¤¨ à¤ªà¥à¤°à¤•à¥à¤°à¤¿à¤¯à¤¾
+                            भूसंपादन प्रक्रिया
                         </a>
                     </nav>
                 </div>
@@ -353,56 +353,56 @@
                             data-tab="1">
                             <span
                                 class="flex h-12 w-12 items-center justify-center rounded-full border-2 border-[#cad8ea] bg-white text-lg font-bold text-[#8a99ad]">1</span>
-                            <span class="text-sm font-semibold text-[#8897ab]">à¤®à¥‚à¤²à¤­à¥‚à¤¤ à¤®à¤¾à¤¹à¤¿à¤¤à¥€</span>
+                            <span class="text-sm font-semibold text-[#8897ab]">मूलभूत माहिती</span>
                         </button>
                         <button type="button"
                             class="tab-trigger relative z-10 flex flex-col items-center gap-2 rounded-2xl px-2 py-2 text-center transition"
                             data-tab="2">
                             <span
                                 class="flex h-12 w-12 items-center justify-center rounded-full border-2 border-[#cad8ea] bg-white text-lg font-bold text-[#8a99ad]">2</span>
-                            <span class="text-sm font-semibold text-[#8897ab]">à¤…à¤§à¤¿à¤¸à¥‚à¤šà¤¨à¤¾</span>
+                            <span class="text-sm font-semibold text-[#8897ab]">अधिसूचना</span>
                         </button>
                         <button type="button"
                             class="tab-trigger relative z-10 flex flex-col items-center gap-2 rounded-2xl px-2 py-2 text-center transition"
                             data-tab="3">
                             <span
                                 class="flex h-12 w-12 items-center justify-center rounded-full border-2 border-[#cad8ea] bg-white text-lg font-bold text-[#8a99ad]">3</span>
-                            <span class="text-sm font-semibold text-[#8897ab]">à¤¸à¥à¤¨à¤¾à¤µà¤£à¥€</span>
+                            <span class="text-sm font-semibold text-[#8897ab]">सुनावणी</span>
                         </button>
                         <button type="button"
                             class="tab-trigger relative z-10 flex flex-col items-center gap-2 rounded-2xl px-2 py-2 text-center transition"
                             data-tab="4">
                             <span
                                 class="flex h-12 w-12 items-center justify-center rounded-full border-2 border-[#cad8ea] bg-white text-lg font-bold text-[#8a99ad]">4</span>
-                            <span class="text-sm font-semibold text-[#8897ab]">à¤®à¥‚à¤²à¥à¤¯à¤¾à¤‚à¤•à¤¨</span>
+                            <span class="text-sm font-semibold text-[#8897ab]">मूल्यांकन</span>
                         </button>
                         <button type="button"
                             class="tab-trigger relative z-10 flex flex-col items-center gap-2 rounded-2xl px-2 py-2 text-center transition"
                             data-tab="5">
                             <span
                                 class="flex h-12 w-12 items-center justify-center rounded-full border-2 border-[#cad8ea] bg-white text-lg font-bold text-[#8a99ad]">5</span>
-                            <span class="text-sm font-semibold text-[#8897ab]">à¤¦à¤° à¤¨à¤¿à¤¶à¥à¤šà¤¿à¤¤à¥€</span>
+                            <span class="text-sm font-semibold text-[#8897ab]">दर निश्चिती</span>
                         </button>
                         <button type="button"
                             class="tab-trigger relative z-10 flex flex-col items-center gap-2 rounded-2xl px-2 py-2 text-center transition"
                             data-tab="6">
                             <span
                                 class="flex h-12 w-12 items-center justify-center rounded-full border-2 border-[#cad8ea] bg-white text-lg font-bold text-[#8a99ad]">6</span>
-                            <span class="text-sm font-semibold text-[#8897ab]">à¤…à¤­à¤¿à¤ªà¥à¤°à¤¾à¤¯</span>
+                            <span class="text-sm font-semibold text-[#8897ab]">अभिप्राय</span>
                         </button>
                         <button type="button"
                             class="tab-trigger relative z-10 flex flex-col items-center gap-2 rounded-2xl px-2 py-2 text-center transition"
                             data-tab="7">
                             <span
                                 class="flex h-12 w-12 items-center justify-center rounded-full border-2 border-[#cad8ea] bg-white text-lg font-bold text-[#8a99ad]">7</span>
-                            <span class="text-sm font-semibold text-[#8897ab]">à¤œà¤¿à¤²à¥à¤¹à¤¾à¤¸à¥à¤¤à¤°à¥€à¤¯ à¤¸à¤®à¤¿à¤¤à¥€</span>
+                            <span class="text-sm font-semibold text-[#8897ab]">जिल्हास्तरीय समिती</span>
                         </button>
                         <button type="button"
                             class="tab-trigger relative z-10 flex flex-col items-center gap-2 rounded-2xl px-2 py-2 text-center transition"
                             data-tab="8">
                             <span
                                 class="flex h-12 w-12 items-center justify-center rounded-full border-2 border-[#cad8ea] bg-white text-lg font-bold text-[#8a99ad]">8</span>
-                            <span class="text-sm font-semibold text-[#8897ab]">à¤¨à¤¿à¤µà¤¾à¤¡à¤¾</span>
+                            <span class="text-sm font-semibold text-[#8897ab]">निवाडा</span>
                         </button>
                     </div>
                 </div>
@@ -416,9 +416,9 @@
                                     class="mt-1 flex h-7 w-7 items-center justify-center rounded-full bg-[#125fcb] text-xs font-bold text-white">
                                     i</div>
                                 <div>
-                                    <h2 class="text-xl font-bold text-[#214a8b]">à¤Ÿà¤ªà¥à¤ªà¤¾ 1: à¤œà¤®à¤¿à¤¨à¥€à¤šà¥€ à¤®à¥‚à¤²à¤­à¥‚à¤¤ à¤®à¤¾à¤¹à¤¿à¤¤à¥€</h2>
-                                    <p class="mt-1 text-sm text-[#5c78a5]">à¤•à¥ƒà¤ªà¤¯à¤¾ à¤¸à¤°à¥à¤µ à¤®à¤¾à¤¹à¤¿à¤¤à¥€ à¤¨à¤®à¥à¤¨à¥à¤¯à¤¾à¤¦à¤¾à¤–à¤² à¤­à¤°à¤¾. à¤šà¤¿à¤¨à¥à¤¹à¤¾à¤‚à¤•à¤¿à¤¤
-                                        à¤«à¥€à¤²à¥à¤¡ à¤†à¤µà¤¶à¥à¤¯à¤• à¤†à¤¹à¥‡à¤¤.</p>
+                                    <h2 class="text-xl font-bold text-[#214a8b]">टप्पा 1: जमिनीची मूलभूत माहिती</h2>
+                                    <p class="mt-1 text-sm text-[#5c78a5]">कृपया सर्व माहिती नमुन्यादाखल भरा. चिन्हांकित
+                                        फील्ड आवश्यक आहेत.</p>
                                 </div>
                             </div>
                         </div>
@@ -426,37 +426,37 @@
                             <div class="grid gap-6 md:grid-cols-4">
                                 <div>
                                     <label
-                                        class="mb-2 flex min-h-[48px] items-end text-sm font-semibold text-[#384d6d]">à¤­à¥‚à¤¸à¤‚à¤ªà¤¦à¤¨à¤¾à¤šà¥‡ à¤ªà¥à¤°à¤¯à¥‹à¤œà¤¨</label>
+                                        class="mb-2 flex min-h-[48px] items-end text-sm font-semibold text-[#384d6d]">भूसंपदनाचे प्रयोजन</label>
                                     <select id="vi-land-acquisition-purpose" class="w-full rounded-xl border border-[#d3deeb] bg-white px-4 py-3 text-sm text-[#394d6c]">
-                                        <option value="">à¤ªà¥à¤°à¤¯à¥‹à¤œà¤¨ à¤¨à¤¿à¤µà¤¡à¤¾</option>
-                                        <option value="à¤›à¤¤à¥à¤°à¤ªà¤¤à¥€ à¤¸à¤¾à¤‚à¤­à¤¾à¤œà¥€à¤°à¤¾à¤œà¥‡ à¤†à¤‚à¤¤à¤°à¤°à¤¾à¤·à¥à¤Ÿà¥à¤°à¥€à¤¯ à¤µà¤¿à¤®à¤¾à¤¨à¤¤à¤³, à¤ªà¥à¤°à¤‚à¤¦à¤°">à¤›à¤¤à¥à¤°à¤ªà¤¤à¥€ à¤¸à¤¾à¤‚à¤­à¤¾à¤œà¥€à¤°à¤¾à¤œà¥‡ à¤†à¤‚à¤¤à¤°à¤°à¤¾à¤·à¥à¤Ÿà¥à¤°à¥€à¤¯ à¤µà¤¿à¤®à¤¾à¤¨à¤¤à¤³, à¤ªà¥à¤°à¤‚à¤¦à¤°</option>
+                                        <option value="">प्रयोजन निवडा</option>
+                                        <option value="छत्रपती सांभाजीराजे आंतरराष्ट्रीय विमानतळ, पुरंदर">छत्रपती सांभाजीराजे आंतरराष्ट्रीय विमानतळ, पुरंदर</option>
                                     </select>
                                 </div>
                                 <div>
                                     <label
-                                        class="mb-2 flex min-h-[48px] items-end text-sm font-semibold text-[#384d6d]">à¤œà¤¿à¤²à¥à¤¹à¤¾
+                                        class="mb-2 flex min-h-[48px] items-end text-sm font-semibold text-[#384d6d]">जिल्हा
                                         (District) *</label>
                                     <select id="vi-district" name="district"
                                         class="w-full rounded-xl border border-[#d3deeb] bg-white px-4 py-3 text-sm text-[#394d6c]">
-                                        <option value="">à¤²à¥‹à¤¡ à¤¹à¥‹à¤¤ à¤†à¤¹à¥‡...</option>
+                                        <option value="">लोड होत आहे...</option>
                                     </select>
                                 </div>
                                 <div>
                                     <label
-                                        class="mb-2 flex min-h-[48px] items-end text-sm font-semibold text-[#384d6d]">à¤¤à¤¾à¤²à¥à¤•à¤¾
+                                        class="mb-2 flex min-h-[48px] items-end text-sm font-semibold text-[#384d6d]">तालुका
                                         (Taluka) *</label>
                                     <select id="vi-taluka" name="taluka" disabled
                                         class="w-full rounded-xl border border-[#d3deeb] bg-white px-4 py-3 text-sm text-[#394d6c]">
-                                        <option value="">à¤†à¤§à¥€ à¤œà¤¿à¤²à¥à¤¹à¤¾ à¤¨à¤¿à¤µà¤¡à¤¾</option>
+                                        <option value="">आधी जिल्हा निवडा</option>
                                     </select>
                                 </div>
                                 <div>
                                     <label
-                                        class="mb-2 flex min-h-[48px] items-end text-sm font-semibold text-[#384d6d]">à¤—à¤¾à¤µ
+                                        class="mb-2 flex min-h-[48px] items-end text-sm font-semibold text-[#384d6d]">गाव
                                         (Village) *</label>
                                     <select id="vi-village" name="village" disabled
                                         class="w-full rounded-xl border border-[#d3deeb] bg-white px-4 py-3 text-sm text-[#394d6c]">
-                                        <option value="">à¤†à¤§à¥€ à¤¤à¤¾à¤²à¥à¤•à¤¾ à¤¨à¤¿à¤µà¤¡à¤¾</option>
+                                        <option value="">आधी तालुका निवडा</option>
                                     </select>
                                 </div>
                             </div>
@@ -464,31 +464,31 @@
                             <div class="rounded-2xl border border-[#e2ebf7] bg-[#fbfdff] p-5">
                                 <div class="grid gap-4 md:grid-cols-2">
                                     <div class="md:col-span-2">
-                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">à¤­à¥‚à¤¸à¤‚à¤ªà¤¦à¤¨à¤¾à¤šà¥‡ à¤ªà¥à¤°à¤¯à¥‹à¤œà¤¨</label>
+                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">भूसंपदनाचे प्रयोजन</label>
                                         <select id="vi-land-acquisition-purpose" class="w-full rounded-xl border border-[#d3deeb] bg-white px-4 py-3 text-sm text-[#394d6c]">
-                                            <option value="">à¤ªà¥à¤°à¤¯à¥‹à¤œà¤¨ à¤¨à¤¿à¤µà¤¡à¤¾</option>
-                                            <option value="à¤›à¤¤à¥à¤°à¤ªà¤¤à¥€ à¤¸à¤¾à¤‚à¤­à¤¾à¤œà¥€à¤°à¤¾à¤œà¥‡ à¤†à¤‚à¤¤à¤°à¤°à¤¾à¤·à¥à¤Ÿà¥à¤°à¥€à¤¯ à¤µà¤¿à¤®à¤¾à¤¨à¤¤à¤³, à¤ªà¥à¤°à¤‚à¤¦à¤°">à¤›à¤¤à¥à¤°à¤ªà¤¤à¥€ à¤¸à¤¾à¤‚à¤­à¤¾à¤œà¥€à¤°à¤¾à¤œà¥‡ à¤†à¤‚à¤¤à¤°à¤°à¤¾à¤·à¥à¤Ÿà¥à¤°à¥€à¤¯ à¤µà¤¿à¤®à¤¾à¤¨à¤¤à¤³, à¤ªà¥à¤°à¤‚à¤¦à¤°</option>
+                                            <option value="">प्रयोजन निवडा</option>
+                                            <option value="छत्रपती सांभाजीराजे आंतरराष्ट्रीय विमानतळ, पुरंदर">छत्रपती सांभाजीराजे आंतरराष्ट्रीय विमानतळ, पुरंदर</option>
                                         </select>
                                     </div>
                                 </div>
                             </div>
 
                             <div class="rounded-2xl border border-[#e2ebf7] bg-[#fbfdff] p-5">
-                                <h3 class="mb-4 text-lg font-bold text-[#244271]">à¤œà¤¿à¤²à¥à¤¹à¤¾à¤§à¤¿à¤•à¤¾à¤°à¥€ à¤•à¤¾à¤°à¥à¤¯à¤¾à¤²à¤¯à¤¾à¤šà¥‡ à¤¨à¤¾à¤µ à¤µ à¤ªà¤¤à¥à¤¤à¤¾</h3>
+                                <h3 class="mb-4 text-lg font-bold text-[#244271]">जिल्हाधिकारी कार्यालयाचे नाव व पत्ता</h3>
                                 <div class="grid gap-4 md:grid-cols-2">
                                     <div>
-                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">à¤œà¤¿à¤²à¥à¤¹à¤¾à¤§à¤¿à¤•à¤¾à¤°à¥€ à¤¯à¤¾à¤‚à¤šà¥‡ à¤¨à¤¾à¤µ</label>
-                                        <input id="vi-collector-name" type="text" placeholder="à¤œà¤¿à¤²à¥à¤¹à¤¾à¤§à¤¿à¤•à¤¾à¤°à¥€ à¤¯à¤¾à¤‚à¤šà¥‡ à¤¨à¤¾à¤µ"
+                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">जिल्हाधिकारी यांचे नाव</label>
+                                        <input id="vi-collector-name" type="text" placeholder="जिल्हाधिकारी यांचे नाव"
                                             class="w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
                                     </div>
                                     <div>
-                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">à¤•à¤¾à¤°à¥à¤¯à¤¾à¤²à¤¯à¤¾à¤šà¥‡ à¤¨à¤¾à¤µ</label>
-                                        <input id="vi-collector-office-name" type="text" placeholder="à¤•à¤¾à¤°à¥à¤¯à¤¾à¤²à¤¯à¤¾à¤šà¥‡ à¤¨à¤¾à¤µ"
+                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">कार्यालयाचे नाव</label>
+                                        <input id="vi-collector-office-name" type="text" placeholder="कार्यालयाचे नाव"
                                             class="w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
                                     </div>
                                     <div class="md:col-span-2">
-                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">à¤ªà¤¤à¥à¤¤à¤¾</label>
-                                        <input id="vi-collector-office-address" type="text" placeholder="à¤ªà¤¤à¥à¤¤à¤¾"
+                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">पत्ता</label>
+                                        <input id="vi-collector-office-address" type="text" placeholder="पत्ता"
                                             class="w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
                                     </div>
                                 </div>
@@ -496,61 +496,61 @@
 
                             <div class="rounded-2xl border border-[#e2ebf7] bg-[#fbfdff] p-5">
                                 <div class="mb-4 flex items-center justify-between gap-3">
-                                     <h3 class="text-lg font-bold text-[#244271]">à¥§. à¤®. à¤“. à¤µà¤¿. à¤….- à¤ªà¥à¤°à¤•à¤°à¤£ 6 (31) à¤¤à¤°à¤¤à¥à¤¦à¥€à¤¨à¥à¤¸à¤¾à¤° à¤‰à¤•à¥à¤¤ à¤…à¤§à¤¿à¤¨à¤¿à¤¯à¤®à¤¾à¤šà¥‡ à¤•à¤²à¤® 2 à¤–à¤‚à¤¡ (à¤—) à¤…à¤¨à¥à¤µà¤¯à¥‡</h3>
+                                     <h3 class="text-lg font-bold text-[#244271]">१. म. ओ. वि. अ.- प्रकरण 6 (31) तरतुदीनुसार उक्त अधिनियमाचे कलम 2 खंड (ग) अन्वये</h3>
                                 </div>
                                 <div class="grid gap-4 md:grid-cols-2">
                                     <div>
-                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">à¤†à¤¦à¥‡à¤¶/à¤…à¤§à¤¿à¤¸à¥‚à¤šà¤¨à¤¾
-                                            à¤•à¥à¤°à¤®à¤¾à¤‚à¤•</label>
-                                        <input type="text" placeholder="à¤•à¥à¤°à¤®à¤¾à¤‚à¤• à¤ªà¥à¤°à¤µà¤¿à¤·à¥à¤Ÿ à¤•à¤°à¤¾"
+                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">आदेश/अधिसूचना
+                                            क्रमांक</label>
+                                        <input type="text" placeholder="क्रमांक प्रविष्ट करा"
                                             class="w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
                                     </div>
                                     <div>
-                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">à¤¦à¤¿à¤¨à¤¾à¤‚à¤•</label>
+                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">दिनांक</label>
                                         <input type="date"
                                             class="w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
                                     </div>
                                     <div class="md:col-span-2">
-                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">à¤…à¤ªà¤²à¥‹à¤¡ à¤•à¤°à¤¾</label>
+                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">अपलोड करा</label>
                                         <input type="file" multiple
                                             class="block w-full rounded-xl border border-dashed border-[#c5d6ec] bg-white px-4 py-3 text-sm text-[#60708a] file:mr-4 file:rounded-lg file:border-0 file:bg-[#125fcb] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white">
                                     </div>
                                     <div class="md:col-span-2 space-y-3">
                                         <div class="rounded-xl border border-[#dfe8f5] bg-white p-3">
-                                            <p class="mb-2 text-sm font-semibold text-[#44597a]">à¤µà¤°à¥à¤¤à¤®à¤¾à¤¨à¤ªà¤¤à¥à¤° à¥§</p>
+                                            <p class="mb-2 text-sm font-semibold text-[#44597a]">वर्तमानपत्र १</p>
                                             <div class="grid gap-3 md:grid-cols-3 md:items-end">
                                                 <div>
-                                                    <label class="mb-2 block text-sm font-semibold text-[#44597a]">à¤¨à¤¾à¤µ</label>
-                                                    <input type="text" placeholder="à¤µà¤°à¥à¤¤à¤®à¤¾à¤¨à¤ªà¤¤à¥à¤° à¥§ à¤šà¥‡ à¤¨à¤¾à¤µ"
+                                                    <label class="mb-2 block text-sm font-semibold text-[#44597a]">नाव</label>
+                                                    <input type="text" placeholder="वर्तमानपत्र १ चे नाव"
                                                         class="w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
                                                 </div>
                                                 <div>
-                                                    <label class="mb-2 block text-sm font-semibold text-[#44597a]">à¤¦à¤¿à¤¨à¤¾à¤‚à¤•</label>
+                                                    <label class="mb-2 block text-sm font-semibold text-[#44597a]">दिनांक</label>
                                                     <input type="date"
                                                         class="w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
                                                 </div>
                                                 <div>
-                                                    <label class="mb-2 block text-sm font-semibold text-[#44597a]">à¤…à¤ªà¤²à¥‹à¤¡</label>
+                                                    <label class="mb-2 block text-sm font-semibold text-[#44597a]">अपलोड</label>
                                                     <input type="file" multiple
                                                         class="block w-full rounded-xl border border-dashed border-[#c5d6ec] bg-white px-4 py-3 text-sm text-[#60708a] file:mr-4 file:rounded-lg file:border-0 file:bg-[#125fcb] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white">
                                                 </div>
                                             </div>
                                         </div>
                                         <div class="rounded-xl border border-[#dfe8f5] bg-white p-3">
-                                            <p class="mb-2 text-sm font-semibold text-[#44597a]">à¤µà¤°à¥à¤¤à¤®à¤¾à¤¨à¤ªà¤¤à¥à¤° à¥¨</p>
+                                            <p class="mb-2 text-sm font-semibold text-[#44597a]">वर्तमानपत्र २</p>
                                             <div class="grid gap-3 md:grid-cols-3 md:items-end">
                                                 <div>
-                                                    <label class="mb-2 block text-sm font-semibold text-[#44597a]">à¤¨à¤¾à¤µ</label>
-                                                    <input type="text" placeholder="à¤µà¤°à¥à¤¤à¤®à¤¾à¤¨à¤ªà¤¤à¥à¤° à¥¨ à¤šà¥‡ à¤¨à¤¾à¤µ"
+                                                    <label class="mb-2 block text-sm font-semibold text-[#44597a]">नाव</label>
+                                                    <input type="text" placeholder="वर्तमानपत्र २ चे नाव"
                                                         class="w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
                                                 </div>
                                                 <div>
-                                                    <label class="mb-2 block text-sm font-semibold text-[#44597a]">à¤¦à¤¿à¤¨à¤¾à¤‚à¤•</label>
+                                                    <label class="mb-2 block text-sm font-semibold text-[#44597a]">दिनांक</label>
                                                     <input type="date"
                                                         class="w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
                                                 </div>
                                                 <div>
-                                                    <label class="mb-2 block text-sm font-semibold text-[#44597a]">à¤…à¤ªà¤²à¥‹à¤¡</label>
+                                                    <label class="mb-2 block text-sm font-semibold text-[#44597a]">अपलोड</label>
                                                     <input type="file" multiple
                                                         class="block w-full rounded-xl border border-dashed border-[#c5d6ec] bg-white px-4 py-3 text-sm text-[#60708a] file:mr-4 file:rounded-lg file:border-0 file:bg-[#125fcb] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white">
                                                 </div>
@@ -562,41 +562,41 @@
 
                             <!-- <div class="rounded-2xl border border-[#e2ebf7] bg-[#fbfdff] p-5">
                                 <div class="mb-4 flex items-center justify-between gap-3">
-                                    <h3 class="text-lg font-bold text-[#244271]">à¥¨. à¤•à¤²à¤® 3 à¤…à¤§à¤¿à¤¸à¥‚à¤šà¤¨à¤¾</h3>
+                                    <h3 class="text-lg font-bold text-[#244271]">२. कलम 3 अधिसूचना</h3>
                                 </div>
                                 <div class="grid gap-4 md:grid-cols-3">
                                     <div>
-                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">à¤…à¤§à¤¿à¤¸à¥‚à¤šà¤¨à¤¾ à¤•à¥à¤°à¤®à¤¾à¤‚à¤•</label>
-                                        <input type="text" placeholder="à¤•à¥à¤°à¤®à¤¾à¤‚à¤• à¤ªà¥à¤°à¤µà¤¿à¤·à¥à¤Ÿ à¤•à¤°à¤¾"
+                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">अधिसूचना क्रमांक</label>
+                                        <input type="text" placeholder="क्रमांक प्रविष्ट करा"
                                             class="w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
                                     </div>
                                     <div>
-                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">à¤¦à¤¿à¤¨à¤¾à¤‚à¤•</label>
+                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">दिनांक</label>
                                         <input type="date"
                                             class="w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
                                     </div>
                                     <div>
-                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">à¤…à¤ªà¤²à¥‹à¤¡ à¤•à¤°à¤¾</label>
+                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">अपलोड करा</label>
                                         <input type="file" multiple
                                             class="block w-full rounded-xl border border-dashed border-[#c5d6ec] bg-white px-4 py-3 text-sm text-[#60708a] file:mr-4 file:rounded-lg file:border-0 file:bg-[#125fcb] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white">
                                     </div>
 
                                     <div class="md:col-span-3 space-y-3">
                                         <div class="rounded-xl border border-[#dfe8f5] bg-white p-3">
-                                            <p class="mb-2 text-sm font-semibold text-[#44597a]">à¤µà¤°à¥à¤¤à¤®à¤¾à¤¨à¤ªà¤¤à¥à¤° à¥§</p>
+                                            <p class="mb-2 text-sm font-semibold text-[#44597a]">वर्तमानपत्र १</p>
                                             <div class="grid gap-3 md:grid-cols-3 md:items-end">
                                                 <div>
-                                                    <label class="mb-2 block text-sm font-semibold text-[#44597a]">à¤¨à¤¾à¤µ</label>
-                                                    <input type="text" placeholder="à¤µà¤°à¥à¤¤à¤®à¤¾à¤¨à¤ªà¤¤à¥à¤° à¥§ à¤šà¥‡ à¤¨à¤¾à¤µ"
+                                                    <label class="mb-2 block text-sm font-semibold text-[#44597a]">नाव</label>
+                                                    <input type="text" placeholder="वर्तमानपत्र १ चे नाव"
                                                         class="w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
                                                 </div>
                                                 <div>
-                                                    <label class="mb-2 block text-sm font-semibold text-[#44597a]">à¤¦à¤¿à¤¨à¤¾à¤‚à¤•</label>
+                                                    <label class="mb-2 block text-sm font-semibold text-[#44597a]">दिनांक</label>
                                                     <input type="date"
                                                         class="w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
                                                 </div>
                                                 <div>
-                                                    <label class="mb-2 block text-sm font-semibold text-[#44597a]">à¤…à¤ªà¤²à¥‹à¤¡</label>
+                                                    <label class="mb-2 block text-sm font-semibold text-[#44597a]">अपलोड</label>
                                                     <input type="file" multiple
                                                         class="block w-full rounded-xl border border-dashed border-[#c5d6ec] bg-white px-4 py-3 text-sm text-[#60708a] file:mr-4 file:rounded-lg file:border-0 file:bg-[#125fcb] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white">
                                                 </div>
@@ -604,20 +604,20 @@
                                         </div>
 
                                         <div class="rounded-xl border border-[#dfe8f5] bg-white p-3">
-                                            <p class="mb-2 text-sm font-semibold text-[#44597a]">à¤µà¤°à¥à¤¤à¤®à¤¾à¤¨à¤ªà¤¤à¥à¤° à¥¨</p>
+                                            <p class="mb-2 text-sm font-semibold text-[#44597a]">वर्तमानपत्र २</p>
                                             <div class="grid gap-3 md:grid-cols-3 md:items-end">
                                                 <div>
-                                                    <label class="mb-2 block text-sm font-semibold text-[#44597a]">à¤¨à¤¾à¤µ</label>
-                                                    <input type="text" placeholder="à¤µà¤°à¥à¤¤à¤®à¤¾à¤¨à¤ªà¤¤à¥à¤° à¥¨ à¤šà¥‡ à¤¨à¤¾à¤µ"
+                                                    <label class="mb-2 block text-sm font-semibold text-[#44597a]">नाव</label>
+                                                    <input type="text" placeholder="वर्तमानपत्र २ चे नाव"
                                                         class="w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
                                                 </div>
                                                 <div>
-                                                    <label class="mb-2 block text-sm font-semibold text-[#44597a]">à¤¦à¤¿à¤¨à¤¾à¤‚à¤•</label>
+                                                    <label class="mb-2 block text-sm font-semibold text-[#44597a]">दिनांक</label>
                                                     <input type="date"
                                                         class="w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
                                                 </div>
                                                 <div>
-                                                    <label class="mb-2 block text-sm font-semibold text-[#44597a]">à¤…à¤ªà¤²à¥‹à¤¡</label>
+                                                    <label class="mb-2 block text-sm font-semibold text-[#44597a]">अपलोड</label>
                                                     <input type="file" multiple
                                                         class="block w-full rounded-xl border border-dashed border-[#c5d6ec] bg-white px-4 py-3 text-sm text-[#60708a] file:mr-4 file:rounded-lg file:border-0 file:bg-[#125fcb] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white">
                                                 </div>
@@ -629,28 +629,28 @@
 
                             <div class="rounded-2xl border border-[#e2ebf7] bg-[#fbfdff] p-5">
                                 <div class="mb-4 flex items-center justify-between gap-3">
-                                    <h3 class="text-lg font-bold text-[#244271]">à¥¨. à¤…à¤§à¤¿à¤¨à¤¿à¤¯à¤®à¤¾à¤šà¥‡ à¤•à¤²à¤® 32, 36 à¤µ 38 à¤…à¤¨à¥à¤µà¤¯à¥‡ à¤ªà¥à¤°à¤¾à¤§à¤¿à¤•à¥ƒà¤¤ à¤­à¥‚-à¤¸à¤‚à¤ªà¤¾à¤¦à¤¨ à¤…à¤§à¤¿à¤•à¤¾à¤°à¥€ à¤¨à¤¿à¤¯à¥à¤•à¥à¤¤à¥€
+                                    <h3 class="text-lg font-bold text-[#244271]">२. अधिनियमाचे कलम 32, 36 व 38 अन्वये प्राधिकृत भू-संपादन अधिकारी नियुक्ती
                                     </h3>
                                 </div>
                                 <div class="grid gap-4 md:grid-cols-2">
                                     <div>
-                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">à¤‰à¤ªà¤µà¤¿à¤­à¤¾à¤—à¤¾à¤šà¥‡ à¤¨à¤¾à¤µ</label>
-                                        <input type="text" placeholder="à¤‰à¤ªà¤µà¤¿à¤­à¤¾à¤—à¤¾à¤šà¥‡ à¤¨à¤¾à¤µ à¤ªà¥à¤°à¤µà¤¿à¤·à¥à¤Ÿ à¤•à¤°à¤¾"
+                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">उपविभागाचे नाव</label>
+                                        <input type="text" placeholder="उपविभागाचे नाव प्रविष्ट करा"
                                             class="w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
                                     </div>
                                     <div>
-                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">à¤…à¤§à¤¿à¤¸à¥‚à¤šà¤¨à¤¾
-                                            à¤•à¥à¤°à¤®à¤¾à¤‚à¤•</label>
-                                        <input type="text" placeholder="à¤•à¥à¤°à¤®à¤¾à¤‚à¤• à¤ªà¥à¤°à¤µà¤¿à¤·à¥à¤Ÿ à¤•à¤°à¤¾"
+                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">अधिसूचना
+                                            क्रमांक</label>
+                                        <input type="text" placeholder="क्रमांक प्रविष्ट करा"
                                             class="w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
                                     </div>
                                     <div>
-                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">à¤¦à¤¿à¤¨à¤¾à¤‚à¤•</label>
+                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">दिनांक</label>
                                         <input type="date"
                                             class="w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
                                     </div>
                                     <div class="md:col-span-2">
-                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">à¤…à¤ªà¤²à¥‹à¤¡ à¤•à¤°à¤¾</label>
+                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">अपलोड करा</label>
                                         <input type="file" multiple
                                             class="block w-full rounded-xl border border-dashed border-[#c5d6ec] bg-white px-4 py-3 text-sm text-[#60708a] file:mr-4 file:rounded-lg file:border-0 file:bg-[#125fcb] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white">
                                     </div>
@@ -660,7 +660,7 @@
                         <div
                             class="flex flex-col gap-3 border-t border-[#e6edf7] bg-[#fcfdff] px-6 py-5 md:flex-row md:items-center md:justify-between">
                             <div></div>
-                            <div class="text-sm text-[#7c8da5]">à¤Ÿà¥…à¤¬ 1 / 8</div>
+                            <div class="text-sm text-[#7c8da5]">टॅब 1 / 8</div>
                             <div class="flex items-center gap-2">
                                 <button type="button"
                                     class="rounded-xl border border-[#ccdbef] bg-white px-5 py-3 text-sm font-semibold text-[#4a6488]">Save & Next</button>
@@ -673,25 +673,25 @@
                     <div
                         class="w-full rounded-lg border border-[#cfdceb] bg-white shadow-sm">
                         <div class="border-b border-[#dbe8f8] bg-[#edf5ff] px-6 py-5">
-                            <h2 class="text-xl font-bold text-[#214a8b]">à¤Ÿà¤ªà¥à¤ªà¤¾ 2: à¤…à¤§à¤¿à¤¸à¥‚à¤šà¤¨à¤¾</h2>
-                            <p class="mt-1 text-sm text-[#5c78a5]">à¤•à¤²à¤® 32 (2), à¤­à¥‚à¤¸à¤‚à¤ªà¤¾à¤¦à¤¨ à¤ªà¥à¤°à¤¸à¥à¤¤à¤¾à¤µ à¤†à¤£à¤¿ à¤¸à¤‚à¤¯à¥à¤•à¥à¤¤ à¤®à¥‹à¤œà¤£à¥€.</p>
+                            <h2 class="text-xl font-bold text-[#214a8b]">टप्पा 2: अधिसूचना</h2>
+                            <p class="mt-1 text-sm text-[#5c78a5]">कलम 32 (2), भूसंपादन प्रस्ताव आणि संयुक्त मोजणी.</p>
                         </div>
                         <div class="space-y-6 px-6 py-7 md:px-8">
                             <div class="rounded-2xl border border-[#e2ebf7] bg-[#fbfdff] p-5">
-                                    <h3 class="mb-4 text-lg font-bold text-[#244271]">à¥©. à¤­à¥‚à¤¸à¤‚à¤ªà¤¾à¤¦à¤¨ à¤ªà¥à¤°à¤¸à¥à¤¤à¤¾à¤µ</h3>
+                                    <h3 class="mb-4 text-lg font-bold text-[#244271]">३. भूसंपादन प्रस्ताव</h3>
                                     <div class="grid gap-4 md:grid-cols-2">
                                         <div>
-                                            <label class="mb-2 block text-sm font-semibold text-[#44597a]">à¤ªà¥à¤°à¤¸à¥à¤¤à¤¾à¤µ à¤ªà¤¤à¥à¤°
-                                                à¤•à¥à¤°à¤®à¤¾à¤‚à¤•</label>
-                                            <input type="text" placeholder="à¤ªà¥à¤°à¤¸à¥à¤¤à¤¾à¤µ à¤ªà¤¤à¥à¤° à¤•à¥à¤°à¤®à¤¾à¤‚à¤•"
+                                            <label class="mb-2 block text-sm font-semibold text-[#44597a]">प्रस्ताव पत्र
+                                                क्रमांक</label>
+                                            <input type="text" placeholder="प्रस्ताव पत्र क्रमांक"
                                                 class="w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
                                         </div>
                                         <div>
-                                            <label class="mb-2 block text-sm font-semibold text-[#44597a]">à¤¦à¤¿à¤¨à¤¾à¤‚à¤•</label>
+                                            <label class="mb-2 block text-sm font-semibold text-[#44597a]">दिनांक</label>
                                             <input type="date" class="w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
                                         </div>
                                         <div class="md:col-span-2">
-                                            <label class="mb-2 block text-sm font-semibold text-[#44597a]">à¤…à¤ªà¤²à¥‹à¤¡ à¤•à¤°à¤¾</label>
+                                            <label class="mb-2 block text-sm font-semibold text-[#44597a]">अपलोड करा</label>
                                             <input type="file" multiple
                                                 class="block w-full rounded-xl border border-dashed border-[#c5d6ec] bg-white px-4 py-3 text-sm text-[#60708a] file:mr-4 file:rounded-lg file:border-0 file:bg-[#125fcb] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white">
                                         </div>
@@ -699,34 +699,34 @@
                                 </div>
                             <div class="rounded-2xl border border-[#e2ebf7] bg-[#fbfdff] p-5">
                                 <div class="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                                    <h3 class="text-lg font-bold text-[#244271]">à¥ª. à¤•à¤²à¤® 32 (2) à¤¨à¥à¤¸à¤¾à¤° à¤œà¤®à¤¿à¤¨à¥€à¤šà¥à¤¯à¤¾ à¤µà¤¾à¤ªà¤°à¤¾à¤¬à¤¾à¤¬à¤¤ à¤¹à¤¿à¤¤à¤¸à¤‚à¤¬à¤‚à¤§à¥€ à¤µà¥à¤¯à¤•à¥à¤¤à¥€à¤‚à¤šà¥‡ à¤®à¥à¤¹à¤£à¤£à¥‡ à¤à¤•à¥‚à¤¨ à¤˜à¥‡à¤£à¥à¤¯à¤¾à¤¸à¤¾à¤ à¥€ à¤œà¤¾à¤¹à¤¿à¤° à¤¨à¥‹à¤Ÿà¥€à¤¸</h3>
+                                    <h3 class="text-lg font-bold text-[#244271]">४. कलम 32 (2) नुसार जमिनीच्या वापराबाबत हितसंबंधी व्यक्तींचे म्हणणे ऐकून घेण्यासाठी जाहिर नोटीस</h3>
                                     <button type="button" id="add-sec4-row-btn"
-                                        class="inline-flex items-center justify-center rounded-lg border border-[#c6d9f2] bg-white px-4 py-2 text-sm font-semibold text-[#125fcb] hover:bg-[#eef5ff]">+ à¤“à¤³ à¤œà¥‹à¤¡à¤¾</button>
+                                        class="inline-flex items-center justify-center rounded-lg border border-[#c6d9f2] bg-white px-4 py-2 text-sm font-semibold text-[#125fcb] hover:bg-[#eef5ff]">+ ओळ जोडा</button>
                                 </div>
                                 <div id="record-sec4-rows" class="space-y-3"></div>
                             </div>
                             <div class="rounded-2xl border border-[#e2ebf7] bg-[#fbfdff] p-5">
-                                <h3 class="mb-4 text-lg font-bold text-[#244271]">à¥«. à¤¸à¤‚à¤¯à¥à¤•à¥à¤¤ à¤®à¥‹à¤œà¤£à¥€</h3>
+                                <h3 class="mb-4 text-lg font-bold text-[#244271]">५. संयुक्त मोजणी</h3>
                                 <div class="grid gap-4 md:grid-cols-2">
                                     <div>
-                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">à¤®à¥‹à¤œà¤£à¥€ à¤°à¤œà¤¿à¤¸à¥à¤Ÿà¤°
-                                            à¤¨à¤‚à¤¬à¤°</label>
-                                        <input type="text" placeholder="à¤®à¥‹à¤œà¤£à¥€ à¤°à¤œà¤¿à¤¸à¥à¤Ÿà¤° à¤¨à¤‚à¤¬à¤°"
+                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">मोजणी रजिस्टर
+                                            नंबर</label>
+                                        <input type="text" placeholder="मोजणी रजिस्टर नंबर"
                                             class="w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
                                     </div>
                                     <div>
-                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">à¤¸à¤‚à¤¯à¥à¤•à¥à¤¤ à¤®à¥‹à¤œà¤£à¥€ à¤¦à¤¿à¤¨à¤¾à¤‚à¤•</label>
+                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">संयुक्त मोजणी दिनांक</label>
                                         <input type="date" class="w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
                                     </div>
                                     <div>
-                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">à¤ªà¤°à¤¿à¤¶à¤¿à¤·à¥à¤Ÿ
+                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">परिशिष्ट
                                             16</label>
                                         <input type="file" multiple
                                             class="block w-full rounded-xl border border-dashed border-[#c5d6ec] bg-white px-4 py-3 text-sm text-[#60708a] file:mr-4 file:rounded-lg file:border-0 file:bg-[#125fcb] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white">
                                     </div>
                                     <div>
-                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">à¤¸à¤‚à¤¯à¥à¤•à¥à¤¤ à¤®à¥‹à¤œà¤£à¥€
-                                            à¤¨à¤•à¤¾à¤¶à¤¾</label>
+                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">संयुक्त मोजणी
+                                            नकाशा</label>
                                         <input type="file" multiple
                                             class="block w-full rounded-xl border border-dashed border-[#c5d6ec] bg-white px-4 py-3 text-sm text-[#60708a] file:mr-4 file:rounded-lg file:border-0 file:bg-[#125fcb] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white">
                                     </div>
@@ -737,8 +737,8 @@
                             class="flex flex-col gap-3 border-t border-[#e6edf7] bg-[#fcfdff] px-6 py-5 md:flex-row md:items-center md:justify-between">
                             <button type="button"
                                 class="nav-btn rounded-xl border border-[#ccdbef] px-5 py-3 text-sm font-semibold text-[#4a6488]"
-                                data-direction="prev">à¤®à¤¾à¤—à¥€à¤² (Previous)</button>
-                            <div class="text-sm text-[#7c8da5]">à¤Ÿà¥…à¤¬ 2 / 8</div>
+                                data-direction="prev">मागील (Previous)</button>
+                            <div class="text-sm text-[#7c8da5]">टॅब 2 / 8</div>
                             <div class="flex items-center gap-2">
                                 <button type="button"
                                     class="rounded-xl border border-[#ccdbef] bg-white px-5 py-3 text-sm font-semibold text-[#4a6488]">Save & Next</button>
@@ -751,20 +751,20 @@
                     <div
                         class="w-full rounded-lg border border-[#cfdceb] bg-white shadow-sm">
                         <div class="border-b border-[#dbe8f8] bg-[#edf5ff] px-6 py-5">
-                            <h2 class="text-xl font-bold text-[#214a8b]">à¤Ÿà¤ªà¥à¤ªà¤¾ 3: à¤¸à¥à¤¨à¤¾à¤µà¤£à¥€</h2>
-                            <p class="mt-1 text-sm text-[#5c78a5]">à¤†à¤•à¥à¤·à¥‡à¤ª, à¤…à¤‚à¤¤à¤¿à¤® à¤…à¤§à¤¿à¤¸à¥‚à¤šà¤¨à¤¾ à¤†à¤£à¤¿ à¤œà¤¾à¤¹à¥€à¤° à¤¨à¥‹à¤Ÿà¥€à¤¸.</p>
+                            <h2 class="text-xl font-bold text-[#214a8b]">टप्पा 3: सुनावणी</h2>
+                            <p class="mt-1 text-sm text-[#5c78a5]">आक्षेप, अंतिम अधिसूचना आणि जाहीर नोटीस.</p>
                         </div>
                         <div class="space-y-6 px-6 py-7 md:px-8">
                             <!-- <div class="rounded-2xl border border-[#e2ebf7] bg-[#fbfdff] p-5">
-                                <h3 class="mb-4 text-lg font-bold text-[#244271]">à¥®. à¤•à¤²à¤® 17 à¤¸à¥à¤¨à¤¾à¤µà¤£à¥€ à¤¨à¤¿à¤°à¥à¤£à¤¯</h3>
+                                <h3 class="mb-4 text-lg font-bold text-[#244271]">८. कलम 17 सुनावणी निर्णय</h3>
                                 <div class="grid gap-4 md:grid-cols-2">
                                     <div class="md:col-span-2">
-                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">à¤†à¤•à¥à¤·à¥‡à¤ª à¤µ à¤¨à¤¿à¤°à¥à¤£à¤¯ à¤¤à¤ªà¤¶à¥€à¤²</label>
-                                        <input type="text" placeholder="à¤†à¤•à¥à¤·à¥‡à¤ª à¤µ à¤¨à¤¿à¤°à¥à¤£à¤¯ à¤¤à¤ªà¤¶à¥€à¤²"
+                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">आक्षेप व निर्णय तपशील</label>
+                                        <input type="text" placeholder="आक्षेप व निर्णय तपशील"
                                             class="w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
                                     </div>
                                     <div class="md:col-span-2">
-                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">à¤…à¤ªà¤²à¥‹à¤¡ à¤•à¤°à¤¾</label>
+                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">अपलोड करा</label>
                                         <input type="file" multiple
                                             class="block w-full rounded-xl border border-dashed border-[#c5d6ec] bg-white px-4 py-3 text-sm text-[#60708a] file:mr-4 file:rounded-lg file:border-0 file:bg-[#125fcb] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white">
                                     </div>
@@ -772,30 +772,30 @@
                             </div> -->
                             <div class="rounded-2xl border border-[#e2ebf7] bg-[#fbfdff] p-5">
                                 <div class="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                                    <h3 class="text-lg font-bold text-[#244271]">à¥¬. à¤…à¤§à¤¿à¤¨à¤¿à¤¯à¤®à¤¾à¤šà¥‡ à¤•à¤²à¤® 32 (1) à¤¨à¥à¤¸à¤¾à¤° à¤¸à¤‚à¤ªà¤¾à¤¦à¤¨à¤¾à¤šà¥à¤¯à¤¾ à¤˜à¥‹à¤·à¤£à¥‡à¤¬à¤¾à¤¬à¤¤ à¤…à¤§à¤¿à¤¸à¥‚à¤šà¤¨à¤¾</h3>
+                                    <h3 class="text-lg font-bold text-[#244271]">६. अधिनियमाचे कलम 32 (1) नुसार संपादनाच्या घोषणेबाबत अधिसूचना</h3>
                                     <button type="button" id="add-sec8-row-btn"
-                                        class="inline-flex items-center justify-center rounded-lg border border-[#c6d9f2] bg-white px-4 py-2 text-sm font-semibold text-[#125fcb] hover:bg-[#eef5ff]">+ à¤“à¤³ à¤œà¥‹à¤¡à¤¾</button>
+                                        class="inline-flex items-center justify-center rounded-lg border border-[#c6d9f2] bg-white px-4 py-2 text-sm font-semibold text-[#125fcb] hover:bg-[#eef5ff]">+ ओळ जोडा</button>
                                 </div>
                                 <div id="record-sec8-rows" class="space-y-3"></div>
                             </div>
                             <!-- <div class="rounded-2xl border border-[#e2ebf7] bg-[#fbfdff] p-5">
-                                <h3 class="mb-4 text-lg font-bold text-[#244271]">à¥¯. à¤•à¤²à¤® 19-à¤¬ à¤œà¤¾à¤¹à¥€à¤° à¤¨à¥‹à¤Ÿà¥€à¤¸</h3>
+                                <h3 class="mb-4 text-lg font-bold text-[#244271]">९. कलम 19-ब जाहीर नोटीस</h3>
                                 <div class="space-y-3">
                                     <div class="rounded-xl border border-[#dfe8f5] bg-white p-3">
-                                        <p class="mb-2 text-sm font-semibold text-[#44597a]">à¤µà¤°à¥à¤¤à¤®à¤¾à¤¨à¤ªà¤¤à¥à¤° à¥§</p>
+                                        <p class="mb-2 text-sm font-semibold text-[#44597a]">वर्तमानपत्र १</p>
                                         <div class="grid gap-3 md:grid-cols-3 md:items-end">
                                             <div>
-                                                <label class="mb-2 block text-sm font-semibold text-[#44597a]">à¤¨à¤¾à¤µ</label>
-                                                <input type="text" placeholder="à¤µà¤°à¥à¤¤à¤®à¤¾à¤¨à¤ªà¤¤à¥à¤° à¥§ à¤šà¥‡ à¤¨à¤¾à¤µ"
+                                                <label class="mb-2 block text-sm font-semibold text-[#44597a]">नाव</label>
+                                                <input type="text" placeholder="वर्तमानपत्र १ चे नाव"
                                                     class="w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
                                             </div>
                                             <div>
-                                                <label class="mb-2 block text-sm font-semibold text-[#44597a]">à¤¦à¤¿à¤¨à¤¾à¤‚à¤•</label>
+                                                <label class="mb-2 block text-sm font-semibold text-[#44597a]">दिनांक</label>
                                                 <input type="date"
                                                     class="w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
                                             </div>
                                             <div>
-                                                <label class="mb-2 block text-sm font-semibold text-[#44597a]">à¤…à¤ªà¤²à¥‹à¤¡</label>
+                                                <label class="mb-2 block text-sm font-semibold text-[#44597a]">अपलोड</label>
                                                 <input type="file" multiple
                                                     class="block w-full rounded-xl border border-dashed border-[#c5d6ec] bg-white px-4 py-3 text-sm text-[#60708a] file:mr-4 file:rounded-lg file:border-0 file:bg-[#125fcb] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white">
                                             </div>
@@ -803,20 +803,20 @@
                                     </div>
 
                                     <div class="rounded-xl border border-[#dfe8f5] bg-white p-3">
-                                        <p class="mb-2 text-sm font-semibold text-[#44597a]">à¤µà¤°à¥à¤¤à¤®à¤¾à¤¨à¤ªà¤¤à¥à¤° à¥¨</p>
+                                        <p class="mb-2 text-sm font-semibold text-[#44597a]">वर्तमानपत्र २</p>
                                         <div class="grid gap-3 md:grid-cols-3 md:items-end">
                                             <div>
-                                                <label class="mb-2 block text-sm font-semibold text-[#44597a]">à¤¨à¤¾à¤µ</label>
-                                                <input type="text" placeholder="à¤µà¤°à¥à¤¤à¤®à¤¾à¤¨à¤ªà¤¤à¥à¤° à¥¨ à¤šà¥‡ à¤¨à¤¾à¤µ"
+                                                <label class="mb-2 block text-sm font-semibold text-[#44597a]">नाव</label>
+                                                <input type="text" placeholder="वर्तमानपत्र २ चे नाव"
                                                     class="w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
                                             </div>
                                             <div>
-                                                <label class="mb-2 block text-sm font-semibold text-[#44597a]">à¤¦à¤¿à¤¨à¤¾à¤‚à¤•</label>
+                                                <label class="mb-2 block text-sm font-semibold text-[#44597a]">दिनांक</label>
                                                 <input type="date"
                                                     class="w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
                                             </div>
                                             <div>
-                                                <label class="mb-2 block text-sm font-semibold text-[#44597a]">à¤…à¤ªà¤²à¥‹à¤¡</label>
+                                                <label class="mb-2 block text-sm font-semibold text-[#44597a]">अपलोड</label>
                                                 <input type="file" multiple
                                                     class="block w-full rounded-xl border border-dashed border-[#c5d6ec] bg-white px-4 py-3 text-sm text-[#60708a] file:mr-4 file:rounded-lg file:border-0 file:bg-[#125fcb] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white">
                                             </div>
@@ -829,8 +829,8 @@
                             class="flex flex-col gap-3 border-t border-[#e6edf7] bg-[#fcfdff] px-6 py-5 md:flex-row md:items-center md:justify-between">
                             <button type="button"
                                 class="nav-btn rounded-xl border border-[#ccdbef] px-5 py-3 text-sm font-semibold text-[#4a6488]"
-                                data-direction="prev">à¤®à¤¾à¤—à¥€à¤² (Previous)</button>
-                            <div class="text-sm text-[#7c8da5]">à¤Ÿà¥…à¤¬ 3 / 8</div>
+                                data-direction="prev">मागील (Previous)</button>
+                            <div class="text-sm text-[#7c8da5]">टॅब 3 / 8</div>
                             <div class="flex items-center gap-2">
                                 <button type="button"
                                     class="rounded-xl border border-[#ccdbef] bg-white px-5 py-3 text-sm font-semibold text-[#4a6488]">Save & Next</button>
@@ -843,58 +843,58 @@
                     <div
                         class="w-full rounded-lg border border-[#cfdceb] bg-white shadow-sm">
                         <div class="border-b border-[#dbe8f8] bg-[#edf5ff] px-6 py-5">
-                            <h2 class="text-xl font-bold text-[#214a8b]">à¤Ÿà¤ªà¥à¤ªà¤¾ 4: à¤®à¥‚à¤²à¥à¤¯à¤¾à¤‚à¤•à¤¨</h2>
-                            <p class="mt-1 text-sm text-[#5c78a5]">à¤œà¤®à¥€à¤¨ à¤®à¥‚à¤²à¥à¤¯à¤¾à¤‚à¤•à¤¨, à¤¨à¤—à¤° à¤°à¤šà¤¨à¤¾ à¤†à¤£à¤¿ à¤à¥‹à¤¨ à¤®à¤¾à¤¹à¤¿à¤¤à¥€.</p>
+                            <h2 class="text-xl font-bold text-[#214a8b]">टप्पा 4: मूल्यांकन</h2>
+                            <p class="mt-1 text-sm text-[#5c78a5]">जमीन मूल्यांकन, नगर रचना आणि झोन माहिती.</p>
                         </div>
                         <div class="space-y-6 px-6 py-7 md:px-8">
                             <div class="rounded-2xl border border-[#e2ebf7] bg-[#fbfdff] p-5">
-                                <h3 class="mb-4 text-lg font-bold text-[#244271]">à¥­. à¤œà¤®à¥€à¤¨ à¤®à¥‚à¤²à¥à¤¯à¤¾à¤‚à¤•à¤¨</h3>
+                                <h3 class="mb-4 text-lg font-bold text-[#244271]">७. जमीन मूल्यांकन</h3>
                                 <div class="grid gap-4 md:grid-cols-2">
                                     <div>
-                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">à¤ªà¥à¤°à¤¾à¤§à¤¿à¤•à¥ƒà¤¤ à¤…à¤§à¤¿à¤•à¤¾à¤°à¥€ à¤¯à¤¾à¤‚à¤šà¤¾ à¤ªà¥à¤°à¤¸à¥à¤¤à¤¾à¤µ à¤•à¥à¤°à¤®à¤¾à¤‚à¤•</label>
-                                        <input type="text" placeholder="à¤ªà¥à¤°à¤¾à¤§à¤¿à¤•à¥ƒà¤¤ à¤…à¤§à¤¿à¤•à¤¾à¤°à¥€ à¤¯à¤¾à¤‚à¤šà¤¾ à¤ªà¥à¤°à¤¸à¥à¤¤à¤¾à¤µ à¤•à¥à¤°à¤®à¤¾à¤‚à¤•"
+                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">प्राधिकृत अधिकारी यांचा प्रस्ताव क्रमांक</label>
+                                        <input type="text" placeholder="प्राधिकृत अधिकारी यांचा प्रस्ताव क्रमांक"
                                             class="w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
                                     </div>
                                     <div>
-                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">à¤¦à¤¿à¤¨à¤¾à¤‚à¤•</label>
+                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">दिनांक</label>
                                         <input type="date" class="w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
                                     </div>
                                     <div class="md:col-span-2">
-                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">à¤…à¤ªà¤²à¥‹à¤¡ à¤•à¤°à¤¾</label>
+                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">अपलोड करा</label>
                                         <input type="file" multiple
                                             class="block w-full rounded-xl border border-dashed border-[#c5d6ec] bg-white px-4 py-3 text-sm text-[#60708a] file:mr-4 file:rounded-lg file:border-0 file:bg-[#125fcb] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white">
                                     </div>
                                 </div>
                             </div>
                             <div class="rounded-2xl border border-[#e2ebf7] bg-[#fbfdff] p-5">
-                                <h3 class="mb-4 text-lg font-bold text-[#244271]">à¥®. à¤¨à¤—à¤° à¤°à¤šà¤¨à¤¾ à¤µà¤¿à¤­à¤¾à¤—à¤¾à¤šà¥‡ à¤…à¤­à¤¿à¤ªà¥à¤°à¤¾à¤¯</h3>
+                                <h3 class="mb-4 text-lg font-bold text-[#244271]">८. नगर रचना विभागाचे अभिप्राय</h3>
                                 <div class="grid gap-4 md:grid-cols-2">
                                     <div>
-                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">à¤¦à¤¿à¤¨à¤¾à¤‚à¤•</label>
+                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">दिनांक</label>
                                         <input type="date"
                                             class="w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
                                     </div>
                                     <div>
-                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">à¤…à¤ªà¤²à¥‹à¤¡ à¤•à¤°à¤¾</label>
+                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">अपलोड करा</label>
                                         <input type="file" multiple
                                             class="block w-full rounded-xl border border-dashed border-[#c5d6ec] bg-white px-4 py-3 text-sm text-[#60708a] file:mr-4 file:rounded-lg file:border-0 file:bg-[#125fcb] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white">
                                     </div>
                                 </div>
                             </div>
                             <div class="rounded-2xl border border-[#e2ebf7] bg-[#fbfdff] p-5">
-                                <h3 class="mb-4 text-lg font-bold text-[#244271]">à¥¯. à¤à¥‹à¤¨ à¤¦à¤¾à¤–à¤²à¤¾ à¤®à¤¾à¤¹à¤¿à¤¤à¥€</h3>
+                                <h3 class="mb-4 text-lg font-bold text-[#244271]">९. झोन दाखला माहिती</h3>
                                 <div class="grid gap-4 md:grid-cols-2">
                                     <div class="md:col-span-2">
-                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">à¤à¥‹à¤¨ à¤¦à¤¾à¤–à¤²à¤¾ à¤¤à¤ªà¤¶à¥€à¤²</label>
-                                        <input type="text" placeholder="à¤à¥‹à¤¨ à¤¤à¤ªà¤¶à¥€à¤² à¤²à¤¿à¤¹à¤¾"
+                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">झोन दाखला तपशील</label>
+                                        <input type="text" placeholder="झोन तपशील लिहा"
                                             class="w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
                                     </div>
                                     <div>
-                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">à¤¦à¤¿à¤¨à¤¾à¤‚à¤•</label>
+                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">दिनांक</label>
                                         <input type="date" class="w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
                                     </div>
                                     <div>
-                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">à¤…à¤ªà¤²à¥‹à¤¡ à¤•à¤°à¤¾</label>
+                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">अपलोड करा</label>
                                         <input type="file" multiple
                                             class="block w-full rounded-xl border border-dashed border-[#c5d6ec] bg-white px-4 py-3 text-sm text-[#60708a] file:mr-4 file:rounded-lg file:border-0 file:bg-[#125fcb] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white">
                                     </div>
@@ -905,8 +905,8 @@
                             class="flex flex-col gap-3 border-t border-[#e6edf7] bg-[#fcfdff] px-6 py-5 md:flex-row md:items-center md:justify-between">
                             <button type="button"
                                 class="nav-btn rounded-xl border border-[#ccdbef] px-5 py-3 text-sm font-semibold text-[#4a6488]"
-                                data-direction="prev">à¤®à¤¾à¤—à¥€à¤² (Previous)</button>
-                            <div class="text-sm text-[#7c8da5]">à¤Ÿà¥…à¤¬ 4 / 8</div>
+                                data-direction="prev">मागील (Previous)</button>
+                            <div class="text-sm text-[#7c8da5]">टॅब 4 / 8</div>
                             <div class="flex items-center gap-2">
                                 <button type="button"
                                     class="rounded-xl border border-[#ccdbef] bg-white px-5 py-3 text-sm font-semibold text-[#4a6488]">Save & Next</button>
@@ -919,45 +919,45 @@
                     <div
                         class="w-full rounded-lg border border-[#cfdceb] bg-white shadow-sm">
                         <div class="border-b border-[#dbe8f8] bg-[#edf5ff] px-6 py-5">
-                            <h2 class="text-xl font-bold text-[#214a8b]">à¤Ÿà¤ªà¥à¤ªà¤¾ 5: à¤¦à¤° à¤¨à¤¿à¤¶à¥à¤šà¤¿à¤¤à¥€</h2>
-                            <p class="mt-1 text-sm text-[#5c78a5]">à¤–à¤°à¥‡à¤¦à¥€ à¤µà¤¿à¤•à¥à¤°à¥€ à¤¡à¥‡à¤Ÿà¤¾ à¤†à¤£à¤¿ à¤®à¤‚à¤œà¥‚à¤° à¤¦à¤°.</p>
+                            <h2 class="text-xl font-bold text-[#214a8b]">टप्पा 5: दर निश्चिती</h2>
+                            <p class="mt-1 text-sm text-[#5c78a5]">खरेदी विक्री डेटा आणि मंजूर दर.</p>
                         </div>
                         <div class="space-y-6 px-6 py-7 md:px-8">
                             <div class="rounded-2xl border border-[#e2ebf7] bg-[#fbfdff] p-5">
-                                <h3 class="mb-4 text-lg font-bold text-[#244271]">à¥§à¥¦. à¤¦à¤° à¤¨à¤¿à¤¶à¥à¤šà¤¿à¤¤à¥€à¤¸à¤¾à¤ à¥€ à¤–à¤°à¥‡à¤¦à¥€ à¤µà¤¿à¤•à¥à¤°à¥€ à¤¤à¤ªà¤¶à¥€à¤²</h3>
+                                <h3 class="mb-4 text-lg font-bold text-[#244271]">१०. दर निश्चितीसाठी खरेदी विक्री तपशील</h3>
                                 <div class="grid gap-4 md:grid-cols-2">
                                     <div>
-                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">à¤–à¤°à¥‡à¤¦à¥€ à¤µà¤¿à¤•à¥à¤°à¥€ à¤¤à¤ªà¤¶à¥€à¤²</label>
-                                        <input type="text" placeholder="à¤–à¤°à¥‡à¤¦à¥€ à¤µà¤¿à¤•à¥à¤°à¥€ à¤¤à¤ªà¤¶à¥€à¤²"
+                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">खरेदी विक्री तपशील</label>
+                                        <input type="text" placeholder="खरेदी विक्री तपशील"
                                             class="w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
                                     </div>
                                     <div>
-                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">à¤…à¤ªà¤²à¥‹à¤¡ à¤•à¤°à¤¾</label>
+                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">अपलोड करा</label>
                                         <input type="file" multiple
                                             class="block w-full rounded-xl border border-dashed border-[#c5d6ec] bg-white px-4 py-3 text-sm text-[#60708a] file:mr-4 file:rounded-lg file:border-0 file:bg-[#125fcb] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white">
                                     </div>
                                 </div>
                             </div>
                             <div class="rounded-2xl border border-[#e2ebf7] bg-[#fbfdff] p-5">
-                                <h3 class="mb-4 text-lg font-bold text-[#244271]">à¥§à¥§. à¤•à¤²à¤® 33(2) à¤…à¤¨à¥à¤µà¤¯à¥‡ à¤¦à¤° à¤¨à¤¿à¤¶à¥à¤šà¤¿à¤¤à¥€à¤¸à¤¾à¤ à¥€ à¤‰à¤šà¥à¤šà¤¾à¤§à¤¿à¤•à¤° à¤¸à¤®à¤¿à¤¤à¥€à¤šà¥‡ à¤•à¤¾à¤®à¤•à¤¾à¤œ</h3>
+                                <h3 class="mb-4 text-lg font-bold text-[#244271]">११. कलम 33(2) अन्वये दर निश्चितीसाठी उच्चाधिकर समितीचे कामकाज</h3>
                                 <div class="grid gap-4 md:grid-cols-2">
                                      <div>
-        <label class="mb-2 block text-sm font-semibold text-[#44597a]">à¤¦à¤° à¤¨à¤¿à¤¶à¥à¤šà¤¿à¤¤à¥€à¤¸à¤¾à¤ à¥€ à¤‰à¤šà¥à¤šà¤¾à¤§à¤¿à¤•à¤° à¤¸à¤®à¤¿à¤¤à¥€à¤šà¥à¤¯à¤¾ à¤¬à¥ˆà¤ à¤•à¥€à¤šà¤¾ à¤¤à¤ªà¤¶à¥€à¤²</label>
-        <input type="text" placeholder="à¤®à¤‚à¤œà¥‚à¤° à¤¦à¤° à¤¤à¤ªà¤¶à¥€à¤²"
+        <label class="mb-2 block text-sm font-semibold text-[#44597a]">दर निश्चितीसाठी उच्चाधिकर समितीच्या बैठकीचा तपशील</label>
+        <input type="text" placeholder="मंजूर दर तपशील"
             class="w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
     </div>
     <div>
-        <label class="mb-2 block text-sm font-semibold text-[#44597a]">à¤¦à¤¿à¤¨à¤¾à¤‚à¤•</label>
+        <label class="mb-2 block text-sm font-semibold text-[#44597a]">दिनांक</label>
         <input type="date"
             class="w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
     </div>
                                     <div class="md:col-span-2">
-                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">à¤®à¤¾. à¤‰à¤šà¥à¤š à¤…à¤§à¤¿à¤•à¤¾à¤°à¥€ à¤¸à¤®à¤¿à¤¤à¥€à¤¨à¥‡ à¤®à¤‚à¤œà¥‚à¤° à¤•à¥‡à¤²à¥‡à¤²à¥à¤¯à¤¾ à¤¦à¤°à¤¾à¤šà¥‡ à¤µà¤¿à¤µà¤°à¤£ :</label>
-                                        <textarea rows="4" placeholder="à¤¦à¤°à¤¾à¤šà¥‡ à¤µà¤¿à¤µà¤°à¤£ à¤²à¤¿à¤¹à¤¾"
+                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">मा. उच्च अधिकारी समितीने मंजूर केलेल्या दराचे विवरण :</label>
+                                        <textarea rows="4" placeholder="दराचे विवरण लिहा"
                                             class="w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm"></textarea>
                                     </div>
                                     <div>
-                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">à¤…à¤ªà¤²à¥‹à¤¡ à¤•à¤°à¤¾</label>
+                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">अपलोड करा</label>
                                         <input type="file" multiple
                                             class="block w-full rounded-xl border border-dashed border-[#c5d6ec] bg-white px-4 py-3 text-sm text-[#60708a] file:mr-4 file:rounded-lg file:border-0 file:bg-[#125fcb] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white">
                                     </div>
@@ -965,22 +965,22 @@
                                 </div>
                             </div>
                             <div class="rounded-2xl border border-[#e2ebf7] bg-[#fbfdff] p-5">
-                                <h3 class="mb-4 text-lg font-bold text-[#244271]">à¥§à¥¨. à¤¸à¤‚à¤ªà¤¾à¤¦à¤¨à¤¾à¤–à¤¾à¤²à¥€à¤² à¤œà¤®à¤¿à¤¨à¥€à¤‚à¤¸à¤¾à¤ à¥€ à¤œà¤¿à¤²à¥à¤¹à¤¾à¤¸à¥à¤¤à¤°à¥€à¤¯ à¤¸à¤®à¤¿à¤¤à¥€à¤¨à¥‡ à¤®à¤‚à¤œà¥‚à¤° à¤•à¥‡à¤²à¥‡à¤²à¤¾ à¤…à¤‚à¤¤à¤¿à¤® à¤¦à¤°</h3>
+                                <h3 class="mb-4 text-lg font-bold text-[#244271]">१२. संपादनाखालील जमिनींसाठी जिल्हास्तरीय समितीने मंजूर केलेला अंतिम दर</h3>
                                 <div class="overflow-x-auto rounded-xl border border-[#cdd7e5]">
                                     <table class="min-w-full border-collapse text-sm text-[#2a3f62]">
                                         <thead class="bg-[#f2f4f8]">
                                             <tr>
-                                                <th class="border border-[#cdd7e5] px-3 py-2 text-left font-semibold">à¤®à¥‚à¤²à¥à¤¯ à¤µà¤¿à¤­à¤¾à¤— à¤ªà¥à¤°à¤•à¤¾à¤°</th>
+                                                <th class="border border-[#cdd7e5] px-3 py-2 text-left font-semibold">मूल्य विभाग प्रकार</th>
                                                 <th class="border border-[#cdd7e5] px-3 py-2 text-left font-semibold">Assessment Range</th>
-                                                <th class="border border-[#cdd7e5] px-3 py-2 text-left font-semibold">à¤°à¥‡à¤¡à¥€ à¤°à¥‡à¤•à¤¨à¤° à¤¦à¤°</th>
-                                                <th class="border border-[#cdd7e5] px-3 py-2 text-left font-semibold">à¤œà¤¿à¤²à¥à¤¹à¤¾à¤¸à¥à¤¤à¤°à¥€à¤¯ à¤¸à¤®à¤¿à¤¤à¥€à¤¨à¥‡ à¤®à¤‚à¤œà¥‚à¤° à¤•à¥‡à¤²à¥‡à¤²à¤¾ à¤¦à¤°</th>
-                                                <th class="border border-[#cdd7e5] px-3 py-2 text-left font-semibold">à¤à¤•à¤•</th>
+                                                <th class="border border-[#cdd7e5] px-3 py-2 text-left font-semibold">रेडी रेकनर दर</th>
+                                                <th class="border border-[#cdd7e5] px-3 py-2 text-left font-semibold">जिल्हास्तरीय समितीने मंजूर केलेला दर</th>
+                                                <th class="border border-[#cdd7e5] px-3 py-2 text-left font-semibold">एकक</th>
                                             </tr>
                                         </thead>
                                         <tbody id="sec15-rate-table-body" class="bg-white sec15-rate-body">
                                             <tr>
                                                 <td colspan="5" class="border border-[#cdd7e5] px-3 py-3 text-center text-sm text-[#6d7f9b]">
-                                                    à¤—à¤¾à¤µ à¤¨à¤¿à¤µà¤¡à¤²à¥à¤¯à¤¾à¤µà¤° à¤°à¥‡à¤¡à¥€ à¤°à¥‡à¤•à¤¨à¤° à¤¦à¤° à¤¦à¤¿à¤¸à¤¤à¥€à¤²
+                                                    गाव निवडल्यावर रेडी रेकनर दर दिसतील
                                                 </td>
                                             </tr>
                                         </tbody>
@@ -992,7 +992,7 @@
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
                                         </svg>
-                                        Excel Generate à¤•à¤°à¤¾
+                                        Excel Generate करा
                                     </button>
                                 </div>
                             </div>
@@ -1001,8 +1001,8 @@
                             class="flex flex-col gap-3 border-t border-[#e6edf7] bg-[#fcfdff] px-6 py-5 md:flex-row md:items-center md:justify-between">
                             <button type="button"
                                 class="nav-btn rounded-xl border border-[#ccdbef] px-5 py-3 text-sm font-semibold text-[#4a6488]"
-                                data-direction="prev">à¤®à¤¾à¤—à¥€à¤² (Previous)</button>
-                            <div class="text-sm text-[#7c8da5]">à¤Ÿà¥…à¤¬ 5 / 8</div>
+                                data-direction="prev">मागील (Previous)</button>
+                            <div class="text-sm text-[#7c8da5]">टॅब 5 / 8</div>
                             <div class="flex items-center gap-2">
                                 <button type="button"
                                     class="rounded-xl border border-[#ccdbef] bg-white px-5 py-3 text-sm font-semibold text-[#4a6488]">Save & Next</button>
@@ -1015,103 +1015,103 @@
                     <div
                         class="w-full rounded-lg border border-[#cfdceb] bg-white shadow-sm">
                         <div class="border-b border-[#dbe8f8] bg-[#edf5ff] px-6 py-5">
-                            <h2 class="text-xl font-bold text-[#214a8b]">à¤Ÿà¤ªà¥à¤ªà¤¾ 6: à¤µà¤¿à¤­à¤¾à¤—à¥€à¤¯ à¤…à¤­à¤¿à¤ªà¥à¤°à¤¾à¤¯</h2>
-                            <p class="mt-1 text-sm text-[#5c78a5]">à¤•à¥ƒà¤·à¥€, à¤¬à¤¾à¤‚à¤§à¤•à¤¾à¤®, à¤ªà¤¾à¤£à¥€ à¤ªà¥à¤°à¤µà¤ à¤¾, à¤µà¤¨ à¤†à¤£à¤¿ à¤‡à¤¤à¤° à¤µà¤¿à¤­à¤¾à¤—.</p>
+                            <h2 class="text-xl font-bold text-[#214a8b]">टप्पा 6: विभागीय अभिप्राय</h2>
+                            <p class="mt-1 text-sm text-[#5c78a5]">कृषी, बांधकाम, पाणी पुरवठा, वन आणि इतर विभाग.</p>
                         </div>
                         <div class="space-y-4 px-6 py-6 md:px-8">
                             <div class="rounded-xl border border-[#d6e3f5] bg-[#eef4ff] px-4 py-3 text-base font-extrabold text-[#244271] md:text-lg">
-                                â€¢ à¤¨à¤¿à¤—à¤¡à¥€à¤¤ à¤˜à¤Ÿà¤•à¤¾à¤‚à¤šà¥‡ à¤®à¥‚à¤²à¥à¤¯à¤¾à¤‚à¤•à¤¨
+                                • निगडीत घटकांचे मूल्यांकन
                             </div>
                             <div class="rounded-2xl border border-[#e2ebf7] bg-[#fbfdff] p-4">
-                                <h3 class="mb-3 text-lg font-bold text-[#244271]">à¥§à¥©. à¤ªà¤¾à¤£à¥€à¤ªà¥à¤°à¤µà¤ à¤¾</h3>
+                                <h3 class="mb-3 text-lg font-bold text-[#244271]">१३. पाणीपुरवठा</h3>
                                 <div class="grid gap-3 md:grid-cols-2">
                                     <div class="md:col-span-2">
-                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">à¤®à¥‚à¤²à¥à¤¯à¤¾à¤‚à¤•à¤¨ à¤¸à¤¾à¤¦à¤° à¤•à¥‡à¤²à¥‡à¤²à¥à¤¯à¤¾ à¤ªà¤¤à¥à¤°à¤¾à¤šà¤¾ à¤¤à¤ªà¤¶à¥€à¤²</label>
-                                        <input type="text" placeholder="à¤®à¥‚à¤²à¥à¤¯à¤¾à¤‚à¤•à¤¨ à¤¸à¤¾à¤¦à¤° à¤•à¥‡à¤²à¥‡à¤²à¥à¤¯à¤¾ à¤ªà¤¤à¥à¤°à¤¾à¤šà¤¾ à¤¤à¤ªà¤¶à¥€à¤²"
+                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">मूल्यांकन सादर केलेल्या पत्राचा तपशील</label>
+                                        <input type="text" placeholder="मूल्यांकन सादर केलेल्या पत्राचा तपशील"
                                             class="w-full rounded-xl border border-[#d3deeb] px-3 py-2.5 text-sm">
                                     </div>
                                     <div>
-                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">à¤¦à¤¿à¤¨à¤¾à¤‚à¤•</label>
+                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">दिनांक</label>
                                         <input type="date" class="w-full rounded-xl border border-[#d3deeb] px-3 py-2.5 text-sm">
                                     </div>
                                     <div>
-                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">à¤…à¤ªà¤²à¥‹à¤¡ à¤•à¤°à¤¾</label>
+                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">अपलोड करा</label>
                                         <input type="file" multiple
                                             class="block w-full rounded-xl border border-dashed border-[#c5d6ec] bg-white px-3 py-2.5 text-sm text-[#60708a] file:mr-3 file:rounded-lg file:border-0 file:bg-[#125fcb] file:px-3 file:py-1.5 file:text-sm file:font-semibold file:text-white">
                                     </div>
                                 </div>
                             </div>
                             <div class="rounded-2xl border border-[#e2ebf7] bg-[#fbfdff] p-4">
-                                <h3 class="mb-3 text-lg font-bold text-[#244271]">à¥§à¥ª. à¤•à¥ƒà¤·à¥€ à¤µà¤¿à¤­à¤¾à¤—</h3>
+                                <h3 class="mb-3 text-lg font-bold text-[#244271]">१४. कृषी विभाग</h3>
                                 <div class="grid gap-3 md:grid-cols-2">
                                     <div class="md:col-span-2">
-                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">à¤®à¥‚à¤²à¥à¤¯à¤¾à¤‚à¤•à¤¨ à¤¸à¤¾à¤¦à¤° à¤•à¥‡à¤²à¥‡à¤²à¥à¤¯à¤¾ à¤ªà¤¤à¥à¤°à¤¾à¤šà¤¾ à¤¤à¤ªà¤¶à¥€à¤²</label>
-                                        <input type="text" placeholder="à¤®à¥‚à¤²à¥à¤¯à¤¾à¤‚à¤•à¤¨ à¤¸à¤¾à¤¦à¤° à¤•à¥‡à¤²à¥‡à¤²à¥à¤¯à¤¾ à¤ªà¤¤à¥à¤°à¤¾à¤šà¤¾ à¤¤à¤ªà¤¶à¥€à¤²"
+                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">मूल्यांकन सादर केलेल्या पत्राचा तपशील</label>
+                                        <input type="text" placeholder="मूल्यांकन सादर केलेल्या पत्राचा तपशील"
                                             class="w-full rounded-xl border border-[#d3deeb] px-3 py-2.5 text-sm">
                                     </div>
                                     <div>
-                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">à¤¦à¤¿à¤¨à¤¾à¤‚à¤•</label>
+                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">दिनांक</label>
                                         <input type="date" class="w-full rounded-xl border border-[#d3deeb] px-3 py-2.5 text-sm">
                                     </div>
                                     <div>
-                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">à¤…à¤ªà¤²à¥‹à¤¡ à¤•à¤°à¤¾</label>
+                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">अपलोड करा</label>
                                         <input type="file" multiple
                                             class="block w-full rounded-xl border border-dashed border-[#c5d6ec] bg-white px-3 py-2.5 text-sm text-[#60708a] file:mr-3 file:rounded-lg file:border-0 file:bg-[#125fcb] file:px-3 file:py-1.5 file:text-sm file:font-semibold file:text-white">
                                     </div>
                                 </div>
                             </div>
                             <div class="rounded-2xl border border-[#e2ebf7] bg-[#fbfdff] p-4">
-                                <h3 class="mb-3 text-lg font-bold text-[#244271]">à¥§à¥«. à¤¬à¤¾à¤‚à¤§à¤•à¤¾à¤® à¤µà¤¿à¤­à¤¾à¤—</h3>
+                                <h3 class="mb-3 text-lg font-bold text-[#244271]">१५. बांधकाम विभाग</h3>
                                 <div class="grid gap-3 md:grid-cols-2">
                                     <div class="md:col-span-2">
-                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">à¤®à¥‚à¤²à¥à¤¯à¤¾à¤‚à¤•à¤¨ à¤¸à¤¾à¤¦à¤° à¤•à¥‡à¤²à¥‡à¤²à¥à¤¯à¤¾ à¤ªà¤¤à¥à¤°à¤¾à¤šà¤¾ à¤¤à¤ªà¤¶à¥€à¤²</label>
-                                        <input type="text" placeholder="à¤®à¥‚à¤²à¥à¤¯à¤¾à¤‚à¤•à¤¨ à¤¸à¤¾à¤¦à¤° à¤•à¥‡à¤²à¥‡à¤²à¥à¤¯à¤¾ à¤ªà¤¤à¥à¤°à¤¾à¤šà¤¾ à¤¤à¤ªà¤¶à¥€à¤²"
+                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">मूल्यांकन सादर केलेल्या पत्राचा तपशील</label>
+                                        <input type="text" placeholder="मूल्यांकन सादर केलेल्या पत्राचा तपशील"
                                             class="w-full rounded-xl border border-[#d3deeb] px-3 py-2.5 text-sm">
                                     </div>
                                     <div>
-                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">à¤¦à¤¿à¤¨à¤¾à¤‚à¤•</label>
+                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">दिनांक</label>
                                         <input type="date" class="w-full rounded-xl border border-[#d3deeb] px-3 py-2.5 text-sm">
                                     </div>
                                     <div>
-                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">à¤…à¤ªà¤²à¥‹à¤¡ à¤•à¤°à¤¾</label>
+                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">अपलोड करा</label>
                                         <input type="file" multiple
                                             class="block w-full rounded-xl border border-dashed border-[#c5d6ec] bg-white px-3 py-2.5 text-sm text-[#60708a] file:mr-3 file:rounded-lg file:border-0 file:bg-[#125fcb] file:px-3 file:py-1.5 file:text-sm file:font-semibold file:text-white">
                                     </div>
                                 </div>
                             </div>
                             <div class="rounded-2xl border border-[#e2ebf7] bg-[#fbfdff] p-4">
-                                <h3 class="mb-3 text-lg font-bold text-[#244271]">à¥§à¥¬. à¤µà¤¨ à¤µà¤¿à¤­à¤¾à¤—</h3>
+                                <h3 class="mb-3 text-lg font-bold text-[#244271]">१६. वन विभाग</h3>
                                 <div class="grid gap-3 md:grid-cols-2">
                                     <div class="md:col-span-2">
-                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">à¤®à¥‚à¤²à¥à¤¯à¤¾à¤‚à¤•à¤¨ à¤¸à¤¾à¤¦à¤° à¤•à¥‡à¤²à¥‡à¤²à¥à¤¯à¤¾ à¤ªà¤¤à¥à¤°à¤¾à¤šà¤¾ à¤¤à¤ªà¤¶à¥€à¤²</label>
-                                        <input type="text" placeholder="à¤®à¥‚à¤²à¥à¤¯à¤¾à¤‚à¤•à¤¨ à¤¸à¤¾à¤¦à¤° à¤•à¥‡à¤²à¥‡à¤²à¥à¤¯à¤¾ à¤ªà¤¤à¥à¤°à¤¾à¤šà¤¾ à¤¤à¤ªà¤¶à¥€à¤²"
+                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">मूल्यांकन सादर केलेल्या पत्राचा तपशील</label>
+                                        <input type="text" placeholder="मूल्यांकन सादर केलेल्या पत्राचा तपशील"
                                             class="w-full rounded-xl border border-[#d3deeb] px-3 py-2.5 text-sm">
                                     </div>
                                     <div>
-                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">à¤¦à¤¿à¤¨à¤¾à¤‚à¤•</label>
+                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">दिनांक</label>
                                         <input type="date" class="w-full rounded-xl border border-[#d3deeb] px-3 py-2.5 text-sm">
                                     </div>
                                     <div>
-                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">à¤…à¤ªà¤²à¥‹à¤¡ à¤•à¤°à¤¾</label>
+                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">अपलोड करा</label>
                                         <input type="file" multiple
                                             class="block w-full rounded-xl border border-dashed border-[#c5d6ec] bg-white px-3 py-2.5 text-sm text-[#60708a] file:mr-3 file:rounded-lg file:border-0 file:bg-[#125fcb] file:px-3 file:py-1.5 file:text-sm file:font-semibold file:text-white">
                                     </div>
                                 </div>
                             </div>
                             <div class="rounded-2xl border border-[#e2ebf7] bg-[#fbfdff] p-4">
-                                <h3 class="mb-3 text-lg font-bold text-[#244271]">à¥§à¥­. à¤‡à¤¤à¤° à¤µà¤¿à¤­à¤¾à¤—</h3>
+                                <h3 class="mb-3 text-lg font-bold text-[#244271]">१७. इतर विभाग</h3>
                                 <div class="grid gap-3 md:grid-cols-2">
                                     <div class="md:col-span-2">
-                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">à¤®à¥‚à¤²à¥à¤¯à¤¾à¤‚à¤•à¤¨ à¤¸à¤¾à¤¦à¤° à¤•à¥‡à¤²à¥‡à¤²à¥à¤¯à¤¾ à¤ªà¤¤à¥à¤°à¤¾à¤šà¤¾ à¤¤à¤ªà¤¶à¥€à¤²</label>
-                                        <input type="text" placeholder="à¤®à¥‚à¤²à¥à¤¯à¤¾à¤‚à¤•à¤¨ à¤¸à¤¾à¤¦à¤° à¤•à¥‡à¤²à¥‡à¤²à¥à¤¯à¤¾ à¤ªà¤¤à¥à¤°à¤¾à¤šà¤¾ à¤¤à¤ªà¤¶à¥€à¤²"
+                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">मूल्यांकन सादर केलेल्या पत्राचा तपशील</label>
+                                        <input type="text" placeholder="मूल्यांकन सादर केलेल्या पत्राचा तपशील"
                                             class="w-full rounded-xl border border-[#d3deeb] px-3 py-2.5 text-sm">
                                     </div>
                                     <div>
-                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">à¤¦à¤¿à¤¨à¤¾à¤‚à¤•</label>
+                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">दिनांक</label>
                                         <input type="date" class="w-full rounded-xl border border-[#d3deeb] px-3 py-2.5 text-sm">
                                     </div>
                                     <div>
-                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">à¤…à¤ªà¤²à¥‹à¤¡ à¤•à¤°à¤¾</label>
+                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">अपलोड करा</label>
                                         <input type="file" multiple
                                             class="block w-full rounded-xl border border-dashed border-[#c5d6ec] bg-white px-3 py-2.5 text-sm text-[#60708a] file:mr-3 file:rounded-lg file:border-0 file:bg-[#125fcb] file:px-3 file:py-1.5 file:text-sm file:font-semibold file:text-white">
                                     </div>
@@ -1122,8 +1122,8 @@
                             class="flex flex-col gap-3 border-t border-[#e6edf7] bg-[#fcfdff] px-6 py-5 md:flex-row md:items-center md:justify-between">
                             <button type="button"
                                 class="nav-btn rounded-xl border border-[#ccdbef] px-5 py-3 text-sm font-semibold text-[#4a6488]"
-                                data-direction="prev">à¤®à¤¾à¤—à¥€à¤² (Previous)</button>
-                            <div class="text-sm text-[#7c8da5]">à¤Ÿà¥…à¤¬ 6 / 8</div>
+                                data-direction="prev">मागील (Previous)</button>
+                            <div class="text-sm text-[#7c8da5]">टॅब 6 / 8</div>
                             <div class="flex items-center gap-2">
                                 <button type="button"
                                     class="rounded-xl border border-[#ccdbef] bg-white px-5 py-3 text-sm font-semibold text-[#4a6488]">Save & Next</button>
@@ -1136,41 +1136,41 @@
                     <div
                         class="w-full rounded-lg border border-[#cfdceb] bg-white shadow-sm">
                         <div class="border-b border-[#dbe8f8] bg-[#edf5ff] px-6 py-5">
-                            <h2 class="text-xl font-bold text-[#214a8b]">à¤Ÿà¤ªà¥à¤ªà¤¾ 7: à¤œà¤¿à¤²à¥à¤¹à¤¾à¤¸à¥à¤¤à¤°à¥€à¤¯ à¤¸à¤®à¤¿à¤¤à¥€à¤šà¥‡ à¤•à¤¾à¤°à¥à¤¯à¤µà¥ƒà¤¤à¥à¤¤à¤¾à¤‚à¤¤</h2>
-                            <p class="mt-1 text-sm text-[#5c78a5]">à¤¸à¤‚à¤®à¤¤à¥€ à¤¨à¤¿à¤µà¤¾à¤¡à¤¾ à¤†à¤£à¤¿ à¤•.à¤œà¤¾.à¤ª à¤¤à¤ªà¤¶à¥€à¤².</p>
+                            <h2 class="text-xl font-bold text-[#214a8b]">टप्पा 7: जिल्हास्तरीय समितीचे कार्यवृत्तांत</h2>
+                            <p class="mt-1 text-sm text-[#5c78a5]">संमती निवाडा आणि क.जा.प तपशील.</p>
                         </div>
                         <div class="space-y-6 px-6 py-7 md:px-8">
                             <div class="rounded-2xl border border-[#e2ebf7] bg-[#fbfdff] p-5">
-                                <h3 class="mb-4 text-lg font-bold text-[#244271]">à¥§à¥¯. à¤œà¤¿à¤²à¥à¤¹à¤¾à¤¸à¥à¤¤à¤°à¥€à¤¯ à¤¸à¤®à¤¿à¤¤à¥€à¤¨à¥‡ à¤®à¤‚à¤œà¥‚à¤° à¤•à¥‡à¤²à¥‡à¤²à¥‡ à¤®à¥‹à¤¬à¤¦à¤²à¤¾ à¤¨à¤¿à¤¶à¥à¤šà¤¿à¤¤à¥€ à¤ªà¥à¤°à¤ªà¤¤à¥à¤°</h3>
+                                <h3 class="mb-4 text-lg font-bold text-[#244271]">१९. जिल्हास्तरीय समितीने मंजूर केलेले मोबदला निश्चिती प्रपत्र</h3>
                                 <div class="space-y-4">
                                     <div class="grid gap-4 md:grid-cols-3">
                                         <div>
-                                            <label class="mb-2 block text-sm font-semibold text-[#44597a]">à¤ªà¥à¤°à¤¸à¥à¤¤à¤¾à¤µ</label>
-                                            <input type="text" placeholder="à¤ªà¥à¤°à¤¸à¥à¤¤à¤¾à¤µ"
+                                            <label class="mb-2 block text-sm font-semibold text-[#44597a]">प्रस्ताव</label>
+                                            <input type="text" placeholder="प्रस्ताव"
                                                 class="w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
                                         </div>
                                         <div>
-                                            <label class="mb-2 block text-sm font-semibold text-[#44597a]">à¤¦à¤¿à¤¨à¤¾à¤‚à¤•</label>
+                                            <label class="mb-2 block text-sm font-semibold text-[#44597a]">दिनांक</label>
                                             <input type="date" class="w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
                                         </div>
                                         <div>
-                                            <label class="mb-2 block text-sm font-semibold text-[#44597a]">à¤…à¤ªà¤²à¥‹à¤¡ à¤•à¤°à¤¾</label>
+                                            <label class="mb-2 block text-sm font-semibold text-[#44597a]">अपलोड करा</label>
                                             <input type="file" multiple
                                                 class="block w-full rounded-xl border border-dashed border-[#c5d6ec] bg-white px-4 py-3 text-sm text-[#60708a] file:mr-4 file:rounded-lg file:border-0 file:bg-[#125fcb] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white">
                                         </div>
                                     </div>
                                     <div class="grid gap-4 md:grid-cols-3">
                                         <div>
-                                            <label class="mb-2 block text-sm font-semibold text-[#44597a]">à¤•à¤¾à¤°à¥à¤¯à¤µà¥ƒà¤¤à¥à¤¤à¤¾à¤‚à¤¤</label>
-                                            <input type="text" placeholder="à¤•à¤¾à¤°à¥à¤¯à¤µà¥ƒà¤¤à¥à¤¤à¤¾à¤‚à¤¤"
+                                            <label class="mb-2 block text-sm font-semibold text-[#44597a]">कार्यवृत्तांत</label>
+                                            <input type="text" placeholder="कार्यवृत्तांत"
                                                 class="w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
                                         </div>
                                         <div>
-                                            <label class="mb-2 block text-sm font-semibold text-[#44597a]">à¤¦à¤¿à¤¨à¤¾à¤‚à¤•</label>
+                                            <label class="mb-2 block text-sm font-semibold text-[#44597a]">दिनांक</label>
                                             <input type="date" class="w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
                                         </div>
                                         <div>
-                                            <label class="mb-2 block text-sm font-semibold text-[#44597a]">à¤…à¤ªà¤²à¥‹à¤¡ à¤•à¤°à¤¾</label>
+                                            <label class="mb-2 block text-sm font-semibold text-[#44597a]">अपलोड करा</label>
                                             <input type="file" multiple
                                                 class="block w-full rounded-xl border border-dashed border-[#c5d6ec] bg-white px-4 py-3 text-sm text-[#60708a] file:mr-4 file:rounded-lg file:border-0 file:bg-[#125fcb] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white">
                                         </div>
@@ -1182,8 +1182,8 @@
                             class="flex flex-col gap-3 border-t border-[#e6edf7] bg-[#fcfdff] px-6 py-5 md:flex-row md:items-center md:justify-between">
                             <button type="button"
                                 class="nav-btn rounded-xl border border-[#ccdbef] px-5 py-3 text-sm font-semibold text-[#4a6488]"
-                                data-direction="prev">à¤®à¤¾à¤—à¥€à¤² (Previous)</button>
-                            <div class="text-sm text-[#7c8da5]">à¤Ÿà¥…à¤¬ 7 / 8</div>
+                                data-direction="prev">मागील (Previous)</button>
+                            <div class="text-sm text-[#7c8da5]">टॅब 7 / 8</div>
                             <div class="flex items-center gap-2">
                                 <button type="button"
                                     class="rounded-xl border border-[#ccdbef] bg-white px-5 py-3 text-sm font-semibold text-[#4a6488]">Save & Next</button>
@@ -1196,58 +1196,58 @@
                     <div
                         class="w-full rounded-lg border border-[#cfdceb] bg-white shadow-sm">
                         <div class="border-b border-[#dbe8f8] bg-[#edf5ff] px-6 py-5">
-                            <h2 class="text-xl font-bold text-[#214a8b]">à¤Ÿà¤ªà¥à¤ªà¤¾ 8: à¤¨à¤¿à¤µà¤¾à¤¡à¤¾</h2>
-                            <p class="mt-1 text-sm text-[#5c78a5]">à¤¸à¤‚à¤®à¤¤à¥€ à¤•à¤°à¤¾à¤°à¤¨à¤¾à¤®à¤¾, à¤¨à¤¿à¤µà¤¾à¤¡à¤¾ à¤†à¤£à¤¿ à¤®à¥‹à¤¬à¤¦à¤²à¤¾ à¤…à¤¦à¤¾ à¤¤à¤ªà¤¶à¥€à¤².</p>
+                            <h2 class="text-xl font-bold text-[#214a8b]">टप्पा 8: निवाडा</h2>
+                            <p class="mt-1 text-sm text-[#5c78a5]">संमती करारनामा, निवाडा आणि मोबदला अदा तपशील.</p>
                         </div>
                         <div class="space-y-6 px-6 py-7 md:px-8">
                             <div class="rounded-2xl border border-[#e2ebf7] bg-[#fbfdff] p-5">
-                                <h3 class="mb-4 text-lg font-bold text-[#244271]">à¥¨à¥¦. à¤¸à¤‚à¤®à¤¤à¥€/à¤µà¤¿à¤¨à¤¾à¤¸à¤‚à¤®à¤¤à¥€ à¤¨à¤¿à¤µà¤¾à¤¡à¤¾</h3>
+                                <h3 class="mb-4 text-lg font-bold text-[#244271]">२०. संमती/विनासंमती निवाडा</h3>
                                 <div class="grid gap-4 md:grid-cols-2">
                                     <div>
-                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">à¤•à¥à¤°à¤®à¤¾à¤‚à¤•</label>
-                                        <input type="text" placeholder="à¤•à¥à¤°à¤®à¤¾à¤‚à¤•"
+                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">क्रमांक</label>
+                                        <input type="text" placeholder="क्रमांक"
                                             class="w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
                                     </div>
                                     <div>
-                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">à¤¦à¤¿à¤¨à¤¾à¤‚à¤•</label>
+                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">दिनांक</label>
                                         <input type="date" class="w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
                                     </div>
                                     <div class="md:col-span-2">
-                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">à¤…à¤ªà¤²à¥‹à¤¡ à¤•à¤°à¤¾</label>
+                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">अपलोड करा</label>
                                         <input type="file" multiple
                                             class="block w-full rounded-xl border border-dashed border-[#c5d6ec] bg-white px-4 py-3 text-sm text-[#60708a] file:mr-4 file:rounded-lg file:border-0 file:bg-[#125fcb] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white">
                                     </div>
                                 </div>
                             </div>
                             <div class="rounded-2xl border border-[#e2ebf7] bg-[#fbfdff] p-5">
-                                <h3 class="mb-4 text-lg font-bold text-[#244271]">à¥¨à¥§. à¤¨à¥à¤¯à¤¾à¤¯à¤¾à¤²à¤¯à¥€à¤¨ à¤ªà¥à¤°à¤•à¤°à¤£à¤¾à¤‚à¤šà¤¾ à¤¤à¤ªà¤¶à¥€à¤²</h3>
+                                <h3 class="mb-4 text-lg font-bold text-[#244271]">२१. न्यायालयीन प्रकरणांचा तपशील</h3>
                                 <div class="grid gap-4 md:grid-cols-2">
                                     <div>
-                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">à¤¨à¥à¤¯à¤¾à¤¯à¤¾à¤²à¤¯à¥€à¤¨ à¤ªà¥à¤°à¤•à¤°à¤£à¤¾à¤‚à¤šà¤¾ à¤¤à¤ªà¤¶à¥€à¤²</label>
-                                        <input type="text" placeholder="à¤¨à¥à¤¯à¤¾à¤¯à¤¾à¤²à¤¯à¥€à¤¨ à¤ªà¥à¤°à¤•à¤°à¤£à¤¾à¤‚à¤šà¤¾ à¤¤à¤ªà¤¶à¥€à¤²"
+                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">न्यायालयीन प्रकरणांचा तपशील</label>
+                                        <input type="text" placeholder="न्यायालयीन प्रकरणांचा तपशील"
                                             class="w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
                                     </div>
                                     <div>
-                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">à¤¤à¤ªà¤¶à¥€à¤² à¤…à¤ªà¤²à¥‹à¤¡</label>
+                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">तपशील अपलोड</label>
                                         <input type="file" multiple
                                             class="block w-full rounded-xl border border-dashed border-[#c5d6ec] bg-white px-4 py-3 text-sm text-[#60708a] file:mr-4 file:rounded-lg file:border-0 file:bg-[#125fcb] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white">
                                     </div>
                                 </div>
                             </div>
                             <div class="rounded-2xl border border-[#e2ebf7] bg-[#fbfdff] p-5">
-                                <h3 class="mb-4 text-lg font-bold text-[#244271]">à¥¨à¥¨. à¤•.à¤œà¤¾.à¤ª à¤¤à¤ªà¤¶à¥€à¤²</h3>
+                                <h3 class="mb-4 text-lg font-bold text-[#244271]">२२. क.जा.प तपशील</h3>
                                 <div class="grid gap-4 md:grid-cols-2">
                                     <div>
-                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">à¤•à¥à¤°à¤®à¤¾à¤‚à¤•</label>
-                                        <input type="text" placeholder="à¤•à¥à¤°à¤®à¤¾à¤‚à¤•"
+                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">क्रमांक</label>
+                                        <input type="text" placeholder="क्रमांक"
                                             class="w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
                                     </div>
                                     <div>
-                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">à¤¦à¤¿à¤¨à¤¾à¤‚à¤•</label>
+                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">दिनांक</label>
                                         <input type="date" class="w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
                                     </div>
                                     <div class="md:col-span-2">
-                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">à¤…à¤ªà¤²à¥‹à¤¡ à¤•à¤°à¤¾</label>
+                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">अपलोड करा</label>
                                         <input type="file" multiple
                                             class="block w-full rounded-xl border border-dashed border-[#c5d6ec] bg-white px-4 py-3 text-sm text-[#60708a] file:mr-4 file:rounded-lg file:border-0 file:bg-[#125fcb] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white">
                                     </div>
@@ -1255,37 +1255,37 @@
                             </div>
                             <div class="rounded-2xl border border-[#e2ebf7] bg-[#fbfdff] p-5">
                                 <div class="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                                    <h3 class="text-lg font-bold text-[#244271]">à¥¨à¥©. à¤¸à¤‚à¤ªà¤¾à¤¦à¤¨ à¤¸à¤‚à¤¸à¥à¤¥à¥‡à¤šà¥à¤¯à¤¾ à¤¨à¤¾à¤µà¤¾à¤µà¤° à¤à¤¾à¤²à¥‡à¤²à¥à¤¯à¤¾ à¥® à¤… à¤…à¤­à¤¿à¤²à¥‡à¤–à¤¾à¤šà¤¾ à¤¤à¤ªà¤¶à¥€à¤²</h3>
+                                    <h3 class="text-lg font-bold text-[#244271]">२३. संपादन संस्थेच्या नावावर झालेल्या ८ अ अभिलेखाचा तपशील</h3>
                                     <button type="button" id="add-8a-line-btn"
-                                        class="inline-flex items-center justify-center rounded-lg border border-[#c6d9f2] bg-white px-4 py-2 text-sm font-semibold text-[#125fcb] hover:bg-[#eef5ff]">+ à¤“à¤³ à¤œà¥‹à¤¡à¤¾</button>
+                                        class="inline-flex items-center justify-center rounded-lg border border-[#c6d9f2] bg-white px-4 py-2 text-sm font-semibold text-[#125fcb] hover:bg-[#eef5ff]">+ ओळ जोडा</button>
                                 </div>
                                 <div id="record-8a-lines" class="space-y-4">
                                     <div class="record-8a-line relative rounded-xl border border-[#e2ebf7] bg-white p-4">
                                         <div>
                                             <div class="grid gap-4 md:grid-cols-3">
                                                 <div>
-                                                    <label class="mb-2 block text-sm font-semibold text-[#44597a]">à¤–à¤¾à¤¤à¥‡à¤•à¥à¤°à¤®à¤¾à¤‚à¤•</label>
-                                                    <input type="text" placeholder="à¤–à¤¾à¤¤à¥‡à¤•à¥à¤°à¤®à¤¾à¤‚à¤•"
+                                                    <label class="mb-2 block text-sm font-semibold text-[#44597a]">खातेक्रमांक</label>
+                                                    <input type="text" placeholder="खातेक्रमांक"
                                                         class="vi-8a-khate w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
                                                 </div>
                                                 <div>
-                                                    <label class="mb-2 block text-sm font-semibold text-[#44597a]">à¤¨à¤¾à¤µà¤¾à¤µà¤° à¤à¤¾à¤²à¥‡à¤²à¥‡ à¤•à¥à¤·à¥‡à¤¤à¥à¤°</label>
-                                                    <input type="text" placeholder="à¤¨à¤¾à¤µà¤¾à¤µà¤° à¤à¤¾à¤²à¥‡à¤²à¥‡ à¤•à¥à¤·à¥‡à¤¤à¥à¤°"
+                                                    <label class="mb-2 block text-sm font-semibold text-[#44597a]">नावावर झालेले क्षेत्र</label>
+                                                    <input type="text" placeholder="नावावर झालेले क्षेत्र"
                                                         class="vi-8a-navavar w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
                                                 </div>
                                                 <div>
-                                                    <label class="mb-2 block text-sm font-semibold text-[#44597a]">à¤«à¥‡à¤°à¤«à¤¾à¤° à¤•à¥à¤°à¤®à¤¾à¤‚à¤•</label>
-                                                    <input type="text" placeholder="à¤«à¥‡à¤°à¤«à¤¾à¤° à¤•à¥à¤°à¤®à¤¾à¤‚à¤•"
+                                                    <label class="mb-2 block text-sm font-semibold text-[#44597a]">फेरफार क्रमांक</label>
+                                                    <input type="text" placeholder="फेरफार क्रमांक"
                                                         class="vi-8a-ferfar w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
                                                 </div>
                                             </div>
                                             <div class="mt-4 grid gap-4 md:grid-cols-2">
                                                 <div>
-                                                    <label class="mb-2 block text-sm font-semibold text-[#44597a]">à¤«à¥‡à¤°à¤«à¤¾à¤° à¤¦à¤¿à¤¨à¤¾à¤‚à¤•</label>
+                                                    <label class="mb-2 block text-sm font-semibold text-[#44597a]">फेरफार दिनांक</label>
                                                     <input type="date" class="vi-8a-date w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
                                                 </div>
                                                 <div>
-                                                    <label class="mb-2 block text-sm font-semibold text-[#44597a]">à¥® à¤… à¤…à¤ªà¤²à¥‹à¤¡</label>
+                                                    <label class="mb-2 block text-sm font-semibold text-[#44597a]">८ अ अपलोड</label>
                                                     <input type="file" multiple
                                                         class="vi-8a-files block w-full rounded-xl border border-dashed border-[#c5d6ec] bg-white px-4 py-2.5 text-sm text-[#60708a] file:mr-4 file:rounded-lg file:border-0 file:bg-[#125fcb] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white">
                                                 </div>
@@ -1299,8 +1299,8 @@
                             class="flex flex-col gap-3 border-t border-[#e6edf7] bg-[#fcfdff] px-6 py-5 md:flex-row md:items-center md:justify-between">
                             <button type="button"
                                 class="nav-btn rounded-xl border border-[#ccdbef] px-5 py-3 text-sm font-semibold text-[#4a6488]"
-                                data-direction="prev">à¤®à¤¾à¤—à¥€à¤² (Previous)</button>
-                            <div class="text-sm text-[#7c8da5]">à¤Ÿà¥…à¤¬ 8 / 8</div>
+                                data-direction="prev">मागील (Previous)</button>
+                            <div class="text-sm text-[#7c8da5]">टॅब 8 / 8</div>
                             <div class="flex items-center gap-2">
                                 <button type="button"
                                     class="rounded-xl bg-[#125fcb] px-5 py-3 text-sm font-semibold text-white">Submit</button>
@@ -1461,7 +1461,7 @@
             const toast = document.getElementById('viDuplicateToast');
             const msg = document.getElementById('viDuplicateToastMsg');
             if (!toast || !msg) return;
-            msg.textContent = message || 'à¤¯à¤¾ à¤—à¤¾à¤µà¤¾à¤¸à¤¾à¤ à¥€ à¤—à¤¾à¤µà¤¾à¤šà¥€ à¤®à¤¾à¤¹à¤¿à¤¤à¥€ à¤¨à¥‹à¤‚à¤¦ à¤†à¤§à¥€à¤š à¤…à¤¸à¥à¤¤à¤¿à¤¤à¥à¤µà¤¾à¤¤ à¤†à¤¹à¥‡.';
+            msg.textContent = message || 'या गावासाठी गावाची माहिती नोंद आधीच अस्तित्वात आहे.';
             toast.classList.remove('hidden');
             if (viDuplicateToastTimer) clearTimeout(viDuplicateToastTimer);
             viDuplicateToastTimer = setTimeout(hideViDuplicateToast, 10000);
@@ -1537,7 +1537,7 @@
                 const duplicate = !!data.exists;
                 setVillageInfoFieldsLocked(duplicate);
                 if (duplicate) {
-                    showViDuplicateToast(data.message || 'à¤¯à¤¾ à¤—à¤¾à¤µà¤¾à¤¸à¤¾à¤ à¥€ à¤—à¤¾à¤µà¤¾à¤šà¥€ à¤®à¤¾à¤¹à¤¿à¤¤à¥€ à¤¨à¥‹à¤‚à¤¦ à¤†à¤§à¥€à¤š à¤…à¤¸à¥à¤¤à¤¿à¤¤à¥à¤µà¤¾à¤¤ à¤†à¤¹à¥‡.');
+                    showViDuplicateToast(data.message || 'या गावासाठी गावाची माहिती नोंद आधीच अस्तित्वात आहे.');
                 }
             } catch (err) {
                 setVillageInfoFieldsLocked(false);
@@ -1794,7 +1794,7 @@
                 .map((f, index) => `
                     <span class="vi-selected-chip" title="${escapeHtml(f.name)}">
                         <span class="vi-selected-chip-name">${escapeHtml(f.name)}</span>
-                        <button type="button" class="vi-selected-chip-remove" data-file-index="${index}" aria-label="Remove ${escapeHtml(f.name)}">Ã—</button>
+                        <button type="button" class="vi-selected-chip-remove" data-file-index="${index}" aria-label="Remove ${escapeHtml(f.name)}">×</button>
                     </span>
                 `)
                 .join('');
@@ -1849,12 +1849,12 @@
                 el.value = '';
             });
             districtSel.value = '';
-            fillSelect(talukaSel, [], 'à¤†à¤§à¥€ à¤œà¤¿à¤²à¥à¤¹à¤¾ à¤¨à¤¿à¤µà¤¡à¤¾');
-            fillSelect(villageSel, [], 'à¤†à¤§à¥€ à¤¤à¤¾à¤²à¥à¤•à¤¾ à¤¨à¤¿à¤µà¤¡à¤¾');
+            fillSelect(talukaSel, [], 'आधी जिल्हा निवडा');
+            fillSelect(villageSel, [], 'आधी तालुका निवडा');
             renderSec4Rows([]);
             renderSec8Rows([]);
             render8aRecords([]);
-            renderSec15Rows([], 'à¤—à¤¾à¤µ à¤¨à¤¿à¤µà¤¡à¤¾');
+            renderSec15Rows([], 'गाव निवडा');
             setLocationFieldsReadonly(false);
             setVillageInfoFieldsLocked(false);
             setActiveTab(1);
@@ -1978,7 +1978,7 @@
             } else {
                 buttons.push(buildButton(1, 1, currentPage === 1));
                 if (currentPage > 3) {
-                    buttons.push('<span class="px-2 text-sm text-[#6d7f9b]">â€¦</span>');
+                    buttons.push('<span class="px-2 text-sm text-[#6d7f9b]">…</span>');
                 }
                 const start = Math.max(2, currentPage - 1);
                 const end = Math.min(pageCount - 1, currentPage + 1);
@@ -1986,7 +1986,7 @@
                     buttons.push(buildButton(i, i, i === currentPage));
                 }
                 if (currentPage < pageCount - 2) {
-                    buttons.push('<span class="px-2 text-sm text-[#6d7f9b]">â€¦</span>');
+                    buttons.push('<span class="px-2 text-sm text-[#6d7f9b]">…</span>');
                 }
                 buttons.push(buildButton(pageCount, pageCount, currentPage === pageCount));
             }
@@ -2091,19 +2091,19 @@
         }
 
         async function loadTalukasForDistrict(district, selectedTaluka = '') {
-            fillSelect(talukaSel, [], 'à¤†à¤§à¥€ à¤œà¤¿à¤²à¥à¤¹à¤¾ à¤¨à¤¿à¤µà¤¡à¤¾');
-            fillSelect(villageSel, [], 'à¤†à¤§à¥€ à¤¤à¤¾à¤²à¥à¤•à¤¾ à¤¨à¤¿à¤µà¤¡à¤¾');
+            fillSelect(talukaSel, [], 'आधी जिल्हा निवडा');
+            fillSelect(villageSel, [], 'आधी तालुका निवडा');
             if (!district) return;
             const data = await fetchJSON(`/api/locations/?district=${encodeURIComponent(district)}&lang=mr`);
-            fillSelect(talukaSel, data.data || [], 'à¤¤à¤¾à¤²à¥à¤•à¤¾ à¤¨à¤¿à¤µà¤¡à¤¾');
+            fillSelect(talukaSel, data.data || [], 'तालुका निवडा');
             talukaSel.value = selectedTaluka || '';
         }
 
         async function loadVillagesForTaluka(district, taluka, selectedVillage = '') {
-            fillSelect(villageSel, [], 'à¤†à¤§à¥€ à¤¤à¤¾à¤²à¥à¤•à¤¾ à¤¨à¤¿à¤µà¤¡à¤¾');
+            fillSelect(villageSel, [], 'आधी तालुका निवडा');
             if (!district || !taluka) return;
             const data = await fetchJSON(`/api/locations/?district=${encodeURIComponent(district)}&taluka=${encodeURIComponent(taluka)}&lang=mr`);
-            fillSelect(villageSel, data.data || [], 'à¤—à¤¾à¤µ à¤¨à¤¿à¤µà¤¡à¤¾');
+            fillSelect(villageSel, data.data || [], 'गाव निवडा');
             villageSel.value = selectedVillage || '';
         }
 
@@ -2168,7 +2168,7 @@
             const summaryHint = document.createElement('span');
             summaryHint.className = 'text-[11px] font-medium text-[#60708a]';
             summaryHint.setAttribute('aria-hidden', 'true');
-            summaryHint.textContent = 'â–¾';
+            summaryHint.textContent = '▾';
             summary.appendChild(summaryLabel);
             summary.appendChild(summaryHint);
 
@@ -2178,7 +2178,7 @@
             const updateSummary = () => {
                 const uploadedCount = body.querySelectorAll('[data-file-row="uploaded"]').length;
                 summaryLabel.textContent = `Uploaded files (${uploadedCount})`;
-                summaryHint.textContent = details.open ? 'â–´' : 'â–¾';
+                summaryHint.textContent = details.open ? '▴' : '▾';
                 if (!uploadedCount) {
                     container.innerHTML = '';
                     container.classList.add('hidden');
@@ -2239,20 +2239,20 @@
         function buildSec4RowHtml() {
             return `
                 <button type="button"
-                    class="remove-sec4-row-btn absolute right-3 top-3 inline-flex h-7 w-7 items-center justify-center rounded-full border border-[#cddcf0] text-sm font-bold text-[#6b7d99] hover:bg-[#eef5ff]">âœ•</button>
+                    class="remove-sec4-row-btn absolute right-3 top-3 inline-flex h-7 w-7 items-center justify-center rounded-full border border-[#cddcf0] text-sm font-bold text-[#6b7d99] hover:bg-[#eef5ff]">✕</button>
                 <div class="grid gap-4 md:grid-cols-3 md:items-end">
                     <div>
-                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">à¤…à¤§à¤¿à¤¸à¥‚à¤šà¤¨à¤¾ à¤•à¥à¤°à¤®à¤¾à¤‚à¤•</label>
-                        <input type="text" placeholder="à¤•à¤²à¤® 32 (2) à¤…à¤§à¤¿à¤¸à¥‚à¤šà¤¨à¤¾ à¤•à¥à¤°à¤®à¤¾à¤‚à¤•"
+                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">अधिसूचना क्रमांक</label>
+                        <input type="text" placeholder="कलम 32 (2) अधिसूचना क्रमांक"
                             class="vi-sec4-kramank vi-sec4-row-input w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
                     </div>
                     <div>
-                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">à¤¦à¤¿à¤¨à¤¾à¤‚à¤•</label>
+                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">दिनांक</label>
                         <input type="date"
                             class="vi-sec4-date vi-sec4-row-input w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
                     </div>
                     <div>
-                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">à¤…à¤ªà¤²à¥‹à¤¡</label>
+                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">अपलोड</label>
                         <input type="file" multiple
                             class="vi-sec4-main-files vi-sec4-row-input block w-full rounded-xl border border-dashed border-[#c5d6ec] bg-white px-4 py-3 text-sm text-[#60708a] file:mr-4 file:rounded-lg file:border-0 file:bg-[#125fcb] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white">
                     </div>
@@ -2260,40 +2260,40 @@
                 </div>
                 <div class="mt-4 space-y-3">
                     <div class="rounded-xl border border-[#dfe8f5] bg-white p-3">
-                        <p class="mb-2 text-sm font-semibold text-[#44597a]">à¤µà¤°à¥à¤¤à¤®à¤¾à¤¨à¤ªà¤¤à¥à¤° à¥§</p>
+                        <p class="mb-2 text-sm font-semibold text-[#44597a]">वर्तमानपत्र १</p>
                         <div class="grid gap-3 md:grid-cols-3 md:items-end">
                             <div>
-                                <label class="mb-2 block text-sm font-semibold text-[#44597a]">à¤¨à¤¾à¤µ</label>
-                                <input type="text" placeholder="à¤µà¤°à¥à¤¤à¤®à¤¾à¤¨à¤ªà¤¤à¥à¤° à¥§ à¤šà¥‡ à¤¨à¤¾à¤µ"
+                                <label class="mb-2 block text-sm font-semibold text-[#44597a]">नाव</label>
+                                <input type="text" placeholder="वर्तमानपत्र १ चे नाव"
                                     class="vi-sec4-paper1-name vi-sec4-row-input w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
                             </div>
                             <div>
-                                <label class="mb-2 block text-sm font-semibold text-[#44597a]">à¤¦à¤¿à¤¨à¤¾à¤‚à¤•</label>
+                                <label class="mb-2 block text-sm font-semibold text-[#44597a]">दिनांक</label>
                                 <input type="date"
                                     class="vi-sec4-paper1-date vi-sec4-row-input w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
                             </div>
                             <div>
-                                <label class="mb-2 block text-sm font-semibold text-[#44597a]">à¤…à¤ªà¤²à¥‹à¤¡</label>
+                                <label class="mb-2 block text-sm font-semibold text-[#44597a]">अपलोड</label>
                                 <input type="file" multiple
                                     class="vi-sec4-paper1-files vi-sec4-row-input block w-full rounded-xl border border-dashed border-[#c5d6ec] bg-white px-4 py-3 text-sm text-[#60708a] file:mr-4 file:rounded-lg file:border-0 file:bg-[#125fcb] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white">
                             </div>
                         </div>
                     </div>
                     <div class="rounded-xl border border-[#dfe8f5] bg-white p-3">
-                        <p class="mb-2 text-sm font-semibold text-[#44597a]">à¤µà¤°à¥à¤¤à¤®à¤¾à¤¨à¤ªà¤¤à¥à¤° à¥¨</p>
+                        <p class="mb-2 text-sm font-semibold text-[#44597a]">वर्तमानपत्र २</p>
                         <div class="grid gap-3 md:grid-cols-3 md:items-end">
                             <div>
-                                <label class="mb-2 block text-sm font-semibold text-[#44597a]">à¤¨à¤¾à¤µ</label>
-                                <input type="text" placeholder="à¤µà¤°à¥à¤¤à¤®à¤¾à¤¨à¤ªà¤¤à¥à¤° à¥¨ à¤šà¥‡ à¤¨à¤¾à¤µ"
+                                <label class="mb-2 block text-sm font-semibold text-[#44597a]">नाव</label>
+                                <input type="text" placeholder="वर्तमानपत्र २ चे नाव"
                                     class="vi-sec4-paper2-name vi-sec4-row-input w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
                             </div>
                             <div>
-                                <label class="mb-2 block text-sm font-semibold text-[#44597a]">à¤¦à¤¿à¤¨à¤¾à¤‚à¤•</label>
+                                <label class="mb-2 block text-sm font-semibold text-[#44597a]">दिनांक</label>
                                 <input type="date"
                                     class="vi-sec4-paper2-date vi-sec4-row-input w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
                             </div>
                             <div>
-                                <label class="mb-2 block text-sm font-semibold text-[#44597a]">à¤…à¤ªà¤²à¥‹à¤¡</label>
+                                <label class="mb-2 block text-sm font-semibold text-[#44597a]">अपलोड</label>
                                 <input type="file" multiple
                                     class="vi-sec4-paper2-files vi-sec4-row-input block w-full rounded-xl border border-dashed border-[#c5d6ec] bg-white px-4 py-3 text-sm text-[#60708a] file:mr-4 file:rounded-lg file:border-0 file:bg-[#125fcb] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white">
                             </div>
@@ -2362,60 +2362,60 @@
         function buildSec8RowHtml() {
             return `
                 <button type="button"
-                    class="remove-sec8-row-btn absolute right-3 top-3 inline-flex h-7 w-7 items-center justify-center rounded-full border border-[#cddcf0] text-sm font-bold text-[#6b7d99] hover:bg-[#eef5ff]">âœ•</button>
+                    class="remove-sec8-row-btn absolute right-3 top-3 inline-flex h-7 w-7 items-center justify-center rounded-full border border-[#cddcf0] text-sm font-bold text-[#6b7d99] hover:bg-[#eef5ff]">✕</button>
                 <div class="grid gap-4 md:grid-cols-3 md:items-end">
                     <div>
-                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">à¤…à¤§à¤¿à¤¸à¥‚à¤šà¤¨à¤¾ à¤•à¥à¤°à¤®à¤¾à¤‚à¤•</label>
-                        <input type="text" placeholder="à¤•à¤²à¤® 18/1 à¤…à¤§à¤¿à¤¸à¥‚à¤šà¤¨à¤¾ à¤•à¥à¤°à¤®à¤¾à¤‚à¤•"
+                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">अधिसूचना क्रमांक</label>
+                        <input type="text" placeholder="कलम 18/1 अधिसूचना क्रमांक"
                             class="vi-sec8-kramank vi-sec8-row-input w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
                     </div>
                     <div>
-                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">à¤¦à¤¿à¤¨à¤¾à¤‚à¤•</label>
+                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">दिनांक</label>
                         <input type="date"
                             class="vi-sec8-date vi-sec8-row-input w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
                     </div>
                     <div>
-                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">à¤…à¤ªà¤²à¥‹à¤¡</label>
+                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">अपलोड</label>
                         <input type="file" multiple
                             class="vi-sec8-files vi-sec8-row-input block w-full rounded-xl border border-dashed border-[#c5d6ec] bg-white px-4 py-3 text-sm text-[#60708a] file:mr-4 file:rounded-lg file:border-0 file:bg-[#125fcb] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white">
                     </div>
                 </div>
                 <div class="mt-4 space-y-3">
                     <div class="rounded-xl border border-[#dfe8f5] bg-white p-3">
-                        <p class="mb-2 text-sm font-semibold text-[#44597a]">à¤µà¤°à¥à¤¤à¤®à¤¾à¤¨à¤ªà¤¤à¥à¤° à¥§</p>
+                        <p class="mb-2 text-sm font-semibold text-[#44597a]">वर्तमानपत्र १</p>
                         <div class="grid gap-3 md:grid-cols-3 md:items-end">
                             <div>
-                                <label class="mb-2 block text-sm font-semibold text-[#44597a]">à¤¨à¤¾à¤µ</label>
-                                <input type="text" placeholder="à¤µà¤°à¥à¤¤à¤®à¤¾à¤¨à¤ªà¤¤à¥à¤° à¥§ à¤šà¥‡ à¤¨à¤¾à¤µ"
+                                <label class="mb-2 block text-sm font-semibold text-[#44597a]">नाव</label>
+                                <input type="text" placeholder="वर्तमानपत्र १ चे नाव"
                                     class="vi-sec8-paper1-name vi-sec8-row-input w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
                             </div>
                             <div>
-                                <label class="mb-2 block text-sm font-semibold text-[#44597a]">à¤¦à¤¿à¤¨à¤¾à¤‚à¤•</label>
+                                <label class="mb-2 block text-sm font-semibold text-[#44597a]">दिनांक</label>
                                 <input type="date"
                                     class="vi-sec8-paper1-date vi-sec8-row-input w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
                             </div>
                             <div>
-                                <label class="mb-2 block text-sm font-semibold text-[#44597a]">à¤…à¤ªà¤²à¥‹à¤¡</label>
+                                <label class="mb-2 block text-sm font-semibold text-[#44597a]">अपलोड</label>
                                 <input type="file" multiple
                                     class="vi-sec8-paper1-files vi-sec8-row-input block w-full rounded-xl border border-dashed border-[#c5d6ec] bg-white px-4 py-3 text-sm text-[#60708a] file:mr-4 file:rounded-lg file:border-0 file:bg-[#125fcb] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white">
                             </div>
                         </div>
                     </div>
                     <div class="rounded-xl border border-[#dfe8f5] bg-white p-3">
-                        <p class="mb-2 text-sm font-semibold text-[#44597a]">à¤µà¤°à¥à¤¤à¤®à¤¾à¤¨à¤ªà¤¤à¥à¤° à¥¨</p>
+                        <p class="mb-2 text-sm font-semibold text-[#44597a]">वर्तमानपत्र २</p>
                         <div class="grid gap-3 md:grid-cols-3 md:items-end">
                             <div>
-                                <label class="mb-2 block text-sm font-semibold text-[#44597a]">à¤¨à¤¾à¤µ</label>
-                                <input type="text" placeholder="à¤µà¤°à¥à¤¤à¤®à¤¾à¤¨à¤ªà¤¤à¥à¤° à¥¨ à¤šà¥‡ à¤¨à¤¾à¤µ"
+                                <label class="mb-2 block text-sm font-semibold text-[#44597a]">नाव</label>
+                                <input type="text" placeholder="वर्तमानपत्र २ चे नाव"
                                     class="vi-sec8-paper2-name vi-sec8-row-input w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
                             </div>
                             <div>
-                                <label class="mb-2 block text-sm font-semibold text-[#44597a]">à¤¦à¤¿à¤¨à¤¾à¤‚à¤•</label>
+                                <label class="mb-2 block text-sm font-semibold text-[#44597a]">दिनांक</label>
                                 <input type="date"
                                     class="vi-sec8-paper2-date vi-sec8-row-input w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
                             </div>
                             <div>
-                                <label class="mb-2 block text-sm font-semibold text-[#44597a]">à¤…à¤ªà¤²à¥‹à¤¡</label>
+                                <label class="mb-2 block text-sm font-semibold text-[#44597a]">अपलोड</label>
                                 <input type="file" multiple
                                     class="vi-sec8-paper2-files vi-sec8-row-input block w-full rounded-xl border border-dashed border-[#c5d6ec] bg-white px-4 py-3 text-sm text-[#60708a] file:mr-4 file:rounded-lg file:border-0 file:bg-[#125fcb] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white">
                             </div>
@@ -2484,31 +2484,31 @@
         function build8aLineHtml() {
             return `
                 <button type="button"
-                    class="remove-8a-line-btn absolute right-3 top-3 inline-flex h-7 w-7 items-center justify-center rounded-full border border-[#cddcf0] text-sm font-bold text-[#6b7d99] hover:bg-[#eef5ff]">âœ•</button>
+                    class="remove-8a-line-btn absolute right-3 top-3 inline-flex h-7 w-7 items-center justify-center rounded-full border border-[#cddcf0] text-sm font-bold text-[#6b7d99] hover:bg-[#eef5ff]">✕</button>
                 <div class="grid gap-4 md:grid-cols-3">
                     <div>
-                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">à¤–à¤¾à¤¤à¥‡à¤•à¥à¤°à¤®à¤¾à¤‚à¤•</label>
-                        <input type="text" placeholder="à¤–à¤¾à¤¤à¥‡à¤•à¥à¤°à¤®à¤¾à¤‚à¤•"
+                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">खातेक्रमांक</label>
+                        <input type="text" placeholder="खातेक्रमांक"
                             class="vi-8a-khate w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
                     </div>
                     <div>
-                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">à¤¨à¤¾à¤µà¤¾à¤µà¤° à¤à¤¾à¤²à¥‡à¤²à¥‡ à¤•à¥à¤·à¥‡à¤¤à¥à¤°</label>
-                        <input type="text" placeholder="à¤¨à¤¾à¤µà¤¾à¤µà¤° à¤à¤¾à¤²à¥‡à¤²à¥‡ à¤•à¥à¤·à¥‡à¤¤à¥à¤°"
+                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">नावावर झालेले क्षेत्र</label>
+                        <input type="text" placeholder="नावावर झालेले क्षेत्र"
                             class="vi-8a-navavar w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
                     </div>
                     <div>
-                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">à¤«à¥‡à¤°à¤«à¤¾à¤° à¤•à¥à¤°à¤®à¤¾à¤‚à¤•</label>
-                        <input type="text" placeholder="à¤«à¥‡à¤°à¤«à¤¾à¤° à¤•à¥à¤°à¤®à¤¾à¤‚à¤•"
+                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">फेरफार क्रमांक</label>
+                        <input type="text" placeholder="फेरफार क्रमांक"
                             class="vi-8a-ferfar w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
                     </div>
                 </div>
                 <div class="mt-4 grid gap-4 md:grid-cols-2">
                     <div>
-                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">à¤«à¥‡à¤°à¤«à¤¾à¤° à¤¦à¤¿à¤¨à¤¾à¤‚à¤•</label>
+                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">फेरफार दिनांक</label>
                         <input type="date" class="vi-8a-date w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
                     </div>
                     <div>
-                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">à¥® à¤… à¤…à¤ªà¤²à¥‹à¤¡</label>
+                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">८ अ अपलोड</label>
                         <input type="file" multiple
                             class="vi-8a-files block w-full rounded-xl border border-dashed border-[#c5d6ec] bg-white px-4 py-2.5 text-sm text-[#60708a] file:mr-4 file:rounded-lg file:border-0 file:bg-[#125fcb] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white">
                     </div>
@@ -2561,11 +2561,11 @@
             const thead = sec15TableBody.closest('table').querySelector('thead tr');
             if (thead) {
                 thead.innerHTML = `
-                    <th class="border border-[#cdd7e5] px-3 py-2 text-left font-semibold">à¤®à¥‚à¤²à¥à¤¯ à¤µà¤¿à¤­à¤¾à¤— à¤ªà¥à¤°à¤•à¤¾à¤°</th>
-                    <th class="border border-[#cdd7e5] px-3 py-2 text-left font-semibold">${isProabhav ? 'à¤¶à¤¿à¤˜à¥à¤°à¤¸à¤¿à¤§à¥à¤¦ à¤—à¤£à¤•à¤¾à¤¤à¥€à¤² à¤µà¤¿à¤­à¤¾à¤—' : 'Assessment Range'}</th>
-                    <th class="border border-[#cdd7e5] px-3 py-2 text-left font-semibold">à¤°à¥‡à¤¡à¥€ à¤°à¥‡à¤•à¤¨à¤° à¤¦à¤°</th>
-                    <th class="border border-[#cdd7e5] px-3 py-2 text-left font-semibold">à¤œà¤¿à¤²à¥à¤¹à¤¾à¤¸à¥à¤¤à¤°à¥€à¤¯ à¤¸à¤®à¤¿à¤¤à¥€à¤¨à¥‡ à¤®à¤‚à¤œà¥‚à¤° à¤•à¥‡à¤²à¥‡à¤²à¤¾ à¤¦à¤°</th>
-                    <th class="border border-[#cdd7e5] px-3 py-2 text-left font-semibold">à¤à¤•à¤•</th>
+                    <th class="border border-[#cdd7e5] px-3 py-2 text-left font-semibold">मूल्य विभाग प्रकार</th>
+                    <th class="border border-[#cdd7e5] px-3 py-2 text-left font-semibold">${isProabhav ? 'शिघ्रसिध्द गणकातील विभाग' : 'Assessment Range'}</th>
+                    <th class="border border-[#cdd7e5] px-3 py-2 text-left font-semibold">रेडी रेकनर दर</th>
+                    <th class="border border-[#cdd7e5] px-3 py-2 text-left font-semibold">जिल्हास्तरीय समितीने मंजूर केलेला दर</th>
+                    <th class="border border-[#cdd7e5] px-3 py-2 text-left font-semibold">एकक</th>
                 `;
             }
             sec15TableBody.innerHTML = rows.map((row) => `
@@ -2577,7 +2577,7 @@
                             class="w-full rounded-lg border border-[#d3deeb] bg-[#f7fafe] px-3 py-2 text-sm">
                     </td>
                     <td class="border border-[#cdd7e5] px-3 py-2">
-                        <input type="number" value="${row.approved_rate ?? ''}" placeholder="à¤®à¤‚à¤œà¥‚à¤° à¤¦à¤°"
+                        <input type="number" value="${row.approved_rate ?? ''}" placeholder="मंजूर दर"
                             class="vi-sec15-approved w-full rounded-lg border border-[#d3deeb] px-3 py-2 text-sm">
                     </td>
                     <td class="border border-[#cdd7e5] px-3 py-2">
@@ -2593,7 +2593,7 @@
             const taluka = talukaSel.value;
             const village = villageSel.value;
             if (!village) {
-                renderSec15Rows([], 'à¤—à¤¾à¤µ à¤¨à¤¿à¤µà¤¡à¤¾');
+                renderSec15Rows([], 'गाव निवडा');
                 return;
             }
             try {
@@ -2830,13 +2830,13 @@
             const taluka = talukaSel.value;
             const village = villageSel.value;
             if (!district || !taluka || !village) {
-                showStatus('à¤¡à¥à¤°à¤¾à¤«à¥à¤Ÿ à¤¸à¥‡à¤µà¥à¤¹ à¤•à¤°à¤£à¥à¤¯à¤¾à¤¸à¤¾à¤ à¥€ à¤œà¤¿à¤²à¥à¤¹à¤¾, à¤¤à¤¾à¤²à¥à¤•à¤¾ à¤†à¤£à¤¿ à¤—à¤¾à¤µ à¤¨à¤¿à¤µà¤¡à¤¾.', true);
+                showStatus('ड्राफ्ट सेव्ह करण्यासाठी जिल्हा, तालुका आणि गाव निवडा.', true);
                 setActiveTab(1);
                 return;
             }
             const key = getDraftStorageKey(district, taluka, village);
             draftCache[key] = collectCurrentFormSnapshot();
-            showStatus('à¤¡à¥à¤°à¤¾à¤«à¥à¤Ÿ à¤¸à¥‡à¤µà¥à¤¹ à¤à¤¾à¤²à¤¾.');
+            showStatus('ड्राफ्ट सेव्ह झाला.');
         }
 
         function loadDraftFromLocal(district, taluka, village) {
@@ -2869,7 +2869,7 @@
             const taluka = talukaSel.value;
             const village = villageSel.value;
             if (!district || !taluka || !village) {
-                showStatus('à¤•à¥ƒà¤ªà¤¯à¤¾ à¤œà¤¿à¤²à¥à¤¹à¤¾, à¤¤à¤¾à¤²à¥à¤•à¤¾ à¤†à¤£à¤¿ à¤—à¤¾à¤µ à¤¨à¤¿à¤µà¤¡à¤¾.', true);
+                showStatus('कृपया जिल्हा, तालुका आणि गाव निवडा.', true);
                 setActiveTab(1);
                 return;
             }
@@ -2963,13 +2963,13 @@
                 completedTabs.add(currentTab);
 
                 if (goToList) {
-                    showStatus('à¤¡à¥‡à¤Ÿà¤¾ à¤¯à¤¶à¤¸à¥à¤µà¥€à¤°à¤¿à¤¤à¥à¤¯à¤¾ à¤¸à¤¬à¤®à¤¿à¤Ÿ à¤à¤¾à¤²à¤¾.');
+                    showStatus('डेटा यशस्वीरित्या सबमिट झाला.');
                     clearDraftFromLocal(district, taluka, village);
                     clearProgressFromLocal(district, taluka, village);
                     await loadVillageRecordList();
                     showListView();
                 } else {
-                    showStatus('à¤¡à¥‡à¤Ÿà¤¾ à¤¯à¤¶à¤¸à¥à¤µà¥€à¤°à¤¿à¤¤à¥à¤¯à¤¾ à¤¸à¥‡à¤µà¥à¤¹ à¤à¤¾à¤²à¤¾.');
+                    showStatus('डेटा यशस्वीरित्या सेव्ह झाला.');
                     await Promise.all([loadVillageData(), loadSec15ForSelectedVillage()]);
                     showFormView();
                     const nextTab = (goNext && currentTab < 8) ? currentTab + 1 : currentTab;
@@ -3104,7 +3104,7 @@
                         method: 'POST',
                         headers: { 'X-CSRFToken': csrfToken() }
                     });
-                    showStatus('à¤°à¥‡à¤•à¥‰à¤°à¥à¤¡ à¤¹à¤Ÿà¤µà¤²à¤¾ à¤—à¥‡à¤²à¤¾.');
+                    showStatus('रेकॉर्ड हटवला गेला.');
                     await loadVillageRecordList();
                 } catch (err) {
                     showStatus(err.message, true);
@@ -3115,15 +3115,15 @@
 
         async function initLocationSelectors() {
             const districtsData = await fetchJSON('/api/locations/?lang=mr');
-            fillSelect(districtSel, districtsData.data || [], 'à¤œà¤¿à¤²à¥à¤¹à¤¾ à¤¨à¤¿à¤µà¤¡à¤¾');
+            fillSelect(districtSel, districtsData.data || [], 'जिल्हा निवडा');
 
             districtSel.addEventListener('change', async () => {
-                renderSec15Rows([], 'à¤—à¤¾à¤µ à¤¨à¤¿à¤µà¤¡à¤¾');
+                renderSec15Rows([], 'गाव निवडा');
                 await loadTalukasForDistrict(districtSel.value, '');
             });
 
             talukaSel.addEventListener('change', async () => {
-                renderSec15Rows([], 'à¤—à¤¾à¤µ à¤¨à¤¿à¤µà¤¡à¤¾');
+                renderSec15Rows([], 'गाव निवडा');
                 await loadVillagesForTaluka(districtSel.value, talukaSel.value, '');
             });
 
@@ -3159,7 +3159,7 @@
         render8aRecords([]);
         initAllDropzones();
         initDateValidation();
-        renderSec15Rows([], 'à¤—à¤¾à¤µ à¤¨à¤¿à¤µà¤¡à¤¾');
+        renderSec15Rows([], 'गाव निवडा');
         setActiveTab(1);
         clearLegacyPersistedDrafts();
         locationInitPromise = initLocationSelectors();
@@ -3205,7 +3205,7 @@
                             setActiveTab(1);
                         }
                     } else {
-                        // No edit record from list â€” check if we have a persisted form state (e.g. from a reload)
+                        // No edit record from list — check if we have a persisted form state (e.g. from a reload)
                         let restoredState = null;
                         try {
                             const stored = sessionStorage.getItem('vi_form_state');
@@ -3229,7 +3229,7 @@
                                 await Promise.all([loadVillageData(), loadSec15ForSelectedVillage()]);
                                 setVillageInfoFieldsLocked(false);
                             } else if (completedTabs.size > 0) {
-                                // New entry already saved at least once â€” load data, skip duplicate check, don't lock location
+                                // New entry already saved at least once — load data, skip duplicate check, don't lock location
                                 await Promise.all([loadVillageData(), loadSec15ForSelectedVillage()]);
                                 setVillageInfoFieldsLocked(false);
                             } else {
@@ -3261,7 +3261,6 @@
     </script>
 
 {% endblock %}
-
 
 
 
