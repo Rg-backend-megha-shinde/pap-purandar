@@ -2580,6 +2580,7 @@
                 container.appendChild(line);
             });
             syncSec4RemoveButtons();
+            renderNotifiedAreaRows(notifiedAreaRowsState);
             requestAnimationFrame(() => refreshSavedFilePopovers(container));
         }
 
@@ -2710,6 +2711,7 @@
                 container.appendChild(line);
             });
             syncSec8RemoveButtons();
+            renderNotifiedAreaRows(notifiedAreaRowsState);
             requestAnimationFrame(() => refreshSavedFilePopovers(container));
         }
 
@@ -3281,6 +3283,7 @@
                 initDateValidation(line);
                 recordSec4Rows.appendChild(line);
                 syncSec4RemoveButtons();
+                renderNotifiedAreaRows(notifiedAreaRowsState);
             });
 
             recordSec4Rows.addEventListener('click', (event) => {
@@ -3333,6 +3336,7 @@
                 initDateValidation(line);
                 recordSec8Rows.appendChild(line);
                 syncSec8RemoveButtons();
+                renderNotifiedAreaRows(notifiedAreaRowsState);
             });
 
             recordSec8Rows.addEventListener('click', (event) => {
