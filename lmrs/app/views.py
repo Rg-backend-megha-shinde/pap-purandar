@@ -4151,21 +4151,51 @@ def village_info(request):
             parsed_rows = []
         cleaned_notified_rows = []
         if isinstance(parsed_rows, list):
-            for row in parsed_rows:
-                if not isinstance(row, dict):
-                    continue
-                gut_mode = (row.get('gut_mode') or '').strip().lower()
-                gut_number = (row.get('gut_number') or '').strip()
-                other_gut = (row.get('other_gut') or '').strip()
-                notified_area = (row.get('notified_area') or '').strip()
-                if gut_mode not in ('listed', 'other'):
-                    gut_mode = 'other' if other_gut else 'listed'
-                cleaned_notified_rows.append({
-                    'gut_mode': gut_mode,
-                    'gut_number': gut_number,
-                    'other_gut': other_gut,
-                    'notified_area': notified_area,
-                })
+            if parsed_rows and isinstance(parsed_rows[0], dict) and 'rows' in parsed_rows[0]:
+                for item in parsed_rows:
+                    if not isinstance(item, dict):
+                        continue
+                    block_index = item.get('block_index')
+                    rows = item.get('rows')
+                    if not isinstance(rows, list):
+                        continue
+                    cleaned_rows = []
+                    for row in rows:
+                        if not isinstance(row, dict):
+                            continue
+                        gut_mode = (row.get('gut_mode') or '').strip().lower()
+                        gut_number = (row.get('gut_number') or '').strip()
+                        other_gut = (row.get('other_gut') or '').strip()
+                        notified_area = (row.get('notified_area') or '').strip()
+                        if gut_mode not in ('listed', 'other'):
+                            gut_mode = 'other' if other_gut else 'listed'
+                        cleaned_rows.append({
+                            'gut_mode': gut_mode,
+                            'gut_number': gut_number,
+                            'other_gut': other_gut,
+                            'notified_area': notified_area,
+                        })
+                    cleaned_notified_rows.append({
+                        'block_index': int(block_index) if str(block_index).isdigit() else 0,
+                        'rows': cleaned_rows or [{}],
+                    })
+            else:
+                # Backward compatibility: old flat list format
+                for row in parsed_rows:
+                    if not isinstance(row, dict):
+                        continue
+                    gut_mode = (row.get('gut_mode') or '').strip().lower()
+                    gut_number = (row.get('gut_number') or '').strip()
+                    other_gut = (row.get('other_gut') or '').strip()
+                    notified_area = (row.get('notified_area') or '').strip()
+                    if gut_mode not in ('listed', 'other'):
+                        gut_mode = 'other' if other_gut else 'listed'
+                    cleaned_notified_rows.append({
+                        'gut_mode': gut_mode,
+                        'gut_number': gut_number,
+                        'other_gut': other_gut,
+                        'notified_area': notified_area,
+                    })
         village_data.notified_area_rows = cleaned_notified_rows
 
         if final_submit:

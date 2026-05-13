@@ -1865,7 +1865,7 @@
             fillSelect(talukaSel, [], 'आधी जिल्हा निवडा');
             fillSelect(villageSel, [], 'आधी तालुका निवडा');
             renderSec1AdminRows([]);
-            renderNotifiedAreaRows([]);
+            initNotifiedAreaBlocks([{}]);
             renderSec4Rows([]);
             renderSec8Rows([]);
             render8aRecords([]);
@@ -1892,7 +1892,7 @@
                 el.value = '';
             });
             renderSec1AdminRows([]);
-            renderNotifiedAreaRows([]);
+            initNotifiedAreaBlocks([{}]);
             renderSec4Rows([]);
             renderSec8Rows([]);
             render8aRecords([]);
@@ -2108,7 +2108,6 @@
             };
         }
 
-        let notifiedAreaRowsState = [{}];
         let notifiedAreaGutOptions = [];
 
         async function loadNotifiedAreaGutOptions() {
@@ -2117,7 +2116,7 @@
             const village = (villageSel.value || '').trim();
             if (!district || !taluka || !village) {
                 notifiedAreaGutOptions = [];
-                renderNotifiedAreaRows(notifiedAreaRowsState);
+                initNotifiedAreaBlocks();
                 return;
             }
             try {
@@ -2129,7 +2128,7 @@
             } catch (_) {
                 notifiedAreaGutOptions = [];
             }
-            renderNotifiedAreaRows(notifiedAreaRowsState);
+            initNotifiedAreaBlocks();
         }
 
         function buildNotifiedAreaTableHtml(rows) {
@@ -2184,73 +2183,109 @@
             `;
         }
 
-        function renderNotifiedAreaRows(rows = []) {
-            notifiedAreaRowsState = (Array.isArray(rows) && rows.length ? rows : [{}]).map((row) => ({
+        function normalizeNotifiedRows(rows = []) {
+            return (Array.isArray(rows) && rows.length ? rows : [{}]).map((row) => ({
                 gut_mode: row?.gut_mode === 'other' ? 'other' : 'listed',
                 gut_number: row?.gut_number || '',
                 other_gut: row?.other_gut || '',
                 notified_area: row?.notified_area || '',
             }));
-            document.querySelectorAll('.vi-notified-area-rows').forEach((host) => {
-                host.innerHTML = buildNotifiedAreaTableHtml(notifiedAreaRowsState);
-                host.querySelectorAll('select[data-notified-field=\"gut_select\"]').forEach((el) => {
-                    const idx = Number(el.dataset.rowIndex);
-                    const row = notifiedAreaRowsState[idx] || {};
-                    const current = row.gut_mode === 'other' ? '__other__' : (row.gut_number || '');
-                    if (current) el.value = current;
-                });
+        }
+
+        function renderNotifiedAreaBlock(blockEl, rows = [{}]) {
+            if (!blockEl) return;
+            const host = blockEl.querySelector('.vi-notified-area-rows');
+            if (!host) return;
+            const normalizedRows = normalizeNotifiedRows(rows);
+            host.innerHTML = buildNotifiedAreaTableHtml(normalizedRows);
+            host.querySelectorAll('select[data-notified-field=\"gut_select\"]').forEach((el) => {
+                const idx = Number(el.dataset.rowIndex);
+                const row = normalizedRows[idx] || {};
+                const current = row.gut_mode === 'other' ? '__other__' : (row.gut_number || '');
+                if (current) el.value = current;
             });
         }
 
+        function initNotifiedAreaBlocks(defaultRows = [{}]) {
+            document.querySelectorAll('.vi-notified-area-block').forEach((block) => {
+                const host = block.querySelector('.vi-notified-area-rows');
+                if (!host) return;
+                if (!host.querySelector('table')) {
+                    renderNotifiedAreaBlock(block, defaultRows);
+                } else {
+                    const currentRows = collectNotifiedAreaRowsFromBlock(block);
+                    renderNotifiedAreaBlock(block, currentRows);
+                }
+            });
+        }
+
+        function collectNotifiedAreaRowsFromBlock(blockEl) {
+            if (!blockEl) return [{}];
+            const rows = [];
+            const trs = blockEl.querySelectorAll('.vi-notified-area-rows tbody tr');
+            trs.forEach((tr, idx) => {
+                const gutSelect = tr.querySelector('select[data-notified-field="gut_select"]');
+                const otherGutInput = tr.querySelector('input[data-notified-field="other_gut"]');
+                const areaInput = tr.querySelector('input[data-notified-field="notified_area"]');
+                const selected = (gutSelect?.value || '').trim();
+                const row = {
+                    gut_mode: selected === '__other__' ? 'other' : 'listed',
+                    gut_number: selected && selected !== '__other__' ? selected : '',
+                    other_gut: (otherGutInput?.value || '').trim(),
+                    notified_area: (areaInput?.value || '').trim(),
+                };
+                if (idx === 0 || row.gut_number || row.other_gut || row.notified_area) rows.push(row);
+            });
+            return rows.length ? rows : [{}];
+        }
+
         function collectNotifiedAreaRows() {
-            return (Array.isArray(notifiedAreaRowsState) && notifiedAreaRowsState.length ? notifiedAreaRowsState : [{}]).map((row) => ({
-                gut_mode: row.gut_mode === 'other' ? 'other' : 'listed',
-                gut_number: row.gut_number || '',
-                other_gut: row.other_gut || '',
-                notified_area: row.notified_area || '',
-            }));
+            const payload = [];
+            document.querySelectorAll('.vi-notified-area-block').forEach((block, index) => {
+                payload.push({
+                    block_index: index,
+                    rows: collectNotifiedAreaRowsFromBlock(block),
+                });
+            });
+            return payload;
         }
 
         function wireNotifiedAreaRows() {
             document.addEventListener('click', (event) => {
                 const addBtn = event.target.closest('.add-notified-area-row-btn');
                 if (addBtn) {
-                    notifiedAreaRowsState.push({ gut_mode: 'listed', gut_number: '', other_gut: '', notified_area: '' });
-                    renderNotifiedAreaRows(notifiedAreaRowsState);
+                    const block = addBtn.closest('.vi-notified-area-block');
+                    const rows = collectNotifiedAreaRowsFromBlock(block);
+                    rows.push({ gut_mode: 'listed', gut_number: '', other_gut: '', notified_area: '' });
+                    renderNotifiedAreaBlock(block, rows);
                     return;
                 }
                 const removeBtn = event.target.closest('button[data-notified-remove-row]');
                 if (!removeBtn) return;
                 const idx = Number(removeBtn.dataset.notifiedRemoveRow);
                 if (!Number.isInteger(idx)) return;
-                notifiedAreaRowsState.splice(idx, 1);
-                if (!notifiedAreaRowsState.length) notifiedAreaRowsState = [{}];
-                renderNotifiedAreaRows(notifiedAreaRowsState);
+                const block = removeBtn.closest('.vi-notified-area-block');
+                const rows = collectNotifiedAreaRowsFromBlock(block);
+                rows.splice(idx, 1);
+                renderNotifiedAreaBlock(block, rows.length ? rows : [{}]);
             });
 
             document.addEventListener('change', (event) => {
                 const select = event.target.closest('select[data-notified-field="gut_select"]');
                 if (!select) return;
                 const idx = Number(select.dataset.rowIndex);
-                if (!Number.isInteger(idx) || !notifiedAreaRowsState[idx]) return;
+                const block = select.closest('.vi-notified-area-block');
+                const rows = collectNotifiedAreaRowsFromBlock(block);
+                if (!Number.isInteger(idx) || !rows[idx]) return;
                 if (select.value === '__other__') {
-                    notifiedAreaRowsState[idx].gut_mode = 'other';
-                    notifiedAreaRowsState[idx].gut_number = '';
+                    rows[idx].gut_mode = 'other';
+                    rows[idx].gut_number = '';
                 } else {
-                    notifiedAreaRowsState[idx].gut_mode = 'listed';
-                    notifiedAreaRowsState[idx].gut_number = select.value || '';
-                    notifiedAreaRowsState[idx].other_gut = '';
+                    rows[idx].gut_mode = 'listed';
+                    rows[idx].gut_number = select.value || '';
+                    rows[idx].other_gut = '';
                 }
-                renderNotifiedAreaRows(notifiedAreaRowsState);
-            });
-
-            document.addEventListener('input', (event) => {
-                const field = event.target.dataset.notifiedField;
-                if (!field) return;
-                const idx = Number(event.target.dataset.rowIndex);
-                if (!Number.isInteger(idx) || !notifiedAreaRowsState[idx]) return;
-                if (field === 'other_gut') notifiedAreaRowsState[idx].other_gut = event.target.value || '';
-                if (field === 'notified_area') notifiedAreaRowsState[idx].notified_area = event.target.value || '';
+                renderNotifiedAreaBlock(block, rows);
             });
         }
 
@@ -2580,7 +2615,7 @@
                 container.appendChild(line);
             });
             syncSec4RemoveButtons();
-            renderNotifiedAreaRows(notifiedAreaRowsState);
+            initNotifiedAreaBlocks([{}]);
             requestAnimationFrame(() => refreshSavedFilePopovers(container));
         }
 
@@ -2711,7 +2746,7 @@
                 container.appendChild(line);
             });
             syncSec8RemoveButtons();
-            renderNotifiedAreaRows(notifiedAreaRowsState);
+            initNotifiedAreaBlocks([{}]);
             requestAnimationFrame(() => refreshSavedFilePopovers(container));
         }
 
@@ -2889,7 +2924,7 @@
                     renderSec8Rows([]);
                     render8aRecords([]);
                     renderSec1AdminRows([]);
-                    renderNotifiedAreaRows([]);
+                    initNotifiedAreaBlocks([{}]);
                     renderFieldFileLists(fieldMap, {});
                     return;
                 }
@@ -2904,11 +2939,20 @@
                     el.value = values[key] || '';
                 }
                 renderFieldFileLists(fieldMap, data.files_map || {});
-                renderSec1AdminRows(values.sec1_admin_approvals || []);
-                renderNotifiedAreaRows(values.notified_area_rows || []);
                 renderSec4Rows(data.sec4_rows || []);
                 renderSec8Rows(data.sec8_rows || []);
                 render8aRecords(data.sec26_8a_records || []);
+                renderSec1AdminRows(values.sec1_admin_approvals || []);
+                const blocks = Array.from(document.querySelectorAll('.vi-notified-area-block'));
+                const saved = Array.isArray(values.notified_area_rows) ? values.notified_area_rows : [];
+                if (saved.length && saved[0] && Array.isArray(saved[0].rows)) {
+                    blocks.forEach((block, idx) => {
+                        const item = saved.find((x) => Number(x.block_index) === idx);
+                        renderNotifiedAreaBlock(block, item?.rows || [{}]);
+                    });
+                } else {
+                    blocks.forEach((block) => renderNotifiedAreaBlock(block, saved.length ? saved : [{}]));
+                }
             } catch (err) {
                 showStatus(err.message, true);
             }
@@ -3070,14 +3114,25 @@
 
             const sec1AdminRows = Array.isArray(snapshot?.sec1_admin_rows) && snapshot.sec1_admin_rows.length ? snapshot.sec1_admin_rows : [{}];
             renderSec1AdminRows(sec1AdminRows);
-            const notifiedRows = Array.isArray(snapshot?.notified_area_rows) && snapshot.notified_area_rows.length ? snapshot.notified_area_rows : [{}];
-            renderNotifiedAreaRows(notifiedRows);
 
             const sec4Rows = Array.isArray(snapshot?.sec4_rows) && snapshot.sec4_rows.length ? snapshot.sec4_rows : [{}];
             renderSec4Rows(sec4Rows);
 
             const sec8Rows = Array.isArray(snapshot?.sec8_rows) && snapshot.sec8_rows.length ? snapshot.sec8_rows : [{}];
             renderSec8Rows(sec8Rows);
+
+            const notifiedRows = Array.isArray(snapshot?.notified_area_rows) && snapshot.notified_area_rows.length
+                ? snapshot.notified_area_rows
+                : [{ block_index: 0, rows: [{}] }];
+            const blocks = Array.from(document.querySelectorAll('.vi-notified-area-block'));
+            if (notifiedRows.length && notifiedRows[0] && Array.isArray(notifiedRows[0].rows)) {
+                blocks.forEach((block, idx) => {
+                    const item = notifiedRows.find((x) => Number(x.block_index) === idx);
+                    renderNotifiedAreaBlock(block, item?.rows || [{}]);
+                });
+            } else {
+                blocks.forEach((block) => renderNotifiedAreaBlock(block, notifiedRows.length ? notifiedRows : [{}]));
+            }
 
             const rows = Array.isArray(snapshot?.sec26_rows) && snapshot.sec26_rows.length ? snapshot.sec26_rows : [{}];
             render8aRecords(rows);
@@ -3283,7 +3338,7 @@
                 initDateValidation(line);
                 recordSec4Rows.appendChild(line);
                 syncSec4RemoveButtons();
-                renderNotifiedAreaRows(notifiedAreaRowsState);
+                renderNotifiedAreaBlock(line.querySelector('.vi-notified-area-block'), [{}]);
             });
 
             recordSec4Rows.addEventListener('click', (event) => {
@@ -3336,7 +3391,7 @@
                 initDateValidation(line);
                 recordSec8Rows.appendChild(line);
                 syncSec8RemoveButtons();
-                renderNotifiedAreaRows(notifiedAreaRowsState);
+                renderNotifiedAreaBlock(line.querySelector('.vi-notified-area-block'), [{}]);
             });
 
             recordSec8Rows.addEventListener('click', (event) => {
@@ -3469,10 +3524,10 @@
             changeVillagePage(page);
         });
         renderSec1AdminRows([]);
-        renderNotifiedAreaRows([]);
         renderSec4Rows([]);
         renderSec8Rows([]);
         render8aRecords([]);
+        initNotifiedAreaBlocks([{}]);
         initAllDropzones();
         initDateValidation();
         renderSec15Rows([], 'गाव निवडा');
