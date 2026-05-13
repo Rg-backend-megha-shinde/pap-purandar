@@ -939,6 +939,7 @@ class VillageData(models.Model):
     sec21_karyavrutant = models.TextField(blank=True)
     sec21_karyavrutant_date = models.DateField(null=True, blank=True)
     sec21_karyavrutant_files = models.TextField(blank=True)
+    sec21_rows = models.JSONField(default=list, blank=True)
 
 
     # --- २३. निवाडा ---

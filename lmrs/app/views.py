@@ -4170,6 +4170,41 @@ def village_info(request):
         first_sec3_date_raw = (first_sec3.get('date') or '').strip()
         village_data.sec3_date = parse_date(first_sec3_date_raw) if first_sec3_date_raw else None
 
+        sec21_rows_payload_raw = request.POST.get('sec21_rows_json')
+        sec21_rows = []
+        if sec21_rows_payload_raw:
+            try:
+                parsed_sec21 = json.loads(sec21_rows_payload_raw)
+                if isinstance(parsed_sec21, list):
+                    for row in parsed_sec21:
+                        if not isinstance(row, dict):
+                            continue
+                        sec21_rows.append({
+                            'prastaav': (row.get('prastaav') or '').strip(),
+                            'prastaav_date': (row.get('prastaav_date') or '').strip(),
+                            'karyavrutant': (row.get('karyavrutant') or '').strip(),
+                            'karyavrutant_date': (row.get('karyavrutant_date') or '').strip(),
+                            'files': {'prastaav_files': [], 'karyavrutant_files': []},
+                        })
+            except (TypeError, ValueError, json.JSONDecodeError):
+                sec21_rows = []
+        if not sec21_rows:
+            sec21_rows = [{
+                'prastaav': '',
+                'prastaav_date': '',
+                'karyavrutant': '',
+                'karyavrutant_date': '',
+                'files': {'prastaav_files': [], 'karyavrutant_files': []},
+            }]
+        village_data.sec21_rows = sec21_rows
+        first_sec21 = sec21_rows[0] if sec21_rows else {}
+        village_data.sec21_prastaav = first_sec21.get('prastaav', '')
+        first_sec21_prastaav_date = (first_sec21.get('prastaav_date') or '').strip()
+        village_data.sec21_prastaav_date = parse_date(first_sec21_prastaav_date) if first_sec21_prastaav_date else None
+        village_data.sec21_karyavrutant = first_sec21.get('karyavrutant', '')
+        first_sec21_karyavrutant_date = (first_sec21.get('karyavrutant_date') or '').strip()
+        village_data.sec21_karyavrutant_date = parse_date(first_sec21_karyavrutant_date) if first_sec21_karyavrutant_date else None
+
         related_sections_payload_raw = request.POST.get('related_sections_rows_json')
         related_sections_payload = {}
         if related_sections_payload_raw:
@@ -4324,6 +4359,46 @@ def village_info(request):
                 for rf in row_files
             ]
         village_data.save(update_fields=['sec3_rows', 'updated_at'])
+
+        # Section 21 repeatable rows with two file buckets per row.
+        sec21_rows = village_data.sec21_rows or []
+        existing_sec21_files = VillageDataFile.objects.filter(
+            village_data=village_data,
+            field_key__startswith='sec21_row_'
+        )
+        for old in existing_sec21_files:
+            key = old.field_key or ''
+            m = re.match(r'^sec21_row_(\d+)_(prastaav|karyavrutant)$', key)
+            if not m:
+                continue
+            old_index = int(m.group(1))
+            if old_index >= len(sec21_rows):
+                if old.file:
+                    old.file.delete(save=False)
+                old.delete()
+
+        for i in range(len(sec21_rows)):
+            prastaav_key = f'sec21_row_{i}_prastaav'
+            kary_key = f'sec21_row_{i}_karyavrutant'
+            for f in request.FILES.getlist(f'sec21_prastaav_files_{i}'):
+                VillageDataFile.objects.create(village_data=village_data, field_key=prastaav_key, file=f)
+            for f in request.FILES.getlist(f'sec21_karyavrutant_files_{i}'):
+                VillageDataFile.objects.create(village_data=village_data, field_key=kary_key, file=f)
+
+            prastaav_files = VillageDataFile.objects.filter(village_data=village_data, field_key=prastaav_key)
+            kary_files = VillageDataFile.objects.filter(village_data=village_data, field_key=kary_key)
+            sec21_rows[i]['files'] = {
+                'prastaav_files': [
+                    {'id': rf.id, 'url': rf.file.url, 'name': rf.file.name.split('/')[-1]}
+                    for rf in prastaav_files
+                ],
+                'karyavrutant_files': [
+                    {'id': rf.id, 'url': rf.file.url, 'name': rf.file.name.split('/')[-1]}
+                    for rf in kary_files
+                ],
+            }
+        village_data.sec21_rows = sec21_rows
+        village_data.save(update_fields=['sec21_rows', 'updated_at'])
 
         # Related section repeatable rows (13-17 in UI) with files stored in VillageDataFile.
         for sec_code, cfg in _RELATED_SECTION_ROW_CONFIG.items():
@@ -4667,6 +4742,7 @@ def get_village_info_data(request):
             'files': [],
         }]
     data['sec3_rows'] = sec3_rows
+    data['sec21_rows'] = village_data.sec21_rows or []
     data['notified_area_rows'] = village_data.notified_area_rows or []
     data['sec13_rows'] = village_data.sec13_rows or []
     data['sec14_rows'] = village_data.sec14_rows or []
@@ -4691,6 +4767,41 @@ def get_village_info_data(request):
         if not isinstance(row, dict):
             continue
         row['files'] = sec3_row_files_map.get(idx, row.get('files') or [])
+
+    sec21_data_rows = data.get('sec21_rows') or []
+    sec21_file_maps = {}
+    for key, files in files_map.items():
+        m = re.match(r'^sec21_row_(\d+)_(prastaav|karyavrutant)$', key or '')
+        if not m:
+            continue
+        idx = int(m.group(1))
+        bucket = m.group(2)
+        sec21_file_maps.setdefault(idx, {'prastaav_files': [], 'karyavrutant_files': []})
+        sec21_file_maps[idx][f'{bucket}_files'] = files
+    normalized_sec21_rows = []
+    for idx, row in enumerate(sec21_data_rows):
+        if not isinstance(row, dict):
+            row = {}
+        existing_files = row.get('files') if isinstance(row.get('files'), dict) else {}
+        normalized_sec21_rows.append({
+            'prastaav': row.get('prastaav') or '',
+            'prastaav_date': row.get('prastaav_date') or '',
+            'karyavrutant': row.get('karyavrutant') or '',
+            'karyavrutant_date': row.get('karyavrutant_date') or '',
+            'files': {
+                'prastaav_files': sec21_file_maps.get(idx, {}).get('prastaav_files', existing_files.get('prastaav_files') or []),
+                'karyavrutant_files': sec21_file_maps.get(idx, {}).get('karyavrutant_files', existing_files.get('karyavrutant_files') or []),
+            }
+        })
+    if not normalized_sec21_rows:
+        normalized_sec21_rows = [{
+            'prastaav': village_data.sec21_prastaav or '',
+            'prastaav_date': village_data.sec21_prastaav_date.isoformat() if village_data.sec21_prastaav_date else '',
+            'karyavrutant': village_data.sec21_karyavrutant or '',
+            'karyavrutant_date': village_data.sec21_karyavrutant_date.isoformat() if village_data.sec21_karyavrutant_date else '',
+            'files': {'prastaav_files': [], 'karyavrutant_files': []},
+        }]
+    data['sec21_rows'] = normalized_sec21_rows
 
     for sec_code, cfg in _RELATED_SECTION_ROW_CONFIG.items():
         json_field = cfg.get('json')

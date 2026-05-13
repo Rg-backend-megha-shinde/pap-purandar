@@ -1139,38 +1139,46 @@
                         </div>
                         <div class="space-y-6 px-6 py-7 md:px-8">
                             <div class="rounded-2xl border border-[#e2ebf7] bg-[#fbfdff] p-5">
-                                <h3 class="mb-4 text-lg font-bold text-[#244271]">१९. जिल्हास्तरीय समितीने मंजूर केलेले मोबदला निश्चिती प्रपत्र</h3>
-                                <div class="space-y-4">
-                                    <div class="grid gap-4 md:grid-cols-3">
-                                        <div>
-                                            <label class="mb-2 block text-sm font-semibold text-[#44597a]">प्रस्ताव</label>
-                                            <input type="text" placeholder="प्रस्ताव"
-                                                class="w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
-                                        </div>
-                                        <div>
-                                            <label class="mb-2 block text-sm font-semibold text-[#44597a]">दिनांक</label>
-                                            <input type="date" class="w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
-                                        </div>
-                                        <div>
-                                            <label class="mb-2 block text-sm font-semibold text-[#44597a]">अपलोड करा</label>
-                                            <input type="file" multiple
-                                                class="block w-full rounded-xl border border-dashed border-[#c5d6ec] bg-white px-4 py-3 text-sm text-[#60708a] file:mr-4 file:rounded-lg file:border-0 file:bg-[#125fcb] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white">
-                                        </div>
-                                    </div>
-                                    <div class="grid gap-4 md:grid-cols-3">
-                                        <div>
-                                            <label class="mb-2 block text-sm font-semibold text-[#44597a]">कार्यवृत्तांत</label>
-                                            <input type="text" placeholder="कार्यवृत्तांत"
-                                                class="w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
-                                        </div>
-                                        <div>
-                                            <label class="mb-2 block text-sm font-semibold text-[#44597a]">दिनांक</label>
-                                            <input type="date" class="w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
-                                        </div>
-                                        <div>
-                                            <label class="mb-2 block text-sm font-semibold text-[#44597a]">अपलोड करा</label>
-                                            <input type="file" multiple
-                                                class="block w-full rounded-xl border border-dashed border-[#c5d6ec] bg-white px-4 py-3 text-sm text-[#60708a] file:mr-4 file:rounded-lg file:border-0 file:bg-[#125fcb] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white">
+                                <div class="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                                    <h3 class="text-lg font-bold text-[#244271]">१९. जिल्हास्तरीय समितीने मंजूर केलेले मोबदला निश्चिती प्रपत्र</h3>
+                                    <button type="button" id="add-sec21-row-btn"
+                                        class="inline-flex items-center justify-center rounded-lg border border-[#c6d9f2] bg-white px-4 py-2 text-sm font-semibold text-[#125fcb] hover:bg-[#eef5ff]">+ ओळ जोडा</button>
+                                </div>
+                                <div id="record-sec21-rows" class="space-y-4">
+                                    <div class="record-sec21-row relative rounded-xl border border-[#e2ebf7] bg-white p-4">
+                                        <div class="space-y-4">
+                                            <div class="grid gap-4 md:grid-cols-3">
+                                                <div>
+                                                    <label class="mb-2 block text-sm font-semibold text-[#44597a]">प्रस्ताव</label>
+                                                    <input type="text" placeholder="प्रस्ताव"
+                                                        class="vi-sec21-prastaav w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
+                                                </div>
+                                                <div>
+                                                    <label class="mb-2 block text-sm font-semibold text-[#44597a]">दिनांक</label>
+                                                    <input type="date" class="vi-sec21-prastaav-date w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
+                                                </div>
+                                                <div>
+                                                    <label class="mb-2 block text-sm font-semibold text-[#44597a]">अपलोड करा</label>
+                                                    <input type="file" multiple
+                                                        class="vi-sec21-prastaav-files block w-full rounded-xl border border-dashed border-[#c5d6ec] bg-white px-4 py-3 text-sm text-[#60708a] file:mr-4 file:rounded-lg file:border-0 file:bg-[#125fcb] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white">
+                                                </div>
+                                            </div>
+                                            <div class="grid gap-4 md:grid-cols-3">
+                                                <div>
+                                                    <label class="mb-2 block text-sm font-semibold text-[#44597a]">कार्यवृत्तांत</label>
+                                                    <input type="text" placeholder="कार्यवृत्तांत"
+                                                        class="vi-sec21-karyavrutant w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
+                                                </div>
+                                                <div>
+                                                    <label class="mb-2 block text-sm font-semibold text-[#44597a]">दिनांक</label>
+                                                    <input type="date" class="vi-sec21-karyavrutant-date w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
+                                                </div>
+                                                <div>
+                                                    <label class="mb-2 block text-sm font-semibold text-[#44597a]">अपलोड करा</label>
+                                                    <input type="file" multiple
+                                                        class="vi-sec21-karyavrutant-files block w-full rounded-xl border border-dashed border-[#c5d6ec] bg-white px-4 py-3 text-sm text-[#60708a] file:mr-4 file:rounded-lg file:border-0 file:bg-[#125fcb] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white">
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -1854,6 +1862,7 @@
             initNotifiedAreaBlocks([{}]);
             renderSec4Rows([]);
             renderSec8Rows([]);
+            renderSec21Rows([]);
             render8aRecords([]);
             renderSec15Rows([], 'गाव निवडा');
             setLocationFieldsReadonly(false);
@@ -1882,6 +1891,7 @@
             initNotifiedAreaBlocks([{}]);
             renderSec4Rows([]);
             renderSec8Rows([]);
+            renderSec21Rows([]);
             render8aRecords([]);
             renderFieldFileLists(fieldMap, {});
         }
@@ -2079,9 +2089,6 @@
 
                 sec13_kharedi_vikri_details: p5[0], sec13_files: p5[1],
                 sec14_meeting_details: p5[2], sec14_date: p5[3], sec14_approved_rate_details: p5[4], sec14_files: p5[5],
-
-                sec21_prastaav: p7[0], sec21_prastaav_date: p7[1], sec21_prastaav_files: p7[2],
-                sec21_karyavrutant: p7[3], sec21_karyavrutant_date: p7[4], sec21_karyavrutant_files: p7[5],
 
                 sec23_kramank: p8[0], sec23_date: p8[1], sec23_files: p8[2],
                 sec24_court_details: p8[3], sec24_files: p8[4],
@@ -2903,6 +2910,7 @@
                     });
                     renderSec4Rows([]);
                     renderSec8Rows([]);
+                    renderSec21Rows([]);
                     render8aRecords([]);
                     renderSec1AdminRows([]);
                     renderSec3Rows([]);
@@ -2924,6 +2932,7 @@
                 renderFieldFileLists(fieldMap, data.files_map || {});
                 renderSec4Rows(data.sec4_rows || []);
                 renderSec8Rows(data.sec8_rows || []);
+                renderSec21Rows(values.sec21_rows || []);
                 render8aRecords(data.sec26_8a_records || []);
                 renderSec1AdminRows(values.sec1_admin_approvals || []);
                 renderSec3Rows(values.sec3_rows || []);
@@ -3107,6 +3116,111 @@
             });
         }
 
+        function buildSec21RowHtml() {
+            return `
+                <button type="button"
+                    class="remove-sec21-row-btn absolute right-3 top-3 inline-flex h-7 w-7 items-center justify-center rounded-full border border-[#cddcf0] text-sm font-bold text-[#6b7d99] hover:bg-[#eef5ff]">✕</button>
+                <div class="space-y-4">
+                    <div class="grid gap-4 md:grid-cols-3">
+                        <div>
+                            <label class="mb-2 block text-sm font-semibold text-[#44597a]">प्रस्ताव</label>
+                            <input type="text" placeholder="प्रस्ताव"
+                                class="vi-sec21-prastaav w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
+                        </div>
+                        <div>
+                            <label class="mb-2 block text-sm font-semibold text-[#44597a]">दिनांक</label>
+                            <input type="date" class="vi-sec21-prastaav-date w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
+                        </div>
+                        <div>
+                            <label class="mb-2 block text-sm font-semibold text-[#44597a]">अपलोड करा</label>
+                            <input type="file" multiple
+                                class="vi-sec21-prastaav-files block w-full rounded-xl border border-dashed border-[#c5d6ec] bg-white px-4 py-3 text-sm text-[#60708a] file:mr-4 file:rounded-lg file:border-0 file:bg-[#125fcb] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white">
+                        </div>
+                    </div>
+                    <div class="grid gap-4 md:grid-cols-3">
+                        <div>
+                            <label class="mb-2 block text-sm font-semibold text-[#44597a]">कार्यवृत्तांत</label>
+                            <input type="text" placeholder="कार्यवृत्तांत"
+                                class="vi-sec21-karyavrutant w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
+                        </div>
+                        <div>
+                            <label class="mb-2 block text-sm font-semibold text-[#44597a]">दिनांक</label>
+                            <input type="date" class="vi-sec21-karyavrutant-date w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
+                        </div>
+                        <div>
+                            <label class="mb-2 block text-sm font-semibold text-[#44597a]">अपलोड करा</label>
+                            <input type="file" multiple
+                                class="vi-sec21-karyavrutant-files block w-full rounded-xl border border-dashed border-[#c5d6ec] bg-white px-4 py-3 text-sm text-[#60708a] file:mr-4 file:rounded-lg file:border-0 file:bg-[#125fcb] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white">
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderSec21SavedFiles(lineEl, files = {}) {
+            const prastaavInput = lineEl.querySelector('.vi-sec21-prastaav-files');
+            const karyInput = lineEl.querySelector('.vi-sec21-karyavrutant-files');
+            if (prastaavInput) {
+                const container = ensureSavedFilesContainer(prastaavInput, 'vi-sec21-saved-files');
+                renderSavedFilesInContainer(
+                    container,
+                    Array.isArray(files.prastaav_files) ? files.prastaav_files : [],
+                    (id) => `/api/village-info/delete-file/${id}/`
+                );
+            }
+            if (karyInput) {
+                const container = ensureSavedFilesContainer(karyInput, 'vi-sec21-saved-files');
+                renderSavedFilesInContainer(
+                    container,
+                    Array.isArray(files.karyavrutant_files) ? files.karyavrutant_files : [],
+                    (id) => `/api/village-info/delete-file/${id}/`
+                );
+            }
+        }
+
+        function syncSec21RemoveButtons() {
+            const rows = Array.from(document.querySelectorAll('#record-sec21-rows .record-sec21-row'));
+            rows.forEach((row, index) => {
+                const btn = row.querySelector('.remove-sec21-row-btn');
+                if (!btn) return;
+                if (index === 0) btn.classList.add('hidden');
+                else btn.classList.remove('hidden');
+            });
+        }
+
+        function renderSec21Rows(rows = []) {
+            const container = document.getElementById('record-sec21-rows');
+            if (!container) return;
+            container.innerHTML = '';
+            const finalRows = rows.length ? rows : [{}];
+            finalRows.forEach((row) => {
+                const line = document.createElement('div');
+                line.className = 'record-sec21-row relative rounded-xl border border-[#e2ebf7] bg-white p-4';
+                line.innerHTML = buildSec21RowHtml();
+                line.querySelector('.vi-sec21-prastaav').value = row.prastaav || '';
+                line.querySelector('.vi-sec21-prastaav-date').value = row.prastaav_date || '';
+                line.querySelector('.vi-sec21-karyavrutant').value = row.karyavrutant || '';
+                line.querySelector('.vi-sec21-karyavrutant-date').value = row.karyavrutant_date || '';
+                renderSec21SavedFiles(line, row.files || {});
+                initAllDropzones(line);
+                initDateValidation(line);
+                container.appendChild(line);
+            });
+            syncSec21RemoveButtons();
+            requestAnimationFrame(() => refreshSavedFilePopovers(container));
+        }
+
+        function collectSec21Rows() {
+            return Array.from(document.querySelectorAll('#record-sec21-rows .record-sec21-row')).map((line) => ({
+                prastaav: line.querySelector('.vi-sec21-prastaav')?.value?.trim() || '',
+                prastaav_date: line.querySelector('.vi-sec21-prastaav-date')?.value || '',
+                karyavrutant: line.querySelector('.vi-sec21-karyavrutant')?.value?.trim() || '',
+                karyavrutant_date: line.querySelector('.vi-sec21-karyavrutant-date')?.value || '',
+                prastaavFilesInput: line.querySelector('.vi-sec21-prastaav-files'),
+                karyavrutantFilesInput: line.querySelector('.vi-sec21-karyavrutant-files')
+            }));
+        }
+
         const relatedSectionCardsConfig = [
             { secCode: 'sec17', titlePrefix: '१३.' },
             { secCode: 'sec18', titlePrefix: '१४.' },
@@ -3288,6 +3402,12 @@
                     paper2_name: row.paper2_name || '',
                     paper2_date: row.paper2_date || ''
                 })),
+                sec21_rows: collectSec21Rows().map((row) => ({
+                    prastaav: row.prastaav || '',
+                    prastaav_date: row.prastaav_date || '',
+                    karyavrutant: row.karyavrutant || '',
+                    karyavrutant_date: row.karyavrutant_date || ''
+                })),
                 sec26_rows: collect8ARecords().map((row) => ({
                     khate_kramank: row.khate_kramank || '',
                     navavar_kshetra: row.navavar_kshetra || '',
@@ -3320,6 +3440,8 @@
 
             const sec8Rows = Array.isArray(snapshot?.sec8_rows) && snapshot.sec8_rows.length ? snapshot.sec8_rows : [{}];
             renderSec8Rows(sec8Rows);
+            const sec21Rows = Array.isArray(snapshot?.sec21_rows) && snapshot.sec21_rows.length ? snapshot.sec21_rows : [{}];
+            renderSec21Rows(sec21Rows);
 
             const notifiedRows = Array.isArray(snapshot?.notified_area_rows) && snapshot.notified_area_rows.length
                 ? snapshot.notified_area_rows
@@ -3436,6 +3558,22 @@
                 formData.append(`sec3_row_date_${i}`, row.date);
                 Array.from(row.filesInput?.files || []).forEach((file) => {
                     formData.append(`sec3_row_files_${i}`, file);
+                });
+            });
+            const sec21Rows = collectSec21Rows();
+            formData.append('sec21_count', String(sec21Rows.length));
+            formData.append('sec21_rows_json', JSON.stringify(sec21Rows.map((row) => ({
+                prastaav: row.prastaav,
+                prastaav_date: row.prastaav_date,
+                karyavrutant: row.karyavrutant,
+                karyavrutant_date: row.karyavrutant_date
+            }))));
+            sec21Rows.forEach((row, i) => {
+                Array.from(row.prastaavFilesInput?.files || []).forEach((file) => {
+                    formData.append(`sec21_prastaav_files_${i}`, file);
+                });
+                Array.from(row.karyavrutantFilesInput?.files || []).forEach((file) => {
+                    formData.append(`sec21_karyavrutant_files_${i}`, file);
                 });
             });
             formData.append('notified_area_rows_json', JSON.stringify(collectNotifiedAreaRows()));
@@ -3679,6 +3817,32 @@
             });
         }
 
+        function wireSec21RowButtons() {
+            const addBtn = document.getElementById('add-sec21-row-btn');
+            const container = document.getElementById('record-sec21-rows');
+            if (!addBtn || !container) return;
+
+            addBtn.addEventListener('click', () => {
+                const line = document.createElement('div');
+                line.className = 'record-sec21-row relative rounded-xl border border-[#e2ebf7] bg-white p-4';
+                line.innerHTML = buildSec21RowHtml();
+                initAllDropzones(line);
+                initDateValidation(line);
+                container.appendChild(line);
+                syncSec21RemoveButtons();
+            });
+
+            container.addEventListener('click', (event) => {
+                const removeBtn = event.target.closest('.remove-sec21-row-btn');
+                if (!removeBtn) return;
+                const line = removeBtn.closest('.record-sec21-row');
+                if (line && container.querySelectorAll('.record-sec21-row').length > 1) {
+                    line.remove();
+                    syncSec21RemoveButtons();
+                }
+            });
+        }
+
         function wire8AButtons() {
             const add8aLineBtn = document.getElementById('add-8a-line-btn');
             const record8aLines = document.getElementById('record-8a-lines');
@@ -3819,6 +3983,7 @@
         wireSec4RowButtons();
         wireSec1AdminRowButtons();
         wireSec3RowButtons();
+        wireSec21RowButtons();
         wireSec8RowButtons();
         wireNotifiedAreaRows();
         wire8AButtons();
@@ -3837,6 +4002,7 @@
         renderSec3Rows([]);
         renderSec4Rows([]);
         renderSec8Rows([]);
+        renderSec21Rows([]);
         render8aRecords([]);
         initNotifiedAreaBlocks([{}]);
         initAllDropzones();
