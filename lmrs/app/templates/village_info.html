@@ -636,30 +636,10 @@
                                 <div class="mb-4 flex items-center justify-between gap-3">
                                     <h3 class="text-lg font-bold text-[#244271]">२. अधिनियमाचे कलम 32, 36 व 38 अन्वये प्राधिकृत भू-संपादन अधिकारी नियुक्ती
                                     </h3>
+                                    <button type="button" id="add-sec3-row-btn"
+                                        class="inline-flex items-center justify-center rounded-lg border border-[#c6d9f2] bg-white px-4 py-2 text-sm font-semibold text-[#125fcb] hover:bg-[#eef5ff]">+ ओळ जोडा</button>
                                 </div>
-                                <div class="grid gap-4 md:grid-cols-2">
-                                    <div>
-                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">उपविभागाचे नाव</label>
-                                        <input type="text" placeholder="उपविभागाचे नाव प्रविष्ट करा"
-                                            class="w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
-                                    </div>
-                                    <div>
-                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">अधिसूचना
-                                            क्रमांक</label>
-                                        <input type="text" placeholder="क्रमांक प्रविष्ट करा"
-                                            class="w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
-                                    </div>
-                                    <div>
-                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">दिनांक</label>
-                                        <input type="date"
-                                            class="w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
-                                    </div>
-                                    <div class="md:col-span-2">
-                                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">अपलोड करा</label>
-                                        <input type="file" multiple
-                                            class="block w-full rounded-xl border border-dashed border-[#c5d6ec] bg-white px-4 py-3 text-sm text-[#60708a] file:mr-4 file:rounded-lg file:border-0 file:bg-[#125fcb] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white">
-                                    </div>
-                                </div>
+                                <div id="record-sec3-rows" class="space-y-3"></div>
                             </div>
                         </div>
                         <div
@@ -1865,6 +1845,7 @@
             fillSelect(talukaSel, [], 'आधी जिल्हा निवडा');
             fillSelect(villageSel, [], 'आधी तालुका निवडा');
             renderSec1AdminRows([]);
+            renderSec3Rows([]);
             initNotifiedAreaBlocks([{}]);
             renderSec4Rows([]);
             renderSec8Rows([]);
@@ -1892,6 +1873,7 @@
                 el.value = '';
             });
             renderSec1AdminRows([]);
+            renderSec3Rows([]);
             initNotifiedAreaBlocks([{}]);
             renderSec4Rows([]);
             renderSec8Rows([]);
@@ -2077,7 +2059,6 @@
                 sec1_adesh_kramank: p1[0], sec1_date: p1[1], sec1_files: p1[2],
                 sec2_paper1_name: p1[3], sec2_paper1_date: p1[4], sec2_paper1_files: p1[5],
                 sec2_paper2_name: p1[6], sec2_paper2_date: p1[7], sec2_paper2_files: p1[8],
-                sec3_upvibhag_name: p1[9], sec3_adhisuchana_kramank: p1[10], sec3_date: p1[11], sec3_files: p1[12],
 
                 sec5_prastaav_kramank: p2[0], sec5_date: p2[1], sec5_files: p2[2],
                 sec6_register_number: p2[3], sec6_date: p2[4], sec6_parishisht16_files: p2[5], sec6_nakasha_files: p2[6],
@@ -2924,6 +2905,7 @@
                     renderSec8Rows([]);
                     render8aRecords([]);
                     renderSec1AdminRows([]);
+                    renderSec3Rows([]);
                     initNotifiedAreaBlocks([{}]);
                     renderFieldFileLists(fieldMap, {});
                     return;
@@ -2943,6 +2925,7 @@
                 renderSec8Rows(data.sec8_rows || []);
                 render8aRecords(data.sec26_8a_records || []);
                 renderSec1AdminRows(values.sec1_admin_approvals || []);
+                renderSec3Rows(values.sec3_rows || []);
                 const blocks = Array.from(document.querySelectorAll('.vi-notified-area-block'));
                 const saved = Array.isArray(values.notified_area_rows) ? values.notified_area_rows : [];
                 if (saved.length && saved[0] && Array.isArray(saved[0].rows)) {
@@ -3022,6 +3005,102 @@
             });
         }
 
+        function buildSec3RowHtml() {
+            return `
+                <button type="button"
+                    class="remove-sec3-row-btn absolute right-3 top-3 inline-flex h-7 w-7 items-center justify-center rounded-full border border-[#cddcf0] text-sm font-bold text-[#6b7d99] hover:bg-[#eef5ff]">✕</button>
+                <div class="grid gap-4 md:grid-cols-2 md:items-end">
+                    <div>
+                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">उपविभागाचे नाव</label>
+                        <input type="text" placeholder="उपविभागाचे नाव प्रविष्ट करा"
+                            class="vi-sec3-upvibhag w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
+                    </div>
+                    <div>
+                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">अधिसूचना क्रमांक</label>
+                        <input type="text" placeholder="क्रमांक प्रविष्ट करा"
+                            class="vi-sec3-adhisuchana w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
+                    </div>
+                    <div>
+                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">भूसंपादण अधिकारी यांचे नाव</label>
+                        <input type="text" placeholder="भूसंपादण अधिकारी यांचे नाव प्रविष्ट करा"
+                            class="vi-sec3-officer-name w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
+                    </div>
+                    <div>
+                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">पत्ता</label>
+                        <input type="text" placeholder="पत्ता प्रविष्ट करा"
+                            class="vi-sec3-address w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
+                    </div>
+                    <div>
+                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">दिनांक</label>
+                        <input type="date"
+                            class="vi-sec3-date w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
+                    </div>
+                    <div>
+                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">अपलोड करा</label>
+                        <input type="file" multiple
+                            class="vi-sec3-files block w-full rounded-xl border border-dashed border-[#c5d6ec] bg-white px-4 py-3 text-sm text-[#60708a] file:mr-4 file:rounded-lg file:border-0 file:bg-[#125fcb] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white">
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderSec3SavedFiles(lineEl, files = []) {
+            const fileInput = lineEl.querySelector('.vi-sec3-files');
+            if (!fileInput) return;
+            const container = ensureSavedFilesContainer(fileInput, 'vi-sec3-saved-files');
+            renderSavedFilesInContainer(
+                container,
+                Array.isArray(files) ? files : [],
+                (id) => `/api/village-info/delete-file/${id}/`
+            );
+        }
+
+        function syncSec3RemoveButtons() {
+            const rows = Array.from(document.querySelectorAll('#record-sec3-rows .record-sec3-row'));
+            rows.forEach((row, index) => {
+                const btn = row.querySelector('.remove-sec3-row-btn');
+                if (!btn) return;
+                if (index === 0) btn.classList.add('hidden');
+                else btn.classList.remove('hidden');
+            });
+        }
+
+        function renderSec3Rows(rows = []) {
+            const container = document.getElementById('record-sec3-rows');
+            if (!container) return;
+            container.innerHTML = '';
+            const finalRows = rows.length ? rows : [{}];
+            finalRows.forEach((row) => {
+                const line = document.createElement('div');
+                line.className = 'record-sec3-row relative rounded-xl border border-[#e2ebf7] bg-white p-4';
+                line.innerHTML = buildSec3RowHtml();
+                line.querySelector('.vi-sec3-upvibhag').value = row.upvibhag_name || '';
+                line.querySelector('.vi-sec3-adhisuchana').value = row.adhisuchana_kramank || '';
+                line.querySelector('.vi-sec3-officer-name').value = row.officer_name || '';
+                line.querySelector('.vi-sec3-address').value = row.address || '';
+                line.querySelector('.vi-sec3-date').value = row.date || '';
+                renderSec3SavedFiles(line, row.files || []);
+                initAllDropzones(line);
+                initDateValidation(line);
+                container.appendChild(line);
+            });
+            syncSec3RemoveButtons();
+            requestAnimationFrame(() => refreshSavedFilePopovers(container));
+        }
+
+        function collectSec3Rows() {
+            return Array.from(document.querySelectorAll('#record-sec3-rows .record-sec3-row')).map((line) => {
+                return {
+                    upvibhag_name: line.querySelector('.vi-sec3-upvibhag')?.value?.trim() || '',
+                    adhisuchana_kramank: line.querySelector('.vi-sec3-adhisuchana')?.value?.trim() || '',
+                    officer_name: line.querySelector('.vi-sec3-officer-name')?.value?.trim() || '',
+                    address: line.querySelector('.vi-sec3-address')?.value?.trim() || '',
+                    date: line.querySelector('.vi-sec3-date')?.value || '',
+                    filesInput: line.querySelector('.vi-sec3-files')
+                };
+            });
+        }
+
         function getDraftStorageKey(district, taluka, village) {
             return `${DRAFT_STORAGE_PREFIX}:${district || ''}:${taluka || ''}:${village || ''}`;
         }
@@ -3073,6 +3152,13 @@
                     adhisuchana_kramank: row.adhisuchana_kramank || '',
                     date: row.date || ''
                 })),
+                sec3_rows: collectSec3Rows().map((row) => ({
+                    upvibhag_name: row.upvibhag_name || '',
+                    adhisuchana_kramank: row.adhisuchana_kramank || '',
+                    officer_name: row.officer_name || '',
+                    address: row.address || '',
+                    date: row.date || ''
+                })),
                 notified_area_rows: collectNotifiedAreaRows(),
                 sec4_rows: collectSec4Rows().map((row) => ({
                     adhisuchana_kramank: row.adhisuchana_kramank || '',
@@ -3114,6 +3200,8 @@
 
             const sec1AdminRows = Array.isArray(snapshot?.sec1_admin_rows) && snapshot.sec1_admin_rows.length ? snapshot.sec1_admin_rows : [{}];
             renderSec1AdminRows(sec1AdminRows);
+            const sec3Rows = Array.isArray(snapshot?.sec3_rows) && snapshot.sec3_rows.length ? snapshot.sec3_rows : [{}];
+            renderSec3Rows(sec3Rows);
 
             const sec4Rows = Array.isArray(snapshot?.sec4_rows) && snapshot.sec4_rows.length ? snapshot.sec4_rows : [{}];
             renderSec4Rows(sec4Rows);
@@ -3224,6 +3312,18 @@
                 formData.append(`sec1_admin_date_${i}`, row.date);
                 Array.from(row.filesInput?.files || []).forEach((file) => {
                     formData.append(`sec1_admin_files_${i}`, file);
+                });
+            });
+            const sec3Rows = collectSec3Rows();
+            formData.append('sec3_row_count', String(sec3Rows.length));
+            sec3Rows.forEach((row, i) => {
+                formData.append(`sec3_row_upvibhag_name_${i}`, row.upvibhag_name);
+                formData.append(`sec3_row_adhisuchana_${i}`, row.adhisuchana_kramank);
+                formData.append(`sec3_row_officer_name_${i}`, row.officer_name);
+                formData.append(`sec3_row_address_${i}`, row.address);
+                formData.append(`sec3_row_date_${i}`, row.date);
+                Array.from(row.filesInput?.files || []).forEach((file) => {
+                    formData.append(`sec3_row_files_${i}`, file);
                 });
             });
             formData.append('notified_area_rows_json', JSON.stringify(collectNotifiedAreaRows()));
@@ -3405,6 +3505,32 @@
             });
         }
 
+        function wireSec3RowButtons() {
+            const addBtn = document.getElementById('add-sec3-row-btn');
+            const container = document.getElementById('record-sec3-rows');
+            if (!addBtn || !container) return;
+
+            addBtn.addEventListener('click', () => {
+                const line = document.createElement('div');
+                line.className = 'record-sec3-row relative rounded-xl border border-[#e2ebf7] bg-white p-4';
+                line.innerHTML = buildSec3RowHtml();
+                initAllDropzones(line);
+                initDateValidation(line);
+                container.appendChild(line);
+                syncSec3RemoveButtons();
+            });
+
+            container.addEventListener('click', (event) => {
+                const removeBtn = event.target.closest('.remove-sec3-row-btn');
+                if (!removeBtn) return;
+                const line = removeBtn.closest('.record-sec3-row');
+                if (line && container.querySelectorAll('.record-sec3-row').length > 1) {
+                    line.remove();
+                    syncSec3RemoveButtons();
+                }
+            });
+        }
+
         function wire8AButtons() {
             const add8aLineBtn = document.getElementById('add-8a-line-btn');
             const record8aLines = document.getElementById('record-8a-lines');
@@ -3510,6 +3636,7 @@
 
         wireSec4RowButtons();
         wireSec1AdminRowButtons();
+        wireSec3RowButtons();
         wireSec8RowButtons();
         wireNotifiedAreaRows();
         wire8AButtons();
@@ -3524,6 +3651,7 @@
             changeVillagePage(page);
         });
         renderSec1AdminRows([]);
+        renderSec3Rows([]);
         renderSec4Rows([]);
         renderSec8Rows([]);
         render8aRecords([]);

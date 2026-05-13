@@ -4141,6 +4141,26 @@ def village_info(request):
                 'files': [],
             })
         village_data.sec1_admin_approvals = sec1_admin_rows
+        try:
+            sec3_row_count = int(request.POST.get('sec3_row_count') or 0)
+        except (TypeError, ValueError):
+            sec3_row_count = 0
+        sec3_rows = []
+        for i in range(sec3_row_count):
+            sec3_rows.append({
+                'upvibhag_name': (request.POST.get(f'sec3_row_upvibhag_name_{i}') or '').strip(),
+                'officer_name': (request.POST.get(f'sec3_row_officer_name_{i}') or '').strip(),
+                'address': (request.POST.get(f'sec3_row_address_{i}') or '').strip(),
+                'adhisuchana_kramank': (request.POST.get(f'sec3_row_adhisuchana_{i}') or '').strip(),
+                'date': (request.POST.get(f'sec3_row_date_{i}') or '').strip(),
+                'files': [],
+            })
+        village_data.sec3_rows = sec3_rows
+        first_sec3 = sec3_rows[0] if sec3_rows else {}
+        village_data.sec3_upvibhag_name = (first_sec3.get('upvibhag_name') or '').strip()
+        village_data.sec3_adhisuchana_kramank = (first_sec3.get('adhisuchana_kramank') or '').strip()
+        first_sec3_date_raw = (first_sec3.get('date') or '').strip()
+        village_data.sec3_date = parse_date(first_sec3_date_raw) if first_sec3_date_raw else None
         notified_area_rows_payload = request.POST.get('notified_area_rows_json')
         if notified_area_rows_payload:
             try:
@@ -4229,6 +4249,33 @@ def village_info(request):
                 for rf in row_files
             ]
         village_data.save(update_fields=['sec1_admin_approvals', 'updated_at'])
+
+        # sec3 repeatable rows in JSON + file attachments in VillageDataFile.
+        existing_sec3_files = VillageDataFile.objects.filter(
+            village_data=village_data,
+            field_key__startswith='sec3_row_'
+        )
+        for old in existing_sec3_files:
+            key = old.field_key or ''
+            m = re.match(r'^sec3_row_(\d+)$', key)
+            if not m:
+                continue
+            old_index = int(m.group(1))
+            if old_index >= sec3_row_count:
+                if old.file:
+                    old.file.delete(save=False)
+                old.delete()
+
+        for i in range(sec3_row_count):
+            row_key = f'sec3_row_{i}'
+            for f in request.FILES.getlist(f'sec3_row_files_{i}'):
+                VillageDataFile.objects.create(village_data=village_data, field_key=row_key, file=f)
+            row_files = VillageDataFile.objects.filter(village_data=village_data, field_key=row_key)
+            village_data.sec3_rows[i]['files'] = [
+                {'id': rf.id, 'url': rf.file.url, 'name': rf.file.name.split('/')[-1]}
+                for rf in row_files
+            ]
+        village_data.save(update_fields=['sec3_rows', 'updated_at'])
 
         # Save uploaded files per field_key (append mode; duplicates already blocked above).
         for field_key in _VILLAGE_FILE_KEYS:
@@ -4527,12 +4574,34 @@ def get_village_info_data(request):
         val = getattr(village_data, f)
         data[f] = val.isoformat() if hasattr(val, 'isoformat') and val else (val or '')
     data['sec1_admin_approvals'] = village_data.sec1_admin_approvals or []
+    sec3_rows = village_data.sec3_rows or []
+    if not sec3_rows:
+        sec3_rows = [{
+            'upvibhag_name': village_data.sec3_upvibhag_name or '',
+            'officer_name': '',
+            'address': '',
+            'adhisuchana_kramank': village_data.sec3_adhisuchana_kramank or '',
+            'date': village_data.sec3_date.isoformat() if village_data.sec3_date else '',
+            'files': [],
+        }]
+    data['sec3_rows'] = sec3_rows
     data['notified_area_rows'] = village_data.notified_area_rows or []
 
     # files per field_key
     files_map = {}
     for vf in village_data.village_files.all():
         files_map.setdefault(vf.field_key, []).append({'id': vf.id, 'url': vf.file.url, 'name': vf.file.name.split('/')[-1]})
+    sec3_row_files_map = {}
+    for key, files in files_map.items():
+        m = re.match(r'^sec3_row_(\d+)$', key or '')
+        if not m:
+            continue
+        sec3_row_files_map[int(m.group(1))] = files
+    sec3_data_rows = data.get('sec3_rows') or []
+    for idx, row in enumerate(sec3_data_rows):
+        if not isinstance(row, dict):
+            continue
+        row['files'] = sec3_row_files_map.get(idx, row.get('files') or [])
 
     sec26 = []
     for row in village_data.sec26_8a_records.prefetch_related('files_8a').all():
