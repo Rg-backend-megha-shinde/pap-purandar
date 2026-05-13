@@ -1300,6 +1300,39 @@
                                     </div>
                                 </div>
                             </div>
+                            <div class="rounded-2xl border border-[#e2ebf7] bg-[#fbfdff] p-5">
+                                <div class="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                                    <h3 class="text-lg font-bold text-[#244271]">२४. प्राधिकृत भूसंपादन अधिकारी कार्यालयाची खाते तपशील (मोबदला वाटपाचे खाते)</h3>
+                                    <button type="button" id="add-sec24-account-row-btn"
+                                        class="inline-flex items-center justify-center rounded-lg border border-[#c6d9f2] bg-white px-4 py-2 text-sm font-semibold text-[#125fcb] hover:bg-[#eef5ff]">+ ओळ जोडा</button>
+                                </div>
+                                <div id="record-sec24-account-rows" class="space-y-4">
+                                    <div class="record-sec24-account-row relative rounded-xl border border-[#e2ebf7] bg-white p-4">
+                                        <div class="grid gap-4 md:grid-cols-2">
+                                            <div>
+                                                <label class="mb-2 block text-sm font-semibold text-[#44597a]">खाते क्रमांक</label>
+                                                <input type="text" placeholder="खाते क्रमांक"
+                                                    class="vi-sec24-account-number w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
+                                            </div>
+                                            <div>
+                                                <label class="mb-2 block text-sm font-semibold text-[#44597a]">खातेदाराचे नाव</label>
+                                                <input type="text" placeholder="खातेदाराचे नाव"
+                                                    class="vi-sec24-account-holder w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
+                                            </div>
+                                            <div>
+                                                <label class="mb-2 block text-sm font-semibold text-[#44597a]">बँकेचे नाव</label>
+                                                <input type="text" placeholder="बँकेचे नाव"
+                                                    class="vi-sec24-bank-name w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
+                                            </div>
+                                            <div>
+                                                <label class="mb-2 block text-sm font-semibold text-[#44597a]">IFSC</label>
+                                                <input type="text" placeholder="IFSC"
+                                                    class="vi-sec24-ifsc w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                         <div
                             class="flex flex-col gap-3 border-t border-[#e6edf7] bg-[#fcfdff] px-6 py-5 md:flex-row md:items-center md:justify-between">
@@ -1863,6 +1896,7 @@
             renderSec4Rows([]);
             renderSec8Rows([]);
             renderSec21Rows([]);
+            renderSec24AccountRows([]);
             render8aRecords([]);
             renderSec15Rows([], 'गाव निवडा');
             setLocationFieldsReadonly(false);
@@ -1892,6 +1926,7 @@
             renderSec4Rows([]);
             renderSec8Rows([]);
             renderSec21Rows([]);
+            renderSec24AccountRows([]);
             render8aRecords([]);
             renderFieldFileLists(fieldMap, {});
         }
@@ -2911,6 +2946,7 @@
                     renderSec4Rows([]);
                     renderSec8Rows([]);
                     renderSec21Rows([]);
+                    renderSec24AccountRows([]);
                     render8aRecords([]);
                     renderSec1AdminRows([]);
                     renderSec3Rows([]);
@@ -2933,6 +2969,7 @@
                 renderSec4Rows(data.sec4_rows || []);
                 renderSec8Rows(data.sec8_rows || []);
                 renderSec21Rows(values.sec21_rows || []);
+                renderSec24AccountRows(values.sec24_account_rows || []);
                 render8aRecords(data.sec26_8a_records || []);
                 renderSec1AdminRows(values.sec1_admin_approvals || []);
                 renderSec3Rows(values.sec3_rows || []);
@@ -3221,6 +3258,72 @@
             }));
         }
 
+        function buildSec24AccountRowHtml() {
+            return `
+                <button type="button"
+                    class="remove-sec24-account-row-btn absolute right-3 top-3 inline-flex h-7 w-7 items-center justify-center rounded-full border border-[#cddcf0] text-sm font-bold text-[#6b7d99] hover:bg-[#eef5ff]">✕</button>
+                <div class="grid gap-4 md:grid-cols-2">
+                    <div>
+                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">खाते क्रमांक</label>
+                        <input type="text" placeholder="खाते क्रमांक"
+                            class="vi-sec24-account-number w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
+                    </div>
+                    <div>
+                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">खातेदाराचे नाव</label>
+                        <input type="text" placeholder="खातेदाराचे नाव"
+                            class="vi-sec24-account-holder w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
+                    </div>
+                    <div>
+                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">बँकेचे नाव</label>
+                        <input type="text" placeholder="बँकेचे नाव"
+                            class="vi-sec24-bank-name w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
+                    </div>
+                    <div>
+                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">IFSC</label>
+                        <input type="text" placeholder="IFSC"
+                            class="vi-sec24-ifsc w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
+                    </div>
+                </div>
+            `;
+        }
+
+        function syncSec24AccountRemoveButtons() {
+            const rows = Array.from(document.querySelectorAll('#record-sec24-account-rows .record-sec24-account-row'));
+            rows.forEach((row, index) => {
+                const btn = row.querySelector('.remove-sec24-account-row-btn');
+                if (!btn) return;
+                if (index === 0) btn.classList.add('hidden');
+                else btn.classList.remove('hidden');
+            });
+        }
+
+        function renderSec24AccountRows(rows = []) {
+            const container = document.getElementById('record-sec24-account-rows');
+            if (!container) return;
+            container.innerHTML = '';
+            const finalRows = rows.length ? rows : [{}];
+            finalRows.forEach((row) => {
+                const line = document.createElement('div');
+                line.className = 'record-sec24-account-row relative rounded-xl border border-[#e2ebf7] bg-white p-4';
+                line.innerHTML = buildSec24AccountRowHtml();
+                line.querySelector('.vi-sec24-account-number').value = row.account_number || '';
+                line.querySelector('.vi-sec24-account-holder').value = row.account_holder_name || '';
+                line.querySelector('.vi-sec24-bank-name').value = row.bank_name || '';
+                line.querySelector('.vi-sec24-ifsc').value = row.ifsc_code || '';
+                container.appendChild(line);
+            });
+            syncSec24AccountRemoveButtons();
+        }
+
+        function collectSec24AccountRows() {
+            return Array.from(document.querySelectorAll('#record-sec24-account-rows .record-sec24-account-row')).map((line) => ({
+                account_number: line.querySelector('.vi-sec24-account-number')?.value?.trim() || '',
+                account_holder_name: line.querySelector('.vi-sec24-account-holder')?.value?.trim() || '',
+                bank_name: line.querySelector('.vi-sec24-bank-name')?.value?.trim() || '',
+                ifsc_code: line.querySelector('.vi-sec24-ifsc')?.value?.trim() || ''
+            }));
+        }
+
         const relatedSectionCardsConfig = [
             { secCode: 'sec17', titlePrefix: '१३.' },
             { secCode: 'sec18', titlePrefix: '१४.' },
@@ -3408,6 +3511,12 @@
                     karyavrutant: row.karyavrutant || '',
                     karyavrutant_date: row.karyavrutant_date || ''
                 })),
+                sec24_account_rows: collectSec24AccountRows().map((row) => ({
+                    account_number: row.account_number || '',
+                    account_holder_name: row.account_holder_name || '',
+                    bank_name: row.bank_name || '',
+                    ifsc_code: row.ifsc_code || ''
+                })),
                 sec26_rows: collect8ARecords().map((row) => ({
                     khate_kramank: row.khate_kramank || '',
                     navavar_kshetra: row.navavar_kshetra || '',
@@ -3442,6 +3551,8 @@
             renderSec8Rows(sec8Rows);
             const sec21Rows = Array.isArray(snapshot?.sec21_rows) && snapshot.sec21_rows.length ? snapshot.sec21_rows : [{}];
             renderSec21Rows(sec21Rows);
+            const sec24Rows = Array.isArray(snapshot?.sec24_account_rows) && snapshot.sec24_account_rows.length ? snapshot.sec24_account_rows : [{}];
+            renderSec24AccountRows(sec24Rows);
 
             const notifiedRows = Array.isArray(snapshot?.notified_area_rows) && snapshot.notified_area_rows.length
                 ? snapshot.notified_area_rows
@@ -3576,6 +3687,8 @@
                     formData.append(`sec21_karyavrutant_files_${i}`, file);
                 });
             });
+            const sec24AccountRows = collectSec24AccountRows();
+            formData.append('sec24_account_rows_json', JSON.stringify(sec24AccountRows));
             formData.append('notified_area_rows_json', JSON.stringify(collectNotifiedAreaRows()));
 
             const sec4Rows = collectSec4Rows();
@@ -3843,6 +3956,30 @@
             });
         }
 
+        function wireSec24AccountRowButtons() {
+            const addBtn = document.getElementById('add-sec24-account-row-btn');
+            const container = document.getElementById('record-sec24-account-rows');
+            if (!addBtn || !container) return;
+
+            addBtn.addEventListener('click', () => {
+                const line = document.createElement('div');
+                line.className = 'record-sec24-account-row relative rounded-xl border border-[#e2ebf7] bg-white p-4';
+                line.innerHTML = buildSec24AccountRowHtml();
+                container.appendChild(line);
+                syncSec24AccountRemoveButtons();
+            });
+
+            container.addEventListener('click', (event) => {
+                const removeBtn = event.target.closest('.remove-sec24-account-row-btn');
+                if (!removeBtn) return;
+                const line = removeBtn.closest('.record-sec24-account-row');
+                if (line && container.querySelectorAll('.record-sec24-account-row').length > 1) {
+                    line.remove();
+                    syncSec24AccountRemoveButtons();
+                }
+            });
+        }
+
         function wire8AButtons() {
             const add8aLineBtn = document.getElementById('add-8a-line-btn');
             const record8aLines = document.getElementById('record-8a-lines');
@@ -3984,6 +4121,7 @@
         wireSec1AdminRowButtons();
         wireSec3RowButtons();
         wireSec21RowButtons();
+        wireSec24AccountRowButtons();
         wireSec8RowButtons();
         wireNotifiedAreaRows();
         wire8AButtons();
@@ -4003,6 +4141,7 @@
         renderSec4Rows([]);
         renderSec8Rows([]);
         renderSec21Rows([]);
+        renderSec24AccountRows([]);
         render8aRecords([]);
         initNotifiedAreaBlocks([{}]);
         initAllDropzones();

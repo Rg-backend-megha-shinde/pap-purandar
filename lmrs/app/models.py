@@ -955,6 +955,7 @@ class VillageData(models.Model):
     sec25_kramank = models.TextField(blank=True)
     sec25_date = models.DateField(null=True, blank=True)
     sec25_files = models.TextField(blank=True)
+    sec24_account_rows = models.JSONField(default=list, blank=True)
 
     is_final_submitted = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)

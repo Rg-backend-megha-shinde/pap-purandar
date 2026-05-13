@@ -4205,6 +4205,32 @@ def village_info(request):
         first_sec21_karyavrutant_date = (first_sec21.get('karyavrutant_date') or '').strip()
         village_data.sec21_karyavrutant_date = parse_date(first_sec21_karyavrutant_date) if first_sec21_karyavrutant_date else None
 
+        sec24_account_rows_payload_raw = request.POST.get('sec24_account_rows_json')
+        sec24_account_rows = []
+        if sec24_account_rows_payload_raw:
+            try:
+                parsed_sec24 = json.loads(sec24_account_rows_payload_raw)
+                if isinstance(parsed_sec24, list):
+                    for row in parsed_sec24:
+                        if not isinstance(row, dict):
+                            continue
+                        sec24_account_rows.append({
+                            'account_number': (row.get('account_number') or '').strip(),
+                            'account_holder_name': (row.get('account_holder_name') or '').strip(),
+                            'bank_name': (row.get('bank_name') or '').strip(),
+                            'ifsc_code': (row.get('ifsc_code') or '').strip(),
+                        })
+            except (TypeError, ValueError, json.JSONDecodeError):
+                sec24_account_rows = []
+        if not sec24_account_rows:
+            sec24_account_rows = [{
+                'account_number': '',
+                'account_holder_name': '',
+                'bank_name': '',
+                'ifsc_code': '',
+            }]
+        village_data.sec24_account_rows = sec24_account_rows
+
         related_sections_payload_raw = request.POST.get('related_sections_rows_json')
         related_sections_payload = {}
         if related_sections_payload_raw:
@@ -4743,6 +4769,7 @@ def get_village_info_data(request):
         }]
     data['sec3_rows'] = sec3_rows
     data['sec21_rows'] = village_data.sec21_rows or []
+    data['sec24_account_rows'] = village_data.sec24_account_rows or []
     data['notified_area_rows'] = village_data.notified_area_rows or []
     data['sec13_rows'] = village_data.sec13_rows or []
     data['sec14_rows'] = village_data.sec14_rows or []
