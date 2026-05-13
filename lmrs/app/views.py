@@ -3417,6 +3417,14 @@ _VILLAGE_SCALAR_FIELDS = [
     'sec25_kramank', 'sec25_date',
 ]
 
+_RELATED_SECTION_ROW_CONFIG = {
+    'sec17': {'detail': 'sec17_letter_details', 'date': 'sec17_date', 'total': None, 'json': 'sec17_rows'},
+    'sec18': {'detail': 'sec18_letter_details', 'date': 'sec18_date', 'total': None, 'json': 'sec18_rows'},
+    'sec19': {'detail': 'sec19_letter_details', 'date': 'sec19_date', 'total': None, 'json': 'sec19_rows'},
+    'sec16': {'detail': 'sec16_letter_details', 'date': 'sec16_date', 'total': None, 'json': 'sec16_rows'},
+    'sec20': {'detail': 'sec20_letter_details', 'date': 'sec20_date', 'total': None, 'json': 'sec20_rows'},
+}
+
 
 @login_required
 def village_info_list(request):
@@ -4161,6 +4169,46 @@ def village_info(request):
         village_data.sec3_adhisuchana_kramank = (first_sec3.get('adhisuchana_kramank') or '').strip()
         first_sec3_date_raw = (first_sec3.get('date') or '').strip()
         village_data.sec3_date = parse_date(first_sec3_date_raw) if first_sec3_date_raw else None
+
+        related_sections_payload_raw = request.POST.get('related_sections_rows_json')
+        related_sections_payload = {}
+        if related_sections_payload_raw:
+            try:
+                parsed_related = json.loads(related_sections_payload_raw)
+                if isinstance(parsed_related, dict):
+                    related_sections_payload = parsed_related
+            except (TypeError, ValueError, json.JSONDecodeError):
+                related_sections_payload = {}
+
+        for sec_code, cfg in _RELATED_SECTION_ROW_CONFIG.items():
+            rows = related_sections_payload.get(sec_code)
+            cleaned_rows = []
+            if isinstance(rows, list):
+                for row in rows:
+                    if not isinstance(row, dict):
+                        continue
+                    cleaned_rows.append({
+                        'detail': (row.get('detail') or '').strip(),
+                        'date': (row.get('date') or '').strip(),
+                        'total_village_evaluation': (row.get('total_village_evaluation') or '').strip(),
+                        'files': [],
+                    })
+            if not cleaned_rows:
+                cleaned_rows = [{'detail': '', 'date': '', 'total_village_evaluation': '', 'files': []}]
+
+            json_field = cfg.get('json')
+            if json_field:
+                setattr(village_data, json_field, cleaned_rows)
+
+            first_row = cleaned_rows[0] if cleaned_rows else {}
+            setattr(village_data, cfg['detail'], first_row.get('detail', ''))
+            date_field = cfg.get('date')
+            if date_field:
+                first_date = (first_row.get('date') or '').strip()
+                setattr(village_data, date_field, parse_date(first_date) if first_date else None)
+            total_field = cfg.get('total')
+            if total_field:
+                setattr(village_data, total_field, first_row.get('total_village_evaluation', ''))
         notified_area_rows_payload = request.POST.get('notified_area_rows_json')
         if notified_area_rows_payload:
             try:
@@ -4276,6 +4324,40 @@ def village_info(request):
                 for rf in row_files
             ]
         village_data.save(update_fields=['sec3_rows', 'updated_at'])
+
+        # Related section repeatable rows (13-17 in UI) with files stored in VillageDataFile.
+        for sec_code, cfg in _RELATED_SECTION_ROW_CONFIG.items():
+            json_field = cfg.get('json')
+            if not json_field:
+                continue
+            rows = getattr(village_data, json_field, None) or []
+            existing_related_files = VillageDataFile.objects.filter(
+                village_data=village_data,
+                field_key__startswith=f'{sec_code}_row_'
+            )
+            for old in existing_related_files:
+                key = old.field_key or ''
+                m = re.match(rf'^{sec_code}_row_(\d+)$', key)
+                if not m:
+                    continue
+                old_index = int(m.group(1))
+                if old_index >= len(rows):
+                    if old.file:
+                        old.file.delete(save=False)
+                    old.delete()
+
+            for i in range(len(rows)):
+                row_key = f'{sec_code}_row_{i}'
+                for f in request.FILES.getlist(f'{sec_code}_row_files_{i}'):
+                    VillageDataFile.objects.create(village_data=village_data, field_key=row_key, file=f)
+                row_files = VillageDataFile.objects.filter(village_data=village_data, field_key=row_key)
+                rows[i]['files'] = [
+                    {'id': rf.id, 'url': rf.file.url, 'name': rf.file.name.split('/')[-1]}
+                    for rf in row_files
+                ]
+
+            setattr(village_data, json_field, rows)
+        village_data.save(update_fields=[cfg['json'] for cfg in _RELATED_SECTION_ROW_CONFIG.values() if cfg.get('json')] + ['updated_at'])
 
         # Save uploaded files per field_key (append mode; duplicates already blocked above).
         for field_key in _VILLAGE_FILE_KEYS:
@@ -4586,6 +4668,13 @@ def get_village_info_data(request):
         }]
     data['sec3_rows'] = sec3_rows
     data['notified_area_rows'] = village_data.notified_area_rows or []
+    data['sec13_rows'] = village_data.sec13_rows or []
+    data['sec14_rows'] = village_data.sec14_rows or []
+    data['sec16_rows'] = village_data.sec16_rows or []
+    data['sec17_rows'] = village_data.sec17_rows or []
+    data['sec18_rows'] = village_data.sec18_rows or []
+    data['sec19_rows'] = village_data.sec19_rows or []
+    data['sec20_rows'] = village_data.sec20_rows or []
 
     # files per field_key
     files_map = {}
@@ -4602,6 +4691,33 @@ def get_village_info_data(request):
         if not isinstance(row, dict):
             continue
         row['files'] = sec3_row_files_map.get(idx, row.get('files') or [])
+
+    for sec_code, cfg in _RELATED_SECTION_ROW_CONFIG.items():
+        json_field = cfg.get('json')
+        if not json_field:
+            continue
+        section_rows = data.get(json_field) or []
+        if not isinstance(section_rows, list):
+            section_rows = []
+        files_by_index = {}
+        for key, files in files_map.items():
+            m = re.match(rf'^{sec_code}_row_(\d+)$', key or '')
+            if not m:
+                continue
+            files_by_index[int(m.group(1))] = files
+        normalized_rows = []
+        for idx, row in enumerate(section_rows):
+            if not isinstance(row, dict):
+                row = {}
+            normalized_rows.append({
+                'detail': row.get('detail') or '',
+                'date': row.get('date') or '',
+                'total_village_evaluation': row.get('total_village_evaluation') or '',
+                'files': files_by_index.get(idx, row.get('files') or []),
+            })
+        if not normalized_rows:
+            normalized_rows = [{'detail': '', 'date': '', 'total_village_evaluation': '', 'files': []}]
+        data[json_field] = normalized_rows
 
     sec26 = []
     for row in village_data.sec26_8a_records.prefetch_related('files_8a').all():

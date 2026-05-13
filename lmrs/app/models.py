@@ -892,37 +892,44 @@ class VillageData(models.Model):
     # --- १३. दर निश्चितीसाठी खरेदी विक्री तपशील ---
     sec13_kharedi_vikri_details = models.TextField(blank=True)
     sec13_files = models.TextField(blank=True)
+    sec13_rows = models.JSONField(default=list, blank=True)
 
     # --- १४. जिल्हास्तरीय समितीच्या बैठकीचा तपशील ---
     sec14_meeting_details = models.TextField(blank=True)
     sec14_date = models.DateField(null=True, blank=True)
     sec14_approved_rate_details = models.TextField(blank=True, default='')
     sec14_files = models.TextField(blank=True)
+    sec14_rows = models.JSONField(default=list, blank=True)
 
     # --- १६. वन विभाग ---
     sec16_letter_details = models.TextField(blank=True)
     sec16_date = models.DateField(null=True, blank=True)
     sec16_files = models.TextField(blank=True)
+    sec16_rows = models.JSONField(default=list, blank=True)
 
     # --- १७. पाणीपुरवठा ---
     sec17_letter_details = models.TextField(blank=True)
     sec17_date = models.DateField(null=True, blank=True)
     sec17_files = models.TextField(blank=True)
+    sec17_rows = models.JSONField(default=list, blank=True)
 
     # --- १८. कृषी विभाग ---
     sec18_letter_details = models.TextField(blank=True)
     sec18_date = models.DateField(null=True, blank=True)
     sec18_files = models.TextField(blank=True)
+    sec18_rows = models.JSONField(default=list, blank=True)
 
     # --- १९. बांधकाम विभाग ---
     sec19_letter_details = models.TextField(blank=True)
     sec19_date = models.DateField(null=True, blank=True)
     sec19_files = models.TextField(blank=True)
+    sec19_rows = models.JSONField(default=list, blank=True)
 
     # --- २०. इतर विभाग ---
     sec20_letter_details = models.TextField(blank=True)
     sec20_date = models.DateField(null=True, blank=True)
     sec20_files = models.TextField(blank=True)
+    sec20_rows = models.JSONField(default=list, blank=True)
 
     # --- २१. मोबदला निश्चिती ---
     sec21_prastaav = models.TextField(blank=True)

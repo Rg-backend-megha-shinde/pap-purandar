@@ -2037,6 +2037,7 @@
                 !el.classList.contains('vi-sec1-admin-row-input') &&
                 !el.classList.contains('vi-sec4-row-input') &&
                 !el.classList.contains('vi-sec8-row-input') &&
+                !el.closest('[data-related-section-card]') &&
                 !el.closest('.sec15-rate-body')
             );
         }
@@ -2073,12 +2074,6 @@
 
                 sec13_kharedi_vikri_details: p5[0], sec13_files: p5[1],
                 sec14_meeting_details: p5[2], sec14_date: p5[3], sec14_approved_rate_details: p5[4], sec14_files: p5[5],
-
-                sec17_letter_details: p6[0], sec17_date: p6[1], sec17_files: p6[2],
-                sec18_letter_details: p6[3], sec18_date: p6[4], sec18_files: p6[5],
-                sec19_letter_details: p6[6], sec19_date: p6[7], sec19_files: p6[8],
-                sec16_letter_details: p6[9], sec16_date: p6[10], sec16_files: p6[11],
-                sec20_letter_details: p6[12], sec20_date: p6[13], sec20_files: p6[14],
 
                 sec21_prastaav: p7[0], sec21_prastaav_date: p7[1], sec21_prastaav_files: p7[2],
                 sec21_karyavrutant: p7[3], sec21_karyavrutant_date: p7[4], sec21_karyavrutant_files: p7[5],
@@ -2906,6 +2901,7 @@
                     render8aRecords([]);
                     renderSec1AdminRows([]);
                     renderSec3Rows([]);
+                    relatedSectionCardsConfig.forEach((cfg) => renderRelatedSectionRows(cfg.secCode, [{}]));
                     initNotifiedAreaBlocks([{}]);
                     renderFieldFileLists(fieldMap, {});
                     return;
@@ -2926,6 +2922,11 @@
                 render8aRecords(data.sec26_8a_records || []);
                 renderSec1AdminRows(values.sec1_admin_approvals || []);
                 renderSec3Rows(values.sec3_rows || []);
+                renderRelatedSectionRows('sec17', values.sec17_rows || []);
+                renderRelatedSectionRows('sec18', values.sec18_rows || []);
+                renderRelatedSectionRows('sec19', values.sec19_rows || []);
+                renderRelatedSectionRows('sec16', values.sec16_rows || []);
+                renderRelatedSectionRows('sec20', values.sec20_rows || []);
                 const blocks = Array.from(document.querySelectorAll('.vi-notified-area-block'));
                 const saved = Array.isArray(values.notified_area_rows) ? values.notified_area_rows : [];
                 if (saved.length && saved[0] && Array.isArray(saved[0].rows)) {
@@ -3099,6 +3100,112 @@
                     filesInput: line.querySelector('.vi-sec3-files')
                 };
             });
+        }
+
+        const relatedSectionCardsConfig = [
+            { secCode: 'sec17', titlePrefix: '१३.' },
+            { secCode: 'sec18', titlePrefix: '१४.' },
+            { secCode: 'sec19', titlePrefix: '१५.' },
+            { secCode: 'sec16', titlePrefix: '१६.' },
+            { secCode: 'sec20', titlePrefix: '१७.' },
+        ];
+
+        function buildRelatedSectionRowHtml() {
+            return `
+                <button type="button"
+                    class="remove-related-row-btn absolute right-3 top-3 inline-flex h-7 w-7 items-center justify-center rounded-full border border-[#cddcf0] text-sm font-bold text-[#6b7d99] hover:bg-[#eef5ff]">✕</button>
+                <div class="grid gap-3 md:grid-cols-2">
+                    <div class="md:col-span-2">
+                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">मूल्यांकन सादर केलेल्या पत्राचा तपशील</label>
+                        <input type="text" placeholder="मूल्यांकन सादर केलेल्या पत्राचा तपशील"
+                            class="vi-related-detail w-full rounded-xl border border-[#d3deeb] px-3 py-2.5 text-sm">
+                    </div>
+                    <div>
+                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">दिनांक</label>
+                        <input type="date" class="vi-related-date w-full rounded-xl border border-[#d3deeb] px-3 py-2.5 text-sm">
+                    </div>
+                    <div>
+                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">एकूण गावाचे मूल्यांकन</label>
+                        <input type="text" placeholder="एकूण गावाचे मूल्यांकन"
+                            class="vi-related-total w-full rounded-xl border border-[#d3deeb] px-3 py-2.5 text-sm">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">अपलोड करा</label>
+                        <input type="file" multiple
+                            class="vi-related-files block w-full rounded-xl border border-dashed border-[#c5d6ec] bg-white px-3 py-2.5 text-sm text-[#60708a] file:mr-3 file:rounded-lg file:border-0 file:bg-[#125fcb] file:px-3 file:py-1.5 file:text-sm file:font-semibold file:text-white">
+                    </div>
+                </div>
+            `;
+        }
+
+        function initRelatedSectionCards() {
+            const panel = document.querySelector('.tab-panel[data-panel="6"]');
+            if (!panel) return;
+            const cards = relatedSectionCardsConfig
+                .map((cfg) => {
+                    const heading = Array.from(panel.querySelectorAll('h3')).find((h3) =>
+                        (h3.textContent || '').trim().startsWith(cfg.titlePrefix)
+                    );
+                    return heading ? heading.closest('.rounded-2xl') : null;
+                })
+                .filter(Boolean);
+            cards.forEach((card, idx) => {
+                const cfg = relatedSectionCardsConfig[idx];
+                if (!cfg) return;
+                card.dataset.relatedSectionCard = cfg.secCode;
+                card.innerHTML = `
+                    <h3 class="mb-3 text-lg font-bold text-[#244271]">${card.querySelector('h3')?.textContent || ''}</h3>
+                    <div class="space-y-3 related-section-rows"></div>
+                    <button type="button"
+                        class="add-related-row-btn mt-3 inline-flex items-center justify-center rounded-lg border border-[#c6d9f2] bg-white px-4 py-2 text-sm font-semibold text-[#125fcb] hover:bg-[#eef5ff]">+ ओळ जोडा</button>
+                `;
+                renderRelatedSectionRows(cfg.secCode, [{}]);
+            });
+        }
+
+        function renderRelatedRowSavedFiles(lineEl, files = []) {
+            const fileInput = lineEl.querySelector('.vi-related-files');
+            if (!fileInput) return;
+            const container = ensureSavedFilesContainer(fileInput, 'vi-related-saved-files');
+            renderSavedFilesInContainer(
+                container,
+                Array.isArray(files) ? files : [],
+                (id) => `/api/village-info/delete-file/${id}/`
+            );
+        }
+
+        function renderRelatedSectionRows(secCode, rows = []) {
+            const card = document.querySelector(`[data-related-section-card="${secCode}"]`);
+            if (!card) return;
+            const container = card.querySelector('.related-section-rows');
+            if (!container) return;
+            container.innerHTML = '';
+            const finalRows = Array.isArray(rows) && rows.length ? rows : [{}];
+            finalRows.forEach((row, index) => {
+                const line = document.createElement('div');
+                line.className = 'related-section-row relative rounded-xl border border-[#e2ebf7] bg-white p-4';
+                line.innerHTML = buildRelatedSectionRowHtml();
+                line.querySelector('.vi-related-detail').value = row.detail || '';
+                line.querySelector('.vi-related-date').value = row.date || '';
+                line.querySelector('.vi-related-total').value = row.total_village_evaluation || '';
+                renderRelatedRowSavedFiles(line, row.files || []);
+                const removeBtn = line.querySelector('.remove-related-row-btn');
+                if (removeBtn && index === 0) removeBtn.classList.add('hidden');
+                initAllDropzones(line);
+                initDateValidation(line);
+                container.appendChild(line);
+            });
+        }
+
+        function collectRelatedSectionRows(secCode) {
+            const card = document.querySelector(`[data-related-section-card="${secCode}"]`);
+            if (!card) return [];
+            return Array.from(card.querySelectorAll('.related-section-row')).map((row) => ({
+                detail: row.querySelector('.vi-related-detail')?.value?.trim() || '',
+                date: row.querySelector('.vi-related-date')?.value || '',
+                total_village_evaluation: row.querySelector('.vi-related-total')?.value?.trim() || '',
+                filesInput: row.querySelector('.vi-related-files')
+            }));
         }
 
         function getDraftStorageKey(district, taluka, village) {
@@ -3387,6 +3494,42 @@
                 formData.append(`sec15_approved_${i}`, row.approved_rate ?? '');
             });
 
+            const relatedRowsPayload = {
+                sec17: collectRelatedSectionRows('sec17').map((row) => ({
+                    detail: row.detail,
+                    date: row.date,
+                    total_village_evaluation: row.total_village_evaluation
+                })),
+                sec18: collectRelatedSectionRows('sec18').map((row) => ({
+                    detail: row.detail,
+                    date: row.date,
+                    total_village_evaluation: row.total_village_evaluation
+                })),
+                sec19: collectRelatedSectionRows('sec19').map((row) => ({
+                    detail: row.detail,
+                    date: row.date,
+                    total_village_evaluation: row.total_village_evaluation
+                })),
+                sec16: collectRelatedSectionRows('sec16').map((row) => ({
+                    detail: row.detail,
+                    date: row.date,
+                    total_village_evaluation: row.total_village_evaluation
+                })),
+                sec20: collectRelatedSectionRows('sec20').map((row) => ({
+                    detail: row.detail,
+                    date: row.date,
+                    total_village_evaluation: row.total_village_evaluation
+                }))
+            };
+            formData.append('related_sections_rows_json', JSON.stringify(relatedRowsPayload));
+            Object.entries(relatedRowsPayload).forEach(([secCode]) => {
+                collectRelatedSectionRows(secCode).forEach((row, i) => {
+                    Array.from(row.filesInput?.files || []).forEach((file) => {
+                        formData.append(`${secCode}_row_files_${i}`, file);
+                    });
+                });
+            });
+
             setSavingState(true);
             try {
                 const res = await fetchJSON('/tools/village-info/', {
@@ -3552,6 +3695,39 @@
             });
         }
 
+        function wireRelatedSectionRowButtons() {
+            document.addEventListener('click', (event) => {
+                const addBtn = event.target.closest('.add-related-row-btn');
+                if (addBtn) {
+                    const card = addBtn.closest('[data-related-section-card]');
+                    const secCode = card?.dataset?.relatedSectionCard;
+                    if (!secCode) return;
+                    const rows = collectRelatedSectionRows(secCode).map((row) => ({
+                        detail: row.detail,
+                        date: row.date,
+                        total_village_evaluation: row.total_village_evaluation
+                    }));
+                    rows.push({ detail: '', date: '', total_village_evaluation: '' });
+                    renderRelatedSectionRows(secCode, rows);
+                    return;
+                }
+                const removeBtn = event.target.closest('.remove-related-row-btn');
+                if (!removeBtn) return;
+                const card = removeBtn.closest('[data-related-section-card]');
+                const secCode = card?.dataset?.relatedSectionCard;
+                if (!secCode) return;
+                const rows = collectRelatedSectionRows(secCode).map((row) => ({
+                    detail: row.detail,
+                    date: row.date,
+                    total_village_evaluation: row.total_village_evaluation
+                }));
+                const idx = Array.from(card.querySelectorAll('.remove-related-row-btn')).indexOf(removeBtn);
+                if (idx <= 0 || rows.length <= 1) return;
+                rows.splice(idx, 1);
+                renderRelatedSectionRows(secCode, rows);
+            });
+        }
+
         function wireRecordListActions() {
             addNewBtn.addEventListener('click', async () => {
                 if (locationInitPromise) {
@@ -3634,12 +3810,14 @@
         saveNextButtons.forEach(btn => btn.addEventListener('click', () => saveVillageInfo({ goNext: true })));
         if (submitButton) submitButton.addEventListener('click', () => saveVillageInfo({ goToList: true }));
 
+        initRelatedSectionCards();
         wireSec4RowButtons();
         wireSec1AdminRowButtons();
         wireSec3RowButtons();
         wireSec8RowButtons();
         wireNotifiedAreaRows();
         wire8AButtons();
+        wireRelatedSectionRowButtons();
         wireRecordListActions();
         pageSizeSelect.addEventListener('change', handlePageSizeChange);
         searchInput.addEventListener('input', handleSearchChange);
