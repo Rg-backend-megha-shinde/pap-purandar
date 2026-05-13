@@ -881,6 +881,7 @@ class VillageData(models.Model):
     sec10_files = models.TextField(blank=True)
 
     # --- ११. नगर रचना विभागाचे अभिप्राय ---
+    sec11_patra_kramank = models.TextField(blank=True)
     sec11_date = models.DateField(null=True, blank=True)
     sec11_files = models.TextField(blank=True)
 

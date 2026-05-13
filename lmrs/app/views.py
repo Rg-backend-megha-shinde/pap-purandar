@@ -3401,7 +3401,7 @@ _VILLAGE_SCALAR_FIELDS = [
     'sec9_paper1_name', 'sec9_paper1_date',
     'sec9_paper2_name', 'sec9_paper2_date',
     'sec10_prastaav_kramank', 'sec10_date',
-    'sec11_date',
+    'sec11_patra_kramank', 'sec11_date',
     'sec12_zone_details', 'sec12_date',
     'sec13_kharedi_vikri_details',
     'sec14_meeting_details', 'sec14_date', 'sec14_approved_rate_details',
