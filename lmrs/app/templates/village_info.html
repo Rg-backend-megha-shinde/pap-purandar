@@ -495,6 +495,14 @@
                                 <div class="mb-4 flex items-center justify-between gap-3">
                                      <h3 class="text-lg font-bold text-[#244271]">१. म. ओ. वि. अ.- प्रकरण 6 (31) तरतुदीनुसार उक्त अधिनियमाचे कलम 2 खंड (ग) अन्वये</h3>
                                 </div>
+                                <div class="vi-notified-area-block mb-4 rounded-xl border border-[#dfe8f5] bg-white p-3">
+                                    <div class="mb-2 flex items-center justify-between gap-3">
+                                        <p class="text-sm font-semibold text-[#244271]">अधिसूचित केलेले क्षेत्र</p>
+                                        <button type="button"
+                                            class="add-notified-area-row-btn inline-flex items-center justify-center rounded-lg border border-[#c6d9f2] bg-white px-3 py-1 text-xs font-semibold text-[#125fcb] hover:bg-[#eef5ff]">+ ओळ जोडा</button>
+                                    </div>
+                                    <div class="vi-notified-area-rows overflow-x-auto"></div>
+                                </div>
                                 <div class="grid gap-4 md:grid-cols-2">
                                     <div>
                                         <label class="mb-2 block text-sm font-semibold text-[#44597a]">आदेश/अधिसूचना
@@ -676,6 +684,14 @@
                         <div class="space-y-6 px-6 py-7 md:px-8">
                             <div class="rounded-2xl border border-[#e2ebf7] bg-[#fbfdff] p-5">
                                     <h3 class="mb-4 text-lg font-bold text-[#244271]">३. भूसंपादन प्रस्ताव</h3>
+                                    <div class="vi-notified-area-block mb-4 rounded-xl border border-[#dfe8f5] bg-white p-3">
+                                        <div class="mb-2 flex items-center justify-between gap-3">
+                                            <p class="text-sm font-semibold text-[#244271]">अधिसूचित केलेले क्षेत्र</p>
+                                            <button type="button"
+                                                class="add-notified-area-row-btn inline-flex items-center justify-center rounded-lg border border-[#c6d9f2] bg-white px-3 py-1 text-xs font-semibold text-[#125fcb] hover:bg-[#eef5ff]">+ ओळ जोडा</button>
+                                        </div>
+                                        <div class="vi-notified-area-rows overflow-x-auto"></div>
+                                    </div>
                                     <div class="grid gap-4 md:grid-cols-2">
                                         <div>
                                             <label class="mb-2 block text-sm font-semibold text-[#44597a]">प्रस्ताव पत्र
@@ -699,6 +715,14 @@
                                     <h3 class="text-lg font-bold text-[#244271]">४. कलम 32 (2) नुसार जमिनीच्या वापराबाबत हितसंबंधी व्यक्तींचे म्हणणे ऐकून घेण्यासाठी जाहिर नोटीस</h3>
                                     <button type="button" id="add-sec4-row-btn"
                                         class="inline-flex items-center justify-center rounded-lg border border-[#c6d9f2] bg-white px-4 py-2 text-sm font-semibold text-[#125fcb] hover:bg-[#eef5ff]">+ ओळ जोडा</button>
+                                </div>
+                                <div class="vi-notified-area-block mb-4 rounded-xl border border-[#dfe8f5] bg-white p-3">
+                                    <div class="mb-2 flex items-center justify-between gap-3">
+                                        <p class="text-sm font-semibold text-[#244271]">अधिसूचित केलेले क्षेत्र</p>
+                                        <button type="button"
+                                            class="add-notified-area-row-btn inline-flex items-center justify-center rounded-lg border border-[#c6d9f2] bg-white px-3 py-1 text-xs font-semibold text-[#125fcb] hover:bg-[#eef5ff]">+ ओळ जोडा</button>
+                                    </div>
+                                    <div class="vi-notified-area-rows overflow-x-auto"></div>
                                 </div>
                                 <div id="record-sec4-rows" class="space-y-3"></div>
                             </div>
@@ -772,6 +796,14 @@
                                     <h3 class="text-lg font-bold text-[#244271]">६. अधिनियमाचे कलम 32 (1) नुसार संपादनाच्या घोषणेबाबत अधिसूचना</h3>
                                     <button type="button" id="add-sec8-row-btn"
                                         class="inline-flex items-center justify-center rounded-lg border border-[#c6d9f2] bg-white px-4 py-2 text-sm font-semibold text-[#125fcb] hover:bg-[#eef5ff]">+ ओळ जोडा</button>
+                                </div>
+                                <div class="vi-notified-area-block mb-4 rounded-xl border border-[#dfe8f5] bg-white p-3">
+                                    <div class="mb-2 flex items-center justify-between gap-3">
+                                        <p class="text-sm font-semibold text-[#244271]">अधिसूचित केलेले क्षेत्र</p>
+                                        <button type="button"
+                                            class="add-notified-area-row-btn inline-flex items-center justify-center rounded-lg border border-[#c6d9f2] bg-white px-3 py-1 text-xs font-semibold text-[#125fcb] hover:bg-[#eef5ff]">+ ओळ जोडा</button>
+                                    </div>
+                                    <div class="vi-notified-area-rows overflow-x-auto"></div>
                                 </div>
                                 <div id="record-sec8-rows" class="space-y-3"></div>
                             </div>
@@ -1849,6 +1881,7 @@
             fillSelect(talukaSel, [], 'आधी जिल्हा निवडा');
             fillSelect(villageSel, [], 'आधी तालुका निवडा');
             renderSec1AdminRows([]);
+            renderNotifiedAreaRows([]);
             renderSec4Rows([]);
             renderSec8Rows([]);
             render8aRecords([]);
@@ -1875,6 +1908,7 @@
                 el.value = '';
             });
             renderSec1AdminRows([]);
+            renderNotifiedAreaRows([]);
             renderSec4Rows([]);
             renderSec8Rows([]);
             render8aRecords([]);
@@ -2088,6 +2122,152 @@
                 sec24_court_details: p8[3], sec24_files: p8[4],
                 sec25_kramank: p8[5], sec25_date: p8[6], sec25_files: p8[7],
             };
+        }
+
+        let notifiedAreaRowsState = [{}];
+        let notifiedAreaGutOptions = [];
+
+        async function loadNotifiedAreaGutOptions() {
+            const district = (districtSel.value || '').trim();
+            const taluka = (talukaSel.value || '').trim();
+            const village = (villageSel.value || '').trim();
+            if (!district || !taluka || !village) {
+                notifiedAreaGutOptions = [];
+                renderNotifiedAreaRows(notifiedAreaRowsState);
+                return;
+            }
+            try {
+                const data = await fetchJSON(
+                    `/api/locations/?district=${encodeURIComponent(district)}&taluka=${encodeURIComponent(taluka)}&village=${encodeURIComponent(village)}`
+                );
+                const options = (data.level === 'guts' && Array.isArray(data.data)) ? data.data : [];
+                notifiedAreaGutOptions = options.map((v) => String(v || '').trim()).filter(Boolean);
+            } catch (_) {
+                notifiedAreaGutOptions = [];
+            }
+            renderNotifiedAreaRows(notifiedAreaRowsState);
+        }
+
+        function buildNotifiedAreaTableHtml(rows) {
+            const gutOptionsHtml = notifiedAreaGutOptions
+                .map((gut) => `<option value="${escapeHtml(gut)}">${escapeHtml(gut)}</option>`)
+                .join('');
+
+            const bodyRows = rows.map((row, index) => {
+                const gutMode = row.gut_mode === 'other' ? 'other' : 'listed';
+                const gutValue = row.gut_number || '';
+                const otherGut = row.other_gut || '';
+                const areaValue = row.notified_area || '';
+                return `
+                    <tr class="border-t border-[#d8e4f3]">
+                        <td class="px-2 py-2 text-center text-sm text-[#44597a]">${index + 1}</td>
+                        <td class="px-2 py-2">
+                            <select data-notified-field="gut_select" data-row-index="${index}"
+                                class="w-full rounded-lg border border-[#d3deeb] px-2 py-2 text-sm">
+                                <option value="">गट क्रमांक निवडा</option>
+                                ${gutOptionsHtml}
+                                <option value="__other__"${gutMode === 'other' ? ' selected' : ''}>इतर</option>
+                            </select>
+                            <input type="text" data-notified-field="other_gut" data-row-index="${index}"
+                                value="${escapeHtml(otherGut)}" placeholder="इतर गट क्रमांक"
+                                class="mt-2 w-full rounded-lg border border-[#d3deeb] px-2 py-2 text-sm ${gutMode === 'other' ? '' : 'hidden'}">
+                        </td>
+                        <td class="px-2 py-2">
+                            <input type="text" data-notified-field="notified_area" data-row-index="${index}"
+                                value="${escapeHtml(areaValue)}" placeholder="अधिसूचित क्षेत्र"
+                                class="w-full rounded-lg border border-[#d3deeb] px-2 py-2 text-sm">
+                        </td>
+                        <td class="px-2 py-2 text-center">
+                            <button type="button" data-notified-remove-row="${index}"
+                                class="rounded-md border border-[#d4deec] px-2 py-1 text-xs text-[#5d7293] ${index === 0 ? 'hidden' : ''}">✕</button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+
+            return `
+                <table class="min-w-full border border-[#a7bfdc] text-left">
+                    <thead class="bg-[#edf5ff]">
+                        <tr>
+                            <th class="w-16 border-r border-[#a7bfdc] px-2 py-2 text-sm font-semibold text-[#244271]">अ. क्र</th>
+                            <th class="border-r border-[#a7bfdc] px-2 py-2 text-sm font-semibold text-[#244271]">गट क्रमांक</th>
+                            <th class="border-r border-[#a7bfdc] px-2 py-2 text-sm font-semibold text-[#244271]">अधिसूचित क्षेत्र</th>
+                            <th class="w-16 px-2 py-2 text-sm font-semibold text-[#244271]">-</th>
+                        </tr>
+                    </thead>
+                    <tbody>${bodyRows}</tbody>
+                </table>
+            `;
+        }
+
+        function renderNotifiedAreaRows(rows = []) {
+            notifiedAreaRowsState = (Array.isArray(rows) && rows.length ? rows : [{}]).map((row) => ({
+                gut_mode: row?.gut_mode === 'other' ? 'other' : 'listed',
+                gut_number: row?.gut_number || '',
+                other_gut: row?.other_gut || '',
+                notified_area: row?.notified_area || '',
+            }));
+            document.querySelectorAll('.vi-notified-area-rows').forEach((host) => {
+                host.innerHTML = buildNotifiedAreaTableHtml(notifiedAreaRowsState);
+                host.querySelectorAll('select[data-notified-field=\"gut_select\"]').forEach((el) => {
+                    const idx = Number(el.dataset.rowIndex);
+                    const row = notifiedAreaRowsState[idx] || {};
+                    const current = row.gut_mode === 'other' ? '__other__' : (row.gut_number || '');
+                    if (current) el.value = current;
+                });
+            });
+        }
+
+        function collectNotifiedAreaRows() {
+            return (Array.isArray(notifiedAreaRowsState) && notifiedAreaRowsState.length ? notifiedAreaRowsState : [{}]).map((row) => ({
+                gut_mode: row.gut_mode === 'other' ? 'other' : 'listed',
+                gut_number: row.gut_number || '',
+                other_gut: row.other_gut || '',
+                notified_area: row.notified_area || '',
+            }));
+        }
+
+        function wireNotifiedAreaRows() {
+            document.addEventListener('click', (event) => {
+                const addBtn = event.target.closest('.add-notified-area-row-btn');
+                if (addBtn) {
+                    notifiedAreaRowsState.push({ gut_mode: 'listed', gut_number: '', other_gut: '', notified_area: '' });
+                    renderNotifiedAreaRows(notifiedAreaRowsState);
+                    return;
+                }
+                const removeBtn = event.target.closest('button[data-notified-remove-row]');
+                if (!removeBtn) return;
+                const idx = Number(removeBtn.dataset.notifiedRemoveRow);
+                if (!Number.isInteger(idx)) return;
+                notifiedAreaRowsState.splice(idx, 1);
+                if (!notifiedAreaRowsState.length) notifiedAreaRowsState = [{}];
+                renderNotifiedAreaRows(notifiedAreaRowsState);
+            });
+
+            document.addEventListener('change', (event) => {
+                const select = event.target.closest('select[data-notified-field="gut_select"]');
+                if (!select) return;
+                const idx = Number(select.dataset.rowIndex);
+                if (!Number.isInteger(idx) || !notifiedAreaRowsState[idx]) return;
+                if (select.value === '__other__') {
+                    notifiedAreaRowsState[idx].gut_mode = 'other';
+                    notifiedAreaRowsState[idx].gut_number = '';
+                } else {
+                    notifiedAreaRowsState[idx].gut_mode = 'listed';
+                    notifiedAreaRowsState[idx].gut_number = select.value || '';
+                    notifiedAreaRowsState[idx].other_gut = '';
+                }
+                renderNotifiedAreaRows(notifiedAreaRowsState);
+            });
+
+            document.addEventListener('input', (event) => {
+                const field = event.target.dataset.notifiedField;
+                if (!field) return;
+                const idx = Number(event.target.dataset.rowIndex);
+                if (!Number.isInteger(idx) || !notifiedAreaRowsState[idx]) return;
+                if (field === 'other_gut') notifiedAreaRowsState[idx].other_gut = event.target.value || '';
+                if (field === 'notified_area') notifiedAreaRowsState[idx].notified_area = event.target.value || '';
+            });
         }
 
         async function loadTalukasForDistrict(district, selectedTaluka = '') {
@@ -2680,6 +2860,7 @@
             const taluka = talukaSel.value;
             const village = villageSel.value;
             if (!district || !taluka || !village) return;
+            await loadNotifiedAreaGutOptions();
 
             const fieldMap = bindFieldMap();
 
@@ -2706,6 +2887,7 @@
                     renderSec8Rows([]);
                     render8aRecords([]);
                     renderSec1AdminRows([]);
+                    renderNotifiedAreaRows([]);
                     renderFieldFileLists(fieldMap, {});
                     return;
                 }
@@ -2721,6 +2903,7 @@
                 }
                 renderFieldFileLists(fieldMap, data.files_map || {});
                 renderSec1AdminRows(values.sec1_admin_approvals || []);
+                renderNotifiedAreaRows(values.notified_area_rows || []);
                 renderSec4Rows(data.sec4_rows || []);
                 renderSec8Rows(data.sec8_rows || []);
                 render8aRecords(data.sec26_8a_records || []);
@@ -2844,6 +3027,7 @@
                     adhisuchana_kramank: row.adhisuchana_kramank || '',
                     date: row.date || ''
                 })),
+                notified_area_rows: collectNotifiedAreaRows(),
                 sec4_rows: collectSec4Rows().map((row) => ({
                     adhisuchana_kramank: row.adhisuchana_kramank || '',
                     adhisuchana_date: row.adhisuchana_date || '',
@@ -2884,6 +3068,8 @@
 
             const sec1AdminRows = Array.isArray(snapshot?.sec1_admin_rows) && snapshot.sec1_admin_rows.length ? snapshot.sec1_admin_rows : [{}];
             renderSec1AdminRows(sec1AdminRows);
+            const notifiedRows = Array.isArray(snapshot?.notified_area_rows) && snapshot.notified_area_rows.length ? snapshot.notified_area_rows : [{}];
+            renderNotifiedAreaRows(notifiedRows);
 
             const sec4Rows = Array.isArray(snapshot?.sec4_rows) && snapshot.sec4_rows.length ? snapshot.sec4_rows : [{}];
             renderSec4Rows(sec4Rows);
@@ -2983,6 +3169,7 @@
                     formData.append(`sec1_admin_files_${i}`, file);
                 });
             });
+            formData.append('notified_area_rows_json', JSON.stringify(collectNotifiedAreaRows()));
 
             const sec4Rows = collectSec4Rows();
             formData.append('sec4_row_count', String(sec4Rows.length));
@@ -3094,6 +3281,8 @@
                 initDateValidation(line);
                 recordSec4Rows.appendChild(line);
                 syncSec4RemoveButtons();
+                notifiedAreaRowsState.push({ gut_mode: 'listed', gut_number: '', other_gut: '', notified_area: '' });
+                renderNotifiedAreaRows(notifiedAreaRowsState);
             });
 
             recordSec4Rows.addEventListener('click', (event) => {
@@ -3101,8 +3290,14 @@
                 if (!removeBtn) return;
                 const line = removeBtn.closest('.record-sec4-row');
                 if (line && recordSec4Rows.querySelectorAll('.record-sec4-row').length > 1) {
+                    const lineIndex = Array.from(recordSec4Rows.querySelectorAll('.record-sec4-row')).indexOf(line);
                     line.remove();
                     syncSec4RemoveButtons();
+                    if (lineIndex >= 0 && notifiedAreaRowsState.length > 1 && lineIndex < notifiedAreaRowsState.length) {
+                        notifiedAreaRowsState.splice(lineIndex, 1);
+                        if (!notifiedAreaRowsState.length) notifiedAreaRowsState = [{}];
+                        renderNotifiedAreaRows(notifiedAreaRowsState);
+                    }
                 }
             });
         }
@@ -3146,6 +3341,8 @@
                 initDateValidation(line);
                 recordSec8Rows.appendChild(line);
                 syncSec8RemoveButtons();
+                notifiedAreaRowsState.push({ gut_mode: 'listed', gut_number: '', other_gut: '', notified_area: '' });
+                renderNotifiedAreaRows(notifiedAreaRowsState);
             });
 
             recordSec8Rows.addEventListener('click', (event) => {
@@ -3153,8 +3350,14 @@
                 if (!removeBtn) return;
                 const line = removeBtn.closest('.record-sec8-row');
                 if (line && recordSec8Rows.querySelectorAll('.record-sec8-row').length > 1) {
+                    const lineIndex = Array.from(recordSec8Rows.querySelectorAll('.record-sec8-row')).indexOf(line);
                     line.remove();
                     syncSec8RemoveButtons();
+                    if (lineIndex >= 0 && notifiedAreaRowsState.length > 1 && lineIndex < notifiedAreaRowsState.length) {
+                        notifiedAreaRowsState.splice(lineIndex, 1);
+                        if (!notifiedAreaRowsState.length) notifiedAreaRowsState = [{}];
+                        renderNotifiedAreaRows(notifiedAreaRowsState);
+                    }
                 }
             });
         }
@@ -3248,6 +3451,7 @@
             });
 
             villageSel.addEventListener('change', async () => {
+                await loadNotifiedAreaGutOptions();
                 if (isEditingRecord) {
                     await Promise.all([loadVillageData(), loadSec15ForSelectedVillage()]);
                 } else {
@@ -3264,6 +3468,7 @@
         wireSec4RowButtons();
         wireSec1AdminRowButtons();
         wireSec8RowButtons();
+        wireNotifiedAreaRows();
         wire8AButtons();
         wireRecordListActions();
         pageSizeSelect.addEventListener('change', handlePageSizeChange);
@@ -3276,6 +3481,7 @@
             changeVillagePage(page);
         });
         renderSec1AdminRows([]);
+        renderNotifiedAreaRows([]);
         renderSec4Rows([]);
         renderSec8Rows([]);
         render8aRecords([]);

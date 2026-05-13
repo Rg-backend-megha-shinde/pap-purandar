@@ -4141,6 +4141,32 @@ def village_info(request):
                 'files': [],
             })
         village_data.sec1_admin_approvals = sec1_admin_rows
+        notified_area_rows_payload = request.POST.get('notified_area_rows_json')
+        if notified_area_rows_payload:
+            try:
+                parsed_rows = json.loads(notified_area_rows_payload)
+            except (TypeError, ValueError, json.JSONDecodeError):
+                parsed_rows = []
+        else:
+            parsed_rows = []
+        cleaned_notified_rows = []
+        if isinstance(parsed_rows, list):
+            for row in parsed_rows:
+                if not isinstance(row, dict):
+                    continue
+                gut_mode = (row.get('gut_mode') or '').strip().lower()
+                gut_number = (row.get('gut_number') or '').strip()
+                other_gut = (row.get('other_gut') or '').strip()
+                notified_area = (row.get('notified_area') or '').strip()
+                if gut_mode not in ('listed', 'other'):
+                    gut_mode = 'other' if other_gut else 'listed'
+                cleaned_notified_rows.append({
+                    'gut_mode': gut_mode,
+                    'gut_number': gut_number,
+                    'other_gut': other_gut,
+                    'notified_area': notified_area,
+                })
+        village_data.notified_area_rows = cleaned_notified_rows
 
         if final_submit:
             village_data.is_final_submitted = True
@@ -4471,6 +4497,7 @@ def get_village_info_data(request):
         val = getattr(village_data, f)
         data[f] = val.isoformat() if hasattr(val, 'isoformat') and val else (val or '')
     data['sec1_admin_approvals'] = village_data.sec1_admin_approvals or []
+    data['notified_area_rows'] = village_data.notified_area_rows or []
 
     # files per field_key
     files_map = {}
