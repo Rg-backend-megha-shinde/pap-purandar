@@ -666,6 +666,7 @@
                     gutSelect.innerHTML = '<option value="">Select Gut Number</option>';
                     // Reload only default project boundary when deselecting
                     loadDefaultProjectBoundary();
+                    fetchProjectStats();
                     // Reload active asset layers without filters
                     reloadActiveAssetLayers();
                 }
@@ -1778,8 +1779,55 @@
                     })
                     .catch(error => console.error('Error loading project stats:', error));
 
+                fetchDashboardProgress(district, taluka, village, gut);
+
                 // Fetch documents for current filter level
                 fetchFilteredDocuments();
+            }
+
+            function updateProgressCard(prefix, data) {
+                const stats = data || {};
+                const percent = Number(stats.progress_percentage || 0);
+                const fields = {
+                    Total: stats.total || 0,
+                    Completed: stats.completed || 0,
+                    Draft: stats.draft || 0,
+                    NotStarted: stats.not_started || 0
+                };
+
+                const percentEl = document.getElementById(`${prefix}ProgressPercent`);
+                const barEl = document.getElementById(`${prefix}ProgressBar`);
+                if (percentEl) percentEl.textContent = `${percent}%`;
+                if (barEl) barEl.style.width = `${Math.max(0, Math.min(percent, 100))}%`;
+
+                Object.entries(fields).forEach(([key, value]) => {
+                    const el = document.getElementById(`${prefix}${key}`);
+                    if (el) el.textContent = Number(value || 0).toLocaleString();
+                });
+            }
+
+            function fetchDashboardProgress(district = null, taluka = null, village = null, gut = null) {
+                const params = new URLSearchParams();
+
+                if (currentDistrictId) params.append('district_id', currentDistrictId);
+                if (currentTalukaId) params.append('taluka_id', currentTalukaId);
+                if (currentVillageId) params.append('village_id', currentVillageId);
+                if (district) params.append('district', district);
+                if (taluka) params.append('taluka', taluka);
+                if (village) params.append('village', village);
+                if (gut) params.append('gut_id', gut);
+
+                fetch(`/dashboard/progress/?${params.toString()}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        updateProgressCard('villageInfo', data.village_info);
+                        updateProgressCard('bhusampadana', data.bhusampadana_prakriya);
+                    })
+                    .catch(error => {
+                        console.error('Error loading dashboard progress:', error);
+                        updateProgressCard('villageInfo', {});
+                        updateProgressCard('bhusampadana', {});
+                    });
             }
 
             // Fetch and display documents filtered by current selection
