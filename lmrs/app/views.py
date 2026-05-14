@@ -3415,6 +3415,7 @@ _VILLAGE_SCALAR_FIELDS = [
     'sec23_kramank', 'sec23_date',
     'sec24_court_details',
     'sec25_kramank', 'sec25_date',
+    'sec25_map_received', 'sec25_not_received_reason',
 ]
 
 _RELATED_SECTION_ROW_CONFIG = {
@@ -4231,6 +4232,46 @@ def village_info(request):
             }]
         village_data.sec24_account_rows = sec24_account_rows
 
+        sec25_map_rows_payload_raw = request.POST.get('sec25_map_rows_json')
+        sec25_map_rows = []
+        if sec25_map_rows_payload_raw:
+            try:
+                parsed_sec25 = json.loads(sec25_map_rows_payload_raw)
+                if isinstance(parsed_sec25, list):
+                    for row in parsed_sec25:
+                        if not isinstance(row, dict):
+                            continue
+                        notified_rows = []
+                        raw_notified_rows = row.get('notified_rows')
+                        if isinstance(raw_notified_rows, list):
+                            for nrow in raw_notified_rows:
+                                if not isinstance(nrow, dict):
+                                    continue
+                                notified_rows.append({
+                                    'gut_number': (nrow.get('gut_number') or '').strip(),
+                                    'notified_area': (nrow.get('notified_area') or '').strip(),
+                                })
+                        if not notified_rows:
+                            notified_rows = [{'gut_number': '', 'notified_area': ''}]
+                        sec25_map_rows.append({
+                            'patra_kramank': (row.get('patra_kramank') or '').strip(),
+                            'date': (row.get('date') or '').strip(),
+                            'notified_rows': notified_rows,
+                            'files': [],
+                        })
+            except (TypeError, ValueError, json.JSONDecodeError):
+                sec25_map_rows = []
+        if not sec25_map_rows:
+            sec25_map_rows = [{
+                'patra_kramank': '',
+                'date': '',
+                'notified_rows': [{'gut_number': '', 'notified_area': ''}],
+                'files': [],
+            }]
+        village_data.sec25_map_received = (request.POST.get('sec25_map_received') or '').strip().lower()
+        village_data.sec25_not_received_reason = (request.POST.get('sec25_not_received_reason') or '').strip()
+        village_data.sec25_map_rows = sec25_map_rows
+
         related_sections_payload_raw = request.POST.get('related_sections_rows_json')
         related_sections_payload = {}
         if related_sections_payload_raw:
@@ -4425,6 +4466,35 @@ def village_info(request):
             }
         village_data.sec21_rows = sec21_rows
         village_data.save(update_fields=['sec21_rows', 'updated_at'])
+
+        # Section 25 map rows with per-row files.
+        sec25_rows = village_data.sec25_map_rows or []
+        existing_sec25_files = VillageDataFile.objects.filter(
+            village_data=village_data,
+            field_key__startswith='sec25_row_'
+        )
+        for old in existing_sec25_files:
+            key = old.field_key or ''
+            m = re.match(r'^sec25_row_(\d+)$', key)
+            if not m:
+                continue
+            old_index = int(m.group(1))
+            if old_index >= len(sec25_rows):
+                if old.file:
+                    old.file.delete(save=False)
+                old.delete()
+
+        for i, _row in enumerate(sec25_rows):
+            row_key = f'sec25_row_{i}'
+            for f in request.FILES.getlist(f'sec25_row_files_{i}'):
+                VillageDataFile.objects.create(village_data=village_data, field_key=row_key, file=f)
+            row_files = VillageDataFile.objects.filter(village_data=village_data, field_key=row_key)
+            sec25_rows[i]['files'] = [
+                {'id': rf.id, 'url': rf.file.url, 'name': rf.file.name.split('/')[-1]}
+                for rf in row_files
+            ]
+        village_data.sec25_map_rows = sec25_rows
+        village_data.save(update_fields=['sec25_map_rows', 'updated_at'])
 
         # Related section repeatable rows (13-17 in UI) with files stored in VillageDataFile.
         for sec_code, cfg in _RELATED_SECTION_ROW_CONFIG.items():
@@ -4770,6 +4840,7 @@ def get_village_info_data(request):
     data['sec3_rows'] = sec3_rows
     data['sec21_rows'] = village_data.sec21_rows or []
     data['sec24_account_rows'] = village_data.sec24_account_rows or []
+    data['sec25_map_rows'] = village_data.sec25_map_rows or []
     data['notified_area_rows'] = village_data.notified_area_rows or []
     data['sec13_rows'] = village_data.sec13_rows or []
     data['sec14_rows'] = village_data.sec14_rows or []
@@ -4829,6 +4900,43 @@ def get_village_info_data(request):
             'files': {'prastaav_files': [], 'karyavrutant_files': []},
         }]
     data['sec21_rows'] = normalized_sec21_rows
+
+    sec25_rows = data.get('sec25_map_rows') or []
+    sec25_file_map = {}
+    for key, files in files_map.items():
+        m = re.match(r'^sec25_row_(\d+)$', key or '')
+        if not m:
+            continue
+        sec25_file_map[int(m.group(1))] = files
+    normalized_sec25_rows = []
+    for idx, row in enumerate(sec25_rows):
+        if not isinstance(row, dict):
+            row = {}
+        nrows = row.get('notified_rows') if isinstance(row.get('notified_rows'), list) else []
+        normalized_nrows = []
+        for nrow in nrows:
+            if not isinstance(nrow, dict):
+                continue
+            normalized_nrows.append({
+                'gut_number': nrow.get('gut_number') or '',
+                'notified_area': nrow.get('notified_area') or '',
+            })
+        if not normalized_nrows:
+            normalized_nrows = [{'gut_number': '', 'notified_area': ''}]
+        normalized_sec25_rows.append({
+            'patra_kramank': row.get('patra_kramank') or '',
+            'date': row.get('date') or '',
+            'notified_rows': normalized_nrows,
+            'files': sec25_file_map.get(idx, row.get('files') or []),
+        })
+    if not normalized_sec25_rows:
+        normalized_sec25_rows = [{
+            'patra_kramank': village_data.sec25_kramank or '',
+            'date': village_data.sec25_date.isoformat() if village_data.sec25_date else '',
+            'notified_rows': [{'gut_number': '', 'notified_area': ''}],
+            'files': [],
+        }]
+    data['sec25_map_rows'] = normalized_sec25_rows
 
     for sec_code, cfg in _RELATED_SECTION_ROW_CONFIG.items():
         json_field = cfg.get('json')

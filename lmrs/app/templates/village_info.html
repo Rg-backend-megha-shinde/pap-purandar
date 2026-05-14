@@ -1211,16 +1211,16 @@
                                 <div class="grid gap-4 md:grid-cols-2">
                                     <div>
                                         <label class="mb-2 block text-sm font-semibold text-[#44597a]">क्रमांक</label>
-                                        <input type="text" placeholder="क्रमांक"
+                                        <input id="vi-sec23-kramank" type="text" placeholder="क्रमांक"
                                             class="w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
                                     </div>
                                     <div>
                                         <label class="mb-2 block text-sm font-semibold text-[#44597a]">दिनांक</label>
-                                        <input type="date" class="w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
+                                        <input id="vi-sec23-date" type="date" class="w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
                                     </div>
                                     <div class="md:col-span-2">
                                         <label class="mb-2 block text-sm font-semibold text-[#44597a]">अपलोड करा</label>
-                                        <input type="file" multiple
+                                        <input id="vi-sec23-files" type="file" multiple
                                             class="block w-full rounded-xl border border-dashed border-[#c5d6ec] bg-white px-4 py-3 text-sm text-[#60708a] file:mr-4 file:rounded-lg file:border-0 file:bg-[#125fcb] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white">
                                     </div>
                                 </div>
@@ -1230,12 +1230,12 @@
                                 <div class="grid gap-4 md:grid-cols-2">
                                     <div>
                                         <label class="mb-2 block text-sm font-semibold text-[#44597a]">न्यायालयीन प्रकरणांचा तपशील</label>
-                                        <input type="text" placeholder="न्यायालयीन प्रकरणांचा तपशील"
+                                        <input id="vi-sec24-court-details" type="text" placeholder="न्यायालयीन प्रकरणांचा तपशील"
                                             class="w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
                                     </div>
                                     <div>
                                         <label class="mb-2 block text-sm font-semibold text-[#44597a]">तपशील अपलोड</label>
-                                        <input type="file" multiple
+                                        <input id="vi-sec24-files" type="file" multiple
                                             class="block w-full rounded-xl border border-dashed border-[#c5d6ec] bg-white px-4 py-3 text-sm text-[#60708a] file:mr-4 file:rounded-lg file:border-0 file:bg-[#125fcb] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white">
                                     </div>
                                 </div>
@@ -1245,16 +1245,16 @@
                                 <div class="grid gap-4 md:grid-cols-2">
                                     <div>
                                         <label class="mb-2 block text-sm font-semibold text-[#44597a]">क्रमांक</label>
-                                        <input type="text" placeholder="क्रमांक"
+                                        <input id="vi-sec25-kramank" type="text" placeholder="क्रमांक"
                                             class="w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
                                     </div>
                                     <div>
                                         <label class="mb-2 block text-sm font-semibold text-[#44597a]">दिनांक</label>
-                                        <input type="date" class="w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
+                                        <input id="vi-sec25-date" type="date" class="w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
                                     </div>
                                     <div class="md:col-span-2">
                                         <label class="mb-2 block text-sm font-semibold text-[#44597a]">अपलोड करा</label>
-                                        <input type="file" multiple
+                                        <input id="vi-sec25-files" type="file" multiple
                                             class="block w-full rounded-xl border border-dashed border-[#c5d6ec] bg-white px-4 py-3 text-sm text-[#60708a] file:mr-4 file:rounded-lg file:border-0 file:bg-[#125fcb] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white">
                                     </div>
                                 </div>
@@ -1331,6 +1331,33 @@
                                             </div>
                                         </div>
                                     </div>
+                                </div>
+                            </div>
+                            <div class="rounded-2xl border border-[#e2ebf7] bg-[#fbfdff] p-5">
+                                <h3 class="text-lg font-bold text-[#244271]">२५. मुख्य कार्यकारी</h3>
+                                <p class="mt-1 text-sm font-semibold text-[#44597a]">सीमानकण नकाशा प्राप्त झाला काय?</p>
+                                <div class="mt-3 flex gap-6">
+                                    <label class="inline-flex items-center gap-2 text-sm font-semibold text-[#44597a]">
+                                        <input type="radio" name="sec25_map_received" value="yes" class="vi-sec25-map-received">
+                                        होय
+                                    </label>
+                                    <label class="inline-flex items-center gap-2 text-sm font-semibold text-[#44597a]">
+                                        <input type="radio" name="sec25_map_received" value="no" class="vi-sec25-map-received">
+                                        नाही
+                                    </label>
+                                </div>
+                                <div id="sec25-yes-section" class="mt-5 hidden">
+                                    <div class="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                                        <p class="text-base font-semibold text-[#244271]">होय असल्यास</p>
+                                        <button type="button" id="add-sec25-map-row-btn"
+                                            class="inline-flex items-center justify-center rounded-lg border border-[#c6d9f2] bg-white px-4 py-2 text-sm font-semibold text-[#125fcb] hover:bg-[#eef5ff]">+ ओळ जोडा</button>
+                                    </div>
+                                    <div id="record-sec25-map-rows" class="space-y-4"></div>
+                                </div>
+                                <div id="sec25-no-section" class="mt-5 hidden">
+                                    <label class="mb-2 block text-sm font-semibold text-[#44597a]">नाही असल्यास, प्राप्त नसल्याचे कारण नमूद करा :</label>
+                                    <input id="vi-sec25-not-received-reason" type="text" placeholder="कारण नमूद करा"
+                                        class="w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
                                 </div>
                             </div>
                         </div>
@@ -1897,6 +1924,9 @@
             renderSec8Rows([]);
             renderSec21Rows([]);
             renderSec24AccountRows([]);
+            renderSec25MapRows([]);
+            document.querySelectorAll('.vi-sec25-map-received').forEach((el) => el.checked = false);
+            setSec25MapMode('');
             render8aRecords([]);
             renderSec15Rows([], 'गाव निवडा');
             setLocationFieldsReadonly(false);
@@ -1927,6 +1957,9 @@
             renderSec8Rows([]);
             renderSec21Rows([]);
             renderSec24AccountRows([]);
+            renderSec25MapRows([]);
+            document.querySelectorAll('.vi-sec25-map-received').forEach((el) => el.checked = false);
+            setSec25MapMode('');
             render8aRecords([]);
             renderFieldFileLists(fieldMap, {});
         }
@@ -2125,9 +2158,15 @@
                 sec13_kharedi_vikri_details: p5[0], sec13_files: p5[1],
                 sec14_meeting_details: p5[2], sec14_date: p5[3], sec14_approved_rate_details: p5[4], sec14_files: p5[5],
 
-                sec23_kramank: p8[0], sec23_date: p8[1], sec23_files: p8[2],
-                sec24_court_details: p8[3], sec24_files: p8[4],
-                sec25_kramank: p8[5], sec25_date: p8[6], sec25_files: p8[7],
+                sec23_kramank: document.getElementById('vi-sec23-kramank'),
+                sec23_date: document.getElementById('vi-sec23-date'),
+                sec23_files: document.getElementById('vi-sec23-files'),
+                sec24_court_details: document.getElementById('vi-sec24-court-details'),
+                sec24_files: document.getElementById('vi-sec24-files'),
+                sec25_kramank: document.getElementById('vi-sec25-kramank'),
+                sec25_date: document.getElementById('vi-sec25-date'),
+                sec25_files: document.getElementById('vi-sec25-files'),
+                sec25_not_received_reason: document.getElementById('vi-sec25-not-received-reason'),
             };
         }
 
@@ -2947,6 +2986,9 @@
                     renderSec8Rows([]);
                     renderSec21Rows([]);
                     renderSec24AccountRows([]);
+                    renderSec25MapRows([]);
+                    document.querySelectorAll('.vi-sec25-map-received').forEach((el) => el.checked = false);
+                    setSec25MapMode('');
                     render8aRecords([]);
                     renderSec1AdminRows([]);
                     renderSec3Rows([]);
@@ -2970,6 +3012,12 @@
                 renderSec8Rows(data.sec8_rows || []);
                 renderSec21Rows(values.sec21_rows || []);
                 renderSec24AccountRows(values.sec24_account_rows || []);
+                renderSec25MapRows(values.sec25_map_rows || []);
+                const sec25Mode = (values.sec25_map_received || '').toLowerCase();
+                document.querySelectorAll('.vi-sec25-map-received').forEach((el) => {
+                    el.checked = el.value === sec25Mode;
+                });
+                setSec25MapMode(sec25Mode);
                 render8aRecords(data.sec26_8a_records || []);
                 renderSec1AdminRows(values.sec1_admin_approvals || []);
                 renderSec3Rows(values.sec3_rows || []);
@@ -3324,6 +3372,117 @@
             }));
         }
 
+        function buildSec25MapRowHtml() {
+            return `
+                <button type="button"
+                    class="remove-sec25-map-row-btn absolute right-3 top-3 inline-flex h-7 w-7 items-center justify-center rounded-full border border-[#cddcf0] text-sm font-bold text-[#6b7d99] hover:bg-[#eef5ff]">✕</button>
+                <div class="grid gap-4 md:grid-cols-3">
+                    <div>
+                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">पत्र क्रमांक</label>
+                        <input type="text" placeholder="पत्र क्रमांक"
+                            class="vi-sec25-patra-kramank w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
+                    </div>
+                    <div>
+                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">दिनांक</label>
+                        <input type="date" class="vi-sec25-date w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
+                    </div>
+                    <div>
+                        <label class="mb-2 block text-sm font-semibold text-[#44597a]">अपलोड करा</label>
+                        <input type="file" multiple
+                            class="vi-sec25-files block w-full rounded-xl border border-dashed border-[#c5d6ec] bg-white px-4 py-3 text-sm text-[#60708a] file:mr-4 file:rounded-lg file:border-0 file:bg-[#125fcb] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white">
+                    </div>
+                </div>
+                <div class="mt-4 overflow-x-auto rounded-xl border border-[#cdd7e5] bg-white">
+                    <table class="min-w-full border-collapse text-sm text-[#355278]">
+                        <thead class="bg-[#f2f6fb]">
+                            <tr>
+                                <th class="border border-[#cdd7e5] px-3 py-2 text-left">अ. क्र</th>
+                                <th class="border border-[#cdd7e5] px-3 py-2 text-left">गट क्रमांक</th>
+                                <th class="border border-[#cdd7e5] px-3 py-2 text-left">अधिसूचित क्षेत्र</th>
+                                <th class="border border-[#cdd7e5] px-3 py-2 text-left"></th>
+                            </tr>
+                        </thead>
+                        <tbody class="vi-sec25-notified-body"></tbody>
+                    </table>
+                </div>
+                <button type="button"
+                    class="add-sec25-notified-row-btn mt-3 inline-flex items-center justify-center rounded-lg border border-[#c6d9f2] bg-white px-3 py-1 text-xs font-semibold text-[#125fcb] hover:bg-[#eef5ff]">+ ओळ जोडा</button>
+            `;
+        }
+
+        function buildSec25NotifiedRowHtml(index, row = {}) {
+            return `
+                <tr class="border-t border-[#d8e4f3]">
+                    <td class="border border-[#cdd7e5] px-3 py-2">${index + 1}</td>
+                    <td class="border border-[#cdd7e5] px-3 py-2"><input type="text" value="${escapeHtml(row.gut_number || '')}" class="vi-sec25-gut w-full rounded-lg border border-[#d3deeb] px-2 py-2 text-sm"></td>
+                    <td class="border border-[#cdd7e5] px-3 py-2"><input type="text" value="${escapeHtml(row.notified_area || '')}" class="vi-sec25-notified-area w-full rounded-lg border border-[#d3deeb] px-2 py-2 text-sm"></td>
+                    <td class="border border-[#cdd7e5] px-3 py-2 text-center"><button type="button" class="remove-sec25-notified-row-btn rounded-md border border-[#cddcf0] px-2 py-1 text-xs font-semibold text-[#6b7d99] hover:bg-[#eef5ff]">काढा</button></td>
+                </tr>
+            `;
+        }
+
+        function renderSec25NotifiedRows(lineEl, rows = [{}]) {
+            const body = lineEl.querySelector('.vi-sec25-notified-body');
+            if (!body) return;
+            const finalRows = Array.isArray(rows) && rows.length ? rows : [{}];
+            body.innerHTML = finalRows.map((row, idx) => buildSec25NotifiedRowHtml(idx, row)).join('');
+        }
+
+        function syncSec25MapRemoveButtons() {
+            const rows = Array.from(document.querySelectorAll('#record-sec25-map-rows .record-sec25-map-row'));
+            rows.forEach((row, index) => {
+                const btn = row.querySelector('.remove-sec25-map-row-btn');
+                if (!btn) return;
+                if (index === 0) btn.classList.add('hidden');
+                else btn.classList.remove('hidden');
+            });
+        }
+
+        function renderSec25MapRows(rows = []) {
+            const container = document.getElementById('record-sec25-map-rows');
+            if (!container) return;
+            container.innerHTML = '';
+            const finalRows = rows.length ? rows : [{}];
+            finalRows.forEach((row) => {
+                const line = document.createElement('div');
+                line.className = 'record-sec25-map-row relative rounded-xl border border-[#e2ebf7] bg-white p-4';
+                line.innerHTML = buildSec25MapRowHtml();
+                line.querySelector('.vi-sec25-patra-kramank').value = row.patra_kramank || '';
+                line.querySelector('.vi-sec25-date').value = row.date || '';
+                renderSec25NotifiedRows(line, row.notified_rows || []);
+                const filesInput = line.querySelector('.vi-sec25-files');
+                if (filesInput) {
+                    const containerEl = ensureSavedFilesContainer(filesInput, 'vi-sec25-saved-files');
+                    renderSavedFilesInContainer(containerEl, Array.isArray(row.files) ? row.files : [], (id) => `/api/village-info/delete-file/${id}/`);
+                }
+                initAllDropzones(line);
+                initDateValidation(line);
+                container.appendChild(line);
+            });
+            syncSec25MapRemoveButtons();
+            requestAnimationFrame(() => refreshSavedFilePopovers(container));
+        }
+
+        function collectSec25MapRows() {
+            return Array.from(document.querySelectorAll('#record-sec25-map-rows .record-sec25-map-row')).map((line) => ({
+                patra_kramank: line.querySelector('.vi-sec25-patra-kramank')?.value?.trim() || '',
+                date: line.querySelector('.vi-sec25-date')?.value || '',
+                notified_rows: Array.from(line.querySelectorAll('.vi-sec25-notified-body tr')).map((rowEl) => ({
+                    gut_number: rowEl.querySelector('.vi-sec25-gut')?.value?.trim() || '',
+                    notified_area: rowEl.querySelector('.vi-sec25-notified-area')?.value?.trim() || '',
+                })),
+                filesInput: line.querySelector('.vi-sec25-files'),
+            }));
+        }
+
+        function setSec25MapMode(mode) {
+            const yesSection = document.getElementById('sec25-yes-section');
+            const noSection = document.getElementById('sec25-no-section');
+            const isYes = mode === 'yes';
+            yesSection?.classList.toggle('hidden', !isYes);
+            noSection?.classList.toggle('hidden', isYes);
+        }
+
         const relatedSectionCardsConfig = [
             { secCode: 'sec17', titlePrefix: '१३.' },
             { secCode: 'sec18', titlePrefix: '१४.' },
@@ -3517,6 +3676,12 @@
                     bank_name: row.bank_name || '',
                     ifsc_code: row.ifsc_code || ''
                 })),
+                sec25_map_received: (document.querySelector('.vi-sec25-map-received:checked')?.value || ''),
+                sec25_map_rows: collectSec25MapRows().map((row) => ({
+                    patra_kramank: row.patra_kramank || '',
+                    date: row.date || '',
+                    notified_rows: Array.isArray(row.notified_rows) ? row.notified_rows : []
+                })),
                 sec26_rows: collect8ARecords().map((row) => ({
                     khate_kramank: row.khate_kramank || '',
                     navavar_kshetra: row.navavar_kshetra || '',
@@ -3553,6 +3718,13 @@
             renderSec21Rows(sec21Rows);
             const sec24Rows = Array.isArray(snapshot?.sec24_account_rows) && snapshot.sec24_account_rows.length ? snapshot.sec24_account_rows : [{}];
             renderSec24AccountRows(sec24Rows);
+            const sec25Rows = Array.isArray(snapshot?.sec25_map_rows) && snapshot.sec25_map_rows.length ? snapshot.sec25_map_rows : [{}];
+            renderSec25MapRows(sec25Rows);
+            const sec25Mode = (snapshot?.sec25_map_received || '').toLowerCase();
+            document.querySelectorAll('.vi-sec25-map-received').forEach((el) => {
+                el.checked = el.value === sec25Mode;
+            });
+            setSec25MapMode(sec25Mode);
 
             const notifiedRows = Array.isArray(snapshot?.notified_area_rows) && snapshot.notified_area_rows.length
                 ? snapshot.notified_area_rows
@@ -3689,6 +3861,19 @@
             });
             const sec24AccountRows = collectSec24AccountRows();
             formData.append('sec24_account_rows_json', JSON.stringify(sec24AccountRows));
+            const sec25Mode = (document.querySelector('.vi-sec25-map-received:checked')?.value || '').toLowerCase();
+            formData.append('sec25_map_received', sec25Mode);
+            const sec25MapRows = sec25Mode === 'yes' ? collectSec25MapRows() : [];
+            formData.append('sec25_map_rows_json', JSON.stringify(sec25MapRows.map((row) => ({
+                patra_kramank: row.patra_kramank || '',
+                date: row.date || '',
+                notified_rows: Array.isArray(row.notified_rows) ? row.notified_rows : []
+            }))));
+            sec25MapRows.forEach((row, i) => {
+                Array.from(row.filesInput?.files || []).forEach((file) => {
+                    formData.append(`sec25_row_files_${i}`, file);
+                });
+            });
             formData.append('notified_area_rows_json', JSON.stringify(collectNotifiedAreaRows()));
 
             const sec4Rows = collectSec4Rows();
@@ -3980,6 +4165,72 @@
             });
         }
 
+        function wireSec25MapRowButtons() {
+            const addBtn = document.getElementById('add-sec25-map-row-btn');
+            const container = document.getElementById('record-sec25-map-rows');
+            if (!addBtn || !container) return;
+
+            addBtn.addEventListener('click', () => {
+                const rows = collectSec25MapRows().map((row) => ({
+                    patra_kramank: row.patra_kramank || '',
+                    date: row.date || '',
+                    notified_rows: Array.isArray(row.notified_rows) ? row.notified_rows : [{ gut_number: '', notified_area: '' }]
+                }));
+                rows.push({ patra_kramank: '', date: '', notified_rows: [{ gut_number: '', notified_area: '' }] });
+                renderSec25MapRows(rows);
+            });
+
+            container.addEventListener('click', (event) => {
+                const removeMainBtn = event.target.closest('.remove-sec25-map-row-btn');
+                if (removeMainBtn) {
+                    const line = removeMainBtn.closest('.record-sec25-map-row');
+                    if (line && container.querySelectorAll('.record-sec25-map-row').length > 1) {
+                        line.remove();
+                        syncSec25MapRemoveButtons();
+                    }
+                    return;
+                }
+
+                const addNotifiedBtn = event.target.closest('.add-sec25-notified-row-btn');
+                if (addNotifiedBtn) {
+                    const line = addNotifiedBtn.closest('.record-sec25-map-row');
+                    const body = line?.querySelector('.vi-sec25-notified-body');
+                    if (!body) return;
+                    const rows = Array.from(body.querySelectorAll('tr')).map((rowEl) => ({
+                        gut_number: rowEl.querySelector('.vi-sec25-gut')?.value?.trim() || '',
+                        notified_area: rowEl.querySelector('.vi-sec25-notified-area')?.value?.trim() || '',
+                    }));
+                    rows.push({ gut_number: '', notified_area: '' });
+                    renderSec25NotifiedRows(line, rows);
+                    return;
+                }
+
+                const removeNotifiedBtn = event.target.closest('.remove-sec25-notified-row-btn');
+                if (removeNotifiedBtn) {
+                    const line = removeNotifiedBtn.closest('.record-sec25-map-row');
+                    const body = line?.querySelector('.vi-sec25-notified-body');
+                    if (!body) return;
+                    const rows = Array.from(body.querySelectorAll('tr')).map((rowEl) => ({
+                        gut_number: rowEl.querySelector('.vi-sec25-gut')?.value?.trim() || '',
+                        notified_area: rowEl.querySelector('.vi-sec25-notified-area')?.value?.trim() || '',
+                    }));
+                    const idx = Array.from(body.querySelectorAll('.remove-sec25-notified-row-btn')).indexOf(removeNotifiedBtn);
+                    if (idx <= 0 || rows.length <= 1) return;
+                    rows.splice(idx, 1);
+                    renderSec25NotifiedRows(line, rows);
+                }
+            });
+
+            document.querySelectorAll('.vi-sec25-map-received').forEach((radio) => {
+                radio.addEventListener('change', () => {
+                    setSec25MapMode(radio.value);
+                    if (radio.value === 'yes' && !document.querySelector('#record-sec25-map-rows .record-sec25-map-row')) {
+                        renderSec25MapRows([{}]);
+                    }
+                });
+            });
+        }
+
         function wire8AButtons() {
             const add8aLineBtn = document.getElementById('add-8a-line-btn');
             const record8aLines = document.getElementById('record-8a-lines');
@@ -4122,6 +4373,7 @@
         wireSec3RowButtons();
         wireSec21RowButtons();
         wireSec24AccountRowButtons();
+        wireSec25MapRowButtons();
         wireSec8RowButtons();
         wireNotifiedAreaRows();
         wire8AButtons();
@@ -4142,6 +4394,8 @@
         renderSec8Rows([]);
         renderSec21Rows([]);
         renderSec24AccountRows([]);
+        renderSec25MapRows([]);
+        setSec25MapMode('');
         render8aRecords([]);
         initNotifiedAreaBlocks([{}]);
         initAllDropzones();
