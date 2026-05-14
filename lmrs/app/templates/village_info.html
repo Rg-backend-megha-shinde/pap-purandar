@@ -676,16 +676,16 @@
                                         <div>
                                             <label class="mb-2 block text-sm font-semibold text-[#44597a]">प्रस्ताव पत्र
                                                 क्रमांक</label>
-                                            <input type="text" placeholder="प्रस्ताव पत्र क्रमांक"
+                                            <input id="vi-sec5-prastaav-kramank" type="text" placeholder="प्रस्ताव पत्र क्रमांक"
                                                 class="w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
                                         </div>
                                         <div>
                                             <label class="mb-2 block text-sm font-semibold text-[#44597a]">दिनांक</label>
-                                            <input type="date" class="w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
+                                            <input id="vi-sec5-date" type="date" class="w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
                                         </div>
                                         <div class="md:col-span-2">
                                             <label class="mb-2 block text-sm font-semibold text-[#44597a]">अपलोड करा</label>
-                                            <input type="file" multiple
+                                            <input id="vi-sec5-files" type="file" multiple
                                                 class="block w-full rounded-xl border border-dashed border-[#c5d6ec] bg-white px-4 py-3 text-sm text-[#60708a] file:mr-4 file:rounded-lg file:border-0 file:bg-[#125fcb] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white">
                                         </div>
                                     </div>
@@ -704,23 +704,23 @@
                                     <div>
                                         <label class="mb-2 block text-sm font-semibold text-[#44597a]">मोजणी रजिस्टर
                                             नंबर</label>
-                                        <input type="text" placeholder="मोजणी रजिस्टर नंबर"
+                                        <input id="vi-sec6-register-number" type="text" placeholder="मोजणी रजिस्टर नंबर"
                                             class="w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
                                     </div>
                                     <div>
                                         <label class="mb-2 block text-sm font-semibold text-[#44597a]">संयुक्त मोजणी दिनांक</label>
-                                        <input type="date" class="w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
+                                        <input id="vi-sec6-date" type="date" class="w-full rounded-xl border border-[#d3deeb] px-4 py-3 text-sm">
                                     </div>
                                     <div>
                                         <label class="mb-2 block text-sm font-semibold text-[#44597a]">परिशिष्ट
                                             16</label>
-                                        <input type="file" multiple
+                                        <input id="vi-sec6-parishisht16-files" type="file" multiple
                                             class="block w-full rounded-xl border border-dashed border-[#c5d6ec] bg-white px-4 py-3 text-sm text-[#60708a] file:mr-4 file:rounded-lg file:border-0 file:bg-[#125fcb] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white">
                                     </div>
                                     <div>
                                         <label class="mb-2 block text-sm font-semibold text-[#44597a]">संयुक्त मोजणी
                                             नकाशा</label>
-                                        <input type="file" multiple
+                                        <input id="vi-sec6-nakasha-files" type="file" multiple
                                             class="block w-full rounded-xl border border-dashed border-[#c5d6ec] bg-white px-4 py-3 text-sm text-[#60708a] file:mr-4 file:rounded-lg file:border-0 file:bg-[#125fcb] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white">
                                     </div>
                                 </div>
@@ -2154,8 +2154,13 @@
                 sec2_paper2_date: document.getElementById('vi-sec2-paper2-date'),
                 sec2_paper2_files: document.getElementById('vi-sec2-paper2-files'),
 
-                sec5_prastaav_kramank: p2[0], sec5_date: p2[1], sec5_files: p2[2],
-                sec6_register_number: p2[3], sec6_date: p2[4], sec6_parishisht16_files: p2[5], sec6_nakasha_files: p2[6],
+                sec5_prastaav_kramank: document.getElementById('vi-sec5-prastaav-kramank'),
+                sec5_date: document.getElementById('vi-sec5-date'),
+                sec5_files: document.getElementById('vi-sec5-files'),
+                sec6_register_number: document.getElementById('vi-sec6-register-number'),
+                sec6_date: document.getElementById('vi-sec6-date'),
+                sec6_parishisht16_files: document.getElementById('vi-sec6-parishisht16-files'),
+                sec6_nakasha_files: document.getElementById('vi-sec6-nakasha-files'),
 
                 sec7_aakshep_details: p3[0], sec7_files: p3[1],
                 sec9_paper1_name: p3[2], sec9_paper1_date: p3[3], sec9_paper1_files: p3[4],
