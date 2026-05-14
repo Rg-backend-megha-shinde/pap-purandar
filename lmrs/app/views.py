@@ -1639,6 +1639,230 @@ def dashboard(request):
     return render(request, "dashboard.html")
 
 
+def _progress_empty():
+    return {
+        "total": 0,
+        "completed": 0,
+        "draft": 0,
+        "not_started": 0,
+        "progress_percentage": 0,
+    }
+
+
+def _progress_payload(total, completed, draft):
+    total = int(total or 0)
+    completed = int(completed or 0)
+    draft = int(draft or 0)
+    not_started = max(total - completed - draft, 0)
+    progress_percentage = round((completed / total) * 100) if total else 0
+    return {
+        "total": total,
+        "completed": completed,
+        "draft": draft,
+        "not_started": not_started,
+        "progress_percentage": progress_percentage,
+    }
+
+
+def _norm_scope_value(value):
+    return normalize_match_text(value)
+
+
+def _scope_lookup(values, key):
+    return {row[key] for row in values if row.get(key)}
+
+
+def _resolve_dashboard_scope(request):
+    district_id = clean_optional_char(request.GET.get('district_id'))
+    taluka_id = clean_optional_char(request.GET.get('taluka_id'))
+    village_id = clean_optional_char(request.GET.get('village_id'))
+    gut_number = clean_optional_char(request.GET.get('gut_id')) or clean_optional_char(request.GET.get('gut'))
+    district_name = clean_optional_char(request.GET.get('district'))
+    taluka_name = clean_optional_char(request.GET.get('taluka'))
+    village_name = clean_optional_char(request.GET.get('village'))
+
+    with connection.cursor() as cursor:
+        if not district_id and district_name:
+            cursor.execute("""
+                SELECT district_id
+                FROM purandar_airport.prj_district
+                WHERE UPPER(TRIM(name)) = UPPER(TRIM(%s))
+                LIMIT 1;
+            """, [district_name])
+            row = cursor.fetchone()
+            district_id = str(row[0]) if row else ""
+
+        if not taluka_id and taluka_name:
+            cursor.execute("""
+                SELECT c.taluka_id
+                FROM purandar_airport.prj_taluka c
+                JOIN purandar_airport.prj_district a ON a.district_id = c.district_id
+                WHERE UPPER(TRIM(c.taluka)) = UPPER(TRIM(%s))
+                  AND (%s = '' OR a.district_id::text = %s OR UPPER(TRIM(a.name)) = UPPER(TRIM(%s)))
+                LIMIT 1;
+            """, [taluka_name, district_id, district_id, district_name])
+            row = cursor.fetchone()
+            taluka_id = str(row[0]) if row else ""
+
+        if not village_id and village_name:
+            cursor.execute("""
+                SELECT d.village_id
+                FROM purandar_airport.prj_village d
+                JOIN purandar_airport.prj_taluka c ON c.taluka_id = d.taluka_id
+                JOIN purandar_airport.prj_district a ON a.district_id = c.district_id
+                WHERE UPPER(TRIM(d.village)) = UPPER(TRIM(%s))
+                  AND (%s = '' OR c.taluka_id::text = %s OR UPPER(TRIM(c.taluka)) = UPPER(TRIM(%s)))
+                  AND (%s = '' OR a.district_id::text = %s OR UPPER(TRIM(a.name)) = UPPER(TRIM(%s)))
+                LIMIT 1;
+            """, [village_name, taluka_id, taluka_id, taluka_name, district_id, district_id, district_name])
+            row = cursor.fetchone()
+            village_id = str(row[0]) if row else ""
+
+        conditions = []
+        params = []
+        if district_id:
+            conditions.append("a.district_id::text = %s")
+            params.append(district_id)
+        elif district_name:
+            conditions.append("UPPER(TRIM(a.name)) = UPPER(TRIM(%s))")
+            params.append(district_name)
+
+        if taluka_id:
+            conditions.append("c.taluka_id::text = %s")
+            params.append(taluka_id)
+        elif taluka_name:
+            conditions.append("UPPER(TRIM(c.taluka)) = UPPER(TRIM(%s))")
+            params.append(taluka_name)
+
+        if village_id:
+            conditions.append("d.village_id::text = %s")
+            params.append(village_id)
+        elif village_name:
+            conditions.append("UPPER(TRIM(d.village)) = UPPER(TRIM(%s))")
+            params.append(village_name)
+
+        if gut_number:
+            conditions.append("UPPER(TRIM(e.gut_no::text)) = UPPER(TRIM(%s))")
+            params.append(gut_number)
+
+        where_clause = ("WHERE " + " AND ".join(conditions)) if conditions else ""
+        cursor.execute(f"""
+            SELECT DISTINCT
+                a.name AS district,
+                c.taluka AS taluka,
+                d.village AS village,
+                e.gut_no::text AS gut_number
+            FROM purandar_airport.prj_district a
+            JOIN purandar_airport.prj_taluka c ON a.district_id = c.district_id
+            JOIN purandar_airport.prj_village d ON c.taluka_id = d.taluka_id
+            LEFT JOIN purandar_airport.prj_gut_bd e ON d.village_id = e.village_id
+            {where_clause}
+            ORDER BY a.name, c.taluka, d.village, e.gut_no::text;
+        """, params)
+
+        rows = [
+            {
+                "district": row[0] or "",
+                "taluka": row[1] or "",
+                "village": row[2] or "",
+                "gut_number": row[3] or "",
+            }
+            for row in cursor.fetchall()
+        ]
+
+    village_keys = {
+        (_norm_scope_value(row["district"]), _norm_scope_value(row["taluka"]), _norm_scope_value(row["village"]))
+        for row in rows
+        if row["village"]
+    }
+    gut_keys = {
+        (
+            _norm_scope_value(row["district"]),
+            _norm_scope_value(row["taluka"]),
+            _norm_scope_value(row["village"]),
+            normalize_gut_value(row["gut_number"]),
+        )
+        for row in rows
+        if row["village"] and row["gut_number"]
+    }
+    return rows, village_keys, gut_keys
+
+
+@api_login_required
+def get_dashboard_progress(request):
+    try:
+        scope_rows, village_keys, gut_keys = _resolve_dashboard_scope(request)
+    except Exception as exc:
+        return JsonResponse({"error": str(exc)}, status=500)
+
+    if not scope_rows:
+        return JsonResponse({
+            "village_info": _progress_empty(),
+            "bhusampadana_prakriya": _progress_empty(),
+        })
+
+    districts = _scope_lookup(scope_rows, "district")
+    talukas = _scope_lookup(scope_rows, "taluka")
+    villages = _scope_lookup(scope_rows, "village")
+    guts = _scope_lookup(scope_rows, "gut_number")
+
+    village_records = VillageData.objects.all()
+    if districts:
+        village_records = village_records.filter(district__in=districts)
+    if talukas:
+        village_records = village_records.filter(taluka__in=talukas)
+    if villages:
+        village_records = village_records.filter(village__in=villages)
+
+    village_status_by_key = {}
+    for record in village_records.order_by('is_final_submitted', 'updated_at', 'id'):
+        key = (_norm_scope_value(record.district), _norm_scope_value(record.taluka), _norm_scope_value(record.village))
+        if key not in village_keys:
+            continue
+        previous = village_status_by_key.get(key)
+        status = "completed" if record.is_final_submitted else "draft"
+        if previous != "completed":
+            village_status_by_key[key] = status
+
+    village_completed = sum(1 for status in village_status_by_key.values() if status == "completed")
+    village_draft = sum(1 for status in village_status_by_key.values() if status == "draft")
+    village_info = _progress_payload(len(village_keys), village_completed, village_draft)
+
+    process_records = ProcessChartCase.objects.all()
+    if districts:
+        process_records = process_records.filter(district__in=districts)
+    if talukas:
+        process_records = process_records.filter(taluka__in=talukas)
+    if villages:
+        process_records = process_records.filter(village__in=villages)
+    if guts:
+        process_records = process_records.filter(gut_number__in=guts)
+
+    process_status_by_key = {}
+    for record in process_records.order_by('status', 'updated_at', 'id'):
+        key = (
+            _norm_scope_value(record.district),
+            _norm_scope_value(record.taluka),
+            _norm_scope_value(record.village),
+            normalize_gut_value(record.gut_number),
+        )
+        if key not in gut_keys:
+            continue
+        status = "completed" if record.status in ("submitted", "approved") else "draft"
+        previous = process_status_by_key.get(key)
+        if previous != "completed":
+            process_status_by_key[key] = status
+
+    process_completed = sum(1 for status in process_status_by_key.values() if status == "completed")
+    process_draft = sum(1 for status in process_status_by_key.values() if status == "draft")
+    bhusampadana_prakriya = _progress_payload(len(gut_keys), process_completed, process_draft)
+
+    return JsonResponse({
+        "village_info": village_info,
+        "bhusampadana_prakriya": bhusampadana_prakriya,
+    })
+
+
 
 
 
