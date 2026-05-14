@@ -1338,11 +1338,11 @@
                                 <p class="mt-1 text-sm font-semibold text-[#44597a]">सीमानकण नकाशा प्राप्त झाला काय?</p>
                                 <div class="mt-3 flex gap-6">
                                     <label class="inline-flex items-center gap-2 text-sm font-semibold text-[#44597a]">
-                                        <input type="radio" name="sec25_map_received" value="yes" class="vi-sec25-map-received">
+                                        <input type="radio" name="sec25_map_received" value="yes" autocomplete="off" class="vi-sec25-map-received">
                                         होय
                                     </label>
                                     <label class="inline-flex items-center gap-2 text-sm font-semibold text-[#44597a]">
-                                        <input type="radio" name="sec25_map_received" value="no" class="vi-sec25-map-received">
+                                        <input type="radio" name="sec25_map_received" value="no" autocomplete="off" class="vi-sec25-map-received">
                                         नाही
                                     </label>
                                 </div>
@@ -3375,7 +3375,7 @@
         function buildSec25MapRowHtml() {
             return `
                 <button type="button"
-                    class="remove-sec25-map-row-btn absolute right-3 top-3 inline-flex h-7 w-7 items-center justify-center rounded-full border border-[#cddcf0] text-sm font-bold text-[#6b7d99] hover:bg-[#eef5ff]">✕</button>
+                    class="remove-sec25-map-row-btn absolute right-3 top-3 z-20 inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-full border border-[#cddcf0] bg-white text-sm font-bold text-[#6b7d99] hover:bg-[#eef5ff]">✕</button>
                 <div class="grid gap-4 md:grid-cols-3">
                     <div>
                         <label class="mb-2 block text-sm font-semibold text-[#44597a]">पत्र क्रमांक</label>
@@ -4247,7 +4247,8 @@
             });
 
             container.addEventListener('click', (event) => {
-                const removeMainBtn = event.target.closest('.remove-sec25-map-row-btn');
+                const clickEl = event.target instanceof Element ? event.target : event.target?.parentElement;
+                const removeMainBtn = clickEl?.closest('.remove-sec25-map-row-btn');
                 if (removeMainBtn) {
                     const line = removeMainBtn.closest('.record-sec25-map-row');
                     if (line && container.querySelectorAll('.record-sec25-map-row').length > 1) {
@@ -4257,7 +4258,7 @@
                     return;
                 }
 
-                const addNotifiedBtn = event.target.closest('.add-sec25-notified-row-btn');
+                const addNotifiedBtn = clickEl?.closest('.add-sec25-notified-row-btn');
                 if (addNotifiedBtn) {
                     const line = addNotifiedBtn.closest('.record-sec25-map-row');
                     const rows = collectSec25NotifiedRowsFromBlock(line?.querySelector('.vi-sec25-notified-area-block'));
@@ -4266,7 +4267,7 @@
                     return;
                 }
 
-                const removeNotifiedBtn = event.target.closest('button[data-sec25-notified-remove-row]');
+                const removeNotifiedBtn = clickEl?.closest('button[data-sec25-notified-remove-row]');
                 if (removeNotifiedBtn) {
                     const line = removeNotifiedBtn.closest('.record-sec25-map-row');
                     const idx = Number(removeNotifiedBtn.dataset.sec25NotifiedRemoveRow);
@@ -4471,6 +4472,13 @@
         renderSec24AccountRows([]);
         renderSec25MapRows([]);
         setSec25MapMode('');
+        requestAnimationFrame(() => {
+            document.querySelectorAll('.vi-sec25-map-received').forEach((el) => {
+                el.checked = false;
+                el.defaultChecked = false;
+            });
+            setSec25MapMode('');
+        });
         render8aRecords([]);
         initNotifiedAreaBlocks([{}]);
         initAllDropzones();
