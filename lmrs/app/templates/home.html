@@ -300,6 +300,7 @@
         // GeoServer configuration
         const GEOSERVER_URL = "https://purandar-airport.rottengrapes.tech/geoserver/wms";
         const WORKSPACE = "pune_rr";
+        const PURANDAR_IMG_LAYER = "Purandar_New:Purandar_img";
         const PROJECT_NAME = "Purandar Airport";
         const PROJECT_SCHEMA = "purandar_airport";
         const GEOSERVER_VIEWPARAMS = `a:${PROJECT_SCHEMA};project_name:${PROJECT_NAME}`;
@@ -342,7 +343,7 @@
             initialUrlState.district || initialUrlState.taluka || initialUrlState.village || initialUrlState.gut
         );
         if (!hasInitialLocationFilter) {
-            initialUrlState.layers = ['prj_bd'];
+            initialUrlState.layers = ['prj_bd', 'purandar_img'];
         }
 
         function getSelectedLayers() {
@@ -2073,6 +2074,7 @@
                 // Define layers to show
                 const layers = [
                     { key: 'prj_bd', name: 'Project Boundary', icon: 'border_outer' },
+                    { key: 'purandar_img', name: 'Project Image', icon: 'image' },
                     { key: 'prj_ass_pt', name: 'Trees', icon: 'park' },
                     { key: 'prj_ass_pl', name: 'Pipeline/BW', icon: 'water_drop' },
                     { key: 'prj_ass_poly', name: 'Structure/Other', icon: 'apartment' },
@@ -2082,15 +2084,25 @@
                 // Add each layer
                 layers.forEach((layer, index) => {
                     const isProjectBoundary = layer.key === 'prj_bd';
+                    const isDefaultOn = layer.key === 'purandar_img';
                     // prj_bd is always on; others restore their previous state
-                    const isChecked = isProjectBoundary || currentlyActive.has(layer.key) || urlLayers.has(layer.key);
+                    const isChecked = isProjectBoundary || isDefaultOn || currentlyActive.has(layer.key) || urlLayers.has(layer.key);
+                    const opacityControlHtml = layer.key === 'purandar_img'
+                        ? `<div class="mt-1 flex items-center gap-2">
+                                <span class="text-[10px] text-slate-500">Opacity</span>
+                                <input type="range" min="10" max="100" value="85" data-overlay-opacity="purandar_img" class="h-1.5 w-24 accent-primary">
+                           </div>`
+                        : '';
 
                     const layerItem = document.createElement('div');
                     layerItem.className = `flex justify-between items-center text-xs py-2 ${index < layers.length - 1 ? 'border-b border-slate-100 dark:border-slate-800' : ''}`;
                     layerItem.innerHTML = `
-                        <div class="text-slate-600 dark:text-slate-400 flex items-center gap-2">
-                            <span class="material-symbols-outlined text-sm">${layer.icon}</span>
-                            <span class="font-medium">${layer.name}</span>
+                        <div class="text-slate-600 dark:text-slate-400">
+                            <div class="flex items-center gap-2">
+                                <span class="material-symbols-outlined text-sm">${layer.icon}</span>
+                                <span class="font-medium">${layer.name}</span>
+                            </div>
+                            ${opacityControlHtml}
                         </div>
                         <label class="relative inline-flex items-center ${isProjectBoundary ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}">
                             <input type="checkbox" class="sr-only peer asset-layer-toggle" data-asset="${layer.key}"
@@ -2123,6 +2135,15 @@
                         }
                         updateUrlParams();
                     });
+
+                    const opacitySlider = layerItem.querySelector('[data-overlay-opacity="purandar_img"]');
+                    if (opacitySlider) {
+                        opacitySlider.addEventListener('input', function () {
+                            const overlayLayer = assetLayers['purandar_img'];
+                            if (!overlayLayer) return;
+                            overlayLayer.setOpacity(Number(this.value) / 100);
+                        });
+                    }
                 });
             }
 
@@ -2140,6 +2161,7 @@
                 // Layer configuration
                 const layerConfig = {
                     'prj_bd': { zIndex: 500, opacity: 0.7, name: 'Project Boundary', filterable: false },
+                    'purandar_img': { zIndex: 430, opacity: 0.85, name: 'Project Image', filterable: false },
                     'prj_ass_pt': { zIndex: 550, opacity: 1.0, name: 'Trees', filterable: true },
                     'prj_ass_pl': { zIndex: 560, opacity: 1.0, name: 'Pipeline/BW', filterable: true },
                     'prj_ass_poly': { zIndex: 570, opacity: 0.8, name: 'Structure/Other', filterable: true },
@@ -2195,7 +2217,7 @@
                 }
 
                 const wmsParams = {
-                    'LAYERS': `${WORKSPACE}:${assetName}`,
+                    'LAYERS': assetName === 'purandar_img' ? PURANDAR_IMG_LAYER : `${WORKSPACE}:${assetName}`,
                     'FORMAT': 'image/png',
                     'TRANSPARENT': true,
                     'VERSION': '1.1.0',
@@ -2214,26 +2236,36 @@
                     console.log(`   CQL_FILTER: ${cqlFilter}`);
                 }
 
-                const source = new ol.source.TileWMS({
-                    url: GEOSERVER_URL,
-                    params: wmsParams,
-                    serverType: 'geoserver',
-                    crossOrigin: 'anonymous',
-                    transition: 0
-                });
+                const isProjectImage = assetName === 'purandar_img';
+                const source = isProjectImage
+                    ? new ol.source.ImageWMS({
+                        url: GEOSERVER_URL,
+                        params: wmsParams,
+                        serverType: 'geoserver',
+                        crossOrigin: 'anonymous',
+                        ratio: 1,
+                        hidpi: true
+                    })
+                    : new ol.source.TileWMS({
+                        url: GEOSERVER_URL,
+                        params: wmsParams,
+                        serverType: 'geoserver',
+                        crossOrigin: 'anonymous',
+                        transition: 0
+                    });
 
                 let tilesLoaded = false;
                 let tilesErrored = false;
 
-                source.on('tileloadstart', showMapLoading);
-                source.on('tileloadend', () => {
+                source.on(isProjectImage ? 'imageloadstart' : 'tileloadstart', showMapLoading);
+                source.on(isProjectImage ? 'imageloadend' : 'tileloadend', () => {
                     hideMapLoading();
                     if (!tilesLoaded) {
                         tilesLoaded = true;
                         console.log(`✅ ${config.name} tiles loaded`);
                     }
                 });
-                source.on('tileloaderror', (event) => {
+                source.on(isProjectImage ? 'imageloaderror' : 'tileloaderror', (event) => {
                     hideMapLoading();
                     if (!tilesErrored) {
                         tilesErrored = true;
@@ -2241,11 +2273,17 @@
                     }
                 });
 
-                assetLayers[assetName] = new ol.layer.Tile({
-                    source: source,
-                    zIndex: config.zIndex,
-                    opacity: config.opacity
-                });
+                assetLayers[assetName] = isProjectImage
+                    ? new ol.layer.Image({
+                        source: source,
+                        zIndex: config.zIndex,
+                        opacity: config.opacity
+                    })
+                    : new ol.layer.Tile({
+                        source: source,
+                        zIndex: config.zIndex,
+                        opacity: config.opacity
+                    });
 
                 map.addLayer(assetLayers[assetName]);
 
@@ -2292,6 +2330,7 @@
                     // Get friendly name
                     const layerConfig = {
                         'prj_bd': 'Project Boundary',
+                        'purandar_img': 'Project Image',
                         'prj_ass_pt': 'Trees',
                         'prj_ass_pl': 'Pipeline/BW',
                         'prj_ass_poly': 'Structure/Other'
