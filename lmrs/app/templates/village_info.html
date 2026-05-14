@@ -3392,40 +3392,89 @@
                             class="vi-sec25-files block w-full rounded-xl border border-dashed border-[#c5d6ec] bg-white px-4 py-3 text-sm text-[#60708a] file:mr-4 file:rounded-lg file:border-0 file:bg-[#125fcb] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white">
                     </div>
                 </div>
-                <div class="mt-4 overflow-x-auto rounded-xl border border-[#cdd7e5] bg-white">
-                    <table class="min-w-full border-collapse text-sm text-[#355278]">
-                        <thead class="bg-[#f2f6fb]">
-                            <tr>
-                                <th class="border border-[#cdd7e5] px-3 py-2 text-left">अ. क्र</th>
-                                <th class="border border-[#cdd7e5] px-3 py-2 text-left">गट क्रमांक</th>
-                                <th class="border border-[#cdd7e5] px-3 py-2 text-left">अधिसूचित क्षेत्र</th>
-                                <th class="border border-[#cdd7e5] px-3 py-2 text-left"></th>
-                            </tr>
-                        </thead>
-                        <tbody class="vi-sec25-notified-body"></tbody>
-                    </table>
+                <div class="vi-sec25-notified-area-block mt-4 rounded-xl border border-[#dfe8f5] bg-white p-3">
+                    <div class="mb-2 flex items-center justify-between">
+                        <p class="text-sm font-semibold text-[#244271]">- अधिसूचित केलेले क्षेत्र</p>
+                        <button type="button"
+                            class="add-sec25-notified-row-btn inline-flex items-center justify-center rounded-lg border border-[#c6d9f2] bg-white px-3 py-1 text-xs font-semibold text-[#125fcb] hover:bg-[#eef5ff]">+ ओळ जोडा</button>
+                    </div>
+                    <div class="vi-sec25-notified-area-rows overflow-x-auto"></div>
                 </div>
-                <button type="button"
-                    class="add-sec25-notified-row-btn mt-3 inline-flex items-center justify-center rounded-lg border border-[#c6d9f2] bg-white px-3 py-1 text-xs font-semibold text-[#125fcb] hover:bg-[#eef5ff]">+ ओळ जोडा</button>
             `;
         }
 
-        function buildSec25NotifiedRowHtml(index, row = {}) {
+        function normalizeSec25NotifiedRows(rows = []) {
+            return (Array.isArray(rows) && rows.length ? rows : [{}]).map((row) => ({
+                gut_mode: row?.gut_mode === 'other' ? 'other' : 'listed',
+                gut_number: row?.gut_number || '',
+                other_gut: row?.other_gut || '',
+                notified_area: row?.notified_area || '',
+            }));
+        }
+
+        function buildSec25NotifiedTableHtml(rows) {
+            const gutOptionsHtml = notifiedAreaGutOptions
+                .map((gut) => `<option value="${escapeHtml(gut)}">${escapeHtml(gut)}</option>`)
+                .join('');
+
+            const bodyRows = rows.map((row, index) => {
+                const gutMode = row.gut_mode === 'other' ? 'other' : 'listed';
+                const otherGut = row.other_gut || '';
+                const areaValue = row.notified_area || '';
+                return `
+                    <tr class="border-t border-[#d8e4f3]">
+                        <td class="px-2 py-2 text-center text-sm text-[#44597a]">${index + 1}</td>
+                        <td class="px-2 py-2">
+                            <select data-sec25-notified-field="gut_select" data-row-index="${index}"
+                                class="w-full rounded-lg border border-[#d3deeb] px-2 py-2 text-sm">
+                                <option value="">गट क्रमांक निवडा</option>
+                                ${gutOptionsHtml}
+                                <option value="__other__"${gutMode === 'other' ? ' selected' : ''}>इतर</option>
+                            </select>
+                            <input type="text" data-sec25-notified-field="other_gut" data-row-index="${index}"
+                                value="${escapeHtml(otherGut)}" placeholder="इतर गट क्रमांक"
+                                class="mt-2 w-full rounded-lg border border-[#d3deeb] px-2 py-2 text-sm ${gutMode === 'other' ? '' : 'hidden'}">
+                        </td>
+                        <td class="px-2 py-2">
+                            <input type="text" data-sec25-notified-field="notified_area" data-row-index="${index}"
+                                value="${escapeHtml(areaValue)}" placeholder="अधिसूचित क्षेत्र"
+                                class="w-full rounded-lg border border-[#d3deeb] px-2 py-2 text-sm">
+                        </td>
+                        <td class="px-2 py-2 text-center">
+                            <button type="button" data-sec25-notified-remove-row="${index}"
+                                class="rounded-md border border-[#d4deec] px-2 py-1 text-xs text-[#5d7293] ${index === 0 ? 'hidden' : ''}">✕</button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+
             return `
-                <tr class="border-t border-[#d8e4f3]">
-                    <td class="border border-[#cdd7e5] px-3 py-2">${index + 1}</td>
-                    <td class="border border-[#cdd7e5] px-3 py-2"><input type="text" value="${escapeHtml(row.gut_number || '')}" class="vi-sec25-gut w-full rounded-lg border border-[#d3deeb] px-2 py-2 text-sm"></td>
-                    <td class="border border-[#cdd7e5] px-3 py-2"><input type="text" value="${escapeHtml(row.notified_area || '')}" class="vi-sec25-notified-area w-full rounded-lg border border-[#d3deeb] px-2 py-2 text-sm"></td>
-                    <td class="border border-[#cdd7e5] px-3 py-2 text-center"><button type="button" class="remove-sec25-notified-row-btn rounded-md border border-[#cddcf0] px-2 py-1 text-xs font-semibold text-[#6b7d99] hover:bg-[#eef5ff]">काढा</button></td>
-                </tr>
+                <table class="min-w-full border border-[#a7bfdc] text-left">
+                    <thead class="bg-[#edf5ff]">
+                        <tr>
+                            <th class="w-16 border-r border-[#a7bfdc] px-2 py-2 text-sm font-semibold text-[#244271]">अ. क्र</th>
+                            <th class="border-r border-[#a7bfdc] px-2 py-2 text-sm font-semibold text-[#244271]">गट क्रमांक</th>
+                            <th class="border-r border-[#a7bfdc] px-2 py-2 text-sm font-semibold text-[#244271]">अधिसूचित क्षेत्र</th>
+                            <th class="w-16 px-2 py-2 text-sm font-semibold text-[#244271]">-</th>
+                        </tr>
+                    </thead>
+                    <tbody>${bodyRows}</tbody>
+                </table>
             `;
         }
 
         function renderSec25NotifiedRows(lineEl, rows = [{}]) {
-            const body = lineEl.querySelector('.vi-sec25-notified-body');
-            if (!body) return;
-            const finalRows = Array.isArray(rows) && rows.length ? rows : [{}];
-            body.innerHTML = finalRows.map((row, idx) => buildSec25NotifiedRowHtml(idx, row)).join('');
+            const blockEl = lineEl.querySelector('.vi-sec25-notified-area-block');
+            const host = blockEl?.querySelector('.vi-sec25-notified-area-rows');
+            if (!host) return;
+            const normalizedRows = normalizeSec25NotifiedRows(rows);
+            host.innerHTML = buildSec25NotifiedTableHtml(normalizedRows);
+            host.querySelectorAll('select[data-sec25-notified-field="gut_select"]').forEach((el) => {
+                const idx = Number(el.dataset.rowIndex);
+                const row = normalizedRows[idx] || {};
+                const current = row.gut_mode === 'other' ? '__other__' : (row.gut_number || '');
+                if (current) el.value = current;
+            });
         }
 
         function syncSec25MapRemoveButtons() {
@@ -3463,14 +3512,31 @@
             requestAnimationFrame(() => refreshSavedFilePopovers(container));
         }
 
+        function collectSec25NotifiedRowsFromBlock(blockEl) {
+            if (!blockEl) return [{}];
+            const rows = [];
+            const trs = blockEl.querySelectorAll('.vi-sec25-notified-area-rows tbody tr');
+            trs.forEach((tr, idx) => {
+                const gutSelect = tr.querySelector('select[data-sec25-notified-field="gut_select"]');
+                const otherGutInput = tr.querySelector('input[data-sec25-notified-field="other_gut"]');
+                const areaInput = tr.querySelector('input[data-sec25-notified-field="notified_area"]');
+                const selected = (gutSelect?.value || '').trim();
+                const row = {
+                    gut_mode: selected === '__other__' ? 'other' : 'listed',
+                    gut_number: selected && selected !== '__other__' ? selected : '',
+                    other_gut: (otherGutInput?.value || '').trim(),
+                    notified_area: (areaInput?.value || '').trim(),
+                };
+                if (idx === 0 || row.gut_number || row.other_gut || row.notified_area) rows.push(row);
+            });
+            return rows.length ? rows : [{}];
+        }
+
         function collectSec25MapRows() {
             return Array.from(document.querySelectorAll('#record-sec25-map-rows .record-sec25-map-row')).map((line) => ({
                 patra_kramank: line.querySelector('.vi-sec25-patra-kramank')?.value?.trim() || '',
                 date: line.querySelector('.vi-sec25-date')?.value || '',
-                notified_rows: Array.from(line.querySelectorAll('.vi-sec25-notified-body tr')).map((rowEl) => ({
-                    gut_number: rowEl.querySelector('.vi-sec25-gut')?.value?.trim() || '',
-                    notified_area: rowEl.querySelector('.vi-sec25-notified-area')?.value?.trim() || '',
-                })),
+                notified_rows: collectSec25NotifiedRowsFromBlock(line.querySelector('.vi-sec25-notified-area-block')),
                 filesInput: line.querySelector('.vi-sec25-files'),
             }));
         }
@@ -4194,30 +4260,21 @@
                 const addNotifiedBtn = event.target.closest('.add-sec25-notified-row-btn');
                 if (addNotifiedBtn) {
                     const line = addNotifiedBtn.closest('.record-sec25-map-row');
-                    const body = line?.querySelector('.vi-sec25-notified-body');
-                    if (!body) return;
-                    const rows = Array.from(body.querySelectorAll('tr')).map((rowEl) => ({
-                        gut_number: rowEl.querySelector('.vi-sec25-gut')?.value?.trim() || '',
-                        notified_area: rowEl.querySelector('.vi-sec25-notified-area')?.value?.trim() || '',
-                    }));
-                    rows.push({ gut_number: '', notified_area: '' });
+                    const rows = collectSec25NotifiedRowsFromBlock(line?.querySelector('.vi-sec25-notified-area-block'));
+                    rows.push({ gut_mode: 'listed', gut_number: '', other_gut: '', notified_area: '' });
                     renderSec25NotifiedRows(line, rows);
                     return;
                 }
 
-                const removeNotifiedBtn = event.target.closest('.remove-sec25-notified-row-btn');
+                const removeNotifiedBtn = event.target.closest('button[data-sec25-notified-remove-row]');
                 if (removeNotifiedBtn) {
                     const line = removeNotifiedBtn.closest('.record-sec25-map-row');
-                    const body = line?.querySelector('.vi-sec25-notified-body');
-                    if (!body) return;
-                    const rows = Array.from(body.querySelectorAll('tr')).map((rowEl) => ({
-                        gut_number: rowEl.querySelector('.vi-sec25-gut')?.value?.trim() || '',
-                        notified_area: rowEl.querySelector('.vi-sec25-notified-area')?.value?.trim() || '',
-                    }));
-                    const idx = Array.from(body.querySelectorAll('.remove-sec25-notified-row-btn')).indexOf(removeNotifiedBtn);
-                    if (idx <= 0 || rows.length <= 1) return;
+                    const idx = Number(removeNotifiedBtn.dataset.sec25NotifiedRemoveRow);
+                    if (!Number.isInteger(idx)) return;
+                    const rows = collectSec25NotifiedRowsFromBlock(line?.querySelector('.vi-sec25-notified-area-block'));
                     rows.splice(idx, 1);
-                    renderSec25NotifiedRows(line, rows);
+                    renderSec25NotifiedRows(line, rows.length ? rows : [{}]);
+                    return;
                 }
             });
 
@@ -4228,6 +4285,24 @@
                         renderSec25MapRows([{}]);
                     }
                 });
+            });
+
+            container.addEventListener('change', (event) => {
+                const select = event.target.closest('select[data-sec25-notified-field="gut_select"]');
+                if (!select) return;
+                const line = select.closest('.record-sec25-map-row');
+                const idx = Number(select.dataset.rowIndex);
+                const rows = collectSec25NotifiedRowsFromBlock(line?.querySelector('.vi-sec25-notified-area-block'));
+                if (!Number.isInteger(idx) || !rows[idx]) return;
+                if (select.value === '__other__') {
+                    rows[idx].gut_mode = 'other';
+                    rows[idx].gut_number = '';
+                } else {
+                    rows[idx].gut_mode = 'listed';
+                    rows[idx].gut_number = select.value || '';
+                    rows[idx].other_gut = '';
+                }
+                renderSec25NotifiedRows(line, rows);
             });
         }
 
