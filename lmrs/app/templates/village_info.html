@@ -3544,9 +3544,20 @@
         function setSec25MapMode(mode) {
             const yesSection = document.getElementById('sec25-yes-section');
             const noSection = document.getElementById('sec25-no-section');
-            const isYes = mode === 'yes';
-            yesSection?.classList.toggle('hidden', !isYes);
-            noSection?.classList.toggle('hidden', isYes);
+            const normalized = (mode || '').toLowerCase().trim();
+            if (normalized === 'yes') {
+                yesSection?.classList.remove('hidden');
+                noSection?.classList.add('hidden');
+                return;
+            }
+            if (normalized === 'no') {
+                yesSection?.classList.add('hidden');
+                noSection?.classList.remove('hidden');
+                return;
+            }
+            // No selection yet -> keep both hidden
+            yesSection?.classList.add('hidden');
+            noSection?.classList.add('hidden');
         }
 
         const relatedSectionCardsConfig = [
