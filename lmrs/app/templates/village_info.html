@@ -495,7 +495,7 @@
                                 <div class="mb-4 flex items-center justify-between gap-3">
                                      <h3 class="text-lg font-bold text-[#244271]">१. म. ओ. वि. अ.- प्रकरण 6 (31) तरतुदीनुसार उक्त अधिनियमाचे कलम 2 खंड (ग) अन्वये</h3>
                                 </div>
-                                <div class="vi-notified-area-block mb-4 rounded-xl border border-[#dfe8f5] bg-white p-3">
+                                <div class="vi-notified-area-block mb-4 rounded-xl border border-[#dfe8f5] bg-white p-3" data-section-key="section_1">
                                     <div class="mb-2 flex items-center justify-between gap-3">
                                         <p class="text-sm font-semibold text-[#244271]">अधिसूचित केलेले क्षेत्र</p>
                                         <button type="button"
@@ -664,7 +664,7 @@
                         <div class="space-y-6 px-6 py-7 md:px-8">
                             <div class="rounded-2xl border border-[#e2ebf7] bg-[#fbfdff] p-5">
                                     <h3 class="mb-4 text-lg font-bold text-[#244271]">३. भूसंपादन प्रस्ताव</h3>
-                                    <div class="vi-notified-area-block mb-4 rounded-xl border border-[#dfe8f5] bg-white p-3">
+                                    <div class="vi-notified-area-block mb-4 rounded-xl border border-[#dfe8f5] bg-white p-3" data-section-key="section_3">
                                         <div class="mb-2 flex items-center justify-between gap-3">
                                             <p class="text-sm font-semibold text-[#244271]">अधिसूचित केलेले क्षेत्र</p>
                                             <button type="button"
@@ -2337,6 +2337,7 @@
             document.querySelectorAll('.vi-notified-area-block').forEach((block, index) => {
                 payload.push({
                     block_index: index,
+                    section_key: (block.dataset.sectionKey || '').trim(),
                     rows: collectNotifiedAreaRowsFromBlock(block),
                 });
             });
@@ -2612,7 +2613,7 @@
             return `
                 <button type="button"
                     class="remove-sec4-row-btn absolute right-3 top-3 inline-flex h-7 w-7 items-center justify-center rounded-full border border-[#cddcf0] text-sm font-bold text-[#6b7d99] hover:bg-[#eef5ff]">✕</button>
-                <div class="vi-notified-area-block mb-4 rounded-xl border border-[#dfe8f5] bg-white p-3">
+                <div class="vi-notified-area-block mb-4 rounded-xl border border-[#dfe8f5] bg-white p-3" data-section-key="section_4">
                     <div class="mb-2 flex items-center justify-between gap-3">
                         <p class="text-sm font-semibold text-[#244271]">अधिसूचित केलेले क्षेत्र</p>
                         <button type="button"
@@ -2744,7 +2745,7 @@
             return `
                 <button type="button"
                     class="remove-sec8-row-btn absolute right-3 top-3 inline-flex h-7 w-7 items-center justify-center rounded-full border border-[#cddcf0] text-sm font-bold text-[#6b7d99] hover:bg-[#eef5ff]">✕</button>
-                <div class="vi-notified-area-block mb-4 rounded-xl border border-[#dfe8f5] bg-white p-3">
+                <div class="vi-notified-area-block mb-4 rounded-xl border border-[#dfe8f5] bg-white p-3" data-section-key="section_6">
                     <div class="mb-2 flex items-center justify-between gap-3">
                         <p class="text-sm font-semibold text-[#244271]">अधिसूचित केलेले क्षेत्र</p>
                         <button type="button"

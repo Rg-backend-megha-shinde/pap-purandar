@@ -4572,6 +4572,7 @@ def village_info(request):
                         })
                     cleaned_notified_rows.append({
                         'block_index': int(block_index) if str(block_index).isdigit() else 0,
+                        'section_key': (item.get('section_key') or '').strip(),
                         'rows': cleaned_rows or [{}],
                     })
             else:
@@ -4593,7 +4594,16 @@ def village_info(request):
                     })
         village_data.notified_area_rows = cleaned_notified_rows
         total_notified_area = Decimal('0')
+        totals_by_section = {
+            'section_1': Decimal('0'),
+            'section_3': Decimal('0'),
+            'section_4': Decimal('0'),
+            'section_6': Decimal('0'),
+        }
         for item in cleaned_notified_rows:
+            section_key = ''
+            if isinstance(item, dict):
+                section_key = str(item.get('section_key') or '').strip()
             rows_to_sum = item.get('rows') if isinstance(item, dict) and isinstance(item.get('rows'), list) else [item]
             for row in rows_to_sum:
                 if not isinstance(row, dict):
@@ -4605,10 +4615,16 @@ def village_info(request):
                 if not normalized:
                     continue
                 try:
-                    total_notified_area += Decimal(normalized)
+                    amount = Decimal(normalized)
+                    total_notified_area += amount
+                    if section_key in totals_by_section:
+                        totals_by_section[section_key] += amount
                 except (InvalidOperation, ValueError, TypeError):
                     continue
         village_data.sec1_total_notified_area = total_notified_area
+        village_data.notified_area_totals_by_section = {
+            key: str(val) for key, val in totals_by_section.items()
+        }
 
         if final_submit:
             village_data.is_final_submitted = True
@@ -5085,6 +5101,7 @@ def get_village_info_data(request):
     data['sec25_map_rows'] = village_data.sec25_map_rows or []
     data['notified_area_rows'] = village_data.notified_area_rows or []
     data['sec1_total_notified_area'] = str(village_data.sec1_total_notified_area or 0)
+    data['notified_area_totals_by_section'] = village_data.notified_area_totals_by_section or {}
     data['sec13_rows'] = village_data.sec13_rows or []
     data['sec14_rows'] = village_data.sec14_rows or []
     data['sec16_rows'] = village_data.sec16_rows or []
