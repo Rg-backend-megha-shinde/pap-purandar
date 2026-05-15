@@ -2345,6 +2345,26 @@
             return payload;
         }
 
+        function normalizeGutValue(value) {
+            return String(value || '').trim().toLowerCase().replace(/\s+/g, '');
+        }
+
+        function isDuplicateGutInRows(rows, currentIndex) {
+            if (!Array.isArray(rows)) return false;
+            const current = rows[currentIndex] || {};
+            const currentGut = normalizeGutValue(
+                current.gut_mode === 'other' ? current.other_gut : current.gut_number
+            );
+            if (!currentGut) return false;
+            return rows.some((row, idx) => {
+                if (idx === currentIndex || !row || typeof row !== 'object') return false;
+                const candidate = normalizeGutValue(
+                    row.gut_mode === 'other' ? row.other_gut : row.gut_number
+                );
+                return candidate && candidate === currentGut;
+            });
+        }
+
         function wireNotifiedAreaRows() {
             document.addEventListener('click', (event) => {
                 const addBtn = event.target.closest('.add-notified-area-row-btn');
@@ -2367,20 +2387,38 @@
 
             document.addEventListener('change', (event) => {
                 const select = event.target.closest('select[data-notified-field="gut_select"]');
-                if (!select) return;
-                const idx = Number(select.dataset.rowIndex);
-                const block = select.closest('.vi-notified-area-block');
+                if (select) {
+                    const idx = Number(select.dataset.rowIndex);
+                    const block = select.closest('.vi-notified-area-block');
+                    const rows = collectNotifiedAreaRowsFromBlock(block);
+                    if (!Number.isInteger(idx) || !rows[idx]) return;
+                    if (select.value === '__other__') {
+                        rows[idx].gut_mode = 'other';
+                        rows[idx].gut_number = '';
+                    } else {
+                        rows[idx].gut_mode = 'listed';
+                        rows[idx].gut_number = select.value || '';
+                        rows[idx].other_gut = '';
+                        if (isDuplicateGutInRows(rows, idx)) {
+                            showViDuplicateToast('हा गट क्रमांक आधीच जोडलेला आहे. कृपया वेगळा गट क्रमांक निवडा.');
+                            rows[idx].gut_number = '';
+                        }
+                    }
+                    renderNotifiedAreaBlock(block, rows);
+                    return;
+                }
+
+                const otherGutInput = event.target.closest('input[data-notified-field="other_gut"]');
+                if (!otherGutInput) return;
+                const idx = Number(otherGutInput.dataset.rowIndex);
+                const block = otherGutInput.closest('.vi-notified-area-block');
                 const rows = collectNotifiedAreaRowsFromBlock(block);
                 if (!Number.isInteger(idx) || !rows[idx]) return;
-                if (select.value === '__other__') {
-                    rows[idx].gut_mode = 'other';
-                    rows[idx].gut_number = '';
-                } else {
-                    rows[idx].gut_mode = 'listed';
-                    rows[idx].gut_number = select.value || '';
+                if (rows[idx].gut_mode === 'other' && isDuplicateGutInRows(rows, idx)) {
+                    showViDuplicateToast('हा गट क्रमांक आधीच जोडलेला आहे. कृपया वेगळा गट क्रमांक टाका.');
                     rows[idx].other_gut = '';
+                    renderNotifiedAreaBlock(block, rows);
                 }
-                renderNotifiedAreaBlock(block, rows);
             });
 
             document.addEventListener('input', (event) => {
