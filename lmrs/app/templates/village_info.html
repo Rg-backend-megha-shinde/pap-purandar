@@ -429,7 +429,7 @@
                                         class="mb-2 flex min-h-[48px] items-end text-sm font-semibold text-[#384d6d]">भूसंपदनाचे प्रयोजन</label>
                                     <select id="vi-land-acquisition-purpose" class="w-full rounded-xl border border-[#d3deeb] bg-white px-4 py-3 text-sm text-[#394d6c]">
                                         <option value="">प्रयोजन निवडा</option>
-                                        <option value="छत्रपती सांभाजीराजे आंतरराष्ट्रीय विमानतळ, पुरंदर">छत्रपती सांभाजीराजे आंतरराष्ट्रीय विमानतळ, पुरंदर</option>
+                                        <option value="छत्रपती संभाजीराजे आंतरराष्ट्रीय विमानतळ, पुरंदर">छत्रपती  संभाजीराजे आंतरराष्ट्रीय विमानतळ, पुरंदर</option>
                                     </select>
                                 </div>
                                 <div>
@@ -495,7 +495,7 @@
                                 <div class="mb-4 flex items-center justify-between gap-3">
                                      <h3 class="text-lg font-bold text-[#244271]">१. म. ओ. वि. अ.- प्रकरण 6 (31) तरतुदीनुसार उक्त अधिनियमाचे कलम 2 खंड (ग) अन्वये</h3>
                                 </div>
-                                <div class="vi-notified-area-block mb-4 rounded-xl border border-[#dfe8f5] bg-white p-3">
+                                <div class="vi-notified-area-block mb-4 rounded-xl border border-[#dfe8f5] bg-white p-3" data-section-key="section_1">
                                     <div class="mb-2 flex items-center justify-between gap-3">
                                         <p class="text-sm font-semibold text-[#244271]">अधिसूचित केलेले क्षेत्र</p>
                                         <button type="button"
@@ -664,7 +664,7 @@
                         <div class="space-y-6 px-6 py-7 md:px-8">
                             <div class="rounded-2xl border border-[#e2ebf7] bg-[#fbfdff] p-5">
                                     <h3 class="mb-4 text-lg font-bold text-[#244271]">३. भूसंपादन प्रस्ताव</h3>
-                                    <div class="vi-notified-area-block mb-4 rounded-xl border border-[#dfe8f5] bg-white p-3">
+                                    <div class="vi-notified-area-block mb-4 rounded-xl border border-[#dfe8f5] bg-white p-3" data-section-key="section_3">
                                         <div class="mb-2 flex items-center justify-between gap-3">
                                             <p class="text-sm font-semibold text-[#244271]">अधिसूचित केलेले क्षेत्र</p>
                                             <button type="button"
@@ -2212,6 +2212,11 @@
             const gutOptionsHtml = notifiedAreaGutOptions
                 .map((gut) => `<option value="${escapeHtml(gut)}">${escapeHtml(gut)}</option>`)
                 .join('');
+            const totalNotifiedArea = rows.reduce((sum, row) => {
+                const raw = String(row?.notified_area || '').trim();
+                const parsed = Number.parseFloat(raw.replace(/[^0-9.\-]/g, ''));
+                return sum + (Number.isFinite(parsed) ? parsed : 0);
+            }, 0);
 
             const bodyRows = rows.map((row, index) => {
                 const gutMode = row.gut_mode === 'other' ? 'other' : 'listed';
@@ -2235,6 +2240,7 @@
                         <td class="px-2 py-2">
                             <input type="text" data-notified-field="notified_area" data-row-index="${index}"
                                 value="${escapeHtml(areaValue)}" placeholder="अधिसूचित क्षेत्र"
+                                inputmode="decimal" pattern="^[0-9]*\\.?[0-9]*$" autocomplete="off"
                                 class="w-full rounded-lg border border-[#d3deeb] px-2 py-2 text-sm">
                         </td>
                         <td class="px-2 py-2 text-center">
@@ -2256,6 +2262,17 @@
                         </tr>
                     </thead>
                     <tbody>${bodyRows}</tbody>
+                    <tfoot>
+                        <tr class="border-t border-[#a7bfdc] bg-[#f8fbff]">
+                            <td class="px-2 py-2"></td>
+                            <td class="px-2 py-2 text-right text-sm font-semibold text-[#244271]">एकूण क्षेत्र</td>
+                            <td class="px-2 py-2">
+                                <input type="text" value="${totalNotifiedArea.toFixed(2)}" readonly
+                                    class="w-full rounded-lg border border-[#d3deeb] bg-[#eef5ff] px-2 py-2 text-sm font-semibold text-[#244271]">
+                            </td>
+                            <td class="px-2 py-2"></td>
+                        </tr>
+                    </tfoot>
                 </table>
             `;
         }
@@ -2321,10 +2338,31 @@
             document.querySelectorAll('.vi-notified-area-block').forEach((block, index) => {
                 payload.push({
                     block_index: index,
+                    section_key: (block.dataset.sectionKey || '').trim(),
                     rows: collectNotifiedAreaRowsFromBlock(block),
                 });
             });
             return payload;
+        }
+
+        function normalizeGutValue(value) {
+            return String(value || '').trim().toLowerCase().replace(/\s+/g, '');
+        }
+
+        function isDuplicateGutInRows(rows, currentIndex) {
+            if (!Array.isArray(rows)) return false;
+            const current = rows[currentIndex] || {};
+            const currentGut = normalizeGutValue(
+                current.gut_mode === 'other' ? current.other_gut : current.gut_number
+            );
+            if (!currentGut) return false;
+            return rows.some((row, idx) => {
+                if (idx === currentIndex || !row || typeof row !== 'object') return false;
+                const candidate = normalizeGutValue(
+                    row.gut_mode === 'other' ? row.other_gut : row.gut_number
+                );
+                return candidate && candidate === currentGut;
+            });
         }
 
         function wireNotifiedAreaRows() {
@@ -2349,20 +2387,66 @@
 
             document.addEventListener('change', (event) => {
                 const select = event.target.closest('select[data-notified-field="gut_select"]');
-                if (!select) return;
-                const idx = Number(select.dataset.rowIndex);
-                const block = select.closest('.vi-notified-area-block');
+                if (select) {
+                    const idx = Number(select.dataset.rowIndex);
+                    const block = select.closest('.vi-notified-area-block');
+                    const rows = collectNotifiedAreaRowsFromBlock(block);
+                    if (!Number.isInteger(idx) || !rows[idx]) return;
+                    if (select.value === '__other__') {
+                        rows[idx].gut_mode = 'other';
+                        rows[idx].gut_number = '';
+                    } else {
+                        rows[idx].gut_mode = 'listed';
+                        rows[idx].gut_number = select.value || '';
+                        rows[idx].other_gut = '';
+                        if (isDuplicateGutInRows(rows, idx)) {
+                            showViDuplicateToast('हा गट क्रमांक आधीच जोडलेला आहे. कृपया वेगळा गट क्रमांक निवडा.');
+                            rows[idx].gut_number = '';
+                        }
+                    }
+                    renderNotifiedAreaBlock(block, rows);
+                    return;
+                }
+
+                const otherGutInput = event.target.closest('input[data-notified-field="other_gut"]');
+                if (!otherGutInput) return;
+                const idx = Number(otherGutInput.dataset.rowIndex);
+                const block = otherGutInput.closest('.vi-notified-area-block');
                 const rows = collectNotifiedAreaRowsFromBlock(block);
                 if (!Number.isInteger(idx) || !rows[idx]) return;
-                if (select.value === '__other__') {
-                    rows[idx].gut_mode = 'other';
-                    rows[idx].gut_number = '';
-                } else {
-                    rows[idx].gut_mode = 'listed';
-                    rows[idx].gut_number = select.value || '';
+                if (rows[idx].gut_mode === 'other' && isDuplicateGutInRows(rows, idx)) {
+                    showViDuplicateToast('हा गट क्रमांक आधीच जोडलेला आहे. कृपया वेगळा गट क्रमांक टाका.');
                     rows[idx].other_gut = '';
+                    renderNotifiedAreaBlock(block, rows);
                 }
-                renderNotifiedAreaBlock(block, rows);
+            });
+
+            document.addEventListener('input', (event) => {
+                const areaInput = event.target.closest('input[data-notified-field="notified_area"]');
+                if (!areaInput) return;
+                const cleanedValue = (areaInput.value || '')
+                    .replace(/[^0-9.]/g, '')
+                    .replace(/(\..*)\./g, '$1');
+                if (areaInput.value !== cleanedValue) areaInput.value = cleanedValue;
+                const block = areaInput.closest('.vi-notified-area-block');
+                if (!block) return;
+                const rows = collectNotifiedAreaRowsFromBlock(block);
+                const total = rows.reduce((sum, row) => {
+                    const raw = String(row?.notified_area || '').trim();
+                    const parsed = Number.parseFloat(raw.replace(/[^0-9.\-]/g, ''));
+                    return sum + (Number.isFinite(parsed) ? parsed : 0);
+                }, 0);
+                const totalField = block.querySelector('tfoot input[readonly]');
+                if (totalField) totalField.value = total.toFixed(2);
+            });
+
+            document.addEventListener('input', (event) => {
+                const sec25AreaInput = event.target.closest('input[data-sec25-notified-field="notified_area"]');
+                if (!sec25AreaInput) return;
+                const cleanedValue = (sec25AreaInput.value || '')
+                    .replace(/[^0-9.]/g, '')
+                    .replace(/(\..*)\./g, '$1');
+                if (sec25AreaInput.value !== cleanedValue) sec25AreaInput.value = cleanedValue;
             });
         }
 
@@ -2581,7 +2665,7 @@
             return `
                 <button type="button"
                     class="remove-sec4-row-btn absolute right-3 top-3 inline-flex h-7 w-7 items-center justify-center rounded-full border border-[#cddcf0] text-sm font-bold text-[#6b7d99] hover:bg-[#eef5ff]">✕</button>
-                <div class="vi-notified-area-block mb-4 rounded-xl border border-[#dfe8f5] bg-white p-3">
+                <div class="vi-notified-area-block mb-4 rounded-xl border border-[#dfe8f5] bg-white p-3" data-section-key="section_4">
                     <div class="mb-2 flex items-center justify-between gap-3">
                         <p class="text-sm font-semibold text-[#244271]">अधिसूचित केलेले क्षेत्र</p>
                         <button type="button"
@@ -2713,7 +2797,7 @@
             return `
                 <button type="button"
                     class="remove-sec8-row-btn absolute right-3 top-3 inline-flex h-7 w-7 items-center justify-center rounded-full border border-[#cddcf0] text-sm font-bold text-[#6b7d99] hover:bg-[#eef5ff]">✕</button>
-                <div class="vi-notified-area-block mb-4 rounded-xl border border-[#dfe8f5] bg-white p-3">
+                <div class="vi-notified-area-block mb-4 rounded-xl border border-[#dfe8f5] bg-white p-3" data-section-key="section_6">
                     <div class="mb-2 flex items-center justify-between gap-3">
                         <p class="text-sm font-semibold text-[#244271]">अधिसूचित केलेले क्षेत्र</p>
                         <button type="button"
@@ -3453,6 +3537,7 @@
                         <td class="px-2 py-2">
                             <input type="text" data-sec25-notified-field="notified_area" data-row-index="${index}"
                                 value="${escapeHtml(areaValue)}" placeholder="अधिसूचित क्षेत्र"
+                                inputmode="decimal" pattern="^[0-9]*\\.?[0-9]*$" autocomplete="off"
                                 class="w-full rounded-lg border border-[#d3deeb] px-2 py-2 text-sm">
                         </td>
                         <td class="px-2 py-2 text-center">
