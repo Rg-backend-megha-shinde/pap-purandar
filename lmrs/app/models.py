@@ -833,6 +833,7 @@ class VillageData(models.Model):
     sec1_files = models.TextField(blank=True)
     sec1_admin_approvals = models.JSONField(default=list, blank=True)
     notified_area_rows = models.JSONField(default=list, blank=True)
+    sec1_total_notified_area = models.DecimalField(max_digits=14, decimal_places=2, default=0)
 
     # --- २. कलम 3 अधिसूचना ---
     sec2_adhisuchana_kramank = models.TextField(blank=True)

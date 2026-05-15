@@ -3613,6 +3613,7 @@ _VILLAGE_SCALAR_FIELDS = [
     'collector_name',
     'collector_office_name',
     'collector_office_address',
+    'sec1_total_notified_area',
     'sec1_adesh_kramank', 'sec1_date',
     'sec2_adhisuchana_kramank', 'sec2_date',
     'sec2_paper1_name', 'sec2_paper1_date',
@@ -4591,6 +4592,23 @@ def village_info(request):
                         'notified_area': notified_area,
                     })
         village_data.notified_area_rows = cleaned_notified_rows
+        total_notified_area = Decimal('0')
+        for item in cleaned_notified_rows:
+            rows_to_sum = item.get('rows') if isinstance(item, dict) and isinstance(item.get('rows'), list) else [item]
+            for row in rows_to_sum:
+                if not isinstance(row, dict):
+                    continue
+                raw = str(row.get('notified_area') or '').strip()
+                if not raw:
+                    continue
+                normalized = re.sub(r'[^0-9.\-]', '', raw)
+                if not normalized:
+                    continue
+                try:
+                    total_notified_area += Decimal(normalized)
+                except (InvalidOperation, ValueError, TypeError):
+                    continue
+        village_data.sec1_total_notified_area = total_notified_area
 
         if final_submit:
             village_data.is_final_submitted = True
@@ -5066,6 +5084,7 @@ def get_village_info_data(request):
     data['sec24_account_rows'] = village_data.sec24_account_rows or []
     data['sec25_map_rows'] = village_data.sec25_map_rows or []
     data['notified_area_rows'] = village_data.notified_area_rows or []
+    data['sec1_total_notified_area'] = str(village_data.sec1_total_notified_area or 0)
     data['sec13_rows'] = village_data.sec13_rows or []
     data['sec14_rows'] = village_data.sec14_rows or []
     data['sec16_rows'] = village_data.sec16_rows or []

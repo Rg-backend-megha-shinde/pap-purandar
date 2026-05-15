@@ -2212,6 +2212,11 @@
             const gutOptionsHtml = notifiedAreaGutOptions
                 .map((gut) => `<option value="${escapeHtml(gut)}">${escapeHtml(gut)}</option>`)
                 .join('');
+            const totalNotifiedArea = rows.reduce((sum, row) => {
+                const raw = String(row?.notified_area || '').trim();
+                const parsed = Number.parseFloat(raw.replace(/[^0-9.\-]/g, ''));
+                return sum + (Number.isFinite(parsed) ? parsed : 0);
+            }, 0);
 
             const bodyRows = rows.map((row, index) => {
                 const gutMode = row.gut_mode === 'other' ? 'other' : 'listed';
@@ -2256,6 +2261,17 @@
                         </tr>
                     </thead>
                     <tbody>${bodyRows}</tbody>
+                    <tfoot>
+                        <tr class="border-t border-[#a7bfdc] bg-[#f8fbff]">
+                            <td class="px-2 py-2"></td>
+                            <td class="px-2 py-2 text-right text-sm font-semibold text-[#244271]">एकूण क्षेत्र</td>
+                            <td class="px-2 py-2">
+                                <input type="text" value="${totalNotifiedArea.toFixed(2)}" readonly
+                                    class="w-full rounded-lg border border-[#d3deeb] bg-[#eef5ff] px-2 py-2 text-sm font-semibold text-[#244271]">
+                            </td>
+                            <td class="px-2 py-2"></td>
+                        </tr>
+                    </tfoot>
                 </table>
             `;
         }
@@ -2363,6 +2379,21 @@
                     rows[idx].other_gut = '';
                 }
                 renderNotifiedAreaBlock(block, rows);
+            });
+
+            document.addEventListener('input', (event) => {
+                const areaInput = event.target.closest('input[data-notified-field="notified_area"]');
+                if (!areaInput) return;
+                const block = areaInput.closest('.vi-notified-area-block');
+                if (!block) return;
+                const rows = collectNotifiedAreaRowsFromBlock(block);
+                const total = rows.reduce((sum, row) => {
+                    const raw = String(row?.notified_area || '').trim();
+                    const parsed = Number.parseFloat(raw.replace(/[^0-9.\-]/g, ''));
+                    return sum + (Number.isFinite(parsed) ? parsed : 0);
+                }, 0);
+                const totalField = block.querySelector('tfoot input[readonly]');
+                if (totalField) totalField.value = total.toFixed(2);
             });
         }
 
