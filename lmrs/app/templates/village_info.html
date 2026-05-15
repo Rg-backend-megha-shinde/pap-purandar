@@ -2240,6 +2240,7 @@
                         <td class="px-2 py-2">
                             <input type="text" data-notified-field="notified_area" data-row-index="${index}"
                                 value="${escapeHtml(areaValue)}" placeholder="अधिसूचित क्षेत्र"
+                                inputmode="decimal" pattern="^[0-9]*\\.?[0-9]*$" autocomplete="off"
                                 class="w-full rounded-lg border border-[#d3deeb] px-2 py-2 text-sm">
                         </td>
                         <td class="px-2 py-2 text-center">
@@ -2385,6 +2386,10 @@
             document.addEventListener('input', (event) => {
                 const areaInput = event.target.closest('input[data-notified-field="notified_area"]');
                 if (!areaInput) return;
+                const cleanedValue = (areaInput.value || '')
+                    .replace(/[^0-9.]/g, '')
+                    .replace(/(\..*)\./g, '$1');
+                if (areaInput.value !== cleanedValue) areaInput.value = cleanedValue;
                 const block = areaInput.closest('.vi-notified-area-block');
                 if (!block) return;
                 const rows = collectNotifiedAreaRowsFromBlock(block);
@@ -2395,6 +2400,15 @@
                 }, 0);
                 const totalField = block.querySelector('tfoot input[readonly]');
                 if (totalField) totalField.value = total.toFixed(2);
+            });
+
+            document.addEventListener('input', (event) => {
+                const sec25AreaInput = event.target.closest('input[data-sec25-notified-field="notified_area"]');
+                if (!sec25AreaInput) return;
+                const cleanedValue = (sec25AreaInput.value || '')
+                    .replace(/[^0-9.]/g, '')
+                    .replace(/(\..*)\./g, '$1');
+                if (sec25AreaInput.value !== cleanedValue) sec25AreaInput.value = cleanedValue;
             });
         }
 
@@ -3485,6 +3499,7 @@
                         <td class="px-2 py-2">
                             <input type="text" data-sec25-notified-field="notified_area" data-row-index="${index}"
                                 value="${escapeHtml(areaValue)}" placeholder="अधिसूचित क्षेत्र"
+                                inputmode="decimal" pattern="^[0-9]*\\.?[0-9]*$" autocomplete="off"
                                 class="w-full rounded-lg border border-[#d3deeb] px-2 py-2 text-sm">
                         </td>
                         <td class="px-2 py-2 text-center">
