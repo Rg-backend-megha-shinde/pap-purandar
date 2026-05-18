@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 
 {% block content %}
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 <style>
     .tool-tabs-shell {
         border: 1px solid #d8e4f2;
@@ -38,6 +39,43 @@
         color: #125fcb;
         border-color: #cad8ea;
         box-shadow: 0 1px 3px rgba(18, 95, 203, 0.15);
+    }
+
+    .select2-container {
+        width: 100% !important;
+    }
+
+    .select2-container--default .select2-selection--single {
+        height: 50px;
+        border: 1px solid #d3deeb;
+        border-radius: 0.75rem;
+        padding: 6px 36px 6px 12px;
+        display: flex;
+        align-items: center;
+    }
+
+    .select2-container--default .select2-selection--single .select2-selection__rendered {
+        color: #394d6c;
+        line-height: 1.4;
+        padding-left: 0;
+        padding-right: 0;
+    }
+
+    .select2-container--default .select2-selection--single .select2-selection__arrow {
+        height: 48px;
+        right: 8px;
+    }
+
+    .select2-dropdown {
+        border-color: #d3deeb;
+    }
+
+    .select2-container--open .select2-results__options {
+        max-height: 420px !important;
+    }
+
+    .select2-search__field {
+        outline: none;
     }
 
     .pc-step-panel {
@@ -1342,13 +1380,13 @@
                                 <div class="grid gap-4 md:grid-cols-2">
                                     <div>
                                         <label class="pc-label">भूधारकाचे नाव</label>
-                                        <select class="pc-input">
-                                            <option>भूधारकाचे नाव निवडा</option>
+                                        <select class="pc-input" id="pcStep10OwnerName" name="step10_owner_name">
+                                            <option value="">भूधारकाचे नाव निवडा</option>
                                         </select>
                                     </div>
                                     <div>
                                         <label class="pc-label">आधार कार्ड क्रमांक</label>
-                                        <input class="pc-input" type="text" readonly placeholder="पूर्वीच्या माहितीतून येईल">
+                                        <input class="pc-input" id="pcStep10AadhaarNumber" name="step10_aadhaar_number" type="text" readonly placeholder="पूर्वीच्या माहितीतून येईल">
                                     </div>
                                 </div>
                             </div>
@@ -1602,6 +1640,8 @@
     </div>
 </div>
 
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
     (() => {
         const processChartForm = document.getElementById('processChartForm');
@@ -1656,11 +1696,56 @@
         const sec10FilesViewBtn = document.getElementById('pcSec10FilesViewBtn');
         const sec11FilesViewBtn = document.getElementById('pcSec11FilesViewBtn');
         const sec14FilesViewBtn = document.getElementById('pcSec14FilesViewBtn');
+        const step10OwnerNameSelect = document.getElementById('pcStep10OwnerName');
+        const step10AadhaarNumberInput = document.getElementById('pcStep10AadhaarNumber');
         const ownerDropdowns = Array.from(document.querySelectorAll('.owner-name-dropdown'));
         const recordUpdatedRadios = Array.from(document.querySelectorAll('input[name="record_updated"]'));
         const recordUpdatedYesFields = document.getElementById('recordUpdatedYesFields');
         const recordUpdatedNoFields = document.getElementById('recordUpdatedNoFields');
         const recordUpdatedNoFieldsApproval = document.getElementById('recordUpdatedNoFieldsApproval');
+
+        function initProcessChartGutSelect() {
+            if (!gutSelect || !window.jQuery || !window.jQuery.fn || !window.jQuery.fn.select2) return;
+            const $ = window.jQuery;
+            const $select = $(gutSelect);
+            if ($select.hasClass('select2-hidden-accessible')) {
+                $select.off('.pcgutsearch');
+                $select.select2('destroy');
+            }
+            $select.select2({
+                width: '100%',
+                placeholder: 'गट / सर्वे क्रमांक निवडा',
+                allowClear: true,
+                dropdownParent: $(document.body)
+            });
+
+            $select.on('select2:open.pcgutsearch', function () {
+                const searchField = document.querySelector('.select2-container--open .select2-search__field');
+                if (searchField instanceof HTMLInputElement) {
+                    searchField.focus();
+                    searchField.setAttribute('placeholder', 'गट / सर्वे क्रमांक टाइप करा');
+                }
+            });
+
+            $select.on('select2:open.pcgutsearch', function () {
+                const container = document.querySelector('.select2-container--open');
+                const searchField = container?.querySelector('.select2-search__field');
+                const results = container?.querySelector('.select2-results');
+                if (!(searchField instanceof HTMLInputElement) || !(results instanceof HTMLElement)) return;
+
+                const keyHandler = (event) => {
+                    if (event.ctrlKey || event.metaKey || event.altKey) return;
+                    if (event.key.length === 1 || event.key === 'Backspace') {
+                        searchField.focus();
+                    }
+                };
+
+                results.addEventListener('keydown', keyHandler, { passive: true });
+                searchField.addEventListener('blur', () => {
+                    results.removeEventListener('keydown', keyHandler);
+                }, { once: true });
+            });
+        }
 
         const dots = Array.from(document.querySelectorAll('[data-pc-step]'));
         const panels = Array.from(document.querySelectorAll('[data-pc-panel]'));
@@ -1680,6 +1765,7 @@
         let currentAgreementDraftTitle = 'draft';
         let currentJointSurveyApplyMode = 'joint';
         let currentAssetOwnerTargetId = '';
+        let currentStep10SelectedOwnerKeys = [];
         const todayIsoDate = new Date().toISOString().split('T')[0];
 
         function getCookie(name) {
@@ -1882,6 +1968,120 @@
             });
         }
 
+        function populateStep10OwnerSelect(names = [], selectedValue = '') {
+            if (!step10OwnerNameSelect) return;
+            const normalizedNames = Array.from(new Set(
+                (Array.isArray(names) ? names : [])
+                    .map((item) => String(
+                        typeof item === 'string'
+                            ? item
+                            : (item?.value || item?.label || item?.name || '')
+                    ).trim())
+                    .filter(Boolean)
+            ));
+
+            const currentValue = selectedValue || step10OwnerNameSelect.value || '';
+            step10OwnerNameSelect.innerHTML = '<option value="">भूधारकाचे नाव निवडा</option>';
+            normalizedNames.forEach((name) => {
+                const option = document.createElement('option');
+                option.value = name;
+                option.textContent = name;
+                step10OwnerNameSelect.appendChild(option);
+            });
+
+            if (currentValue && normalizedNames.includes(currentValue)) {
+                step10OwnerNameSelect.value = currentValue;
+            } else if (normalizedNames.length === 1) {
+                step10OwnerNameSelect.value = normalizedNames[0];
+            }
+        }
+
+        function normalizeOwnerLookupName(value = '') {
+            return String(value || '')
+                .replace(/\s+/g, ' ')
+                .trim()
+                .toLowerCase();
+        }
+
+        function getStep10OwnerNamesFromTab1(prefill = currentProcessChartPrefill) {
+            const names = [];
+
+            ownerInfoBody?.querySelectorAll('tr').forEach((row) => {
+                const ownerName = String(row.querySelector('input')?.value || '').trim();
+                if (ownerName) names.push(ownerName);
+            });
+
+            if (names.length) {
+                return Array.from(new Set(names));
+            }
+
+            const ownerRows = Array.isArray(prefill?.owner_rows) ? prefill.owner_rows : [];
+            ownerRows.forEach((row) => {
+                const ownerName = String(row.owner_name || '').trim();
+                if (ownerName) names.push(ownerName);
+            });
+
+            const farmers = Array.isArray(prefill?.farmers) ? prefill.farmers : [];
+            farmers.forEach((farmer) => {
+                const ownerName = String(farmer.farmer_name || farmer.owner_name || '').trim();
+                if (ownerName) names.push(ownerName);
+            });
+
+            if (!names.length) {
+                const landRecordNames = String(prefill?.land_record?.holder_name || '')
+                    .split(/\n|,|;|\||\u0964|\/+/)
+                    .map((item) => item.trim())
+                    .filter(Boolean);
+                names.push(...landRecordNames);
+            }
+
+            return Array.from(new Set(names));
+        }
+
+        function collectStep1OwnerAadhaarMap(prefill = currentProcessChartPrefill) {
+            const aadhaarMap = new Map();
+
+            ownerInfoBody?.querySelectorAll('tr').forEach((row) => {
+                const inputs = row.querySelectorAll('input, textarea');
+                const ownerName = normalizeOwnerLookupName(inputs[0]?.value || '');
+                const aadhaarNumber = String(inputs[2]?.value || '').trim();
+                if (ownerName && aadhaarNumber && !aadhaarMap.has(ownerName)) {
+                    aadhaarMap.set(ownerName, aadhaarNumber);
+                }
+            });
+
+            const ownerRows = Array.isArray(prefill?.owner_rows) ? prefill.owner_rows : [];
+            ownerRows.forEach((row) => {
+                const ownerName = normalizeOwnerLookupName(row.owner_name || '');
+                const aadhaarNumber = String(row.aadhaar_number || row.aadhar_number || '').trim();
+                if (ownerName && aadhaarNumber && !aadhaarMap.has(ownerName)) {
+                    aadhaarMap.set(ownerName, aadhaarNumber);
+                }
+            });
+
+            const farmers = Array.isArray(prefill?.farmers) ? prefill.farmers : [];
+            farmers.forEach((farmer) => {
+                const ownerName = normalizeOwnerLookupName(farmer.farmer_name || farmer.owner_name || '');
+                const aadhaarNumber = String(farmer.aadhaar_number || farmer.aadhar_number || '').trim();
+                if (ownerName && aadhaarNumber && !aadhaarMap.has(ownerName)) {
+                    aadhaarMap.set(ownerName, aadhaarNumber);
+                }
+            });
+
+            return aadhaarMap;
+        }
+
+        function updateStep10AadhaarFromOwner(prefill = currentProcessChartPrefill) {
+            if (!step10AadhaarNumberInput || !step10OwnerNameSelect) return;
+            const ownerName = normalizeOwnerLookupName(step10OwnerNameSelect.value || '');
+            if (!ownerName) {
+                step10AadhaarNumberInput.value = '';
+                return;
+            }
+            const aadhaarMap = collectStep1OwnerAadhaarMap(prefill);
+            step10AadhaarNumberInput.value = aadhaarMap.get(ownerName) || '';
+        }
+
         function buildAssetOwnerNameInput(inputName = '', value = '') {
             return `
                 <input
@@ -1910,6 +2110,7 @@
             talukaSelect.innerHTML = '<option value="">तालुका निवडा</option>';
             villageSelect.innerHTML = '<option value="">गाव निवडा</option>';
             gutSelect.innerHTML = '<option value="">गट / सर्वे क्रमांक निवडा</option>';
+            initProcessChartGutSelect();
             try {
                 const res = await fetch('/api/location-data/?lang=mr');
                 const data = await res.json();
@@ -1923,6 +2124,7 @@
             talukaSelect.innerHTML = '<option value="">तालुका निवडा</option>';
             villageSelect.innerHTML = '<option value="">गाव निवडा</option>';
             gutSelect.innerHTML = '<option value="">गट / सर्वे क्रमांक निवडा</option>';
+            initProcessChartGutSelect();
             if (!district) return;
             try {
                 const res = await fetch(`/api/location-data/?district=${encodeURIComponent(district)}&lang=mr`);
@@ -1936,6 +2138,7 @@
         async function populateProcessChartVillages(district, taluka) {
             villageSelect.innerHTML = '<option value="">गाव निवडा</option>';
             gutSelect.innerHTML = '<option value="">गट / सर्वे क्रमांक निवडा</option>';
+            initProcessChartGutSelect();
             if (!district || !taluka) return;
             try {
                 const res = await fetch(`/api/location-data/?district=${encodeURIComponent(district)}&taluka=${encodeURIComponent(taluka)}&lang=mr`);
@@ -1948,6 +2151,7 @@
 
         async function loadProcessChartGuts(district, taluka, village) {
             gutSelect.innerHTML = '<option value="">\u0917\u091f / \u0938\u0930\u094d\u0935\u0947 \u0915\u094d\u0930\u092e\u093e\u0902\u0915 \u0928\u093f\u0935\u0921\u093e</option>';
+            initProcessChartGutSelect();
             if (gutHelp) {
                 gutHelp.textContent = '\u0917\u093e\u0935 \u0928\u093f\u0935\u0921\u0932\u094d\u092f\u093e\u0928\u0902\u0924\u0930 \u0917\u091f / \u0938\u0930\u094d\u0935\u0947 \u0915\u094d\u0930\u092e\u093e\u0902\u0915 \u0926\u093f\u0938\u0924\u0940\u0932.';
             }
@@ -1957,6 +2161,7 @@
                 const data = await res.json();
                 const gutItems = data.data || [];
                 addSelectOptions(gutSelect, gutItems);
+                initProcessChartGutSelect();
             } catch (error) {
                 console.error(error);
                 if (gutHelp) {
@@ -1969,6 +2174,7 @@
             if (!districtSelect || !talukaSelect || !villageSelect) return;
             if (!districtSelect.value || !talukaSelect.value || !villageSelect.value) {
                 fillOwnerDropdowns([]);
+                populateStep10OwnerSelect([]);
                 return;
             }
 
@@ -2313,7 +2519,9 @@
             const { singleGroups, multiGroups } = groupJointSurveyRows(prefill);
             const selectedKeys = currentJointSurveyApplyMode === 'asset'
                 ? new Set()
-                : new Set(getSelectedJointSurveyKeys());
+                : currentJointSurveyApplyMode === 'step10'
+                    ? new Set(currentStep10SelectedOwnerKeys)
+                    : new Set(getSelectedJointSurveyKeys());
 
             jointSurveySingleNamesList.innerHTML = singleGroups.length
                 ? singleGroups.map(({ khataKey, rows }, groupIndex) => {
@@ -2394,9 +2602,39 @@
             closeJointSurveyNamesModal();
         }
 
+        function populateStep10OwnerSelection(prefill = currentProcessChartPrefill) {
+            if (!step10OwnerNameSelect) return;
+            const { singleGroups, multiGroups } = groupJointSurveyRows(prefill);
+            const checkboxes = Array.from(document.querySelectorAll('.pc-joint-survey-name-checkbox:checked'));
+            const selectedNames = [];
+            const selectedKeys = [];
+
+            checkboxes.forEach((checkbox) => {
+                const rowKey = checkbox.getAttribute('data-row-key') || '';
+                if (rowKey) selectedKeys.push(rowKey);
+                const groupType = checkbox.getAttribute('data-group-type');
+                const groupIndex = Number.parseInt(checkbox.getAttribute('data-group-index') || '-1', 10);
+                const rowIndex = Number.parseInt(checkbox.getAttribute('data-row-index') || '-1', 10);
+                const row = groupType === 'single'
+                    ? singleGroups[groupIndex]?.rows?.[rowIndex]
+                    : multiGroups[groupIndex]?.rows?.[rowIndex];
+                const ownerName = String(row?.owner_name || '').trim();
+                if (ownerName) selectedNames.push(ownerName);
+            });
+
+            currentStep10SelectedOwnerKeys = Array.from(new Set(selectedKeys));
+            populateStep10OwnerSelect(selectedNames);
+            updateStep10AadhaarFromOwner(prefill);
+            closeJointSurveyNamesModal();
+        }
+
         function applySelectedJointSurveyNames(prefill = currentProcessChartPrefill) {
             if (currentJointSurveyApplyMode === 'asset') {
                 populateAssetOwnerFieldFromSelection(prefill, currentAssetOwnerTargetId);
+                return;
+            }
+            if (currentJointSurveyApplyMode === 'step10') {
+                populateStep10OwnerSelection(prefill);
                 return;
             }
 
@@ -3120,6 +3358,12 @@
             ownerInfoBody.innerHTML = rows.length
                 ? rows.map((row) => buildOwnerInfoRow(row)).join('')
                 : buildOwnerInfoRow();
+
+            populateStep10OwnerSelect(
+                getStep10OwnerNamesFromTab1(payload || currentProcessChartPrefill),
+                step10OwnerNameSelect?.value || ''
+            );
+            updateStep10AadhaarFromOwner(payload || currentProcessChartPrefill);
 
             if (ownerInfoStatus) {
                 ownerInfoStatus.textContent = rows.length
@@ -4013,6 +4257,13 @@
 
                 updateTotalAssetValuation();
             });
+            if (step10OwnerNameSelect) {
+                populateStep10OwnerSelect(
+                    getStep10OwnerNamesFromTab1(currentProcessChartPrefill),
+                    String(step10OwnerNameSelect.value || '')
+                );
+                updateStep10AadhaarFromOwner(currentProcessChartPrefill);
+            }
         }
 
         async function loadExistingProcessChartCase() {
@@ -4057,6 +4308,7 @@
                 await loadProcessChartGuts(caseData.district, caseData.taluka, caseData.village);
                 if (gutSelect && caseData.gut_number) {
                     gutSelect.value = caseData.gut_number;
+                    gutSelect.dispatchEvent(new Event('change', { bubbles: true }));
                 }
 
                 await loadOwnerNamesFrom712();
@@ -4270,6 +4522,9 @@
             if (event.target instanceof HTMLInputElement && event.target.id === 'pcCompensation2') {
                 updateCompensationFields(currentProcessChartPrefill);
             }
+            if (event.target === step10OwnerNameSelect) {
+                updateStep10AadhaarFromOwner(currentProcessChartPrefill);
+            }
         });
         document.getElementById('pcFetchJointSurveyNamesBtn')?.addEventListener('click', () => {
             openJointSurveyNamesModal(currentProcessChartPrefill);
@@ -4297,6 +4552,7 @@
         [singleKhataOwnersBody, multiKhataOwnersBody].forEach((body) => {
             body?.addEventListener('input', () => {
                 updateAcquisitionAreasFromTab4();
+                updateStep10AadhaarFromOwner(currentProcessChartPrefill);
             });
         });
         addSingleKhataOwnerRowBtn?.addEventListener('click', () => appendSingleKhataOwnerRow());
