@@ -1,6 +1,7 @@
 ﻿{% extends "base.html" %}
 
 {% block content %}
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
     <style>
         .tool-tabs-shell {
             border: 1px solid #d8e4f2;
@@ -38,6 +39,43 @@
             color: #125fcb;
             border-color: #cad8ea;
             box-shadow: 0 1px 3px rgba(18, 95, 203, 0.15);
+        }
+
+        .select2-container {
+            width: 100% !important;
+        }
+
+        .select2-container--default .select2-selection--single {
+            height: 42px;
+            border: 1px solid #d3deeb;
+            border-radius: 0.5rem;
+            padding: 6px 36px 6px 10px;
+            display: flex;
+            align-items: center;
+        }
+
+        .select2-container--default .select2-selection--single .select2-selection__rendered {
+            color: #394d6c;
+            line-height: 1.4;
+            padding-left: 0;
+            padding-right: 0;
+        }
+
+        .select2-container--default .select2-selection--single .select2-selection__arrow {
+            height: 40px;
+            right: 8px;
+        }
+
+        .select2-dropdown {
+            border-color: #d3deeb;
+        }
+
+        .select2-search__field {
+            outline: none;
+        }
+
+        .select2-container--open .select2-results__options {
+            max-height: 420px !important;
         }
 
         .vi-toast-host {
@@ -268,7 +306,6 @@
                     </nav>
                 </div>
                 <div id="vi-form-status" class="mb-4 hidden rounded-lg border px-4 py-3 text-sm"></div>
-
                 <div id="vi-list-view" class="rounded-2xl border border-[#d7e5f6] bg-[#fbfdff] p-3 sm:p-4 md:p-5">
                     <div class="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                         <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -666,7 +703,7 @@
                                     <h3 class="mb-4 text-lg font-bold text-[#244271]">३. भूसंपादन प्रस्ताव</h3>
                                     <div class="vi-notified-area-block mb-4 rounded-xl border border-[#dfe8f5] bg-white p-3" data-section-key="section_3">
                                         <div class="mb-2 flex items-center justify-between gap-3">
-                                            <p class="text-sm font-semibold text-[#244271]">अधिसूचित केलेले क्षेत्र</p>
+                                            <p class="text-sm font-semibold text-[#244271]">प्रस्तावित केलेले क्षेत्र</p>
                                             <button type="button"
                                                 class="add-notified-area-row-btn inline-flex items-center justify-center rounded-lg border border-[#c6d9f2] bg-white px-3 py-1 text-xs font-semibold text-[#125fcb] hover:bg-[#eef5ff]">+ ओळ जोडा</button>
                                         </div>
@@ -1334,7 +1371,7 @@
                                 </div>
                             </div>
                             <div class="rounded-2xl border border-[#e2ebf7] bg-[#fbfdff] p-5">
-                                <h3 class="text-lg font-bold text-[#244271]">२५. मुख्य मुख्य कार्यकारी अधिकारी यांचे कडील सिमा दर्शवणारा नकाशा तपशील</h3>
+                                <h3 class="text-lg font-bold text-[#244271]">२५. मुख्य कार्यकारी अधिकारी यांचे कडील सिमा दर्शवणारा नकाशा तपशील</h3>
                                 <p class="mt-1 text-sm font-semibold text-[#44597a]">सिमांकन नकाशा प्राप्त झाला काय?</p>
                                 <div class="mt-3 flex gap-6">
                                     <label class="inline-flex items-center gap-2 text-sm font-semibold text-[#44597a]">
@@ -1379,6 +1416,8 @@
         </div>
     </div>
 
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script>
         const tabs = Array.from(document.querySelectorAll('.tab-trigger'));
         const panels = Array.from(document.querySelectorAll('.tab-panel'));
@@ -2186,6 +2225,7 @@
         }
 
         let notifiedAreaGutOptions = [];
+        let notifiedGutTypeahead = { text: '', time: 0 };
 
         async function loadNotifiedAreaGutOptions() {
             const district = (districtSel.value || '').trim();
@@ -2208,10 +2248,77 @@
             initNotifiedAreaBlocks();
         }
 
+        function buildGutOptionsHtml(selectedValue = '', includeOtherSelected = false) {
+            return [
+                '<option value="">गट क्रमांक निवडा</option>',
+                ...notifiedAreaGutOptions.map((gut) => `<option value="${escapeHtml(gut)}"${gut === selectedValue ? ' selected' : ''}>${escapeHtml(gut)}</option>`),
+                `<option value="__other__"${includeOtherSelected ? ' selected' : ''}>इतर</option>`
+            ].join('');
+        }
+
+        function initSearchableGutSelects(root = document) {
+            if (!window.jQuery || !window.jQuery.fn || !window.jQuery.fn.select2) return;
+            const $ = window.jQuery;
+            $(root).find('select[data-notified-field="gut_select"], select[data-sec25-notified-field="gut_select"]').each(function () {
+                const $select = $(this);
+                if ($select.hasClass('select2-hidden-accessible')) {
+                    $select.off('.gutsearch');
+                    $select.select2('destroy');
+                }
+                $select.select2({
+                    width: '100%',
+                    placeholder: 'गट क्रमांक निवडा',
+                    allowClear: true,
+                    dropdownParent: $(document.body)
+                });
+
+                $select.on('select2:open.gutsearch', function () {
+                    const searchField = document.querySelector('.select2-container--open .select2-search__field');
+                    if (searchField instanceof HTMLInputElement) {
+                        searchField.focus();
+                        searchField.setAttribute('placeholder', 'गट क्रमांक टाइप करा');
+                    }
+                });
+
+                $select.on('select2:open.gutsearch', function () {
+                    const container = document.querySelector('.select2-container--open');
+                    const searchField = container?.querySelector('.select2-search__field');
+                    const results = container?.querySelector('.select2-results');
+                    if (!(searchField instanceof HTMLInputElement) || !(results instanceof HTMLElement)) return;
+
+                    const keyHandler = (event) => {
+                        if (event.ctrlKey || event.metaKey || event.altKey) return;
+                        if (event.key.length === 1 || event.key === 'Backspace') {
+                            searchField.focus();
+                        }
+                    };
+
+                    results.addEventListener('keydown', keyHandler, { passive: true });
+                    searchField.addEventListener('blur', () => {
+                        results.removeEventListener('keydown', keyHandler);
+                    }, { once: true });
+                });
+            });
+        }
+
+        function applyGutTypeaheadSelection(selectEl, typedText) {
+            if (!selectEl || !typedText) return false;
+            const normalized = normalizeGutValue(typedText);
+            if (!normalized) return false;
+            const options = Array.from(selectEl.options || []).filter((option) => {
+                const value = String(option.value || '').trim();
+                return value && value !== '__other__';
+            });
+            const startsWithMatch = options.find((option) => normalizeGutValue(option.value || option.textContent || '').startsWith(normalized));
+            const includesMatch = options.find((option) => normalizeGutValue(option.value || option.textContent || '').includes(normalized));
+            const match = startsWithMatch || includesMatch;
+            if (!match) return false;
+            selectEl.value = match.value;
+            selectEl.dispatchEvent(new Event('change', { bubbles: true }));
+            return true;
+        }
+
         function buildNotifiedAreaTableHtml(rows) {
-            const gutOptionsHtml = notifiedAreaGutOptions
-                .map((gut) => `<option value="${escapeHtml(gut)}">${escapeHtml(gut)}</option>`)
-                .join('');
             const totalNotifiedArea = rows.reduce((sum, row) => {
                 const raw = String(row?.notified_area || '').trim();
                 const parsed = Number.parseFloat(raw.replace(/[^0-9.\-]/g, ''));
@@ -2229,9 +2336,7 @@
                         <td class="px-2 py-2">
                             <select data-notified-field="gut_select" data-row-index="${index}"
                                 class="w-full rounded-lg border border-[#d3deeb] px-2 py-2 text-sm">
-                                <option value="">गट क्रमांक निवडा</option>
-                                ${gutOptionsHtml}
-                                <option value="__other__"${gutMode === 'other' ? ' selected' : ''}>इतर</option>
+                                ${buildGutOptionsHtml(gutValue, gutMode === 'other')}
                             </select>
                             <input type="text" data-notified-field="other_gut" data-row-index="${index}"
                                 value="${escapeHtml(otherGut)}" placeholder="इतर गट क्रमांक"
@@ -2239,11 +2344,13 @@
                         </td>
                         <td class="px-2 py-2">
                             <input type="text" data-notified-field="notified_area" data-row-index="${index}"
-                                value="${escapeHtml(areaValue)}" placeholder="अधिसूचित क्षेत्र"
+                                value="${escapeHtml(areaValue)}" placeholder="प्रस्तावित क्षेत्र"
                                 inputmode="decimal" pattern="^[0-9]*\\.?[0-9]*$" autocomplete="off"
                                 class="w-full rounded-lg border border-[#d3deeb] px-2 py-2 text-sm">
                         </td>
                         <td class="px-2 py-2 text-center">
+                            <button type="button" data-notified-add-row="${index}"
+                                class="mr-1 rounded-md border border-[#d4deec] px-2 py-1 text-xs font-semibold text-[#125fcb]">+</button>
                             <button type="button" data-notified-remove-row="${index}"
                                 class="rounded-md border border-[#d4deec] px-2 py-1 text-xs text-[#5d7293] ${index === 0 ? 'hidden' : ''}">✕</button>
                         </td>
@@ -2257,7 +2364,7 @@
                         <tr>
                             <th class="w-16 border-r border-[#a7bfdc] px-2 py-2 text-sm font-semibold text-[#244271]">अ. क्र</th>
                             <th class="border-r border-[#a7bfdc] px-2 py-2 text-sm font-semibold text-[#244271]">गट क्रमांक</th>
-                            <th class="border-r border-[#a7bfdc] px-2 py-2 text-sm font-semibold text-[#244271]">अधिसूचित क्षेत्र</th>
+                            <th class="border-r border-[#a7bfdc] px-2 py-2 text-sm font-semibold text-[#244271]">प्रस्तावित क्षेत्र</th>
                             <th class="w-16 px-2 py-2 text-sm font-semibold text-[#244271]">-</th>
                         </tr>
                     </thead>
@@ -2292,12 +2399,7 @@
             if (!host) return;
             const normalizedRows = normalizeNotifiedRows(rows);
             host.innerHTML = buildNotifiedAreaTableHtml(normalizedRows);
-            host.querySelectorAll('select[data-notified-field=\"gut_select\"]').forEach((el) => {
-                const idx = Number(el.dataset.rowIndex);
-                const row = normalizedRows[idx] || {};
-                const current = row.gut_mode === 'other' ? '__other__' : (row.gut_number || '');
-                if (current) el.value = current;
-            });
+            initSearchableGutSelects(host);
         }
 
         function initNotifiedAreaBlocks(defaultRows = [{}]) {
@@ -2313,7 +2415,7 @@
             });
         }
 
-        function collectNotifiedAreaRowsFromBlock(blockEl) {
+        function collectNotifiedAreaRowsFromBlock(blockEl, { preserveEmpty = false } = {}) {
             if (!blockEl) return [{}];
             const rows = [];
             const trs = blockEl.querySelectorAll('.vi-notified-area-rows tbody tr');
@@ -2328,7 +2430,9 @@
                     other_gut: (otherGutInput?.value || '').trim(),
                     notified_area: (areaInput?.value || '').trim(),
                 };
-                if (idx === 0 || row.gut_number || row.other_gut || row.notified_area) rows.push(row);
+                if (preserveEmpty || idx === 0 || row.gut_number || row.other_gut || row.notified_area) {
+                    rows.push(row);
+                }
             });
             return rows.length ? rows : [{}];
         }
@@ -2370,8 +2474,21 @@
                 const addBtn = event.target.closest('.add-notified-area-row-btn');
                 if (addBtn) {
                     const block = addBtn.closest('.vi-notified-area-block');
-                    const rows = collectNotifiedAreaRowsFromBlock(block);
+                    const rows = collectNotifiedAreaRowsFromBlock(block, { preserveEmpty: true });
                     rows.push({ gut_mode: 'listed', gut_number: '', other_gut: '', notified_area: '' });
+                    renderNotifiedAreaBlock(block, rows);
+                    return;
+                }
+                const inlineAddBtn = event.target.closest('button[data-notified-add-row]');
+                if (inlineAddBtn) {
+                    const idx = Number(inlineAddBtn.dataset.notifiedAddRow);
+                    const block = inlineAddBtn.closest('.vi-notified-area-block');
+                    const rows = collectNotifiedAreaRowsFromBlock(block, { preserveEmpty: true });
+                    if (Number.isInteger(idx)) {
+                        rows.splice(idx + 1, 0, { gut_mode: 'listed', gut_number: '', other_gut: '', notified_area: '' });
+                    } else {
+                        rows.push({ gut_mode: 'listed', gut_number: '', other_gut: '', notified_area: '' });
+                    }
                     renderNotifiedAreaBlock(block, rows);
                     return;
                 }
@@ -2380,7 +2497,7 @@
                 const idx = Number(removeBtn.dataset.notifiedRemoveRow);
                 if (!Number.isInteger(idx)) return;
                 const block = removeBtn.closest('.vi-notified-area-block');
-                const rows = collectNotifiedAreaRowsFromBlock(block);
+                const rows = collectNotifiedAreaRowsFromBlock(block, { preserveEmpty: true });
                 rows.splice(idx, 1);
                 renderNotifiedAreaBlock(block, rows.length ? rows : [{}]);
             });
@@ -2390,7 +2507,7 @@
                 if (select) {
                     const idx = Number(select.dataset.rowIndex);
                     const block = select.closest('.vi-notified-area-block');
-                    const rows = collectNotifiedAreaRowsFromBlock(block);
+                    const rows = collectNotifiedAreaRowsFromBlock(block, { preserveEmpty: true });
                     if (!Number.isInteger(idx) || !rows[idx]) return;
                     if (select.value === '__other__') {
                         rows[idx].gut_mode = 'other';
@@ -2403,6 +2520,8 @@
                             showViDuplicateToast('हा गट क्रमांक आधीच जोडलेला आहे. कृपया वेगळा गट क्रमांक निवडा.');
                             rows[idx].gut_number = '';
                         }
+                        renderNotifiedAreaBlock(block, rows);
+                        return;
                     }
                     renderNotifiedAreaBlock(block, rows);
                     return;
@@ -2412,7 +2531,7 @@
                 if (!otherGutInput) return;
                 const idx = Number(otherGutInput.dataset.rowIndex);
                 const block = otherGutInput.closest('.vi-notified-area-block');
-                const rows = collectNotifiedAreaRowsFromBlock(block);
+                const rows = collectNotifiedAreaRowsFromBlock(block, { preserveEmpty: true });
                 if (!Number.isInteger(idx) || !rows[idx]) return;
                 if (rows[idx].gut_mode === 'other' && isDuplicateGutInRows(rows, idx)) {
                     showViDuplicateToast('हा गट क्रमांक आधीच जोडलेला आहे. कृपया वेगळा गट क्रमांक टाका.');
@@ -2430,7 +2549,7 @@
                 if (areaInput.value !== cleanedValue) areaInput.value = cleanedValue;
                 const block = areaInput.closest('.vi-notified-area-block');
                 if (!block) return;
-                const rows = collectNotifiedAreaRowsFromBlock(block);
+                const rows = collectNotifiedAreaRowsFromBlock(block, { preserveEmpty: true });
                 const total = rows.reduce((sum, row) => {
                     const raw = String(row?.notified_area || '').trim();
                     const parsed = Number.parseFloat(raw.replace(/[^0-9.\-]/g, ''));
@@ -2447,6 +2566,37 @@
                     .replace(/[^0-9.]/g, '')
                     .replace(/(\..*)\./g, '$1');
                 if (sec25AreaInput.value !== cleanedValue) sec25AreaInput.value = cleanedValue;
+            });
+
+            document.addEventListener('keydown', (event) => {
+                const select = event.target.closest('select[data-notified-field="gut_select"], select[data-sec25-notified-field="gut_select"]');
+                if (!select || event.ctrlKey || event.metaKey || event.altKey) return;
+                if (event.key.length !== 1 && event.key !== 'Backspace') return;
+
+                const now = Date.now();
+                if (now - notifiedGutTypeahead.time > 1000) {
+                    notifiedGutTypeahead.text = '';
+                }
+                notifiedGutTypeahead.time = now;
+
+                if (event.key === 'Backspace') {
+                    notifiedGutTypeahead.text = notifiedGutTypeahead.text.slice(0, -1);
+                } else if (/[0-9A-Za-z/-]/.test(event.key)) {
+                    notifiedGutTypeahead.text += event.key;
+                } else {
+                    return;
+                }
+
+                if (applyGutTypeaheadSelection(select, notifiedGutTypeahead.text)) {
+                    event.preventDefault();
+                }
+            });
+
+            document.addEventListener('focusin', (event) => {
+                const select = event.target.closest('select[data-notified-field="gut_select"], select[data-sec25-notified-field="gut_select"]');
+                if (!select) return;
+                notifiedGutTypeahead.text = '';
+                notifiedGutTypeahead.time = 0;
             });
         }
 
@@ -3512,10 +3662,6 @@
         }
 
         function buildSec25NotifiedTableHtml(rows) {
-            const gutOptionsHtml = notifiedAreaGutOptions
-                .map((gut) => `<option value="${escapeHtml(gut)}">${escapeHtml(gut)}</option>`)
-                .join('');
-
             const bodyRows = rows.map((row, index) => {
                 const gutMode = row.gut_mode === 'other' ? 'other' : 'listed';
                 const otherGut = row.other_gut || '';
@@ -3526,9 +3672,7 @@
                         <td class="px-2 py-2">
                             <select data-sec25-notified-field="gut_select" data-row-index="${index}"
                                 class="w-full rounded-lg border border-[#d3deeb] px-2 py-2 text-sm">
-                                <option value="">गट क्रमांक निवडा</option>
-                                ${gutOptionsHtml}
-                                <option value="__other__"${gutMode === 'other' ? ' selected' : ''}>इतर</option>
+                                ${buildGutOptionsHtml(row.gut_number || '', gutMode === 'other')}
                             </select>
                             <input type="text" data-sec25-notified-field="other_gut" data-row-index="${index}"
                                 value="${escapeHtml(otherGut)}" placeholder="इतर गट क्रमांक"
@@ -3536,11 +3680,13 @@
                         </td>
                         <td class="px-2 py-2">
                             <input type="text" data-sec25-notified-field="notified_area" data-row-index="${index}"
-                                value="${escapeHtml(areaValue)}" placeholder="अधिसूचित क्षेत्र"
+                                value="${escapeHtml(areaValue)}" placeholder="प्रस्तावित क्षेत्र"
                                 inputmode="decimal" pattern="^[0-9]*\\.?[0-9]*$" autocomplete="off"
                                 class="w-full rounded-lg border border-[#d3deeb] px-2 py-2 text-sm">
                         </td>
                         <td class="px-2 py-2 text-center">
+                            <button type="button" data-sec25-notified-add-row="${index}"
+                                class="mr-1 rounded-md border border-[#d4deec] px-2 py-1 text-xs font-semibold text-[#125fcb]">+</button>
                             <button type="button" data-sec25-notified-remove-row="${index}"
                                 class="rounded-md border border-[#d4deec] px-2 py-1 text-xs text-[#5d7293] ${index === 0 ? 'hidden' : ''}">✕</button>
                         </td>
@@ -3554,7 +3700,7 @@
                         <tr>
                             <th class="w-16 border-r border-[#a7bfdc] px-2 py-2 text-sm font-semibold text-[#244271]">अ. क्र</th>
                             <th class="border-r border-[#a7bfdc] px-2 py-2 text-sm font-semibold text-[#244271]">गट क्रमांक</th>
-                            <th class="border-r border-[#a7bfdc] px-2 py-2 text-sm font-semibold text-[#244271]">अधिसूचित क्षेत्र</th>
+                            <th class="border-r border-[#a7bfdc] px-2 py-2 text-sm font-semibold text-[#244271]">प्रस्तावित क्षेत्र</th>
                             <th class="w-16 px-2 py-2 text-sm font-semibold text-[#244271]">-</th>
                         </tr>
                     </thead>
@@ -3569,12 +3715,7 @@
             if (!host) return;
             const normalizedRows = normalizeSec25NotifiedRows(rows);
             host.innerHTML = buildSec25NotifiedTableHtml(normalizedRows);
-            host.querySelectorAll('select[data-sec25-notified-field="gut_select"]').forEach((el) => {
-                const idx = Number(el.dataset.rowIndex);
-                const row = normalizedRows[idx] || {};
-                const current = row.gut_mode === 'other' ? '__other__' : (row.gut_number || '');
-                if (current) el.value = current;
-            });
+            initSearchableGutSelects(host);
         }
 
         function syncSec25MapRemoveButtons() {
@@ -3613,6 +3754,10 @@
         }
 
         function collectSec25NotifiedRowsFromBlock(blockEl) {
+            return collectSec25NotifiedRowsFromBlockWithOptions(blockEl, { preserveEmpty: false });
+        }
+
+        function collectSec25NotifiedRowsFromBlockWithOptions(blockEl, { preserveEmpty = false } = {}) {
             if (!blockEl) return [{}];
             const rows = [];
             const trs = blockEl.querySelectorAll('.vi-sec25-notified-area-rows tbody tr');
@@ -3627,7 +3772,7 @@
                     other_gut: (otherGutInput?.value || '').trim(),
                     notified_area: (areaInput?.value || '').trim(),
                 };
-                if (idx === 0 || row.gut_number || row.other_gut || row.notified_area) rows.push(row);
+                if (preserveEmpty || idx === 0 || row.gut_number || row.other_gut || row.notified_area) rows.push(row);
             });
             return rows.length ? rows : [{}];
         }
@@ -4372,8 +4517,22 @@
                 const addNotifiedBtn = clickEl?.closest('.add-sec25-notified-row-btn');
                 if (addNotifiedBtn) {
                     const line = addNotifiedBtn.closest('.record-sec25-map-row');
-                    const rows = collectSec25NotifiedRowsFromBlock(line?.querySelector('.vi-sec25-notified-area-block'));
+                    const rows = collectSec25NotifiedRowsFromBlockWithOptions(line?.querySelector('.vi-sec25-notified-area-block'), { preserveEmpty: true });
                     rows.push({ gut_mode: 'listed', gut_number: '', other_gut: '', notified_area: '' });
+                    renderSec25NotifiedRows(line, rows);
+                    return;
+                }
+
+                const inlineAddNotifiedBtn = clickEl?.closest('button[data-sec25-notified-add-row]');
+                if (inlineAddNotifiedBtn) {
+                    const line = inlineAddNotifiedBtn.closest('.record-sec25-map-row');
+                    const idx = Number(inlineAddNotifiedBtn.dataset.sec25NotifiedAddRow);
+                    const rows = collectSec25NotifiedRowsFromBlockWithOptions(line?.querySelector('.vi-sec25-notified-area-block'), { preserveEmpty: true });
+                    if (Number.isInteger(idx)) {
+                        rows.splice(idx + 1, 0, { gut_mode: 'listed', gut_number: '', other_gut: '', notified_area: '' });
+                    } else {
+                        rows.push({ gut_mode: 'listed', gut_number: '', other_gut: '', notified_area: '' });
+                    }
                     renderSec25NotifiedRows(line, rows);
                     return;
                 }
@@ -4383,7 +4542,7 @@
                     const line = removeNotifiedBtn.closest('.record-sec25-map-row');
                     const idx = Number(removeNotifiedBtn.dataset.sec25NotifiedRemoveRow);
                     if (!Number.isInteger(idx)) return;
-                    const rows = collectSec25NotifiedRowsFromBlock(line?.querySelector('.vi-sec25-notified-area-block'));
+                    const rows = collectSec25NotifiedRowsFromBlockWithOptions(line?.querySelector('.vi-sec25-notified-area-block'), { preserveEmpty: true });
                     rows.splice(idx, 1);
                     renderSec25NotifiedRows(line, rows.length ? rows : [{}]);
                     return;
@@ -4696,11 +4855,3 @@
     </script>
 
 {% endblock %}
-
-
-
-
-
-
-
-
