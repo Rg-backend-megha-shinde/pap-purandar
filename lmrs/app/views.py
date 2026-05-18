@@ -316,7 +316,10 @@ def normalize_match_text(value):
 
 
 def normalize_gut_value(value):
-    numbers = re.findall(r'\d+', str(value or ''))
+    devanagari_digits = '०१२३४५६७८९'
+    ascii_digits = '0123456789'
+    normalized = str(value or '').translate(str.maketrans(devanagari_digits, ascii_digits))
+    numbers = re.findall(r'\d+', normalized)
     return '/'.join(numbers) if numbers else clean_optional_char(value)
 
 
@@ -3668,7 +3671,7 @@ def village_info_form(request):
 
 @login_required
 def process_chart_list(request):
-    cases = ProcessChartCase.objects.filter(user=request.user).order_by('-updated_at', '-id')
+    cases = ProcessChartCase.objects.all().order_by('-updated_at', '-id')
     for case in cases:
         district_mr = get_marathi_name('district', case.district) if case.district else ''
         taluka_mr = get_marathi_name('taluka', case.district, case.taluka) if case.district and case.taluka else ''
@@ -3752,6 +3755,27 @@ def _serialize_farmers_for_process_chart(land_record):
     ]
 
 
+def _parse_area_decimal(value):
+    try:
+        text = str(value or '').strip()
+        if not text:
+            return Decimal('0')
+        return Decimal(text)
+    except (InvalidOperation, TypeError, ValueError):
+        return Decimal('0')
+
+
+def _format_area_decimal(value):
+    if value is None:
+        return ''
+    return f"{value.quantize(Decimal('0.01')):.2f}"
+
+
+def _combined_cultivable_area(land_record):
+    total = _parse_area_decimal(land_record.jirayit) + _parse_area_decimal(land_record.bagayat)
+    return _format_area_decimal(total) if total else ''
+
+
 def _get_matching_land_records_for_process_chart(district, taluka, village, gut_number):
     district_key = normalize_match_text(district)
     taluka_key = normalize_match_text(taluka)
@@ -3796,15 +3820,18 @@ def _get_matching_land_records_for_process_chart(district, taluka, village, gut_
 def _serialize_owner_rows_for_process_chart(land_records):
     rows = []
     for land_record in land_records:
+        khata_area = land_record.khata_area or ''
+        potkharaba = land_record.potkharaba or ''
+        total_area = land_record.total_area or ''
         farmers = list(land_record.farmers.all().order_by('id'))
         if farmers:
             for farmer in farmers:
                 rows.append({
                     'source_land_record_id': land_record.id,
                     'owner_name': farmer.farmer_name or '',
-                    'cultivable_area': land_record.jirayit or land_record.bagayat or '',
-                    'potkharaba': farmer.potkharaba or land_record.potkharaba or '',
-                    'total_area': farmer.total_area or land_record.total_area or '',
+                    'cultivable_area': khata_area,
+                    'potkharaba': farmer.potkharaba or potkharaba,
+                    'total_area': total_area,
                     'khata_number': land_record.khata_number or '',
                     'aakarni': land_record.aakarni or '',
                     'other_rights': land_record.kul_khand_other_rights or '',
@@ -3816,9 +3843,9 @@ def _serialize_owner_rows_for_process_chart(land_records):
             rows.append({
                 'source_land_record_id': land_record.id,
                 'owner_name': name,
-                'cultivable_area': land_record.jirayit or land_record.bagayat or '',
-                'potkharaba': land_record.potkharaba or '',
-                'total_area': land_record.total_area or '',
+                'cultivable_area': khata_area,
+                'potkharaba': potkharaba,
+                'total_area': total_area,
                 'khata_number': land_record.khata_number or '',
                 'aakarni': land_record.aakarni or '',
                 'other_rights': land_record.kul_khand_other_rights or '',
@@ -3845,13 +3872,140 @@ def _serialize_village_data_for_process_chart(village_data):
             'uploaded_at': file_obj.uploaded_at.isoformat() if file_obj.uploaded_at else '',
         })
 
+    sec4_rows_qs = list(village_data.sec4_rows.prefetch_related('files_15_2').order_by('id'))
+    sec8_rows_qs = list(village_data.sec8_rows.prefetch_related('files_18_1').order_by('id'))
+    notified_area_blocks = village_data.notified_area_rows or []
+
+    def _rows_for_block(block_index):
+        for block in notified_area_blocks:
+            try:
+                current_index = int(block.get('block_index'))
+            except (AttributeError, TypeError, ValueError):
+                continue
+            if current_index == block_index:
+                rows = block.get('rows')
+                return rows if isinstance(rows, list) else []
+        return []
+
     sec4_rows = []
-    for row in village_data.sec4_rows.order_by('id'):
+    sec4_block_offset = 2
+    for index, row in enumerate(sec4_rows_qs):
+        files_by_key = {'main': [], 'paper1': [], 'paper2': []}
+        for f in row.files_15_2.all():
+            key = (getattr(f, 'field_key', '') or 'main').strip() or 'main'
+            if key not in files_by_key:
+                key = 'main'
+            files_by_key[key].append({
+                'id': f.id,
+                'url': f.file.url,
+                'name': os.path.basename(f.file.name),
+            })
+
         sec4_rows.append({
             'id': row.id,
             'adhisuchana_kramank': row.adhisuchana_kramank or '',
             'adhisuchana_date': row.adhisuchana_date.isoformat() if row.adhisuchana_date else '',
+            'paper1_name': row.paper1_name or '',
+            'paper1_date': row.paper1_date.isoformat() if row.paper1_date else '',
+            'paper2_name': row.paper2_name or '',
+            'paper2_date': row.paper2_date.isoformat() if row.paper2_date else '',
+            'files': files_by_key,
+            'notified_rows': _rows_for_block(sec4_block_offset + index),
         })
+
+    sec8_rows = []
+    sec8_block_offset = sec4_block_offset + len(sec4_rows_qs)
+    for index, row in enumerate(sec8_rows_qs):
+        files_by_key = {'main': [], 'paper1': [], 'paper2': []}
+        for f in row.files_18_1.all():
+            key = (getattr(f, 'field_key', '') or 'main').strip() or 'main'
+            if key not in files_by_key:
+                key = 'main'
+            files_by_key[key].append({
+                'id': f.id,
+                'url': f.file.url,
+                'name': os.path.basename(f.file.name),
+            })
+
+        sec8_rows.append({
+            'id': row.id,
+            'adhisuchana_kramank': row.adhisuchana_kramank or '',
+            'adhisuchana_date': row.adhisuchana_date.isoformat() if row.adhisuchana_date else '',
+            'paper1_name': row.paper1_name or '',
+            'paper1_date': row.paper1_date.isoformat() if row.paper1_date else '',
+            'paper2_name': row.paper2_name or '',
+            'paper2_date': row.paper2_date.isoformat() if row.paper2_date else '',
+            'files': files_by_key,
+            'notified_rows': _rows_for_block(sec8_block_offset + index),
+        })
+
+    sec3_rows_data = village_data.sec3_rows or []
+    sec3_row_files_map = {}
+    for key, files in files_map.items():
+        match = re.match(r'^sec3_row_(\d+)$', key or '')
+        if not match:
+            continue
+        sec3_row_files_map[int(match.group(1))] = files
+
+    sec3_rows = []
+    for index, row in enumerate(sec3_rows_data):
+        row_payload = row.copy() if isinstance(row, dict) else {}
+        row_payload['files'] = sec3_row_files_map.get(index, row_payload.get('files') or [])
+        sec3_rows.append(row_payload)
+
+    if not sec3_rows:
+        fallback_files = files_map.get('sec3_files', [])
+        sec3_rows = [{
+            'upvibhag_name': village_data.sec3_upvibhag_name or '',
+            'adhisuchana_kramank': village_data.sec3_adhisuchana_kramank or '',
+            'date': village_data.sec3_date.isoformat() if village_data.sec3_date else '',
+            'files': fallback_files,
+        }]
+
+    if sec3_rows and sec3_rows[0].get('files'):
+        files_map['sec3_files'] = sec3_rows[0]['files']
+
+    approved_map = {
+        item.rr_rate_id: float(item.approved_rate) if item.approved_rate is not None else None
+        for item in village_data.sec15_rates.select_related('rr_rate').all()
+        if item.rr_rate_id
+    }
+    sec15_rows = []
+    latest_year = (
+        ReadyReckonerInfo.objects
+        .filter(
+            district__iexact=village_data.district,
+            taluka__iexact=village_data.taluka,
+            village__iexact=village_data.village,
+        )
+        .order_by('-year')
+        .values_list('year', flat=True)
+        .first()
+    )
+    if latest_year:
+        rr_infos = (
+            ReadyReckonerInfo.objects
+            .filter(
+                district__iexact=village_data.district,
+                taluka__iexact=village_data.taluka,
+                village__iexact=village_data.village,
+                year=latest_year,
+            )
+            .prefetch_related('rates')
+            .order_by('assessment_type')
+        )
+        for info in rr_infos:
+            for rate in info.rates.all().order_by('assessment_range_min', 'assessment_range_max'):
+                sec15_rows.append({
+                    'rr_rate_id': rate.id,
+                    'assessment_type': info.assessment_type or '',
+                    'village_type': rate.village_type or 'gramin',
+                    'assessment_range': f"{rate.assessment_range_min} - {rate.assessment_range_max}",
+                    'shighrasiddha_vibhag': rate.shighrasiddha_vibhag or '',
+                    'ready_reckoner_rate': float(rate.rate) if rate.rate is not None else None,
+                    'approved_rate': approved_map.get(rate.id),
+                    'unit': info.unit or '',
+                })
 
     return {
         'id': village_data.id,
@@ -3860,7 +4014,11 @@ def _serialize_village_data_for_process_chart(village_data):
         'village': village_data.village,
         'data': scalar_data,
         'files': files_map,
+        'notified_area_rows': village_data.notified_area_rows or [],
+        'sec3_rows': sec3_rows,
         'sec4_rows': sec4_rows,
+        'sec8_rows': sec8_rows,
+        'sec15_rows': sec15_rows,
     }
 
 
@@ -3888,6 +4046,29 @@ def _serialize_rr_info_for_process_chart(rr_info):
         'assessment_type': rr_info.assessment_type,
         'unit': rr_info.unit,
         'rates': rates,
+    }
+
+
+def _serialize_entry_for_process_chart(entry):
+    if not entry:
+        return None
+
+    return {
+        'id': entry.id,
+        'district': entry.district,
+        'taluka': entry.taluka,
+        'village': entry.village,
+        'sr_no_02': entry.sr_no_02,
+        'market_value_15a': float(entry.market_value_15a) if entry.market_value_15a is not None else None,
+        'coefficient_15c': float(entry.coefficient_15c) if entry.coefficient_15c is not None else None,
+        'total_market_value_15d': float(entry.total_market_value_15d) if entry.total_market_value_15d is not None else None,
+        'total_assets_16e': float(entry.total_assets_16e) if entry.total_assets_16e is not None else None,
+        'determined_compensation_17': float(entry.determined_compensation_17) if entry.determined_compensation_17 is not None else None,
+        'solatium_amount_18': float(entry.solatium_amount_18) if entry.solatium_amount_18 is not None else None,
+        'additional_12_percent_19': float(entry.additional_12_percent_19) if entry.additional_12_percent_19 is not None else None,
+        'non_consent_compensation_20': float(entry.non_consent_compensation_20) if entry.non_consent_compensation_20 is not None else None,
+        'class2_deduction_21': float(entry.class2_deduction_21) if entry.class2_deduction_21 is not None else None,
+        'consent_total_24': float(entry.consent_total_24) if entry.consent_total_24 is not None else None,
     }
 
 
@@ -3963,11 +4144,30 @@ def _get_process_chart_source_records(district, taluka, village, gut_number):
                 rr_info = candidate
                 break
 
-    return land_record, village_data, rr_info
+    entry = Entry.objects.filter(
+        district__iexact=district,
+        taluka__iexact=taluka,
+        village__iexact=village,
+        sr_no_02__iexact=gut_number,
+    ).order_by('-id').first()
+
+    if not entry and gut_key:
+        entry_candidates = Entry.objects.filter(village__iexact=village).order_by('-id')
+        for candidate in entry_candidates:
+            if (
+                normalize_gut_value(candidate.sr_no_02) == gut_key
+                and normalize_match_text(candidate.district) == district_key
+                and normalize_match_text(candidate.taluka) == taluka_key
+                and normalize_match_text(candidate.village) == village_key
+            ):
+                entry = candidate
+                break
+
+    return land_record, village_data, rr_info, entry
 
 
 def _build_process_chart_prefill(district, taluka, village, gut_number):
-    land_record, village_data, rr_info = _get_process_chart_source_records(district, taluka, village, gut_number)
+    land_record, village_data, rr_info, entry = _get_process_chart_source_records(district, taluka, village, gut_number)
     matching_land_records = _get_matching_land_records_for_process_chart(district, taluka, village, gut_number)
     return {
         'land_record': _serialize_land_record_for_process_chart(land_record),
@@ -3975,10 +4175,12 @@ def _build_process_chart_prefill(district, taluka, village, gut_number):
         'owner_rows': _serialize_owner_rows_for_process_chart(matching_land_records),
         'village_data': _serialize_village_data_for_process_chart(village_data),
         'ready_reckoner': _serialize_rr_info_for_process_chart(rr_info),
+        'compensation_entry': _serialize_entry_for_process_chart(entry),
         'source_refs': {
             'land_record_id_ref': land_record.id if land_record else None,
             'village_data_id_ref': village_data.id if village_data else None,
             'rr_info_id_ref': rr_info.id if rr_info else None,
+            'entry_id_ref': entry.id if entry else None,
         }
     }
 
@@ -3993,7 +4195,7 @@ def get_process_chart_form_data(request):
 
     case = None
     if case_id:
-        case = ProcessChartCase.objects.filter(id=case_id, user=request.user).first()
+        case = ProcessChartCase.objects.filter(id=case_id).first()
         if not case:
             return JsonResponse({'success': False, 'error': 'Process chart case not found.'}, status=404)
         district = district or case.district
@@ -5344,4 +5546,3 @@ def get_village_sec15_rates(request):
         'rates': rates_payload,
         'message': '' if rates_payload else 'No ready reckoner rates found for selected village'
     })
-
