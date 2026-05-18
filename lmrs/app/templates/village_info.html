@@ -2350,7 +2350,7 @@
                         </td>
                         <td class="px-2 py-2 text-center">
                             <button type="button" data-notified-add-row="${index}"
-                                class="mr-1 rounded-md border border-[#d4deec] px-2 py-1 text-xs font-semibold text-[#125fcb]">+</button>
+                                class="mr-1 rounded-md border border-[#d4deec] px-2 py-1 text-xs font-semibold text-[#125fcb] ${index === rows.length - 1 ? '' : 'hidden'}">+</button>
                             <button type="button" data-notified-remove-row="${index}"
                                 class="rounded-md border border-[#d4deec] px-2 py-1 text-xs text-[#5d7293] ${index === 0 ? 'hidden' : ''}">✕</button>
                         </td>
@@ -2481,14 +2481,9 @@
                 }
                 const inlineAddBtn = event.target.closest('button[data-notified-add-row]');
                 if (inlineAddBtn) {
-                    const idx = Number(inlineAddBtn.dataset.notifiedAddRow);
                     const block = inlineAddBtn.closest('.vi-notified-area-block');
                     const rows = collectNotifiedAreaRowsFromBlock(block, { preserveEmpty: true });
-                    if (Number.isInteger(idx)) {
-                        rows.splice(idx + 1, 0, { gut_mode: 'listed', gut_number: '', other_gut: '', notified_area: '' });
-                    } else {
-                        rows.push({ gut_mode: 'listed', gut_number: '', other_gut: '', notified_area: '' });
-                    }
+                    rows.push({ gut_mode: 'listed', gut_number: '', other_gut: '', notified_area: '' });
                     renderNotifiedAreaBlock(block, rows);
                     return;
                 }
@@ -3686,7 +3681,7 @@
                         </td>
                         <td class="px-2 py-2 text-center">
                             <button type="button" data-sec25-notified-add-row="${index}"
-                                class="mr-1 rounded-md border border-[#d4deec] px-2 py-1 text-xs font-semibold text-[#125fcb]">+</button>
+                                class="mr-1 rounded-md border border-[#d4deec] px-2 py-1 text-xs font-semibold text-[#125fcb] ${index === rows.length - 1 ? '' : 'hidden'}">+</button>
                             <button type="button" data-sec25-notified-remove-row="${index}"
                                 class="rounded-md border border-[#d4deec] px-2 py-1 text-xs text-[#5d7293] ${index === 0 ? 'hidden' : ''}">✕</button>
                         </td>
@@ -4526,13 +4521,8 @@
                 const inlineAddNotifiedBtn = clickEl?.closest('button[data-sec25-notified-add-row]');
                 if (inlineAddNotifiedBtn) {
                     const line = inlineAddNotifiedBtn.closest('.record-sec25-map-row');
-                    const idx = Number(inlineAddNotifiedBtn.dataset.sec25NotifiedAddRow);
                     const rows = collectSec25NotifiedRowsFromBlockWithOptions(line?.querySelector('.vi-sec25-notified-area-block'), { preserveEmpty: true });
-                    if (Number.isInteger(idx)) {
-                        rows.splice(idx + 1, 0, { gut_mode: 'listed', gut_number: '', other_gut: '', notified_area: '' });
-                    } else {
-                        rows.push({ gut_mode: 'listed', gut_number: '', other_gut: '', notified_area: '' });
-                    }
+                    rows.push({ gut_mode: 'listed', gut_number: '', other_gut: '', notified_area: '' });
                     renderSec25NotifiedRows(line, rows);
                     return;
                 }
