@@ -2311,7 +2311,9 @@
             currentJointSurveyApplyMode = options.mode || 'joint';
             currentAssetOwnerTargetId = options.targetId || '';
             const { singleGroups, multiGroups } = groupJointSurveyRows(prefill);
-            const selectedKeys = new Set(getSelectedJointSurveyKeys());
+            const selectedKeys = currentJointSurveyApplyMode === 'asset'
+                ? new Set()
+                : new Set(getSelectedJointSurveyKeys());
 
             jointSurveySingleNamesList.innerHTML = singleGroups.length
                 ? singleGroups.map(({ khataKey, rows }, groupIndex) => {
@@ -2328,6 +2330,7 @@
 
             jointSurveyMultiNamesList.innerHTML = multiGroups.length
                 ? multiGroups.map(({ khataKey, rows }, groupIndex) => {
+                    const allSelected = rows.every((row) => selectedKeys.has(buildJointSurveyRowKey(row)));
                     const checkboxRows = rows.map((row, rowIndex) => {
                         const rowKey = buildJointSurveyRowKey(row);
                         return `
@@ -2339,7 +2342,13 @@
                     }).join('');
                     return `
                         <div class="rounded border border-[#dbe8f8] bg-[#f8fbff] p-3">
-                            <div class="mb-2 text-sm font-semibold text-[#244271]">खाता क्रमांक: ${escapeHtml(khataKey)}</div>
+                            <div class="mb-2 flex items-center gap-4 flex-wrap">
+                                <div class="text-sm font-semibold text-[#244271]">खाता क्रमांक: ${escapeHtml(khataKey)}</div>
+                                <label class="flex items-center gap-2 text-sm font-semibold text-[#244271]">
+                                    <input type="checkbox" class="pc-joint-survey-select-all" data-group-index="${groupIndex}" ${allSelected ? 'checked' : ''}>
+                                    <span>सर्व निवडा</span>
+                                </label>
+                            </div>
                             <div class="space-y-2">${checkboxRows}</div>
                         </div>
                     `;
@@ -4146,6 +4155,13 @@
             prevBtn.disabled = currentStep === 1;
             prevBtn.classList.toggle('opacity-50', currentStep === 1);
             nextBtn.textContent = currentStep === totalSteps ? 'Save & Finish' : 'Save & Next';
+            if (currentStep === 6) {
+                updateAcquisitionDetailRowTotals();
+                updateAcquisitionAreasFromTab4();
+            }
+            if (currentStep === 8) {
+                updateCompensationFields(currentProcessChartPrefill);
+            }
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
@@ -4250,6 +4266,11 @@
                 updateCompensationFields(currentProcessChartPrefill);
             }
         });
+        processChartForm?.addEventListener('change', (event) => {
+            if (event.target instanceof HTMLInputElement && event.target.id === 'pcCompensation2') {
+                updateCompensationFields(currentProcessChartPrefill);
+            }
+        });
         document.getElementById('pcFetchJointSurveyNamesBtn')?.addEventListener('click', () => {
             openJointSurveyNamesModal(currentProcessChartPrefill);
         });
@@ -4347,6 +4368,32 @@
         jointSurveyNamesModal?.addEventListener('click', (event) => {
             if (event.target === jointSurveyNamesModal) {
                 closeJointSurveyNamesModal();
+            }
+        });
+        jointSurveyNamesModal?.addEventListener('change', (event) => {
+            const target = event.target;
+            if (!(target instanceof HTMLInputElement)) return;
+            if (target.classList.contains('pc-joint-survey-select-all')) {
+                const groupIndex = target.getAttribute('data-group-index');
+                if (groupIndex === null) return;
+
+                jointSurveyNamesModal.querySelectorAll(`.pc-joint-survey-name-checkbox[data-group-type="multi"][data-group-index="${groupIndex}"]`).forEach((checkbox) => {
+                    if (checkbox instanceof HTMLInputElement) {
+                        checkbox.checked = target.checked;
+                    }
+                });
+                return;
+            }
+
+            if (target.classList.contains('pc-joint-survey-name-checkbox') && target.getAttribute('data-group-type') === 'multi') {
+                const groupIndex = target.getAttribute('data-group-index');
+                if (groupIndex === null) return;
+                const groupCheckboxes = Array.from(jointSurveyNamesModal.querySelectorAll(`.pc-joint-survey-name-checkbox[data-group-type="multi"][data-group-index="${groupIndex}"]`))
+                    .filter((checkbox) => checkbox instanceof HTMLInputElement);
+                const selectAllCheckbox = jointSurveyNamesModal.querySelector(`.pc-joint-survey-select-all[data-group-index="${groupIndex}"]`);
+                if (selectAllCheckbox instanceof HTMLInputElement) {
+                    selectAllCheckbox.checked = groupCheckboxes.length > 0 && groupCheckboxes.every((checkbox) => checkbox.checked);
+                }
             }
         });
 
