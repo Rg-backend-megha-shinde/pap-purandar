@@ -4247,30 +4247,40 @@ def save_process_chart_form(request):
 
     case_id = payload.get('case_id')
     if case_id:
-        case = ProcessChartCase.objects.filter(id=case_id, user=request.user).first()
+        case = ProcessChartCase.objects.filter(id=case_id).first()
         if not case:
             return JsonResponse({'success': False, 'error': 'Process chart case not found.'}, status=404)
     else:
-        case, _created = ProcessChartCase.objects.get_or_create(
+        case = ProcessChartCase.objects.create(
             user=request.user,
             district=district,
             taluka=taluka,
             village=village,
             gut_number=gut_number,
-            defaults={
-                'division': clean_optional_char(payload.get('division')),
-                'project_purpose': clean_optional_char(payload.get('project_purpose')),
-                'acquisition_type': clean_optional_char(payload.get('acquisition_type')),
-                'current_step': int(payload.get('current_step') or 1),
-                'status': clean_optional_char(payload.get('status')) or 'draft',
-            }
+            division=clean_optional_char(payload.get('division')),
+            project_purpose=clean_optional_char(payload.get('project_purpose')),
+            acquisition_type=clean_optional_char(payload.get('acquisition_type')),
+            current_step=int(payload.get('current_step') or 1),
+            status=clean_optional_char(payload.get('status')) or 'draft',
         )
 
+    requested_status = clean_optional_char(payload.get('status')) or 'draft'
+    existing_status = clean_optional_char(case.status) or 'draft'
+    final_statuses = {'submitted', 'approved'}
+
+    case.user = request.user
     case.division = clean_optional_char(payload.get('division'))
     case.project_purpose = clean_optional_char(payload.get('project_purpose'))
     case.acquisition_type = clean_optional_char(payload.get('acquisition_type'))
     case.current_step = int(payload.get('current_step') or case.current_step or 1)
-    case.status = clean_optional_char(payload.get('status')) or case.status or 'draft'
+    if existing_status in final_statuses:
+        case.status = existing_status
+    elif requested_status == 'approved':
+        case.status = 'approved'
+    elif requested_status == 'submitted':
+        case.status = 'submitted'
+    else:
+        case.status = 'draft'
 
     prefill = _build_process_chart_prefill(district, taluka, village, gut_number)
     case.land_record_id_ref = prefill['source_refs']['land_record_id_ref']
@@ -4308,7 +4318,8 @@ def save_process_chart_form(request):
     return JsonResponse({
         'success': True,
         'case_id': case.id,
-        'message': 'Process chart draft saved successfully.',
+        'status': case.status,
+        'message': 'Process chart submitted successfully.' if case.status == 'submitted' else 'Process chart draft saved successfully.',
         'prefill': prefill,
     })
 

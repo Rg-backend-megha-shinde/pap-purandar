@@ -1759,6 +1759,7 @@
         let isSavingProcessChart = false;
         let currentStep = 1;
         const totalSteps = 12;
+        let currentCaseStatus = 'draft';
         let currentVillageFiles = {};
         let currentOwnerNames = [];
         let currentAgreementDraftHtml = '';
@@ -1823,7 +1824,11 @@
             if (!selectedGut || !Array.isArray(rows)) return null;
             return rows.find((row) => {
                 const gutValue = normalizeGutMatchValue(row?.gut_number || row?.other_gut || '');
-                return gutValue && gutValue === selectedGut;
+                return gutValue && (
+                    gutValue === selectedGut
+                    || gutValue.includes(selectedGut)
+                    || selectedGut.includes(gutValue)
+                );
             }) || null;
         }
 
@@ -1874,7 +1879,11 @@
             rowsToSearch.forEach((row) => {
                 if (matchedNotifiedArea || !row) return;
                 const gutValue = normalizeGutMatchValue(row.gut_number || row.other_gut || '');
-                if (selectedGut && gutValue === selectedGut) {
+                if (selectedGut && gutValue && (
+                    gutValue === selectedGut
+                    || gutValue.includes(selectedGut)
+                    || selectedGut.includes(gutValue)
+                )) {
                     matchedNotifiedArea = String(row.notified_area || '').trim();
                 }
             });
@@ -2230,6 +2239,14 @@
 
         let currentProcessChartPrefill = {};
 
+        function getExactSevenTwelveAreaValue(value, fallback = '0.00.00') {
+            const raw = String(value ?? '').trim();
+            if (!raw || raw === '-' || raw.toLowerCase() === 'null' || raw.toLowerCase() === 'none') {
+                return fallback;
+            }
+            return raw;
+        }
+
         function populateLandAreaSummary(landRecord = null) {
             const cultivableField = document.getElementById('pcSummaryCultivableArea');
             const potkharabaField = document.getElementById('pcSummaryPotkharabaArea');
@@ -2243,10 +2260,15 @@
                 return;
             }
 
-            const cultivableArea = toAreaNumber(landRecord.jirayit) + toAreaNumber(landRecord.bagayat);
-            cultivableField.value = formatAreaValue(cultivableArea);
-            potkharabaField.value = landRecord.potkharaba || '';
-            totalAreaField.value = landRecord.total_area || '';
+            cultivableField.value = getExactSevenTwelveAreaValue(
+                landRecord.khata_area || landRecord.jirayit,
+                '0.00.00'
+            );
+            potkharabaField.value = getExactSevenTwelveAreaValue(landRecord.potkharaba, '0.00.00');
+            totalAreaField.value = getExactSevenTwelveAreaValue(
+                landRecord.total_area,
+                cultivableField.value || '0.00.00'
+            );
         }
 
         function escapeHtml(value) {
@@ -4344,6 +4366,7 @@
 
                 const caseData = result.case || {};
                 const prefill = result.prefill || {};
+                currentCaseStatus = caseData.status || currentCaseStatus || 'draft';
                 setStep(caseData.current_step || 1);
 
                 if (caseData.division) {
@@ -4374,7 +4397,9 @@
                 await loadProcessChartGuts(caseData.district, caseData.taluka, caseData.village);
                 if (gutSelect && caseData.gut_number) {
                     gutSelect.value = caseData.gut_number;
-                    gutSelect.dispatchEvent(new Event('change', { bubbles: true }));
+                    if (window.jQuery && window.jQuery.fn && window.jQuery.fn.select2) {
+                        window.jQuery(gutSelect).trigger('change.select2');
+                    }
                 }
 
                 await loadOwnerNamesFrom712();
@@ -4414,7 +4439,7 @@
                 project_purpose: projectPurposeField?.value || '',
                 acquisition_type: acquisitionTypeField?.value || '',
                 current_step: currentStep,
-                status: statusValue,
+                status: currentCaseStatus === 'submitted' || currentCaseStatus === 'approved' ? currentCaseStatus : statusValue,
                 step_no: currentStep,
                 section_code: `step_${currentStep}`,
                 data: collectPanelData(panel),
@@ -4446,6 +4471,7 @@
                 }
 
                 currentCaseId = result.case_id || currentCaseId;
+                currentCaseStatus = result.status || payload.status || currentCaseStatus;
                 const nextUrl = new URL(window.location.href);
                 nextUrl.searchParams.set('case_id', currentCaseId);
                 window.history.replaceState({}, '', nextUrl.toString());
@@ -4462,6 +4488,7 @@
 
         function setStep(step) {
             currentStep = Math.max(1, Math.min(totalSteps, Number(step) || 1));
+            const isFinalizedCase = currentCaseStatus === 'submitted' || currentCaseStatus === 'approved';
             dots.forEach((dot) => {
                 const dotStep = Number(dot.dataset.pcStep);
                 dot.classList.toggle('is-active', dotStep === currentStep);
@@ -4472,7 +4499,16 @@
             });
             prevBtn.disabled = currentStep === 1;
             prevBtn.classList.toggle('opacity-50', currentStep === 1);
-            nextBtn.textContent = currentStep === totalSteps ? 'Save & Finish' : 'Save & Next';
+            nextBtn.textContent = currentStep === totalSteps ? 'Save' : 'Save & Next';
+            if (saveDraftBtn) {
+                saveDraftBtn.textContent = isFinalizedCase ? 'Update Submitted Form' : 'Save Draft';
+            }
+            if (submitBtn) {
+                submitBtn.classList.toggle('hidden', currentStep !== totalSteps);
+                submitBtn.disabled = isFinalizedCase;
+                submitBtn.classList.toggle('opacity-50', submitBtn.disabled);
+                submitBtn.classList.toggle('cursor-not-allowed', submitBtn.disabled);
+            }
             if (currentStep === 6) {
                 updateAcquisitionDetailRowTotals();
                 updateAcquisitionAreasFromTab4();
@@ -4491,13 +4527,13 @@
             }
         });
         nextBtn.addEventListener('click', async () => {
-            const result = await saveProcessChart(currentStep === totalSteps ? 'submitted' : 'draft');
+            const result = await saveProcessChart('draft');
             if (result.success && currentStep < totalSteps) {
                 setStep(currentStep + 1);
                 return;
             }
             if (result.success && currentStep === totalSteps) {
-                alert('Process chart submitted successfully.');
+                alert('Draft saved successfully.');
             }
         });
         saveBtn?.addEventListener('click', async () => {
@@ -4513,9 +4549,14 @@
             }
         });
         submitBtn?.addEventListener('click', async () => {
+            if (currentCaseStatus === 'submitted' || currentCaseStatus === 'approved') {
+                alert('This process chart is already submitted.');
+                return;
+            }
             const result = await saveProcessChart('submitted');
             if (result.success) {
                 alert('Process chart submitted successfully.');
+                setStep(currentStep);
             }
         });
 

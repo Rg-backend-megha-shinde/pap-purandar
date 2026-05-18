@@ -37,8 +37,8 @@
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        min-width: 90px;
-        padding: 0.35rem 0.75rem;
+        min-width: 74px;
+        padding: 0.3rem 0.85rem;
         border-radius: 999px;
         font-size: 0.82rem;
         font-weight: 700;
@@ -50,14 +50,66 @@
         border-color: #fdba74;
     }
     .pc-status-submitted {
-        background: #eff6ff;
-        color: #1d4ed8;
-        border-color: #93c5fd;
+        background: #f0fdf4;
+        color: #166534;
+        border-color: #bbf7d0;
     }
     .pc-status-approved {
         background: #f0fdf4;
-        color: #15803d;
-        border-color: #86efac;
+        color: #166534;
+        border-color: #bbf7d0;
+    }
+    .pc-list-shell .dataTables_wrapper .dataTables_length,
+    .pc-list-shell .dataTables_wrapper .dataTables_filter {
+        margin-bottom: 1rem;
+    }
+    .pc-list-shell .dataTables_wrapper .dataTables_length label,
+    .pc-list-shell .dataTables_wrapper .dataTables_filter label {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: #4a6178;
+        font-size: 0.95rem;
+        font-weight: 500;
+    }
+    .pc-list-shell .dataTables_wrapper .dataTables_length select,
+    .pc-list-shell .dataTables_wrapper .dataTables_filter input {
+        border: 1px solid #cbd5e1;
+        border-radius: 0.4rem;
+        background: #fff;
+        color: #2a3f62;
+        padding: 0.45rem 0.75rem;
+    }
+    .pc-list-shell .dataTables_wrapper .dataTables_info,
+    .pc-list-shell .dataTables_wrapper .dataTables_paginate {
+        margin-top: 1rem;
+        color: #4a6178 !important;
+        font-size: 0.95rem;
+    }
+    .pc-list-shell .dataTables_wrapper .paginate_button {
+        border-radius: 0.8rem !important;
+    }
+    .pc-action-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 48px;
+        padding: 0.4rem 0.9rem;
+        border-radius: 0.7rem;
+        border: 1px solid;
+        font-size: 0.9rem;
+        font-weight: 600;
+        text-decoration: none;
+    }
+    .pc-action-edit {
+        border-color: #bfdbfe;
+        background: #eff6ff;
+        color: #2563eb;
+    }
+    .pc-action-delete {
+        border-color: #fecaca;
+        background: #fef2f2;
+        color: #dc2626;
     }
     @media (max-width: 640px) {
         .tool-tab-link {
@@ -80,7 +132,7 @@
                 </nav>
             </div>
 
-            <div class="rounded-2xl border border-[#d7e5f6] bg-[#fbfdff] p-3 sm:p-4 md:p-5">
+            <div class="pc-list-shell rounded-2xl border border-[#d7e5f6] bg-[#fbfdff] p-3 sm:p-4 md:p-5">
                 <div class="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                     <h2 class="text-xl font-bold">भूसंपादन प्रक्रिया नोंदी</h2>
                     <a href="{% url 'process_chart_form_entry' %}" class="rounded-xl bg-[#125fcb] px-4 py-2 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(18,95,203,0.2)]">
@@ -88,44 +140,48 @@
                     </a>
                 </div>
 
-                <div class="overflow-x-auto">
-                    <table id="processChartListTable" class="display w-full text-sm text-left" style="width:100%;">
-                        <thead>
+                <div class="overflow-x-auto rounded-xl border border-[#d7e5f6] bg-white">
+                    <table id="processChartListTable" class="w-full border-collapse text-sm text-[#2a3f62]" style="width:100%;">
+                        <thead class="bg-[#eef5ff]">
                             <tr>
-                                <th>ID</th>
-                                <th>विभाग</th>
-                                <th>जिल्हा</th>
-                                <th>तालुका</th>
-                                <th>गाव</th>
-                                <th>गट क्रमांक</th>
-                                <th>स्थिती</th>
-                                <th>टप्पा</th>
-                                <th>Updated</th>
-                                <th>Actions</th>
+                                <th class="border border-[#d7e5f6] px-3 py-2 text-center font-semibold">ID</th>
+                                <th class="border border-[#d7e5f6] px-3 py-2 text-center font-semibold">विभाग</th>
+                                <th class="border border-[#d7e5f6] px-3 py-2 text-center font-semibold">जिल्हा</th>
+                                <th class="border border-[#d7e5f6] px-3 py-2 text-center font-semibold">तालुका</th>
+                                <th class="border border-[#d7e5f6] px-3 py-2 text-center font-semibold">गाव</th>
+                                <th class="border border-[#d7e5f6] px-3 py-2 text-center font-semibold">गट क्रमांक</th>
+                                <th class="border border-[#d7e5f6] px-3 py-2 text-center font-semibold">Status</th>
+                                <th class="border border-[#d7e5f6] px-3 py-2 text-center font-semibold">टप्पा</th>
+                                <th class="border border-[#d7e5f6] px-3 py-2 text-center font-semibold">Updated</th>
+                                <th class="border border-[#d7e5f6] px-3 py-2 text-center font-semibold">Actions</th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody class="bg-white">
                             {% for item in cases %}
                             <tr>
-                                <td>{{ item.id }}</td>
-                                <td>{{ item.division|default:"-" }}</td>
-                                <td>{{ item.district_mr|default:"-" }}</td>
-                                <td>{{ item.taluka_mr|default:"-" }}</td>
-                                <td>{{ item.village_mr|default:"-" }}</td>
-                                <td>{{ item.gut_number|default:"-" }}</td>
-                                <td>
+                                <td class="border border-[#d7e5f6] px-3 py-2 text-center">{{ item.id }}</td>
+                                <td class="border border-[#d7e5f6] px-3 py-2 text-center">{{ item.division|default:"-" }}</td>
+                                <td class="border border-[#d7e5f6] px-3 py-2 text-center">{{ item.district_mr|default:"-" }}</td>
+                                <td class="border border-[#d7e5f6] px-3 py-2 text-center">{{ item.taluka_mr|default:"-" }}</td>
+                                <td class="border border-[#d7e5f6] px-3 py-2 text-center">{{ item.village_mr|default:"-" }}</td>
+                                <td class="border border-[#d7e5f6] px-3 py-2 text-center">{{ item.gut_number|default:"-" }}</td>
+                                <td class="border border-[#d7e5f6] px-3 py-2 text-center">
                                     <span class="pc-status-badge {% if item.status == 'submitted' %}pc-status-submitted{% elif item.status == 'approved' %}pc-status-approved{% else %}pc-status-draft{% endif %}">
-                                        {{ item.status|title }}
+                                        {% if item.status == 'draft' %}
+                                            Draft
+                                        {% else %}
+                                            Completed
+                                        {% endif %}
                                     </span>
                                 </td>
-                                <td>{{ item.current_step }}</td>
-                                <td>
+                                <td class="border border-[#d7e5f6] px-3 py-2 text-center">{{ item.current_step }}</td>
+                                <td class="border border-[#d7e5f6] px-3 py-2 text-center">
                                     {{ item.updated_at|date:"d M Y, h:i a" }}
                                     <div class="text-xs text-[#8091aa]">Updated by {{ item.user.username }}</div>
                                 </td>
-                                <td style="white-space: nowrap;">
-                                    <a href="{% url 'process_chart_form_entry' %}?case_id={{ item.id }}" title="Edit" style="display:inline-flex; align-items:center; justify-content:center; width:32px; height:32px; background:#2563eb; color:white; border-radius:6px; margin-right:6px; text-decoration:none;">✏️</a>
-                                    <a href="{% url 'delete_process_chart_case' item.id %}" title="Delete" style="display:inline-flex; align-items:center; justify-content:center; width:32px; height:32px; background:#dc2626; color:white; border-radius:6px; text-decoration:none;" onclick="return confirm('तुम्हाला ही नोंद हटवायची आहे का?');">🗑️</a>
+                                <td class="border border-[#d7e5f6] px-3 py-2 text-center whitespace-nowrap">
+                                    <a href="{% url 'process_chart_form_entry' %}?case_id={{ item.id }}" title="Edit" class="pc-action-btn pc-action-edit mr-2">Edit</a>
+                                    <a href="{% url 'delete_process_chart_case' item.id %}" title="Delete" class="pc-action-btn pc-action-delete" onclick="return confirm('तुम्हाला ही नोंद हटवायची आहे का?');">Delete</a>
                                 </td>
                             </tr>
                             {% endfor %}
