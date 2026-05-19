@@ -1220,7 +1220,7 @@ class ProcessChartCase(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        unique_together = ("user", "district", "taluka", "village", "gut_number")
+        unique_together = ("district", "taluka", "village", "gut_number")
 
     def __str__(self):
         return f"{self.village} - {self.gut_number}"
