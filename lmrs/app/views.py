@@ -17,6 +17,7 @@ import os
 import requests
 from io import BytesIO
 import unicodedata
+from urllib.parse import urlparse, parse_qs
 from decimal import Decimal, InvalidOperation
 from PIL import Image, ImageDraw, ImageFont, ImageOps
 from django.views.decorators.csrf import csrf_exempt
@@ -3718,6 +3719,23 @@ def _serialize_process_chart_case(case):
     }
 
 
+def _serialize_process_chart_documents(case):
+    if not case:
+        return {}
+
+    documents = {}
+    for doc in case.documents.all().order_by('id'):
+        if not doc.file:
+            continue
+        documents[doc.document_type] = {
+            'url': doc.file.url,
+            'name': os.path.basename(doc.file.name or ''),
+            'step_no': doc.step_no,
+            'section_code': doc.section_code,
+        }
+    return documents
+
+
 def _serialize_land_record_for_process_chart(land_record):
     if not land_record:
         return None
@@ -4212,14 +4230,14 @@ def get_process_chart_form_data(request):
     prefill = _build_process_chart_prefill(district, taluka, village, gut_number)
     step_data = {}
     if case:
-        step_data = {
-            f"{row.step_no}:{row.section_code}": row.data
-            for row in case.step_data.all().order_by('step_no', 'id')
-        }
+        for row in case.step_data.all().order_by('step_no', 'id'):
+            step_data[f"{row.step_no}:{row.section_code}"] = row.data
+            step_data[row.section_code] = row.data
 
     return JsonResponse({
         'success': True,
         'case': _serialize_process_chart_case(case),
+        'documents': _serialize_process_chart_documents(case),
         'prefill': prefill,
         'step_data': step_data,
     })
@@ -4230,7 +4248,10 @@ def get_process_chart_form_data(request):
 @require_http_methods(["POST"])
 def save_process_chart_form(request):
     try:
-        payload = json.loads(request.body.decode('utf-8') or '{}')
+        if request.content_type and request.content_type.startswith('multipart/form-data'):
+            payload = json.loads(request.POST.get('payload', '{}') or '{}')
+        else:
+            payload = json.loads(request.body.decode('utf-8') or '{}')
     except (UnicodeDecodeError, json.JSONDecodeError):
         return JsonResponse({'success': False, 'error': 'Invalid JSON payload.'}, status=400)
 
@@ -4245,24 +4266,43 @@ def save_process_chart_form(request):
             'error': 'district, taluka, village and gut_number are required'
         }, status=400)
 
-    case_id = payload.get('case_id')
+    case_id = payload.get('case_id') or request.GET.get('case_id')
+    if not case_id:
+        referrer = request.META.get('HTTP_REFERER') or ''
+        query_params = parse_qs(urlparse(referrer).query)
+        case_id = (query_params.get('case_id') or [''])[0]
     if case_id:
         case = ProcessChartCase.objects.filter(id=case_id).first()
         if not case:
             return JsonResponse({'success': False, 'error': 'Process chart case not found.'}, status=404)
     else:
-        case = ProcessChartCase.objects.create(
-            user=request.user,
+        case, _created = ProcessChartCase.objects.get_or_create(
             district=district,
             taluka=taluka,
             village=village,
             gut_number=gut_number,
-            division=clean_optional_char(payload.get('division')),
-            project_purpose=clean_optional_char(payload.get('project_purpose')),
-            acquisition_type=clean_optional_char(payload.get('acquisition_type')),
-            current_step=int(payload.get('current_step') or 1),
-            status=clean_optional_char(payload.get('status')) or 'draft',
+            defaults={
+                'user': request.user,
+                'division': clean_optional_char(payload.get('division')),
+                'project_purpose': clean_optional_char(payload.get('project_purpose')),
+                'acquisition_type': clean_optional_char(payload.get('acquisition_type')),
+                'current_step': int(payload.get('current_step') or 1),
+                'status': clean_optional_char(payload.get('status')) or 'draft',
+            },
         )
+        case.user = request.user
+        case.division = clean_optional_char(payload.get('division'))
+        case.project_purpose = clean_optional_char(payload.get('project_purpose'))
+        case.acquisition_type = clean_optional_char(payload.get('acquisition_type'))
+        case.current_step = int(payload.get('current_step') or case.current_step or 1)
+        case.status = clean_optional_char(payload.get('status')) or case.status or 'draft'
+        case.save()
+        payload['case_id'] = case.id
+        case_id = case.id
+        # Keep the normal update path below for source refs and status handling.
+        case = ProcessChartCase.objects.filter(id=case_id).first()
+        if not case:
+            return JsonResponse({'success': False, 'error': 'Process chart case could not be created.'}, status=500)
 
     requested_status = clean_optional_char(payload.get('status')) or 'draft'
     existing_status = clean_optional_char(case.status) or 'draft'
@@ -4315,11 +4355,34 @@ def save_process_chart_form(request):
                     defaults={'data': row_data},
                 )
 
+    if int(step_no or 0) == 1 and section_code:
+        step_one_data = section_data if isinstance(section_data, dict) else {}
+        owner_names = step_one_data.get('owner_info_owner_name')
+        owner_names = owner_names if isinstance(owner_names, list) else ([owner_names] if owner_names else [])
+        for field_prefix in ('owner_info_aadhaar_file', 'owner_info_pan_file'):
+            for index, _owner_name in enumerate(owner_names):
+                field_key = f'{field_prefix}_{index}'
+                uploaded_files = request.FILES.getlist(field_key)
+                if not uploaded_files:
+                    continue
+                uploaded_file = uploaded_files[-1]
+                ProcessChartDocument.objects.update_or_create(
+                    case=case,
+                    step_no=int(step_no),
+                    section_code=section_code,
+                    document_type=field_key,
+                    defaults={
+                        'file': uploaded_file,
+                        'remarks': str(_owner_name or '').strip(),
+                    },
+                )
+
     return JsonResponse({
         'success': True,
         'case_id': case.id,
         'status': case.status,
         'message': 'Process chart submitted successfully.' if case.status == 'submitted' else 'Process chart draft saved successfully.',
+        'documents': _serialize_process_chart_documents(case),
         'prefill': prefill,
     })
 
