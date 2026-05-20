@@ -1874,6 +1874,10 @@
 
         const dots = Array.from(document.querySelectorAll('[data-pc-step]'));
         const panels = Array.from(document.querySelectorAll('[data-pc-panel]'));
+        function getProcessChartPanel(stepNo) {
+            return panels.find((panel) => Number(panel.dataset.pcPanel) === Number(stepNo))
+                || document.querySelector(`[data-pc-panel="${stepNo}"]`);
+        }
         const prevBtn = document.getElementById('pcPrevBtn');
         const nextBtn = document.getElementById('pcNextBtn');
         const saveBtn = document.getElementById('pcSaveBtn');
@@ -1883,6 +1887,7 @@
         const urlCaseId = new URLSearchParams(window.location.search).get('case_id') || '';
         let currentCaseId = initialCaseId || urlCaseId || '';
         let isSavingProcessChart = false;
+        let tab7AutoSaveTimer = null;
         let currentStep = 1;
         const totalSteps = 12;
         let currentCaseStatus = 'draft';
@@ -2837,8 +2842,7 @@
         }
 
         function ensureRepeatableAssetRowsForData(sectionData = {}) {
-            if (!processChartForm) return;
-            processChartForm.querySelectorAll('[data-repeatable-asset-rows]').forEach((container) => {
+            document.querySelectorAll('[data-repeatable-asset-rows]').forEach((container) => {
                 const prefix = container.dataset.namePrefix || '';
                 setRepeatableAssetRowCount(container, getRepeatableAssetRowCount(sectionData, prefix));
             });
@@ -2862,7 +2866,7 @@
                 fields: {},
                 sections: {},
             };
-            const tab7Panel = processChartForm?.querySelector('[data-pc-panel="7"]');
+            const tab7Panel = getProcessChartPanel(7);
             if (!tab7Panel) return snapshot;
 
             tab7Panel.querySelectorAll('.owner-name-dropdown input, input[name$="_valuation_letter_detail"], input[name$="_valuation_date"], #total-valuation-amount').forEach((field) => {
@@ -2978,7 +2982,7 @@
         }
 
         function restoreTab7Snapshot(snapshot = {}) {
-            const tab7Panel = processChartForm?.querySelector('[data-pc-panel="7"]');
+            const tab7Panel = getProcessChartPanel(7);
             if (!tab7Panel || !snapshot || typeof snapshot !== 'object') return false;
             const sections = snapshot.sections && typeof snapshot.sections === 'object' ? snapshot.sections : {};
             const fields = snapshot.fields && typeof snapshot.fields === 'object' ? snapshot.fields : {};
@@ -3003,7 +3007,7 @@
         }
 
         function applyTab7FlatDataDirectly(data = {}) {
-            const tab7Panel = processChartForm?.querySelector('[data-pc-panel="7"]');
+            const tab7Panel = getProcessChartPanel(7);
             if (!tab7Panel || !data || typeof data !== 'object') return false;
             let applied = false;
 
@@ -3049,7 +3053,7 @@
 
         function forceRestoreTab7FlatData(stepData = latestProcessChartStepData) {
             const data = stepData?.['7:step_7'] || stepData?.step_7 || stepData || {};
-            const tab7Panel = processChartForm?.querySelector('[data-pc-panel="7"]');
+            const tab7Panel = getProcessChartPanel(7);
             if (!tab7Panel || !data || typeof data !== 'object') return false;
             let restored = false;
 
@@ -3130,7 +3134,7 @@
 
         async function debugTab7Restore() {
             const caseId = currentCaseId || new URLSearchParams(window.location.search).get('case_id') || '';
-            const tab7Panel = processChartForm?.querySelector('[data-pc-panel="7"]');
+            const tab7Panel = getProcessChartPanel(7);
             const waterContainer = document.getElementById('pcWaterSupplyRows');
             const result = {
                 caseId,
@@ -3179,10 +3183,28 @@
         function saveTab7LocalDraft() {
             try {
                 const snapshot = syncTab7SnapshotField() || collectTab7Snapshot();
+                if (!hasTab7SnapshotData(snapshot)) return;
                 window.localStorage.setItem(getTab7LocalStorageKey(), JSON.stringify(snapshot));
             } catch (error) {
                 console.warn('Tab 7 local draft save failed:', error);
             }
+        }
+
+        function scheduleTab7AutoSave() {
+            if (currentStep !== 7 || isSavingProcessChart) return;
+            window.clearTimeout(tab7AutoSaveTimer);
+            tab7AutoSaveTimer = window.setTimeout(async () => {
+                if (currentStep !== 7 || isSavingProcessChart) return;
+                const hasLocation = Boolean(districtSelect?.value && talukaSelect?.value && villageSelect?.value && gutSelect?.value);
+                if (!hasLocation) return;
+                await saveProcessChart('draft', currentStep);
+            }, 900);
+        }
+
+        function handleTab7FieldChanged(event) {
+            if (!(event.target instanceof HTMLInputElement) || !event.target.closest('[data-pc-panel="7"]')) return;
+            saveTab7LocalDraft();
+            scheduleTab7AutoSave();
         }
 
         function restoreTab7LocalDraft() {
@@ -3249,7 +3271,7 @@
             if (applyTab7FlatDataDirectly(tab7Data)) return true;
             if (restoreTab7Snapshot(tab7Data.tab7_snapshot || parseTab7SnapshotJson(tab7Data.tab7_snapshot_json))) return true;
             if (!hasTab7AssetData(tab7Data)) return false;
-            const tab7Panel = processChartForm?.querySelector('[data-pc-panel="7"]');
+            const tab7Panel = getProcessChartPanel(7);
             if (!tab7Panel) return false;
 
             ensureRepeatableAssetRowsForData(tab7Data);
@@ -3262,7 +3284,7 @@
 
         function restoreTab7DataWithFallback(stepData = {}) {
             const restoredFromServer = restoreTab7Data(stepData);
-            const tab7Panel = processChartForm?.querySelector('[data-pc-panel="7"]');
+            const tab7Panel = getProcessChartPanel(7);
             const hasDomData = Array.from(tab7Panel?.querySelectorAll('input') || []).some((field) =>
                 field instanceof HTMLInputElement
                 && field.type !== 'hidden'
@@ -3293,7 +3315,7 @@
             const totalField = document.getElementById('total-valuation-amount');
             if (!totalField || !processChartForm) return;
 
-            const tab7Panel = processChartForm.querySelector('[data-pc-panel="7"]') || totalField.closest('[data-pc-panel]') || processChartForm;
+            const tab7Panel = getProcessChartPanel(7) || totalField.closest('[data-pc-panel]') || processChartForm;
             let valuationFields = Array.from(tab7Panel.querySelectorAll('input')).filter((field) => {
                 if (field === totalField) return false;
                 const name = String(field.name || '');
@@ -3772,6 +3794,8 @@
             });
 
             renderRepeatableAssetRows(container, selectedRows);
+            saveTab7LocalDraft();
+            scheduleTab7AutoSave();
             closeJointSurveyNamesModal();
         }
 
@@ -5702,17 +5726,30 @@
         }
 
         function buildStepDataPayload(stepNo, panel = null) {
-            const targetPanel = panel || processChartForm?.querySelector(`[data-pc-panel="${stepNo}"]`) || null;
+            const targetPanel = panel || getProcessChartPanel(stepNo) || null;
             if (!targetPanel) return null;
             const data = collectPanelData(targetPanel);
             if (stepNo === 7 && !hasTab7SnapshotData(data.tab7_snapshot)) {
+                const savedTab7Data = getSavedStepSectionData(latestProcessChartStepData, 7, 'step_7');
+                if (hasTab7AssetData(savedTab7Data) || hasTab7SnapshotData(savedTab7Data.tab7_snapshot)) {
+                    return {
+                        step_no: stepNo,
+                        section_code: `step_${stepNo}`,
+                        data: savedTab7Data,
+                    };
+                }
                 try {
                     const localSnapshot = JSON.parse(window.localStorage.getItem(getTab7LocalStorageKey()) || 'null');
                     if (hasTab7SnapshotData(localSnapshot)) {
                         data.tab7_snapshot = localSnapshot;
+                        data.tab7_snapshot_json = JSON.stringify(localSnapshot);
+                        mergeTab7SnapshotIntoData(data, localSnapshot);
                     }
                 } catch (error) {
                     console.warn('Tab 7 local draft read failed:', error);
+                }
+                if (!hasTab7SnapshotData(data.tab7_snapshot) && currentStep !== 7) {
+                    return null;
                 }
             }
             return {
@@ -5942,7 +5979,7 @@
                 ? (buildStepDataPayload(7, panel)?.data || collectPanelData(panel))
                 : collectPanelData(panel);
             if (currentStep !== 7 && !hasStep7Row) {
-                const tab7Panel = processChartForm?.querySelector('[data-pc-panel="7"]');
+                const tab7Panel = getProcessChartPanel(7);
                 const tab7Row = buildStepDataPayload(7, tab7Panel);
                 if (tab7Row) stepRows.push(tab7Row);
             }
@@ -5964,6 +6001,13 @@
                 step_rows: stepRows,
             };
         }
+        window.pcDebugCurrentTab7Payload = () => {
+            const tab7Panel = getProcessChartPanel(7);
+            const payload = buildStepDataPayload(7, tab7Panel);
+            console.log('Current Tab 7 payload:', payload);
+            return payload;
+        };
+        window.pcSaveTab7Now = () => saveProcessChart('draft', 7);
 
         async function saveProcessChart(statusValue = 'draft', savedCurrentStep = currentStep) {
             if (isSavingProcessChart) return { success: false, error: 'Save already in progress.' };
@@ -6015,6 +6059,11 @@
                 saveTab7LocalDraft();
                 currentCaseStatus = result.status || payload.status || currentCaseStatus;
                 currentProcessChartDocuments = result.documents || currentProcessChartDocuments || {};
+                if (result.step_data && typeof result.step_data === 'object') {
+                    latestProcessChartStepData = result.step_data;
+                    window.pcLatestStepData = latestProcessChartStepData;
+                    window.pcRestoreTab7Draft = () => restoreTab7DataWithFallback(latestProcessChartStepData);
+                }
                 const nextUrl = new URL(window.location.href);
                 nextUrl.searchParams.set('case_id', currentCaseId);
                 window.history.replaceState({}, '', nextUrl.toString());
@@ -6070,7 +6119,14 @@
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
-        dots.forEach((dot) => dot.addEventListener('click', () => setStep(dot.dataset.pcStep)));
+        dots.forEach((dot) => dot.addEventListener('click', async () => {
+            const targetStep = Number(dot.dataset.pcStep || 1);
+            if (targetStep === currentStep) return;
+            const result = await saveProcessChart('draft', targetStep);
+            if (result.success) {
+                setStep(targetStep);
+            }
+        }));
         prevBtn.addEventListener('click', async () => {
             const result = await saveProcessChart('draft');
             if (result.success) {
@@ -6161,19 +6217,21 @@
             radio.addEventListener('change', () => toggleArbitrationFields());
         });
         toggleArbitrationFields();
-        processChartForm?.querySelectorAll('[data-repeatable-asset-rows]').forEach((container) => {
+        document.querySelectorAll('[data-repeatable-asset-rows]').forEach((container) => {
             ensureRepeatableAssetRows(container, 1);
             syncRepeatableAssetRowButtons(container);
         });
-        processChartForm?.querySelectorAll('.pc-add-asset-row-btn').forEach((button) => {
+        document.querySelectorAll('.pc-add-asset-row-btn').forEach((button) => {
             button.addEventListener('click', () => {
                 const targetId = button.dataset.target || '';
                 const container = targetId ? document.getElementById(targetId) : null;
                 appendRepeatableAssetRow(container);
                 updateTotalAssetValuation();
+                saveTab7LocalDraft();
+                scheduleTab7AutoSave();
             });
         });
-        processChartForm?.querySelectorAll('.pc-fill-asset-owners-btn').forEach((button) => {
+        document.querySelectorAll('.pc-fill-asset-owners-btn').forEach((button) => {
             button.addEventListener('click', () => {
                 const targetId = button.dataset.target || '';
                 openJointSurveyNamesModal(currentProcessChartPrefill, { mode: 'asset', targetId });
@@ -6186,6 +6244,8 @@
                 const container = targetId ? document.getElementById(targetId) : null;
                 appendRepeatableAssetRow(container);
                 updateTotalAssetValuation();
+                saveTab7LocalDraft();
+                scheduleTab7AutoSave();
                 return;
             }
 
@@ -6200,9 +6260,7 @@
                 sanitizeIdentityField(event.target);
                 setIdentityFieldValidity(event.target);
             }
-            if (event.target instanceof HTMLInputElement && event.target.closest('[data-pc-panel="7"]')) {
-                saveTab7LocalDraft();
-            }
+            handleTab7FieldChanged(event);
             if (event.target instanceof HTMLInputElement && event.target.classList.contains('pc-asset-valuation-input')) {
                 updateTotalAssetValuation();
             }
@@ -6217,9 +6275,7 @@
             }
         });
         processChartForm?.addEventListener('change', (event) => {
-            if (event.target instanceof HTMLInputElement && event.target.closest('[data-pc-panel="7"]')) {
-                saveTab7LocalDraft();
-            }
+            handleTab7FieldChanged(event);
             if (event.target instanceof HTMLInputElement && event.target.classList.contains('pc-asset-valuation-input')) {
                 updateTotalAssetValuation();
             }
@@ -6242,6 +6298,8 @@
                 updateArbitrationRemainingCompensation();
             }
         });
+        document.addEventListener('input', handleTab7FieldChanged);
+        document.addEventListener('change', handleTab7FieldChanged);
         ['keyup', 'blur'].forEach((eventName) => {
             document.getElementById('pcCompensation2')?.addEventListener(eventName, () => {
                 requestAnimationFrame(() => updateCompensationFields(currentProcessChartPrefill));
@@ -6389,7 +6447,7 @@
         });
         addSingleKhataOwnerRowBtn?.addEventListener('click', () => appendSingleKhataOwnerRow());
         addMultiKhataOwnerRowBtn?.addEventListener('click', () => appendMultiKhataOwnerRow());
-        processChartForm?.querySelectorAll('[data-repeatable-asset-rows]').forEach((container) => {
+        document.querySelectorAll('[data-repeatable-asset-rows]').forEach((container) => {
             container.addEventListener('click', (event) => {
                 const addBtn = event.target.closest('.pc-inline-add-asset-row');
                 if (addBtn) {
@@ -6404,6 +6462,8 @@
                         row.remove();
                         syncRepeatableAssetRowButtons(container);
                         updateTotalAssetValuation();
+                        saveTab7LocalDraft();
+                        scheduleTab7AutoSave();
                     }
                 }
             });
