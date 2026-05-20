@@ -4243,6 +4243,43 @@ def get_process_chart_form_data(request):
     })
 
 
+def _has_process_chart_tab7_data(data):
+    if not isinstance(data, dict):
+        return False
+
+    tab7_prefixes = (
+        'water_supply_',
+        'agriculture_',
+        'construction_',
+        'forest_',
+        'other_department_',
+    )
+
+    ignored_keys = {'total_asset_valuation_amount', 'tab7_snapshot_json'}
+
+    def has_value(value):
+        if isinstance(value, dict):
+            return any(
+                has_value(item)
+                for nested_key, item in value.items()
+                if nested_key not in ignored_keys
+            )
+        if isinstance(value, list):
+            return any(has_value(item) for item in value)
+        return str(value or '').strip() != ''
+
+    for key, value in data.items():
+        if key in ignored_keys:
+            continue
+        if key == 'tab7_snapshot':
+            if has_value(value):
+                return True
+            continue
+        if key.startswith(tab7_prefixes) and has_value(value):
+            return True
+    return False
+
+
 @csrf_exempt
 @api_login_required
 @require_http_methods(["POST"])
@@ -4331,13 +4368,25 @@ def save_process_chart_form(request):
     step_no = payload.get('step_no')
     section_code = clean_optional_char(payload.get('section_code'))
     section_data = payload.get('data')
+    save_debug = {
+        'current_step_no': step_no,
+        'current_step_written': False,
+        'current_step_skipped_empty_tab7': False,
+        'step_rows_written': [],
+        'step_rows_skipped_empty_tab7': [],
+    }
     if step_no and section_code and isinstance(section_data, dict):
-        ProcessChartStepData.objects.update_or_create(
-            case=case,
-            step_no=int(step_no),
-            section_code=section_code,
-            defaults={'data': section_data},
-        )
+        normalized_step_no = int(step_no)
+        if normalized_step_no != 7 or _has_process_chart_tab7_data(section_data):
+            ProcessChartStepData.objects.update_or_create(
+                case=case,
+                step_no=normalized_step_no,
+                section_code=section_code,
+                defaults={'data': section_data},
+            )
+            save_debug['current_step_written'] = True
+        elif normalized_step_no == 7:
+            save_debug['current_step_skipped_empty_tab7'] = True
 
     rows = payload.get('step_rows')
     if isinstance(rows, list):
@@ -4348,12 +4397,17 @@ def save_process_chart_form(request):
             row_section_code = clean_optional_char(row.get('section_code'))
             row_data = row.get('data')
             if row_step_no and row_section_code and isinstance(row_data, dict):
+                normalized_row_step_no = int(row_step_no)
+                if normalized_row_step_no == 7 and not _has_process_chart_tab7_data(row_data):
+                    save_debug['step_rows_skipped_empty_tab7'].append(row_section_code)
+                    continue
                 ProcessChartStepData.objects.update_or_create(
                     case=case,
-                    step_no=int(row_step_no),
+                    step_no=normalized_row_step_no,
                     section_code=row_section_code,
                     defaults={'data': row_data},
                 )
+                save_debug['step_rows_written'].append(row_section_code)
 
     if int(step_no or 0) == 1 and section_code:
         step_one_data = section_data if isinstance(section_data, dict) else {}
@@ -4377,6 +4431,11 @@ def save_process_chart_form(request):
                     },
                 )
 
+    saved_step_data = {}
+    for row in case.step_data.all().order_by('step_no', 'id'):
+        saved_step_data[f"{row.step_no}:{row.section_code}"] = row.data
+        saved_step_data[row.section_code] = row.data
+
     return JsonResponse({
         'success': True,
         'case_id': case.id,
@@ -4384,6 +4443,8 @@ def save_process_chart_form(request):
         'message': 'Process chart submitted successfully.' if case.status == 'submitted' else 'Process chart draft saved successfully.',
         'documents': _serialize_process_chart_documents(case),
         'prefill': prefill,
+        'step_data': saved_step_data,
+        'save_debug': save_debug,
     })
 
 
