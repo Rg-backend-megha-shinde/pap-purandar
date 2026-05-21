@@ -3779,7 +3779,8 @@ def process_chart_form(request):
 
 @login_required
 def delete_process_chart_case(request, id):
-    case = get_object_or_404(ProcessChartCase, id=id, user=request.user)
+    # Allow any logged-in user to delete any case.
+    case = get_object_or_404(ProcessChartCase, id=id)
     case.delete()
     return redirect('process_chart_form')
 
@@ -5116,6 +5117,10 @@ def village_info(request):
                         gut_number = (row.get('gut_number') or '').strip()
                         other_gut = (row.get('other_gut') or '').strip()
                         notified_area = (row.get('notified_area') or '').strip()
+                        proposed_area = (
+                            (row.get('proposed_area') or row.get('proposal_area') or row.get('prastavit_area') or '')
+                            .strip()
+                        )
                         if gut_mode not in ('listed', 'other'):
                             gut_mode = 'other' if other_gut else 'listed'
                         cleaned_rows.append({
@@ -5123,6 +5128,8 @@ def village_info(request):
                             'gut_number': gut_number,
                             'other_gut': other_gut,
                             'notified_area': notified_area,
+                            # Keep proposed area separately (used by process chart proposal matching).
+                            'proposed_area': proposed_area,
                         })
                     cleaned_notified_rows.append({
                         'block_index': int(block_index) if str(block_index).isdigit() else 0,
@@ -5138,6 +5145,10 @@ def village_info(request):
                     gut_number = (row.get('gut_number') or '').strip()
                     other_gut = (row.get('other_gut') or '').strip()
                     notified_area = (row.get('notified_area') or '').strip()
+                    proposed_area = (
+                        (row.get('proposed_area') or row.get('proposal_area') or row.get('prastavit_area') or '')
+                        .strip()
+                    )
                     if gut_mode not in ('listed', 'other'):
                         gut_mode = 'other' if other_gut else 'listed'
                     cleaned_notified_rows.append({
@@ -5145,6 +5156,7 @@ def village_info(request):
                         'gut_number': gut_number,
                         'other_gut': other_gut,
                         'notified_area': notified_area,
+                        'proposed_area': proposed_area,
                     })
         village_data.notified_area_rows = cleaned_notified_rows
         total_notified_area = Decimal('0')
