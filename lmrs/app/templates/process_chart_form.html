@@ -2150,12 +2150,17 @@
 
             const dateInputs = processChartForm.querySelectorAll('input[type="date"], input[placeholder="dd-mm-yyyy"], input[placeholder="mm/dd/yyyy"], input[placeholder="Select Date"], input[placeholder="दिनांक निवडा"]');
             dateInputs.forEach((field) => {
+                const wasReadonly = field.hasAttribute('readonly') || field.readOnly;
                 if (field.type !== 'date') {
                     field.type = 'date';
                 }
                 field.classList.add('pc-date-input');
-                field.readOnly = false;
-                field.removeAttribute('readonly');
+                // Keep true read-only prefilled fields read-only so saved empty values
+                // from old cases don't wipe them, and users don't edit locked fields.
+                if (!wasReadonly) {
+                    field.readOnly = false;
+                    field.removeAttribute('readonly');
+                }
                 field.max = todayIsoDate;
                 if (field.value) {
                     field.value = normalizeDateInputValue(field.value);
@@ -2905,6 +2910,29 @@
             requestAnimationFrame(normalizeLandAreaSummaryFromVisibleValues);
             window.setTimeout(normalizeLandAreaSummaryFromVisibleValues, 100);
         }
+
+        window.pcDebugLandAreaSummary = () => {
+            const landRecord = currentProcessChartPrefill?.land_record || null;
+            const cultivableField = document.getElementById('pcSummaryCultivableArea');
+            const potkharabaField = document.getElementById('pcSummaryPotkharabaArea');
+            const totalAreaField = document.getElementById('pcSummaryTotalArea');
+            const payload = {
+                land_record: landRecord,
+                ui: {
+                    cultivable: cultivableField?.value || '',
+                    potkharaba: potkharabaField?.value || '',
+                    total: totalAreaField?.value || '',
+                },
+                computed: {
+                    land_total_sqm: parseSevenTwelveAreaToSqm(landRecord?.total_area),
+                    land_potkharaba_sqm: parseSevenTwelveAreaToSqm(landRecord?.potkharaba),
+                    ui_total_sqm: parseSevenTwelveAreaToSqm(totalAreaField?.value),
+                    ui_potkharaba_sqm: parseSevenTwelveAreaToSqm(potkharabaField?.value),
+                },
+            };
+            console.log('Land area summary debug:', payload);
+            return payload;
+        };
 
         function escapeHtml(value) {
             return String(value ?? '')
@@ -5795,7 +5823,17 @@
 
             Object.entries(fieldMap).forEach(([id, value]) => {
                 const field = document.getElementById(id);
-                if (field && !field.value) {
+                if (!field) return;
+                const currentValue = String(field.value || '').trim();
+                const nextValue = String(value || '').trim();
+                if (!nextValue) return;
+                if (!currentValue) {
+                    applyFieldValue(field, value);
+                    return;
+                }
+                // If backend prefill changed (e.g., old case reopened after village-info update),
+                // prefer the latest village data for read-only fields.
+                if (field.hasAttribute('readonly')) {
                     applyFieldValue(field, value);
                 }
             });
@@ -6596,6 +6634,12 @@
 
         function applyFieldValue(field, value) {
             if (!field || field.type === 'file' || value === undefined || value === null) return;
+            const incomingText = typeof value === 'string' ? value : null;
+            // Don't wipe read-only prefilled fields with empty saved values from old cases.
+            if (field.hasAttribute('readonly')) {
+                const trimmedIncoming = incomingText !== null ? incomingText.trim() : String(value ?? '').trim();
+                if (!trimmedIncoming) return;
+            }
 
             if (field.type === 'radio') {
                 field.checked = field.value === String(value);
@@ -6733,6 +6777,13 @@
 
                 const caseData = result.case || {};
                 const prefill = result.prefill || {};
+                const prefillLand = prefill.land_record || {};
+                const locationSeed = {
+                    district: caseData.district || prefillLand.district || '',
+                    taluka: caseData.taluka || prefillLand.taluka || '',
+                    village: caseData.village || prefillLand.village || '',
+                    gut_number: caseData.gut_number || prefillLand.gut_number || '',
+                };
                 latestProcessChartStepData = result.step_data || {};
                 window.pcLatestStepData = latestProcessChartStepData;
                 window.pcRestoreTab7Draft = () => restoreTab7DataWithFallback(latestProcessChartStepData);
@@ -6757,20 +6808,20 @@
                 }
 
                 await loadProcessChartDistricts();
-                if (districtSelect && caseData.district) {
-                    districtSelect.value = caseData.district;
+                if (districtSelect && locationSeed.district) {
+                    districtSelect.value = locationSeed.district;
                 }
-                await populateProcessChartTalukas(caseData.district, caseData.taluka);
-                if (talukaSelect && caseData.taluka) {
-                    talukaSelect.value = caseData.taluka;
+                await populateProcessChartTalukas(locationSeed.district, locationSeed.taluka);
+                if (talukaSelect && locationSeed.taluka) {
+                    talukaSelect.value = locationSeed.taluka;
                 }
-                await populateProcessChartVillages(caseData.district, caseData.taluka);
-                if (villageSelect && caseData.village) {
-                    villageSelect.value = caseData.village;
+                await populateProcessChartVillages(locationSeed.district, locationSeed.taluka);
+                if (villageSelect && locationSeed.village) {
+                    villageSelect.value = locationSeed.village;
                 }
-                await loadProcessChartGuts(caseData.district, caseData.taluka, caseData.village);
-                if (gutSelect && caseData.gut_number) {
-                    gutSelect.value = caseData.gut_number;
+                await loadProcessChartGuts(locationSeed.district, locationSeed.taluka, locationSeed.village);
+                if (gutSelect && locationSeed.gut_number) {
+                    gutSelect.value = locationSeed.gut_number;
                     if (window.jQuery && window.jQuery.fn && window.jQuery.fn.select2) {
                         window.jQuery(gutSelect).trigger('change.select2');
                     }
