@@ -122,6 +122,20 @@
         display: none !important;
     }
 
+    /* Tab 9: consent yes/no toggle (CSS-only fallback so it works even if JS restore runs late). */
+    [data-pc-panel="9"]:has(input[name="consent_submitted"][value="no"]:checked) #pcConsentYesFields {
+        display: none !important;
+    }
+    [data-pc-panel="9"]:has(input[name="consent_submitted"][value="no"]:checked) #pcConsentNoFields {
+        display: block !important;
+    }
+    [data-pc-panel="9"]:has(input[name="consent_submitted"][value="yes"]:checked) #pcConsentYesFields {
+        display: grid !important;
+    }
+    [data-pc-panel="9"]:has(input[name="consent_submitted"][value="yes"]:checked) #pcConsentNoFields {
+        display: none !important;
+    }
+
     .pc-form-card {
         overflow: hidden;
         border: 1px solid #cfdceb;
@@ -1209,10 +1223,11 @@
                                             <label class="pc-label">नोटीस बजावण्याचा दिनांक</label>
                                             <input class="pc-input pc-date-input" name="section325_notice_date" type="date" placeholder="dd-mm-yyyy">
                                         </div>
-                                        <div>
-                                            <label class="pc-label">तामील प्रत</label>
-                                            <input class="pc-upload" type="file">
-                                        </div>
+	                                        <div>
+	                                            <label class="pc-label">तामील प्रत</label>
+	                                            <input class="pc-upload" name="section325_notice_file" type="file">
+	                                            <a class="mt-2 hidden text-xs font-semibold text-[#125fcb] underline" data-pc-doc-link-for="section325_notice_file" target="_blank" rel="noopener"></a>
+	                                        </div>
                                     </div>
                                     <div class="flex justify-end">
                                         
@@ -1398,27 +1413,50 @@
                                             Generate Notice
                                         </button>
                                     </div>
-                                    <div class="flex gap-4"><label><input type="radio" name="consent_submitted" value="yes"> होय</label><label><input type="radio" name="consent_submitted" value="no"> नाही</label></div>
+                                    <div class="flex gap-4">
+                                        <label><input type="radio" name="consent_submitted" value="yes" onclick="window.pcToggleConsentSubmittedFields && window.pcToggleConsentSubmittedFields()" onchange="window.pcToggleConsentSubmittedFields && window.pcToggleConsentSubmittedFields()"> होय</label>
+                                        <label><input type="radio" name="consent_submitted" value="no" onclick="window.pcToggleConsentSubmittedFields && window.pcToggleConsentSubmittedFields()" onchange="window.pcToggleConsentSubmittedFields && window.pcToggleConsentSubmittedFields()"> नाही</label>
+                                    </div>
                                 </div>
-                                <div class="grid gap-4 md:grid-cols-3">
+                                <div id="pcConsentYesFields" class="grid gap-4 md:grid-cols-3">
                                     <div><label class="pc-label">संमतीपत्र दाखल करणाऱ्याचे नाव</label><input class="pc-input" id="pcConsentApplicantName" name="consent_applicant_name" type="text"></div>
                                     <div><label class="pc-label">पत्ता</label><input class="pc-input" id="pcConsentApplicantAddress" name="consent_applicant_address" type="text"></div>
                                     <div><label class="pc-label">संमतीचा स्वरूप</label><input class="pc-input" id="pcConsentNature" name="consent_nature" type="text"></div>
                                     <div><label class="pc-label">संमती क्षेत्र</label><input class="pc-input" id="pcConsentArea" name="consent_area" type="text" placeholder="हेक्टर.आर."></div>
-                                    <div><label class="pc-label">संमती पत्र</label><input class="pc-upload" type="file"></div>
+                                    <div>
+                                        <label class="pc-label">संमती पत्र</label>
+                                        <input class="pc-upload" name="consent_letter_file" type="file">
+                                        <a class="mt-2 hidden text-xs font-semibold text-[#125fcb] underline" data-pc-doc-link-for="consent_letter_file" target="_blank" rel="noopener"></a>
+                                    </div>
                                     <div><label class="pc-label">संमतीचा निर्णय</label><select class="pc-input" id="pcConsentDecision" name="consent_decision"><option>स्वीकार</option><option>अस्वीकार</option></select></div>
-                                    <div><label class="pc-label">निर्णय पत्र</label><input class="pc-upload" type="file"></div>
+                                    <div>
+                                        <label class="pc-label">निर्णय पत्र</label>
+                                        <input class="pc-upload" name="consent_decision_file" type="file">
+                                        <a class="mt-2 hidden text-xs font-semibold text-[#125fcb] underline" data-pc-doc-link-for="consent_decision_file" target="_blank" rel="noopener"></a>
+                                    </div>
                                    
+                                </div>
+                                <div id="pcConsentNoFields" class="hidden mt-4">
+                                    <label class="pc-label">नसल्यास कारण नमूद करा</label>
+                                    <input class="pc-input" id="pcConsentNotSubmittedReason" name="consent_not_submitted_reason" type="text" placeholder="कारण नमूद करा">
                                 </div>
                                 
                             </div>
                             <div class="pc-section">
                                 <h3 class="mb-4 text-lg font-bold text-[#244271]">कलम ३२(५), ३३(२) व ३६(१) संपादनाचा करारनामा</h3>
                                 <div class="grid gap-4 md:grid-cols-2">
-                                    <div><label class="pc-label">संमती करारनामा क्रमांक</label><input class="pc-input" id="pcAgreementNumber" type="text"></div>
-                                    <div><label class="pc-label">करारनामा पत्र</label><input class="pc-upload" type="file"></div>
-                                    <div><label class="pc-label">करारनामा झाल्याचा दिनांक</label><input class="pc-input" id="pcAgreementDate" type="date"></div>
-                                    <div><label class="pc-label">करारनामा अपलोड करा</label><input class="pc-upload" type="file"></div>
+                                    <div><label class="pc-label">संमती करारनामा क्रमांक</label><input class="pc-input" id="pcAgreementNumber" name="agreement_number" type="text"></div>
+                                    <div>
+                                        <label class="pc-label">करारनामा पत्र</label>
+                                        <input class="pc-upload" name="agreement_letter_file" type="file">
+                                        <a class="mt-2 hidden text-xs font-semibold text-[#125fcb] underline" data-pc-doc-link-for="agreement_letter_file" target="_blank" rel="noopener"></a>
+                                    </div>
+                                    <div><label class="pc-label">करारनामा झाल्याचा दिनांक</label><input class="pc-input" id="pcAgreementDate" name="agreement_date" type="date"></div>
+                                    <div>
+                                        <label class="pc-label">करारनामा अपलोड करा</label>
+                                        <input class="pc-upload" name="agreement_upload_file" type="file">
+                                        <a class="mt-2 hidden text-xs font-semibold text-[#125fcb] underline" data-pc-doc-link-for="agreement_upload_file" target="_blank" rel="noopener"></a>
+                                    </div>
                                 </div>
                                 <div class="mt-4 flex flex-wrap justify-end gap-3">
                                     <button type="button" id="pcAgreementDraftViewBtn" class="hidden rounded-xl border border-[#ccdbef] bg-white px-4 py-2 text-sm font-semibold text-[#4a6488]">View Draft</button>
@@ -3642,6 +3680,12 @@
                 const fieldsByName = Array.from(scope.querySelectorAll(`[name="${CSS.escape(key)}"]`) || []);
                 const fieldsById = Array.from(scope.querySelectorAll(`#${CSS.escape(key)}`) || []);
                 const matchedFields = Array.from(new Set([...fieldsByName, ...fieldsById]));
+                // Debug helper: inspect which fields are being restored (tab 9 issues).
+                // Use in console: `window.pcRestoreMatches?.filter(x=>x.key.startsWith(\"consent\")||x.key.startsWith(\"agreement\"))`
+                window.pcRestoreMatches = window.pcRestoreMatches || [];
+                if (matchedFields.length) {
+                    window.pcRestoreMatches.push({ key, count: matchedFields.length, scopePanel: scope?.dataset?.pcPanel || null });
+                }
 
                 if (Array.isArray(value) && matchedFields.length > 1 && !matchedFields.some((field) => field.multiple)) {
                     matchedFields.forEach((field, index) => applyFieldValue(field, value[index] ?? ''));
@@ -3672,6 +3716,7 @@
             ]);
             restoreSavedRadioValues(stepData, 4, ['joint_done']);
             restoreSavedRadioValues(stepData, 5, ['group_in_clause_one_included']);
+            restoreSavedRadioValues(stepData, 9, ['consent_submitted']);
             restoreSavedRadioValues(stepData, 12, [
                 'possession_taken',
                 'possession_handed',
@@ -3685,6 +3730,7 @@
             togglePossessionHandedFields();
             toggleRecordUpdatedFields();
             toggleArbitrationFields();
+            toggleConsentSubmittedFields();
         }
 
         function restoreSavedCompensationInput(stepData = {}) {
@@ -5772,6 +5818,40 @@
             recordUpdatedNoFieldsApproval.classList.add('hidden');
         }
 
+        function toggleConsentSubmittedFields() {
+            const selectedValue = processChartForm?.querySelector('input[name="consent_submitted"]:checked')?.value || '';
+            const yesFields = document.getElementById('pcConsentYesFields');
+            const noFields = document.getElementById('pcConsentNoFields');
+            const reasonField = document.getElementById('pcConsentNotSubmittedReason');
+            if (!yesFields || !noFields) return;
+
+            if (selectedValue === 'yes') {
+                yesFields.classList.remove('hidden');
+                noFields.classList.add('hidden');
+                yesFields.style.removeProperty('display');
+                noFields.style.setProperty('display', 'none', 'important');
+                if (reasonField instanceof HTMLInputElement) {
+                    reasonField.value = '';
+                }
+                return;
+            }
+
+            if (selectedValue === 'no') {
+                yesFields.classList.add('hidden');
+                noFields.classList.remove('hidden');
+                yesFields.style.setProperty('display', 'none', 'important');
+                noFields.style.removeProperty('display');
+                return;
+            }
+
+            // nothing selected yet
+            yesFields.classList.remove('hidden');
+            noFields.classList.add('hidden');
+            yesFields.style.removeProperty('display');
+            noFields.style.setProperty('display', 'none', 'important');
+        }
+        window.pcToggleConsentSubmittedFields = toggleConsentSubmittedFields;
+
         function openOtherRightsModal(content) {
             if (!otherRightsModal || !otherRightsContent) return;
             otherRightsContent.textContent = content || 'माहिती उपलब्ध नाही.';
@@ -6534,7 +6614,9 @@
         }
 
         function getCurrentPanel() {
-            return panels.find((panel) => Number(panel.dataset.pcPanel) === currentStep) || null;
+            return panels.find((panel) => Number(panel.dataset.pcPanel) === currentStep)
+                || document.querySelector(`[data-pc-panel="${currentStep}"]`)
+                || null;
         }
 
         function serializeFieldValue(field) {
@@ -6580,6 +6662,17 @@
                 data[key] = serializedValue;
             });
 
+            // If somehow the panel is detached from the DOM, fall back to querying by current step.
+            if (!Object.keys(data).length) {
+                const stepNo = Number(panel.dataset.pcPanel || 0);
+                if (stepNo) {
+                    const livePanel = document.querySelector(`[data-pc-panel="${stepNo}"]`);
+                    if (livePanel && livePanel !== panel) {
+                        return collectPanelData(livePanel);
+                    }
+                }
+            }
+
             radioNames.forEach((name) => {
                 const checked = panel.querySelector(`input[name="${name}"]:checked`);
                 data[name] = checked ? checked.value : '';
@@ -6602,6 +6695,21 @@
             const targetPanel = panel || getProcessChartPanel(stepNo) || null;
             if (!targetPanel) return null;
             const data = collectPanelData(targetPanel);
+            // Avoid overwriting saved step_data with a completely empty payload for that step.
+            // This was causing tabs like 9 to lose previously-saved text fields when saving
+            // some other tab later (because step_rows included empty objects for all panels).
+            const hasAnyValue = (obj) => {
+                if (!obj || typeof obj !== 'object') return false;
+                return Object.values(obj).some((val) => {
+                    if (Array.isArray(val)) {
+                        return val.some((item) => String(item ?? '').trim());
+                    }
+                    if (val && typeof val === 'object') {
+                        return hasAnyValue(val);
+                    }
+                    return String(val ?? '').trim();
+                });
+            };
             if (stepNo === 7 && !hasTab7SnapshotData(data.tab7_snapshot)) {
                 const savedTab7Data = getSavedStepSectionData(latestProcessChartStepData, 7, 'step_7');
                 if (hasTab7AssetData(savedTab7Data) || hasTab7SnapshotData(savedTab7Data.tab7_snapshot)) {
@@ -6625,6 +6733,7 @@
                     return null;
                 }
             }
+            if (stepNo !== 7 && !hasAnyValue(data)) return null;
             return {
                 step_no: stepNo,
                 section_code: `step_${stepNo}`,
@@ -6635,6 +6744,12 @@
         function applyFieldValue(field, value) {
             if (!field || field.type === 'file' || value === undefined || value === null) return;
             const incomingText = typeof value === 'string' ? value : null;
+            // Don't overwrite non-empty inputs with empty saved values (common in old step_data).
+            // This is important for tabs like 9 where reopening was wiping fields back to blank.
+            const currentText = String(field.value || '');
+            if (incomingText !== null) {
+                if (!incomingText.trim() && currentText.trim()) return;
+            }
             // Don't wipe read-only prefilled fields with empty saved values from old cases.
             if (field.hasAttribute('readonly')) {
                 const trimmedIncoming = incomingText !== null ? incomingText.trim() : String(value ?? '').trim();
@@ -6752,6 +6867,13 @@
                 updateTotalAssetValuation();
                 updateAcquisitionDetailRowTotals();
             });
+            // Tab 9: apply once more scoped to the tab panel to avoid any mismatched selectors
+            // (and to avoid accidental overwrites from other sections).
+            const step9Panel = getProcessChartPanel(9) || document.querySelector('[data-pc-panel="9"]');
+            if (step9Panel) {
+                const step9Data = getSavedStepSectionData(stepData, 9, 'step_9');
+                applySectionDataFields(step9Data, step9Panel);
+            }
             restoreTab7DataWithFallback(stepData);
             renderStep10OwnerCards(currentProcessChartPrefill, stepData.step_10 || {});
             updateStep10AadhaarFromOwner(currentProcessChartPrefill);
@@ -6786,6 +6908,9 @@
                 };
                 latestProcessChartStepData = result.step_data || {};
                 window.pcLatestStepData = latestProcessChartStepData;
+                // Debug: on reopen, quickly inspect whether step_9 data is arriving from server.
+                // Use in console: `window.pcLoadedStep9`
+                window.pcLoadedStep9 = latestProcessChartStepData.step_9 || latestProcessChartStepData['9:step_9'] || null;
                 window.pcRestoreTab7Draft = () => restoreTab7DataWithFallback(latestProcessChartStepData);
                 window.pcForceRestoreTab7Draft = () => fetchAndForceRestoreTab7();
                 window.pcDebugTab7Restore = () => debugTab7Restore();
@@ -6883,34 +7008,44 @@
             const divisionField = processChartForm?.querySelector('[name="division"]');
             const projectPurposeField = processChartForm?.querySelector('[name="project_purpose"]');
             const acquisitionTypeField = processChartForm?.querySelector('[name="acquisition_type"]');
-            const panel = getCurrentPanel();
+            const panel = getCurrentPanel() || getProcessChartPanel(currentStep) || document.querySelector(`[data-pc-panel="${currentStep}"]`);
+            // Only include special-case rows that must be persisted even when not on that tab.
+            // Saving *every* other tab on each click was causing existing step data (like tab 9)
+            // to be overwritten by empty payloads in some cases.
             const stepRows = [];
-            let hasStep7Row = false;
-            panels.forEach((stepPanel) => {
-                const stepNo = Number(stepPanel.dataset.pcPanel || 0);
-                if (!stepNo || stepNo === currentStep) return;
-                const row = buildStepDataPayload(stepNo, stepPanel);
-                if (row) {
-                    if (stepNo === 7) hasStep7Row = true;
-                    stepRows.push(row);
-                }
-            });
-            const currentPanelData = currentStep === 7
+            let currentPanelData = currentStep === 7
                 ? (buildStepDataPayload(7, panel)?.data || collectPanelData(panel))
                 : collectPanelData(panel);
-            if (currentStep !== 7 && !hasStep7Row) {
+            if ((!currentPanelData || !Object.keys(currentPanelData).length) && currentStep) {
+                const livePanel = getProcessChartPanel(currentStep) || document.querySelector(`[data-pc-panel="${currentStep}"]`);
+                if (livePanel && livePanel !== panel) {
+                    currentPanelData = currentStep === 7
+                        ? (buildStepDataPayload(7, livePanel)?.data || collectPanelData(livePanel))
+                        : collectPanelData(livePanel);
+                }
+            }
+            if (currentStep !== 7) {
                 const tab7Panel = getProcessChartPanel(7);
                 const tab7Row = buildStepDataPayload(7, tab7Panel);
                 if (tab7Row) stepRows.push(tab7Row);
             }
 
+            const prefillLand = currentProcessChartPrefill?.land_record || {};
+            const districtValue = districtSelect?.value || prefillLand.district || '';
+            const talukaValue = talukaSelect?.value || prefillLand.taluka || '';
+            const villageValue = villageSelect?.value || prefillLand.village || '';
+            const gutValue = gutSelect?.value || prefillLand.gut_number || '';
+
+            // Debug: allow inspecting exactly what is being sent for a step.
+            window.pcLastBuiltPayload = { step: currentStep, section_code: `step_${currentStep}`, data: currentPanelData };
+
             return {
                 case_id: currentCaseId || undefined,
                 division: divisionField?.value || '',
-                district: districtSelect?.value || '',
-                taluka: talukaSelect?.value || '',
-                village: villageSelect?.value || '',
-                gut_number: gutSelect?.value || '',
+                district: districtValue,
+                taluka: talukaValue,
+                village: villageValue,
+                gut_number: gutValue,
                 project_purpose: projectPurposeField?.value || '',
                 acquisition_type: acquisitionTypeField?.value || '',
                 current_step: savedCurrentStep,
@@ -6938,17 +7073,77 @@
             console.log('Current 7/12 summary:', result);
             return result;
         };
+        window.pcDebugNotifiedArea = (sectionKey = '') => {
+            const rows = getNotifiedRowsForSection(currentProcessChartPrefill, sectionKey);
+            const result = getNotifiedAreaMatchResult(currentProcessChartPrefill, sectionKey);
+            console.log('Notified area debug:', { sectionKey, result, sample: rows.slice(0, 10) });
+            return { result, sample: rows.slice(0, 50) };
+        };
         window.pcSaveTab7Now = () => saveProcessChart('draft', 7);
 
         async function saveProcessChart(statusValue = 'draft', savedCurrentStep = currentStep) {
             if (isSavingProcessChart) return { success: false, error: 'Save already in progress.' };
 
-            const validationScope = statusValue === 'submitted' ? processChartForm : getCurrentPanel();
+            // Ensure currentStep is in sync with visible active panel (helps with rare stale-state issues).
+            const activePanel = document.querySelector('.pc-step-panel.is-active');
+            const activeStep = Number(activePanel?.dataset?.pcPanel || 0);
+            if (activeStep) currentStep = activeStep;
+
+            const validationScope = statusValue === 'submitted'
+                ? processChartForm
+                : (getCurrentPanel() || getProcessChartPanel(currentStep) || document.querySelector(`[data-pc-panel="${currentStep}"]`));
             if (!validateIdentityFields(validationScope)) {
                 return { success: false, error: 'Invalid Aadhaar, PAN, or mobile number.' };
             }
 
-            const payload = buildSavePayload(statusValue, savedCurrentStep);
+            // Debug helper: expose last save step + keys (useful for tabs like 9).
+            window.pcLastSaveDebug = { step: currentStep, panel: getCurrentPanel()?.dataset?.pcPanel || null };
+
+            let payload = buildSavePayload(statusValue, savedCurrentStep);
+            // Old cases may have blank selects even though prefill contains land_record location.
+            // Keep UI/payload consistent to avoid blocking tab switches.
+            if (payload.district && districtSelect && !districtSelect.value) districtSelect.value = payload.district;
+            if (payload.taluka && talukaSelect && !talukaSelect.value) talukaSelect.value = payload.taluka;
+            if (payload.village && villageSelect && !villageSelect.value) villageSelect.value = payload.village;
+            if (payload.gut_number && gutSelect && !gutSelect.value) {
+                gutSelect.value = payload.gut_number;
+                if (window.jQuery && window.jQuery.fn && window.jQuery.fn.select2) {
+                    window.jQuery(gutSelect).trigger('change.select2');
+                }
+            }
+            // If still missing, prefill may not be loaded yet (race). Hydrate once from case_id.
+            if ((!payload.district || !payload.taluka || !payload.village || !payload.gut_number) && currentCaseId) {
+                try {
+                    const response = await fetch(`/api/process-chart-form/data/?case_id=${encodeURIComponent(currentCaseId)}`);
+                    const result = await response.json();
+                    if (response.ok && result?.success) {
+                        const fetchedCase = result.case || {};
+                        const fetchedPrefill = result.prefill || {};
+                        currentProcessChartPrefill = fetchedPrefill || currentProcessChartPrefill || {};
+
+                        // Prefer explicit case location, fall back to prefill land_record.
+                        const fetchedLand = fetchedPrefill?.land_record || {};
+                        const seedDistrict = fetchedCase.district || fetchedLand.district || '';
+                        const seedTaluka = fetchedCase.taluka || fetchedLand.taluka || '';
+                        const seedVillage = fetchedCase.village || fetchedLand.village || '';
+                        const seedGut = fetchedCase.gut_number || fetchedLand.gut_number || '';
+
+                        if (seedDistrict && districtSelect && !districtSelect.value) districtSelect.value = seedDistrict;
+                        if (seedTaluka && talukaSelect && !talukaSelect.value) talukaSelect.value = seedTaluka;
+                        if (seedVillage && villageSelect && !villageSelect.value) villageSelect.value = seedVillage;
+                        if (seedGut && gutSelect && !gutSelect.value) {
+                            gutSelect.value = seedGut;
+                            if (window.jQuery && window.jQuery.fn && window.jQuery.fn.select2) {
+                                window.jQuery(gutSelect).trigger('change.select2');
+                            }
+                        }
+
+                        payload = buildSavePayload(statusValue, savedCurrentStep);
+                    }
+                } catch (error) {
+                    // ignore, fall through to validation alert
+                }
+            }
             if (!payload.district || !payload.taluka || !payload.village || !payload.gut_number) {
                 alert('जिल्हा, तालुका, गाव आणि गट / सर्वे क्रमांक निवडणे आवश्यक आहे.');
                 return { success: false, error: 'Missing required location fields.' };
@@ -6988,6 +7183,7 @@
                     body: formData,
                 });
                 const result = await response.json();
+                window.pcLastSaveResult = result;
                 if (!response.ok || !result.success) {
                     throw new Error(result.error || 'Unable to save process chart.');
                 }
@@ -7059,6 +7255,9 @@
             }
             if (currentStep === 12) {
                 syncArbitrationFieldsFromStep10();
+            }
+            if (currentStep === 9) {
+                toggleConsentSubmittedFields();
             }
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
@@ -7150,6 +7349,20 @@
         processChartForm?.querySelectorAll('input[name="proposal_included"]').forEach((radio) => {
             radio.addEventListener('change', () => toggleProposalFields());
         });
+        processChartForm?.querySelectorAll('input[name="consent_submitted"]').forEach((radio) => {
+            radio.addEventListener('change', () => toggleConsentSubmittedFields());
+            radio.addEventListener('click', () => toggleConsentSubmittedFields());
+        });
+        // Capture-phase listeners so the toggle still works even if radios are restored late or
+        // event bubbling is interrupted.
+        const consentToggleHandler = (event) => {
+            const target = event.target;
+            if (target instanceof HTMLInputElement && target.name === 'consent_submitted') {
+                toggleConsentSubmittedFields();
+            }
+        };
+        document.addEventListener('change', consentToggleHandler, true);
+        document.addEventListener('click', consentToggleHandler, true);
         processChartForm?.querySelectorAll('input[name="group_in_clause_one_included"]').forEach((radio) => {
             radio.addEventListener('change', () => {
                 toggleGroupClauseFields();
@@ -7164,6 +7377,7 @@
             radio.addEventListener('change', () => toggleArbitrationFields());
         });
         toggleArbitrationFields();
+        toggleConsentSubmittedFields();
         document.querySelectorAll('[data-repeatable-asset-rows]').forEach((container) => {
             ensureRepeatableAssetRows(container, 1);
             syncRepeatableAssetRowButtons(container);
@@ -7241,6 +7455,9 @@
             if (event.target instanceof HTMLInputElement && event.target.name === 'proposal_included') {
                 toggleProposalFields();
                 forceToggleProposalQuestionBlock();
+            }
+            if (event.target instanceof HTMLInputElement && event.target.name === 'consent_submitted') {
+                toggleConsentSubmittedFields();
             }
             if (event.target instanceof HTMLInputElement && event.target.classList.contains('pc-step10-owner-name')) {
                 updateStep10AadhaarFromOwner(currentProcessChartPrefill);
