@@ -3670,9 +3670,41 @@ def village_info_form(request):
     return render(request, 'village_info.html', {'active_tab': 'village-info', 'show_form': True})
 
 
+def _append_unique_process_chart_owner_name(names, seen, value):
+    for name in split_holder_names(value):
+        key = normalize_match_text(name)
+        if key and key not in seen:
+            seen.add(key)
+            names.append(name)
+
+
+def _process_chart_case_owner_names(case):
+    names = []
+    seen = set()
+
+    step_one = next((item for item in case.step_data.all() if item.step_no == 1), None)
+    step_one_data = step_one.data if step_one and isinstance(step_one.data, dict) else {}
+    saved_owner_names = step_one_data.get('owner_info_owner_name')
+    if not isinstance(saved_owner_names, list):
+        saved_owner_names = [saved_owner_names] if saved_owner_names else []
+    for owner_name in saved_owner_names:
+        _append_unique_process_chart_owner_name(names, seen, owner_name)
+
+    if not names:
+        prefill = _build_process_chart_prefill(case.district, case.taluka, case.village, case.gut_number)
+        for row in prefill.get('owner_rows') or []:
+            _append_unique_process_chart_owner_name(names, seen, row.get('owner_name'))
+        for farmer in prefill.get('farmers') or []:
+            _append_unique_process_chart_owner_name(names, seen, farmer.get('farmer_name') or farmer.get('owner_name'))
+        land_record = prefill.get('land_record') or {}
+        _append_unique_process_chart_owner_name(names, seen, land_record.get('holder_name'))
+
+    return ', '.join(names)
+
+
 @login_required
 def process_chart_list(request):
-    cases = ProcessChartCase.objects.all().order_by('-updated_at', '-id')
+    cases = ProcessChartCase.objects.select_related('user').prefetch_related('step_data').all().order_by('-updated_at', '-id')
     for case in cases:
         district_mr = get_marathi_name('district', case.district) if case.district else ''
         taluka_mr = get_marathi_name('taluka', case.district, case.taluka) if case.district and case.taluka else ''
@@ -3680,6 +3712,7 @@ def process_chart_list(request):
         case.district_mr = district_mr or case.district
         case.taluka_mr = taluka_mr or case.taluka
         case.village_mr = village_mr or case.village
+        case.owner_names_mr = _process_chart_case_owner_names(case)
     return render(request, 'process_chart_list.html', {
         'active_tab': 'process-chart',
         'cases': cases,
@@ -3838,34 +3871,36 @@ def _get_matching_land_records_for_process_chart(district, taluka, village, gut_
 def _serialize_owner_rows_for_process_chart(land_records):
     rows = []
     for land_record in land_records:
-        khata_area = land_record.khata_area or ''
+        cultivable_area = _combined_cultivable_area(land_record) or land_record.total_area or land_record.khata_area or ''
         potkharaba = land_record.potkharaba or ''
         total_area = land_record.total_area or ''
         farmers = list(land_record.farmers.all().order_by('id'))
         if farmers:
-            for farmer in farmers:
+            for index, farmer in enumerate(farmers):
+                show_area = index == 0
                 rows.append({
                     'source_land_record_id': land_record.id,
                     'owner_name': farmer.farmer_name or '',
-                    'cultivable_area': khata_area,
-                    'potkharaba': farmer.potkharaba or potkharaba,
-                    'total_area': total_area,
+                    'cultivable_area': (farmer.total_area or cultivable_area) if show_area else '',
+                    'potkharaba': (farmer.potkharaba or potkharaba) if show_area else '',
+                    'total_area': total_area if show_area else '',
                     'khata_number': land_record.khata_number or '',
-                    'aakarni': land_record.aakarni or '',
+                    'aakarni': (land_record.aakarni or '') if show_area else '',
                     'other_rights': land_record.kul_khand_other_rights or '',
                 })
             continue
 
         names = split_holder_names(land_record.holder_name)
-        for name in (names or ['']):
+        for index, name in enumerate(names or ['']):
+            show_area = index == 0
             rows.append({
                 'source_land_record_id': land_record.id,
                 'owner_name': name,
-                'cultivable_area': khata_area,
-                'potkharaba': potkharaba,
-                'total_area': total_area,
+                'cultivable_area': cultivable_area if show_area else '',
+                'potkharaba': potkharaba if show_area else '',
+                'total_area': total_area if show_area else '',
                 'khata_number': land_record.khata_number or '',
-                'aakarni': land_record.aakarni or '',
+                'aakarni': (land_record.aakarni or '') if show_area else '',
                 'other_rights': land_record.kul_khand_other_rights or '',
             })
 
@@ -3983,6 +4018,42 @@ def _serialize_village_data_for_process_chart(village_data):
     if sec3_rows and sec3_rows[0].get('files'):
         files_map['sec3_files'] = sec3_rows[0]['files']
 
+    sec21_file_maps = {}
+    for key, files in files_map.items():
+        match = re.match(r'^sec21_row_(\d+)_(prastaav|karyavrutant)$', key or '')
+        if not match:
+            continue
+        row_index = int(match.group(1))
+        bucket = match.group(2)
+        sec21_file_maps.setdefault(row_index, {'prastaav_files': [], 'karyavrutant_files': []})
+        sec21_file_maps[row_index][f'{bucket}_files'] = files
+
+    sec21_rows = []
+    for index, row in enumerate(village_data.sec21_rows or []):
+        row_payload = row.copy() if isinstance(row, dict) else {}
+        existing_files = row_payload.get('files') if isinstance(row_payload.get('files'), dict) else {}
+        sec21_rows.append({
+            'prastaav': row_payload.get('prastaav') or '',
+            'prastaav_date': row_payload.get('prastaav_date') or '',
+            'karyavrutant': row_payload.get('karyavrutant') or '',
+            'karyavrutant_date': row_payload.get('karyavrutant_date') or '',
+            'files': {
+                'prastaav_files': sec21_file_maps.get(index, {}).get('prastaav_files', existing_files.get('prastaav_files') or []),
+                'karyavrutant_files': sec21_file_maps.get(index, {}).get('karyavrutant_files', existing_files.get('karyavrutant_files') or []),
+            },
+        })
+    if not sec21_rows:
+        sec21_rows = [{
+            'prastaav': village_data.sec21_prastaav or '',
+            'prastaav_date': village_data.sec21_prastaav_date.isoformat() if village_data.sec21_prastaav_date else '',
+            'karyavrutant': village_data.sec21_karyavrutant or '',
+            'karyavrutant_date': village_data.sec21_karyavrutant_date.isoformat() if village_data.sec21_karyavrutant_date else '',
+            'files': {
+                'prastaav_files': files_map.get('sec21_prastaav_files', []),
+                'karyavrutant_files': files_map.get('sec21_karyavrutant_files', []),
+            },
+        }]
+
     approved_map = {
         item.rr_rate_id: float(item.approved_rate) if item.approved_rate is not None else None
         for item in village_data.sec15_rates.select_related('rr_rate').all()
@@ -4036,6 +4107,7 @@ def _serialize_village_data_for_process_chart(village_data):
         'sec3_rows': sec3_rows,
         'sec4_rows': sec4_rows,
         'sec8_rows': sec8_rows,
+        'sec21_rows': sec21_rows,
         'sec15_rows': sec15_rows,
     }
 
@@ -4430,6 +4502,25 @@ def save_process_chart_form(request):
                         'remarks': str(_owner_name or '').strip(),
                     },
                 )
+
+    if step_no and section_code:
+        for field_key in request.FILES:
+            if field_key.startswith('owner_info_aadhaar_file_') or field_key.startswith('owner_info_pan_file_'):
+                continue
+            uploaded_files = request.FILES.getlist(field_key)
+            if not uploaded_files:
+                continue
+            uploaded_file = uploaded_files[-1]
+            ProcessChartDocument.objects.update_or_create(
+                case=case,
+                step_no=int(step_no),
+                section_code=section_code,
+                document_type=field_key,
+                defaults={
+                    'file': uploaded_file,
+                    'remarks': '',
+                },
+            )
 
     saved_step_data = {}
     for row in case.step_data.all().order_by('step_no', 'id'):
