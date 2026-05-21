@@ -86,6 +86,42 @@
         display: block;
     }
 
+    #pcNoticePublicationAreaWrap,
+    #pcProposalAreaWrap,
+    #pcGroupClauseAreaWrap {
+        display: block;
+    }
+
+    #pcNoticePublicationReasonWrap,
+    #pcProposalReasonWrap,
+    #pcGroupClauseReasonWrap {
+        display: none;
+    }
+
+    .pc-question-grid:has(input[name="notice_publication_included"][value="no"]:checked) #pcNoticePublicationAreaWrap,
+    .pc-question-grid:has(input[name="proposal_included"][value="no"]:checked) #pcProposalAreaWrap,
+    .pc-question-grid:has(input[name="group_in_clause_one_included"][value="no"]:checked) #pcGroupClauseAreaWrap {
+        display: none !important;
+    }
+
+    .pc-question-grid:has(input[name="notice_publication_included"][value="no"]:checked) #pcNoticePublicationReasonWrap,
+    .pc-question-grid:has(input[name="proposal_included"][value="no"]:checked) #pcProposalReasonWrap,
+    .pc-question-grid:has(input[name="group_in_clause_one_included"][value="no"]:checked) #pcGroupClauseReasonWrap {
+        display: block !important;
+    }
+
+    .pc-question-grid:has(input[name="notice_publication_included"][value="yes"]:checked) #pcNoticePublicationAreaWrap,
+    .pc-question-grid:has(input[name="proposal_included"][value="yes"]:checked) #pcProposalAreaWrap,
+    .pc-question-grid:has(input[name="group_in_clause_one_included"][value="yes"]:checked) #pcGroupClauseAreaWrap {
+        display: block !important;
+    }
+
+    .pc-question-grid:has(input[name="notice_publication_included"][value="yes"]:checked) #pcNoticePublicationReasonWrap,
+    .pc-question-grid:has(input[name="proposal_included"][value="yes"]:checked) #pcProposalReasonWrap,
+    .pc-question-grid:has(input[name="group_in_clause_one_included"][value="yes"]:checked) #pcGroupClauseReasonWrap {
+        display: none !important;
+    }
+
     .pc-form-card {
         overflow: hidden;
         border: 1px solid #cfdceb;
@@ -441,8 +477,24 @@
                             <div class="pc-section">
                                 <h3 class="mb-4 text-lg font-bold text-[#244271]">आवश्यक जमिनीचा तपशील</h3>
                                 <div class="grid gap-4 md:grid-cols-3">
-                                    <div><label class="pc-label">जमीन प्रकार</label><select class="pc-input"><option>खाजगी</option><option>सरकारी</option><option>वनविभाग</option><option>इतर विभाग</option></select></div>
-                                    <div><label class="pc-label">भोगवटदार वर्ग</label><select class="pc-input"><option>वर्ग 1</option><option>वर्ग 2</option></select></div>
+                                    <div>
+                                        <label class="pc-label">जमीन प्रकार</label>
+                                        <select class="pc-input" id="pcLandOwnershipType" name="land_ownership_type">
+                                            <option value="">जमीन प्रकार निवडा</option>
+                                            <option value="खाजगी">खाजगी</option>
+                                            <option value="सरकारी">सरकारी</option>
+                                            <option value="वनविभाग">वनविभाग</option>
+                                            <option value="इतर विभाग">इतर विभाग</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="pc-label">भोगवटदार वर्ग</label>
+                                        <select class="pc-input" id="pcOccupancyClass" name="occupancy_class">
+                                            <option value="">भोगवटदार वर्ग निवडा</option>
+                                            <option value="वर्ग 1">वर्ग 1</option>
+                                            <option value="वर्ग 2">वर्ग 2</option>
+                                        </select>
+                                    </div>
                                     
                                     
                                 </div>
@@ -609,11 +661,12 @@
                                             </div>
                                             <div>
                                                 <label class="pc-label">अधिसूचना दिनांक</label>
-                                                <input class="pc-input pc-sec3-date" name="sec3_date" type="text" placeholder="dd-mm-yyyy">
+                                                <input class="pc-input pc-date-input pc-sec3-date" name="sec3_date" type="date" placeholder="dd-mm-yyyy">
                                             </div>
                                             <div>
                                                 <label class="pc-label">अधिसूचना/पत्र प्रत येथे अपलोड करा</label>
-                                                <input class="pc-input pc-sec3-files" type="file">
+                                                <input class="pc-input pc-sec3-files" name="sec3_files_0" type="file">
+                                                <a class="mt-2 hidden text-xs font-semibold text-[#125fcb] underline pc-sec3-file-link" target="_blank" rel="noopener"></a>
                                             </div>
                                             <div class="pc-eye-col">
                                                 <button type="button" class="pc-eye-view pc-sec3-row-files-view-btn" aria-label="View Documents" title="View Documents">
@@ -652,7 +705,7 @@
                                     </div>
                                     <div>
                                         <label class="pc-label">दिनांक</label>
-                                        <input class="pc-input" id="pcSec4Date" type="text" placeholder="Select Date">
+                                        <input class="pc-input pc-date-input" id="pcSec4Date" type="date" placeholder="Select Date">
                                     </div>
                                 </div>
                                 <div class="mt-4 flex items-center gap-3">
@@ -669,8 +722,8 @@
                                     <div class="pc-question-left">
                                         <span class="pc-label">अधिसूचनेमध्ये सर्वे क्रमांक किंवा गट क्रमांक समाविष्ट आहे का?</span>
                                         <div class="pc-question-radios">
-                                        <label><input type="radio" name="notice_publication_included" value="yes"> होय</label>
-                                        <label><input type="radio" name="notice_publication_included" value="no"> नाही</label>
+                                        <label><input type="radio" name="notice_publication_included" value="yes" onclick="window.pcForceToggleTab3Questions && window.pcForceToggleTab3Questions()" onchange="window.pcForceToggleTab3Questions && window.pcForceToggleTab3Questions()"> होय</label>
+                                        <label><input type="radio" name="notice_publication_included" value="no" onclick="window.pcForceToggleTab3Questions && window.pcForceToggleTab3Questions()" onchange="window.pcForceToggleTab3Questions && window.pcForceToggleTab3Questions()"> नाही</label>
                                         </div>
                                     </div>
                                     <div class="pc-question-right" id="pcNoticePublicationAreaWrap">
@@ -687,7 +740,7 @@
                                 <h3 class="mb-4 text-lg font-bold text-[#244271]">भूसंपादन प्रस्ताव तपशील</h3>
                                 <div class="grid gap-4 md:grid-cols-3 md:items-end">
                                     <div><label class="pc-label">प्रस्ताव पत्र क्रमांक</label><input class="pc-input" id="pcSec5PrastaavKramank" name="sec5_prastaav_kramank" type="text" placeholder="प्रस्ताव पत्र क्रमांक"></div>
-                                    <div><label class="pc-label">दिनांक</label><input class="pc-input" id="pcSec5Date" name="sec5_date" type="text" placeholder="dd-mm-yyyy"></div>
+                                    <div><label class="pc-label">दिनांक</label><input class="pc-input pc-date-input" id="pcSec5Date" name="sec5_date" type="date" placeholder="dd-mm-yyyy"></div>
                                     <div class="pc-eye-col">
                                         <button type="button" id="pcSec5FilesViewBtn" class="pc-eye-view" aria-label="View Documents" title="View Documents">
                                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
@@ -701,8 +754,8 @@
                                     <div class="pc-question-left">
                                         <span class="pc-label">भूसंपादन प्रस्तावामध्ये सर्वे क्रमांक किंवा गट क्रमांक समाविष्ट आहे का?</span>
                                         <div class="pc-question-radios">
-                                        <label><input type="radio" name="proposal_included" value="yes"> होय</label>
-                                        <label><input type="radio" name="proposal_included" value="no"> नाही</label>
+                                        <label><input type="radio" name="proposal_included" value="yes" onclick="window.pcForceToggleProposalQuestion && window.pcForceToggleProposalQuestion()" onchange="window.pcForceToggleProposalQuestion && window.pcForceToggleProposalQuestion()"> होय</label>
+                                        <label><input type="radio" name="proposal_included" value="no" onclick="window.pcForceToggleProposalQuestion && window.pcForceToggleProposalQuestion()" onchange="window.pcForceToggleProposalQuestion && window.pcForceToggleProposalQuestion()"> नाही</label>
                                         </div>
                                     </div>
                                     <div class="pc-question-right" id="pcProposalAreaWrap">
@@ -727,13 +780,14 @@
                                     <div>
                                         <div>
                                             <label class="pc-label">नोटीस बजावण्याचा दिनांक :</label>
-                                            <input class="pc-input mt-3" id="pcSection32NoticeDate" name="section32_notice_date" type="text" placeholder="dd-mm-yyyy">
+                                            <input class="pc-input pc-date-input mt-3" id="pcSection32NoticeDate" name="section32_notice_date" type="date" placeholder="dd-mm-yyyy">
                                         </div>
                                     </div>
                                     <div>
                                         <div>
                                             <label class="pc-label">नोटीस तामील प्रत :</label>
-                                            <input class="pc-upload mt-3" type="file">
+                                            <input class="pc-upload mt-3" name="section32_notice_file" type="file">
+                                            <a class="mt-2 hidden text-xs font-semibold text-[#125fcb] underline" data-pc-doc-link-for="section32_notice_file" target="_blank" rel="noopener"></a>
                                         </div>
                                     </div>
                                     <div class="flex justify-end">
@@ -750,10 +804,14 @@
                                     <div><label class="pc-label">पत्ता</label><input class="pc-input" name="objection_applicant_address" type="text"></div>
                                 </div>
                                 <div class="my-6 border-t border-[#cfdceb]"></div>
-                                <h4 class="mb-4 text-base font-bold text-[#244271]">आक्षेपाचा स्वरूप</h4>
+
                                 <div class="grid gap-4 md:grid-cols-2 md:items-end">
                                     <div><label class="pc-label">आक्षेपाचा स्वरूप</label><input class="pc-input" name="objection_nature" type="text"></div>
-                                    <div><label class="pc-label">पत्र येथे अपलोड करा (scanned copy)</label><input class="pc-upload" type="file"></div>
+                                    <div>
+                                        <label class="pc-label">पत्र येथे अपलोड करा (scanned copy)</label>
+                                        <input class="pc-upload" name="objection_letter_file" type="file">
+                                        <a class="mt-2 hidden text-xs font-semibold text-[#125fcb] underline" data-pc-doc-link-for="objection_letter_file" target="_blank" rel="noopener"></a>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -776,7 +834,8 @@
                                     </div>
                                     <div>
                                         <label class="pc-label">नोटीस तामील प्रत :</label>
-                                        <input class="pc-upload mt-3" type="file">
+                                        <input class="pc-upload mt-3" name="section323_notice_file" type="file">
+                                        <a class="mt-2 hidden text-xs font-semibold text-[#125fcb] underline" data-pc-doc-link-for="section323_notice_file" target="_blank" rel="noopener"></a>
                                     </div>
                                     <div class="flex justify-end">
                                         <button type="button" class="pc-generate-notice-btn pc-323-notice-generate-btn">Generate Notice</button>
@@ -791,11 +850,12 @@
                                         <div class="mt-5 space-y-5">
                                             <div>
                                                 <label class="pc-label">सादर दिनांक :</label>
-                                                <input class="pc-input pc-date-input mt-3" type="date" placeholder="dd-mm-yyyy">
+                                                <input class="pc-input pc-date-input mt-3" name="objection_report_date" type="date" placeholder="dd-mm-yyyy">
                                             </div>
                                             <div>
                                                 <label class="pc-label">प्रत अपलोड करा :</label>
-                                                <input class="pc-upload mt-3" type="file">
+                                                <input class="pc-upload mt-3" name="objection_report_file" type="file">
+                                                <a class="mt-2 hidden text-xs font-semibold text-[#125fcb] underline" data-pc-doc-link-for="objection_report_file" target="_blank" rel="noopener"></a>
                                             </div>
                                         </div>
                                     </div>
@@ -805,11 +865,12 @@
                                         <div class="mt-5 space-y-5">
                                             <div>
                                                 <label class="pc-label">दिनांक :</label>
-                                                <input class="pc-input pc-date-input mt-3" type="date" placeholder="dd-mm-yyyy">
+                                                <input class="pc-input pc-date-input mt-3" name="demarcation_date" type="date" placeholder="dd-mm-yyyy">
                                             </div>
                                             <div>
                                                 <label class="pc-label">प्रादेशिक अधिकारी यांचा सिमांकन दाखला अपलोड करा :</label>
-                                                <input class="pc-upload mt-3" type="file">
+                                                <input class="pc-upload mt-3" name="demarcation_certificate_file" type="file">
+                                                <a class="mt-2 hidden text-xs font-semibold text-[#125fcb] underline" data-pc-doc-link-for="demarcation_certificate_file" target="_blank" rel="noopener"></a>
                                             </div>
                                         </div>
                                     </div>
@@ -1100,7 +1161,7 @@
                                             </div>
                                             <div>
                                                 <label class="pc-label">दिनांक</label>
-                                                <input class="pc-input" id="pcSec8Date" type="text" placeholder="दिनांक निवडा">
+                                                <input class="pc-input pc-date-input" id="pcSec8Date" type="date" placeholder="दिनांक निवडा">
                                             </div>
                                            
                                             <div>
@@ -1123,8 +1184,8 @@
                                         <div class="pc-question-left">
                                             <span class="pc-label">अधिसूचनेमध्ये सर्वे क्रमांक किंवा गट क्रमांक समाविष्ट आहे का?</span>
                                             <div class="pc-question-radios">
-                                                <label><input type="radio" name="group_in_clause_one_included" value="yes"> होय</label>
-                                                <label><input type="radio" name="group_in_clause_one_included" value="no"> नाही</label>
+                                                <label><input type="radio" name="group_in_clause_one_included" value="yes" onclick="window.pcForceToggleGroupClauseQuestion && window.pcForceToggleGroupClauseQuestion()" onchange="window.pcForceToggleGroupClauseQuestion && window.pcForceToggleGroupClauseQuestion()"> होय</label>
+                                                <label><input type="radio" name="group_in_clause_one_included" value="no" onclick="window.pcForceToggleGroupClauseQuestion && window.pcForceToggleGroupClauseQuestion()" onchange="window.pcForceToggleGroupClauseQuestion && window.pcForceToggleGroupClauseQuestion()"> नाही</label>
                                             </div>
                                         </div>
                                         <div class="pc-question-right" id="pcGroupClauseAreaWrap">
@@ -1146,7 +1207,7 @@
                                     <div class="grid gap-4 md:grid-cols-[240px_minmax(320px,1fr)] md:items-end">
                                         <div>
                                             <label class="pc-label">नोटीस बजावण्याचा दिनांक</label>
-                                            <input class="pc-input" type="text" placeholder="dd-mm-yyyy">
+                                            <input class="pc-input pc-date-input" name="section325_notice_date" type="date" placeholder="dd-mm-yyyy">
                                         </div>
                                         <div>
                                             <label class="pc-label">तामील प्रत</label>
@@ -1261,10 +1322,7 @@
                                     </div>
                                     <div class="md:col-span-3">
                                         <label class="pc-label">मा. उच्च अधिकार समितीने मंजूर केलेल्या दराचे विवरण :</label>
-                                        <div class="flex flex-col gap-2 md:flex-row md:items-center">
-                                            <input class="pc-input pc-compact-input" id="pcSec14ApprovedRateDetails" type="text">
-                                            <span class="text-sm font-semibold text-[#44597a]">प्रति हेक्टर / आर</span>
-                                        </div>
+                                        <span class="text-sm font-semibold text-[#44597a]">प्रति हेक्टर / आर</span>
                                     </div>
                                 </div>
                                 <div class="mt-5 overflow-x-auto">
@@ -1290,27 +1348,7 @@
                             </div>
                             <div class="pc-section">
                                 <h3 class="mb-4 text-lg font-bold text-[#244271]">मूल्यांकन / मोबदला निश्चिती अहवाल</h3>
-                                <div class="grid gap-4 md:grid-cols-3">
-                                    <div><label class="pc-label">प्राधिकृत अधिकारी यांचा प्रस्ताव क्रमांक</label><input class="pc-input" type="text"></div>
-                                    <div><label class="pc-label">दिनांक</label><input class="pc-input" type="date"></div>
-                                    <div class="pc-eye-col">
-                                        <button type="button" class="pc-eye-view" aria-label="View Documents" title="View Documents">
-                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                                                <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"></path>
-                                                <circle cx="12" cy="12" r="3"></circle>
-                                            </svg>
-                                        </button>
-                                    </div>
-                                    <div><label class="pc-label">दिनांक</label><input class="pc-input" type="date"></div>
-                                    <div class="pc-eye-col">
-                                        <button type="button" class="pc-eye-view" aria-label="View Documents" title="View Documents">
-                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                                                <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"></path>
-                                                <circle cx="12" cy="12" r="3"></circle>
-                                            </svg>
-                                        </button>
-                                    </div>
-                                </div>
+                                <div id="pcSec21Rows" class="space-y-4"></div>
                             </div>
                         </div>
                     </div>
@@ -1420,9 +1458,13 @@
                             <div class="pc-section">
                                 <h3 class="mb-4 text-lg font-bold text-[#244271]">अधिनियमाचे कलम ३२(५), ३३(२) व ३६(१) अन्वये संपादनाचा निवाडा (संमती / विनासंमती)</h3>
                                 <div class="grid gap-4 md:grid-cols-3">
-                                    <div><label class="pc-label">निवाडा क्रमांक</label><input class="pc-input" type="text"></div>
-                                    <div><label class="pc-label">दिनांक</label><input class="pc-input" type="date"></div>
-                                    <div><label class="pc-label">निवाडा पत्र</label><input class="pc-upload" type="file"></div>
+                                    <div><label class="pc-label">निवाडा क्रमांक</label><input class="pc-input" name="award_number" type="text"></div>
+                                    <div><label class="pc-label">दिनांक</label><input class="pc-input" name="award_date" type="date"></div>
+                                    <div>
+                                        <label class="pc-label">निवाडा पत्र</label>
+                                        <input class="pc-upload" name="award_file" type="file">
+                                        <a class="mt-2 hidden text-xs font-semibold text-[#125fcb] underline" data-pc-doc-link-for="award_file" target="_blank" rel="noopener"></a>
+                                    </div>
                                 </div>
                                 <div class="mt-4 flex justify-end">
                                     <button type="button" class="pc-generate-notice-btn">संपादनाचा निवाडा Generate करा.</button>
@@ -1431,9 +1473,13 @@
                             <div class="pc-section">
                                 <h3 class="mb-4 text-lg font-bold text-[#244271]">विनासंमतीचा मोबदला स्वीकारता ताबा सोडून देण्याबाबतची नोटीस</h3>
                                 <div class="grid gap-4 md:grid-cols-3">
-                                    <div><label class="pc-label">नोटीस क्रमांक :</label><input class="pc-input" type="text"></div>
-                                    <div><label class="pc-label">नोटीस तामील केल्याचा दिनांक :</label><input class="pc-input" type="date"></div>
-                                    <div><label class="pc-label">तामील प्रत अपलोड करा :</label><input class="pc-upload" type="file"></div>
+                                    <div><label class="pc-label">नोटीस क्रमांक :</label><input class="pc-input" name="forced_notice_number" type="text"></div>
+                                    <div><label class="pc-label">नोटीस तामील केल्याचा दिनांक :</label><input class="pc-input" name="forced_notice_served_date" type="date"></div>
+                                    <div>
+                                        <label class="pc-label">तामील प्रत अपलोड करा :</label>
+                                        <input class="pc-upload" name="forced_notice_served_file" type="file">
+                                        <a class="mt-2 hidden text-xs font-semibold text-[#125fcb] underline" data-pc-doc-link-for="forced_notice_served_file" target="_blank" rel="noopener"></a>
+                                    </div>
                                 </div>
                                 <div class="mt-4 flex justify-end">
                                     <button type="button" class="pc-generate-notice-btn">सक्तीची नोटीस निर्गमित करा</button>
@@ -1445,15 +1491,19 @@
                             <div class="pc-section">
                                 <h3 class="mb-4 text-lg font-bold text-[#244271]">मोबदला न्यायालयात जमा करणे</h3>
                                 <div class="grid gap-4 md:grid-cols-3">
-                                    <div><label class="pc-label">न्यायालयाचे नाव</label><input class="pc-input" type="text"></div>
-                                    <div><label class="pc-label">जिल्हा</label><input class="pc-input" type="text"></div>
-                                    <div><label class="pc-label">प्रकरण दाखल करणाऱ्याचे नाव</label><input class="pc-input" type="text"></div>
-                                    <div><label class="pc-label">एकूण मोबदला रक्कम</label><input class="pc-input" type="number" step="0.01"></div>
-                                    <div><label class="pc-label">एकूण प्राप्त क्षेत्र</label><input class="pc-input" type="text" placeholder="हेक्टर.आर."></div>
-                                    <div><label class="pc-label">प्रकरण क्रमांक</label><input class="pc-input" type="text"></div>
-                                    <div><label class="pc-label">दिनांक</label><input class="pc-input" type="date"></div>
-                                    <div><label class="pc-label">रक्कम भरलेली पावती</label><input class="pc-upload" type="file"></div>
-                                    <div><label class="pc-label">संबंधित विधिज्ञ बाब तपशील</label><input class="pc-input" type="text"></div>
+                                    <div><label class="pc-label">न्यायालयाचे नाव</label><input class="pc-input" name="court_name" type="text"></div>
+                                    <div><label class="pc-label">जिल्हा</label><input class="pc-input" name="court_district" type="text"></div>
+                                    <div><label class="pc-label">प्रकरण दाखल करणाऱ्याचे नाव</label><input class="pc-input" name="court_filing_person_name" type="text"></div>
+                                    <div><label class="pc-label">एकूण मोबदला रक्कम</label><input class="pc-input" name="court_total_compensation" type="number" step="0.01"></div>
+                                    <div><label class="pc-label">एकूण प्राप्त क्षेत्र</label><input class="pc-input" name="court_total_received_area" type="text" placeholder="हेक्टर.आर."></div>
+                                    <div><label class="pc-label">प्रकरण क्रमांक</label><input class="pc-input" name="court_case_number" type="text"></div>
+                                    <div><label class="pc-label">दिनांक</label><input class="pc-input" name="court_deposit_date" type="date"></div>
+                                    <div>
+                                        <label class="pc-label">रक्कम भरलेली पावती</label>
+                                        <input class="pc-upload" name="court_payment_receipt_file" type="file">
+                                        <a class="mt-2 hidden text-xs font-semibold text-[#125fcb] underline" data-pc-doc-link-for="court_payment_receipt_file" target="_blank" rel="noopener"></a>
+                                    </div>
+                                    <div><label class="pc-label">संबंधित विधिज्ञ बाब तपशील</label><input class="pc-input" name="court_legal_matter_detail" type="text"></div>
                                 </div>
                             </div>
                         </div>
@@ -1470,15 +1520,23 @@
                             <div class="pc-section">
                                 <h3 class="mb-4 text-lg font-bold text-[#244271]">संपादित जमिनीचा ताबा घेण्याबाबत नोटीस</h3>
                                 <div class="grid gap-4 md:grid-cols-3">
-                                    <div><label class="pc-label">नोटीस बजावण्यात आलेल्या भूधारकाचे नाव</label><input class="pc-input" type="text"></div>
-                                    <div><label class="pc-label">नोटीस क्रमांक</label><input class="pc-input" type="text"></div>
-                                    <div><label class="pc-label">दिनांक</label><input class="pc-input" type="date"></div>
-                                    <div><label class="pc-label">नोटीस पत्र</label><input class="pc-upload" type="file"></div>
-                                    <div><label class="pc-label">कार्यालयाचे नाव</label><input class="pc-input" type="text"></div>
-                                    <div><label class="pc-label">कार्यालय पत्र</label><input class="pc-upload" type="file"></div>
+                                    <div><label class="pc-label">नोटीस बजावण्यात आलेल्या भूधारकाचे नाव</label><input class="pc-input" name="possession_notice_owner_name" type="text"></div>
+                                    <div><label class="pc-label">नोटीस क्रमांक</label><input class="pc-input" name="possession_notice_number" type="text"></div>
+                                    <div><label class="pc-label">दिनांक</label><input class="pc-input" name="possession_notice_date" type="date"></div>
+                                    <div>
+                                        <label class="pc-label">नोटीस पत्र</label>
+                                        <input class="pc-upload" name="possession_notice_file" type="file">
+                                        <a class="mt-2 hidden text-xs font-semibold text-[#125fcb] underline" data-pc-doc-link-for="possession_notice_file" target="_blank" rel="noopener"></a>
+                                    </div>
+                                    <div><label class="pc-label">कार्यालयाचे नाव</label><input class="pc-input" name="possession_office_name" type="text"></div>
+                                    <div>
+                                        <label class="pc-label">कार्यालय पत्र</label>
+                                        <input class="pc-upload" name="possession_office_letter_file" type="file">
+                                        <a class="mt-2 hidden text-xs font-semibold text-[#125fcb] underline" data-pc-doc-link-for="possession_office_letter_file" target="_blank" rel="noopener"></a>
+                                    </div>
                                     <div class="md:col-span-3">
                                         <span class="pc-label">सक्षम प्राधिकारी संपादित जमिनीचा ताबा घेण्यात आला आहे का?</span>
-                                        <div class="flex gap-4"><label><input type="radio" name="possession_taken"> होय</label><label><input type="radio" name="possession_taken"> नाही</label></div>
+                                        <div class="flex gap-4"><label><input type="radio" name="possession_taken" value="yes"> होय</label><label><input type="radio" name="possession_taken" value="no"> नाही</label></div>
                                     </div>
                                 </div>
                             </div>
@@ -1496,7 +1554,11 @@
                                             <div><label class="pc-label">क्षेत्र</label><input class="pc-input" name="possession_handed_area" type="text" placeholder="हेक्टर.आर."></div>
                                             <div><label class="pc-label">ताबा पावती क्रमांक</label><input class="pc-input" name="possession_handed_receipt_number" type="text"></div>
                                             <div><label class="pc-label">दिनांक</label><input class="pc-input" name="possession_handed_date" type="date"></div>
-                                            <div><label class="pc-label">ताबा पावती</label><input class="pc-upload" name="possession_handed_receipt_file" type="file"></div>
+                                            <div>
+                                                <label class="pc-label">ताबा पावती</label>
+                                                <input class="pc-upload" name="possession_handed_receipt_file" type="file">
+                                                <a class="mt-2 hidden text-xs font-semibold text-[#125fcb] underline" data-pc-doc-link-for="possession_handed_receipt_file" target="_blank" rel="noopener"></a>
+                                            </div>
                                         </div>
                                     </div>
                                     <div id="pcPossessionHandedReasonWrap" class="md:col-span-5 hidden">
@@ -1515,13 +1577,17 @@
                                     </div>
                                     <div class="md:col-span-2 hidden" id="recordUpdatedYesFields">
                                         <div class="grid gap-4 md:grid-cols-3">
-                                            <div><label class="pc-label">फेरफार नोंद दिनांक</label><input class="pc-input" type="date"></div>
-                                            <div><label class="pc-label">क्षेत्र</label><input class="pc-input" type="text" placeholder="हेक्टर.आर."></div>
-                                            <div><label class="pc-label">7/12 अपलोड करा</label><input class="pc-upload" type="file"></div>
+                                            <div><label class="pc-label">फेरफार नोंद दिनांक</label><input class="pc-input" name="record_updated_mutation_date" type="date"></div>
+                                            <div><label class="pc-label">क्षेत्र</label><input class="pc-input" name="record_updated_area" type="text" placeholder="हेक्टर.आर."></div>
+                                            <div>
+                                                <label class="pc-label">7/12 अपलोड करा</label>
+                                                <input class="pc-upload" name="record_updated_712_file" type="file">
+                                                <a class="mt-2 hidden text-xs font-semibold text-[#125fcb] underline" data-pc-doc-link-for="record_updated_712_file" target="_blank" rel="noopener"></a>
+                                            </div>
                                         </div>
                                     </div>
-                                    <div class="hidden" id="recordUpdatedNoFields"><label class="pc-label">नोंद दाखल न घेण्याचे कारण</label><input class="pc-input" type="text"></div>
-                                    <div class="hidden" id="recordUpdatedNoFieldsApproval"><label class="pc-label">नोंद मंजूर न होण्याचे कारण</label><input class="pc-input" type="text"></div>
+                                    <div class="hidden" id="recordUpdatedNoFields"><label class="pc-label">नोंद दाखल न घेण्याचे कारण</label><input class="pc-input" name="record_updated_rejection_reason" type="text"></div>
+                                    <div class="hidden" id="recordUpdatedNoFieldsApproval"><label class="pc-label">नोंद मंजूर न होण्याचे कारण</label><input class="pc-input" name="record_updated_approval_reason" type="text"></div>
                                 </div>
                             </div>
 
@@ -1617,12 +1683,10 @@
             <button type="button" id="closePcJointSurveyNamesModalBtn" class="text-gray-500 hover:text-gray-700 text-lg leading-none">&times;</button>
         </div>
         <div class="px-4 py-4 max-h-[70vh] overflow-y-auto space-y-5">
-            <div>
-                <h4 class="mb-2 text-sm font-semibold text-[#244271]">एकच नाव असलेले खाते क्रमांक</h4>
+            <div id="pcJointSurveySingleNamesSection">
                 <div id="pcJointSurveySingleNamesList" class="space-y-2"></div>
             </div>
-            <div>
-                <h4 class="mb-2 text-sm font-semibold text-[#244271]">एकाहून अधिक नावे असलेले खाते क्रमांक</h4>
+            <div id="pcJointSurveyMultiNamesSection">
                 <div id="pcJointSurveyMultiNamesList" class="space-y-3"></div>
             </div>
         </div>
@@ -1911,7 +1975,7 @@
         }
 
         function normalizeDateInputValue(value) {
-            const raw = String(value || '').trim();
+            const raw = String(value || '').trim().replace(/\s*([-/\.])\s*/g, '$1');
             if (!raw) return '';
 
             let match = raw.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
@@ -1922,7 +1986,13 @@
 
             match = raw.match(/^(\d{1,2})[-/.](\d{1,2})[-/.](\d{2,4})$/);
             if (match) {
-                const [, day, month, year] = match;
+                let [, first, second, year] = match;
+                let day = first;
+                let month = second;
+                if (Number(second) > 12 && Number(first) <= 12) {
+                    month = first;
+                    day = second;
+                }
                 return `${year.padStart(4, '0')}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
             }
 
@@ -1956,11 +2026,7 @@
             if (!selectedGut || !Array.isArray(rows)) return null;
             return rows.find((row) => {
                 const gutValue = normalizeGutMatchValue(row?.gut_number || row?.other_gut || '');
-                return gutValue && (
-                    gutValue === selectedGut
-                    || gutValue.includes(selectedGut)
-                    || selectedGut.includes(gutValue)
-                );
+                return gutValue && gutValue === selectedGut;
             }) || null;
         }
 
@@ -1975,9 +2041,37 @@
             return matchedRow || sec8Rows[0] || null;
         }
 
+        function flattenNotifiedAreaBlocks(blocks = []) {
+            if (!Array.isArray(blocks)) return [];
+            return blocks.flatMap((block) => {
+                if (!block) return [];
+                if (Array.isArray(block.rows)) return block.rows;
+                return [block];
+            });
+        }
+
+        function getAllVillageNotifiedRows(villageDataPayload = {}, prefill = currentProcessChartPrefill) {
+            return [
+                ...flattenNotifiedAreaBlocks(villageDataPayload.notified_area_rows),
+                ...flattenNotifiedAreaBlocks(villageDataPayload.data?.notified_area_rows),
+                ...flattenNotifiedAreaBlocks(prefill?.notified_area_rows),
+                ...((Array.isArray(villageDataPayload.sec4_rows) ? villageDataPayload.sec4_rows : [])
+                    .flatMap((row) => Array.isArray(row?.notified_rows) ? row.notified_rows : [])),
+                ...((Array.isArray(villageDataPayload.sec8_rows) ? villageDataPayload.sec8_rows : [])
+                    .flatMap((row) => Array.isArray(row?.notified_rows) ? row.notified_rows : [])),
+            ];
+        }
+
         function getNotifiedRowsForSection(prefill = currentProcessChartPrefill, sectionKey = '') {
-            const villageDataPayload = prefill?.village_data || {};
-            const notifiedAreaBlocks = Array.isArray(villageDataPayload.notified_area_rows) ? villageDataPayload.notified_area_rows : [];
+            const villageDataPayload = prefill?.village_data || prefill || {};
+            const notifiedAreaBlocks = [
+                ...(Array.isArray(villageDataPayload.notified_area_rows) ? villageDataPayload.notified_area_rows : []),
+                ...(Array.isArray(villageDataPayload.data?.notified_area_rows) ? villageDataPayload.data.notified_area_rows : []),
+                ...(Array.isArray(prefill?.notified_area_rows) ? prefill.notified_area_rows : []),
+            ];
+            const rowsForSectionKey = (key) => notifiedAreaBlocks
+                .filter((block) => String(block?.section_key || '').trim() === key)
+                .flatMap((block) => Array.isArray(block?.rows) ? block.rows : []);
 
             if (sectionKey === 'survey_notification') {
                 const surveyNotificationBlock = notifiedAreaBlocks.find((block) => Number(block?.block_index) === 0);
@@ -1985,13 +2079,17 @@
             }
 
             if (sectionKey === 'notice') {
-                const firstSec4Row = Array.isArray(villageDataPayload.sec4_rows) ? villageDataPayload.sec4_rows[0] : null;
-                return Array.isArray(firstSec4Row?.notified_rows) ? firstSec4Row.notified_rows : [];
+                return (Array.isArray(villageDataPayload.sec4_rows) ? villageDataPayload.sec4_rows : [])
+                    .flatMap((row) => Array.isArray(row?.notified_rows) ? row.notified_rows : []);
             }
 
             if (sectionKey === 'clause_one') {
+                const sectionSixRows = rowsForSectionKey('section_6');
+                if (sectionSixRows.length) return sectionSixRows;
                 const matchedSec8Row = getMatchingSec8Row(villageDataPayload);
-                return Array.isArray(matchedSec8Row?.notified_rows) ? matchedSec8Row.notified_rows : [];
+                const sec8Rows = Array.isArray(matchedSec8Row?.notified_rows) ? matchedSec8Row.notified_rows : [];
+                if (sec8Rows.length) return sec8Rows;
+                return getAllVillageNotifiedRows(villageDataPayload, prefill);
             }
 
             if (sectionKey === 'proposal') {
@@ -2005,23 +2103,30 @@
 
         function getNotifiedAreaMatchResult(prefill = currentProcessChartPrefill, sectionKey = '') {
             const selectedGut = normalizeGutMatchValue(gutSelect?.value || '');
-            const rowsToSearch = getNotifiedRowsForSection(prefill, sectionKey);
+            let rowsToSearch = getNotifiedRowsForSection(prefill, sectionKey);
             let matchedNotifiedArea = '';
 
             rowsToSearch.forEach((row) => {
                 if (matchedNotifiedArea || !row) return;
                 const gutValue = normalizeGutMatchValue(row.gut_number || row.other_gut || '');
-                if (selectedGut && gutValue && (
-                    gutValue === selectedGut
-                    || gutValue.includes(selectedGut)
-                    || selectedGut.includes(gutValue)
-                )) {
-                    matchedNotifiedArea = String(row.notified_area || '').trim();
+                if (selectedGut && gutValue && gutValue === selectedGut) {
+                    matchedNotifiedArea = String(row.notified_area || row.proposed_area || row.area || '').trim();
                 }
             });
+            if (!matchedNotifiedArea && sectionKey === 'clause_one') {
+                const villageDataPayload = prefill?.village_data || prefill || {};
+                rowsToSearch = getAllVillageNotifiedRows(villageDataPayload, prefill);
+                rowsToSearch.forEach((row) => {
+                    if (matchedNotifiedArea || !row) return;
+                    const gutValue = normalizeGutMatchValue(row.gut_number || row.other_gut || '');
+                    if (selectedGut && gutValue && gutValue === selectedGut) {
+                        matchedNotifiedArea = String(row.notified_area || row.proposed_area || row.area || '').trim();
+                    }
+                });
+            }
 
             const fallbackNotifiedArea = rowsToSearch
-                .map((row) => String(row?.notified_area || '').trim())
+                .map((row) => String(row?.notified_area || row?.proposed_area || row?.area || '').trim())
                 .find(Boolean) || '';
 
             return {
@@ -2184,8 +2289,14 @@
             ];
             return keys.reduce((maxCount, key) => {
                 const value = sectionData[key];
-                return Array.isArray(value) ? Math.max(maxCount, value.length) : maxCount;
+                return Array.isArray(value) ? Math.max(maxCount, value.length) : (String(value || '').trim() ? Math.max(maxCount, 1) : maxCount);
             }, 0);
+        }
+
+        function getStep10SavedValue(sectionData = {}, key = '', index = 0) {
+            const value = sectionData[key];
+            if (Array.isArray(value)) return value[index] || '';
+            return index === 0 ? (value || '') : '';
         }
 
         function renderStep10OwnerCards(prefill = currentProcessChartPrefill, sectionData = {}) {
@@ -2206,18 +2317,19 @@
                 </datalist>
             `;
             const cards = Array.from({ length: cardCount }, (_, index) => ({
-                step10_owner_name: Array.isArray(sectionData.step10_owner_name) ? (sectionData.step10_owner_name[index] || '') : (index === 0 ? (sectionData.step10_owner_name || '') : ''),
-                step10_aadhaar_number: Array.isArray(sectionData.step10_aadhaar_number) ? (sectionData.step10_aadhaar_number[index] || '') : '',
-                step10_bank_name: Array.isArray(sectionData.step10_bank_name) ? (sectionData.step10_bank_name[index] || '') : '',
-                step10_bank_account_number: Array.isArray(sectionData.step10_bank_account_number) ? (sectionData.step10_bank_account_number[index] || '') : '',
-                step10_bank_branch: Array.isArray(sectionData.step10_bank_branch) ? (sectionData.step10_bank_branch[index] || '') : '',
-                step10_ifsc_code: Array.isArray(sectionData.step10_ifsc_code) ? (sectionData.step10_ifsc_code[index] || '') : '',
-                step10_acquisition_area: Array.isArray(sectionData.step10_acquisition_area) ? (sectionData.step10_acquisition_area[index] || '') : '',
-                step10_compensation_amount: Array.isArray(sectionData.step10_compensation_amount) ? (sectionData.step10_compensation_amount[index] || '') : '',
-                step10_compensation_date: Array.isArray(sectionData.step10_compensation_date) ? (sectionData.step10_compensation_date[index] || '') : '',
-                step10_utr_number: Array.isArray(sectionData.step10_utr_number) ? (sectionData.step10_utr_number[index] || '') : '',
+                step10_owner_name: getStep10SavedValue(sectionData, 'step10_owner_name', index),
+                step10_aadhaar_number: getStep10SavedValue(sectionData, 'step10_aadhaar_number', index),
+                step10_bank_name: getStep10SavedValue(sectionData, 'step10_bank_name', index),
+                step10_bank_account_number: getStep10SavedValue(sectionData, 'step10_bank_account_number', index),
+                step10_bank_branch: getStep10SavedValue(sectionData, 'step10_bank_branch', index),
+                step10_ifsc_code: getStep10SavedValue(sectionData, 'step10_ifsc_code', index),
+                step10_acquisition_area: getStep10SavedValue(sectionData, 'step10_acquisition_area', index),
+                step10_compensation_amount: getStep10SavedValue(sectionData, 'step10_compensation_amount', index),
+                step10_compensation_date: getStep10SavedValue(sectionData, 'step10_compensation_date', index),
+                step10_utr_number: getStep10SavedValue(sectionData, 'step10_utr_number', index),
             }));
             step10OwnerCardsContainer.innerHTML = `${suggestionsMarkup}${cards.map((values, index) => buildStep10OwnerCard(index, ownerNames, values)).join('')}`;
+            renderProcessChartDocumentLinks();
         }
 
         function normalizeOwnerLookupName(value = '') {
@@ -2409,7 +2521,10 @@
                 if (upvibhagField instanceof HTMLInputElement) upvibhagField.id = index === 0 ? 'pcSec3UpvibhagName' : '';
                 if (refField instanceof HTMLInputElement) refField.id = index === 0 ? 'pcSec3AdhisuchanaKramank' : '';
                 if (dateField instanceof HTMLInputElement) dateField.id = index === 0 ? 'pcSec3Date' : '';
-                if (filesField instanceof HTMLInputElement) filesField.id = index === 0 ? 'pcSec3Files' : '';
+                if (filesField instanceof HTMLInputElement) {
+                    filesField.id = index === 0 ? 'pcSec3Files' : '';
+                    filesField.name = `sec3_files_${index}`;
+                }
                 if (viewBtn instanceof HTMLButtonElement) {
                     viewBtn.dataset.rowIndex = String(index);
                     if (index === 0) {
@@ -2419,6 +2534,69 @@
                     }
                 }
             });
+            updateSec3RowDocumentLinks();
+        }
+
+        function updateSec3RowDocumentLinks(documents = currentProcessChartDocuments) {
+            if (!sec3RowsContainer) return;
+            sec3RowsContainer.querySelectorAll('.pc-sec3-row-card').forEach((row, index) => {
+                const link = row.querySelector('.pc-sec3-file-link');
+                if (!(link instanceof HTMLAnchorElement)) return;
+                const doc = documents?.[`sec3_files_${index}`] || null;
+                if (!doc?.url) {
+                    link.classList.add('hidden');
+                    link.removeAttribute('href');
+                    link.textContent = '';
+                    return;
+                }
+                link.href = doc.url;
+                link.textContent = doc.name || 'अपलोड केलेली प्रत';
+                link.classList.remove('hidden');
+            });
+        }
+
+        function hasSavedSec3Rows(stepData = latestProcessChartStepData) {
+            const sectionData = getSavedStepSectionData(stepData, 2, 'step_2');
+            if (!sectionData || typeof sectionData !== 'object') return false;
+            return ['sec3_upvibhag_name', 'sec3_adhisuchana_kramank', 'sec3_officer_name', 'sec3_address', 'sec3_date'].some((key) => {
+                const value = sectionData[key];
+                if (Array.isArray(value)) {
+                    return value.some((item) => String(item ?? '').trim());
+                }
+                return String(value ?? '').trim();
+            });
+        }
+
+        function hasSavedSec21Rows(stepData = latestProcessChartStepData) {
+            const sectionData = getSavedStepSectionData(stepData, 6, 'step_6');
+            if (!sectionData || typeof sectionData !== 'object') return false;
+            return ['sec21_prastaav', 'sec21_prastaav_date', 'sec21_karyavrutant', 'sec21_karyavrutant_date'].some((key) => {
+                const value = sectionData[key];
+                if (Array.isArray(value)) {
+                    return value.some((item) => String(item ?? '').trim());
+                }
+                return String(value ?? '').trim();
+            });
+        }
+
+        function hasFilledSec21Values(sectionData = {}) {
+            if (!sectionData || typeof sectionData !== 'object') return false;
+            return ['sec21_prastaav', 'sec21_prastaav_date', 'sec21_karyavrutant', 'sec21_karyavrutant_date'].some((key) => {
+                const value = sectionData[key];
+                if (Array.isArray(value)) {
+                    return value.some((item) => String(item ?? '').trim());
+                }
+                return String(value ?? '').trim();
+            });
+        }
+
+        function withoutBlankSec21Values(sectionData = {}) {
+            if (hasFilledSec21Values(sectionData)) return sectionData;
+            const cleaned = { ...sectionData };
+            ['sec21_prastaav', 'sec21_prastaav_date', 'sec21_karyavrutant', 'sec21_karyavrutant_date'].forEach((key) => {
+                delete cleaned[key];
+            });
+            return cleaned;
         }
 
         function buildSec3Row(values = {}) {
@@ -2463,6 +2641,20 @@
 
             if (rowCount > 1 && sec3RowsContainer.querySelectorAll('.pc-sec3-row-card').length !== rowCount) {
                 renderSec3Rows(Array.from({ length: rowCount }, () => ({})));
+            }
+        }
+
+        function ensureSec21RowsForData(sectionData = {}) {
+            const container = document.getElementById('pcSec21Rows');
+            if (!container || !sectionData || typeof sectionData !== 'object') return;
+            const repeatKeys = ['sec21_prastaav', 'sec21_prastaav_date', 'sec21_karyavrutant', 'sec21_karyavrutant_date'];
+            const rowCount = repeatKeys.reduce((maxCount, key) => {
+                const value = sectionData[key];
+                return Array.isArray(value) ? Math.max(maxCount, value.length) : maxCount;
+            }, 0);
+
+            if (rowCount > 0 && container.querySelectorAll('.pc-sec21-row').length !== rowCount) {
+                renderSec21Rows(Array.from({ length: rowCount }, () => ({})));
             }
         }
 
@@ -2625,6 +2817,37 @@
             return raw;
         }
 
+        function parseSevenTwelveAreaToSqm(value) {
+            const raw = String(value ?? '').trim();
+            if (!raw || raw === '-' || raw.toLowerCase() === 'null' || raw.toLowerCase() === 'none') return 0;
+            const parts = raw.split(/[.\-]/).map((part) => Number.parseInt(part.replace(/\D/g, ''), 10) || 0);
+            const hectare = parts[0] || 0;
+            const aar = parts[1] || 0;
+            const sqm = parts[2] || 0;
+            return (hectare * 10000) + (aar * 100) + sqm;
+        }
+
+        function formatSevenTwelveAreaFromSqm(totalSqm) {
+            if (!Number.isFinite(totalSqm) || totalSqm <= 0) return '';
+            const hectare = Math.floor(totalSqm / 10000);
+            const remaining = totalSqm % 10000;
+            const aar = Math.floor(remaining / 100);
+            const sqm = remaining % 100;
+            return `${hectare}.${String(aar).padStart(2, '0')}.${String(sqm).padStart(2, '0')}`;
+        }
+
+        function getFullGutCultivableArea(landRecord = {}) {
+            const totalSqm = parseSevenTwelveAreaToSqm(landRecord.total_area);
+            const potkharabaSqm = parseSevenTwelveAreaToSqm(landRecord.potkharaba);
+            const cultivableFromTotal = formatSevenTwelveAreaFromSqm(Math.max(totalSqm - potkharabaSqm, 0));
+            if (cultivableFromTotal) return cultivableFromTotal;
+
+            const jirayitSqm = parseSevenTwelveAreaToSqm(landRecord.jirayit);
+            const bagayatSqm = parseSevenTwelveAreaToSqm(landRecord.bagayat);
+            const combined = formatSevenTwelveAreaFromSqm(jirayitSqm + bagayatSqm);
+            return combined || getExactSevenTwelveAreaValue(landRecord.total_area, '0.00.00');
+        }
+
         function populateLandAreaSummary(landRecord = null) {
             const cultivableField = document.getElementById('pcSummaryCultivableArea');
             const potkharabaField = document.getElementById('pcSummaryPotkharabaArea');
@@ -2638,15 +2861,49 @@
                 return;
             }
 
-            cultivableField.value = getExactSevenTwelveAreaValue(
-                landRecord.khata_area || landRecord.jirayit,
-                '0.00.00'
-            );
+            cultivableField.value = getFullGutCultivableArea(landRecord);
             potkharabaField.value = getExactSevenTwelveAreaValue(landRecord.potkharaba, '0.00.00');
             totalAreaField.value = getExactSevenTwelveAreaValue(
                 landRecord.total_area,
                 cultivableField.value || '0.00.00'
             );
+            const displayedTotalSqm = parseSevenTwelveAreaToSqm(totalAreaField.value);
+            const displayedPotkharabaSqm = parseSevenTwelveAreaToSqm(potkharabaField.value);
+            const cultivableFromDisplayedTotal = formatSevenTwelveAreaFromSqm(
+                Math.max(displayedTotalSqm - displayedPotkharabaSqm, 0)
+            );
+            if (
+                cultivableFromDisplayedTotal
+                && parseSevenTwelveAreaToSqm(cultivableFromDisplayedTotal) > parseSevenTwelveAreaToSqm(cultivableField.value)
+            ) {
+                cultivableField.value = cultivableFromDisplayedTotal;
+            }
+        }
+
+        function normalizeLandAreaSummaryFromVisibleValues() {
+            const cultivableField = document.getElementById('pcSummaryCultivableArea');
+            const potkharabaField = document.getElementById('pcSummaryPotkharabaArea');
+            const totalAreaField = document.getElementById('pcSummaryTotalArea');
+            if (!cultivableField || !potkharabaField || !totalAreaField) return null;
+
+            const totalSqm = parseSevenTwelveAreaToSqm(totalAreaField.value);
+            const potkharabaSqm = parseSevenTwelveAreaToSqm(potkharabaField.value);
+            const correctedCultivable = formatSevenTwelveAreaFromSqm(Math.max(totalSqm - potkharabaSqm, 0));
+            if (correctedCultivable) {
+                cultivableField.value = correctedCultivable;
+            }
+            return {
+                cultivable_area: cultivableField.value,
+                potkharaba: potkharabaField.value,
+                total_area: totalAreaField.value,
+                corrected_cultivable: correctedCultivable,
+            };
+        }
+
+        function scheduleLandAreaSummaryNormalize() {
+            normalizeLandAreaSummaryFromVisibleValues();
+            requestAnimationFrame(normalizeLandAreaSummaryFromVisibleValues);
+            window.setTimeout(normalizeLandAreaSummaryFromVisibleValues, 100);
         }
 
         function escapeHtml(value) {
@@ -2669,6 +2926,110 @@
             if (!selectEl) return '';
             const selectedOption = selectEl.selectedOptions?.[0];
             return selectedOption?.textContent?.trim() || selectEl.value?.trim() || '';
+        }
+
+        function renderProcessChartDocumentLinks(documents = currentProcessChartDocuments) {
+            document.querySelectorAll('[data-pc-doc-link-for]').forEach((link) => {
+                const key = link.getAttribute('data-pc-doc-link-for') || '';
+                const doc = documents?.[key] || null;
+                if (!doc?.url) {
+                    link.classList.add('hidden');
+                    link.removeAttribute('href');
+                    link.textContent = '';
+                    return;
+                }
+                link.href = doc.url;
+                link.textContent = doc.name || 'अपलोड केलेली प्रत';
+                link.classList.remove('hidden');
+            });
+            updateSec3RowDocumentLinks(documents);
+            updateSec21RowDocumentLinks(documents);
+        }
+
+        function normalizeSec21Rows(rows = []) {
+            return Array.isArray(rows) && rows.length ? rows : [{}];
+        }
+
+        function buildSec21SavedFilesHtml(files = [], savedDoc = null) {
+            const allFiles = [
+                ...(savedDoc?.url ? [savedDoc] : []),
+                ...(Array.isArray(files) ? files : []),
+            ].filter((file) => file?.url);
+            if (!allFiles.length) return '';
+            return `
+                <div class="mt-2 space-y-1 text-xs font-semibold text-[#125fcb]">
+                    ${allFiles.map((file) => `
+                        <a class="block underline" href="${escapeHtml(file.url)}" target="_blank" rel="noopener">${escapeHtml(file.name || 'अपलोड केलेली प्रत')}</a>
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        function buildSec21Row(row = {}, index = 0) {
+            const files = row.files && typeof row.files === 'object' ? row.files : {};
+            const savedPrastaavDoc = currentProcessChartDocuments[`sec21_row_${index}_prastaav`] || null;
+            const savedKaryavrutantDoc = currentProcessChartDocuments[`sec21_row_${index}_karyavrutant`] || null;
+            const prastaav = row.prastaav || row.sec21_prastaav || '';
+            const prastaavDate = row.prastaav_date || row.sec21_prastaav_date || '';
+            const karyavrutant = row.karyavrutant || row.sec21_karyavrutant || '';
+            const karyavrutantDate = row.karyavrutant_date || row.sec21_karyavrutant_date || '';
+            return `
+                <div class="pc-sec21-row rounded-xl border border-[#d7e5f6] bg-[#f8fbff] p-4" data-sec21-index="${index}">
+                    <div class="grid gap-4 md:grid-cols-3 md:items-end">
+                        <div>
+                            <label class="pc-label">प्राधिकृत अधिकारी यांचा प्रस्ताव क्रमांक</label>
+                            <input class="pc-input" name="sec21_prastaav" type="text" value="${escapeHtml(prastaav)}" placeholder="प्रस्ताव">
+                        </div>
+                        <div>
+                            <label class="pc-label">दिनांक</label>
+                            <input class="pc-input pc-date-input" name="sec21_prastaav_date" type="date" value="${escapeHtml(normalizeDateInputValue(prastaavDate))}">
+                        </div>
+                        <div>
+                            <label class="pc-label">अपलोड करा</label>
+                            <input class="pc-upload pc-sec21-file-input" name="sec21_row_${index}_prastaav" type="file">
+                            <div class="pc-sec21-prastaav-files">${buildSec21SavedFilesHtml(files.prastaav_files, savedPrastaavDoc)}</div>
+                        </div>
+                    </div>
+                    <div class="mt-4 grid gap-4 md:grid-cols-3 md:items-end">
+                        <div>
+                            <label class="pc-label">कार्यवृत्तांत</label>
+                            <input class="pc-input" name="sec21_karyavrutant" type="text" value="${escapeHtml(karyavrutant)}" placeholder="कार्यवृत्तांत">
+                        </div>
+                        <div>
+                            <label class="pc-label">दिनांक</label>
+                            <input class="pc-input pc-date-input" name="sec21_karyavrutant_date" type="date" value="${escapeHtml(normalizeDateInputValue(karyavrutantDate))}">
+                        </div>
+                        <div>
+                            <label class="pc-label">अपलोड करा</label>
+                            <input class="pc-upload pc-sec21-file-input" name="sec21_row_${index}_karyavrutant" type="file">
+                            <div class="pc-sec21-karyavrutant-files">${buildSec21SavedFilesHtml(files.karyavrutant_files, savedKaryavrutantDoc)}</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderSec21Rows(rows = []) {
+            const container = document.getElementById('pcSec21Rows');
+            if (!container) return;
+            container.innerHTML = normalizeSec21Rows(rows).map((row, index) => buildSec21Row(row || {}, index)).join('');
+        }
+
+        function updateSec21RowDocumentLinks(documents = currentProcessChartDocuments) {
+            const container = document.getElementById('pcSec21Rows');
+            if (!container) return;
+            container.querySelectorAll('.pc-sec21-row').forEach((rowEl, index) => {
+                const sourceRows = currentProcessChartPrefill?.village_data?.sec21_rows || [];
+                const sourceFiles = sourceRows[index]?.files || {};
+                const prastaavHost = rowEl.querySelector('.pc-sec21-prastaav-files');
+                const karyavrutantHost = rowEl.querySelector('.pc-sec21-karyavrutant-files');
+                if (prastaavHost) {
+                    prastaavHost.innerHTML = buildSec21SavedFilesHtml(sourceFiles.prastaav_files, documents?.[`sec21_row_${index}_prastaav`]);
+                }
+                if (karyavrutantHost) {
+                    karyavrutantHost.innerHTML = buildSec21SavedFilesHtml(sourceFiles.karyavrutant_files, documents?.[`sec21_row_${index}_karyavrutant`]);
+                }
+            });
         }
 
         function getDisplayValue(value, fallback = '________') {
@@ -3263,6 +3624,206 @@
             });
         }
 
+        function restoreSavedRadioValues(stepData = {}, stepNo, radioNames = []) {
+            const sectionData = getSavedStepSectionData(stepData, stepNo, `step_${stepNo}`);
+            if (!sectionData || typeof sectionData !== 'object') return;
+            radioNames.forEach((name) => {
+                if (!Object.prototype.hasOwnProperty.call(sectionData, name)) return;
+                const savedValue = String(sectionData[name] || '');
+                document.querySelectorAll(`input[type="radio"][name="${CSS.escape(name)}"]`).forEach((radio) => {
+                    radio.checked = radio.value === savedValue;
+                });
+            });
+        }
+
+        function restoreSavedProcessChartRadios(stepData = {}) {
+            restoreSavedRadioValues(stepData, 2, ['survey_in_notification']);
+            restoreSavedRadioValues(stepData, 3, [
+                'notice_publication_included',
+                'proposal_included',
+            ]);
+            restoreSavedRadioValues(stepData, 4, ['joint_done']);
+            restoreSavedRadioValues(stepData, 5, ['group_in_clause_one_included']);
+            restoreSavedRadioValues(stepData, 12, [
+                'possession_taken',
+                'possession_handed',
+                'record_updated',
+                'new_agreement_process',
+            ]);
+            toggleSurveyNotificationFields();
+            toggleNoticePublicationFields();
+            toggleProposalFields();
+            toggleGroupClauseFields();
+            togglePossessionHandedFields();
+            toggleRecordUpdatedFields();
+            toggleArbitrationFields();
+        }
+
+        function restoreSavedCompensationInput(stepData = {}) {
+            const sectionData = getSavedStepSectionData(stepData, 8, 'step_8');
+            if (!sectionData || typeof sectionData !== 'object') return;
+            const coefficientField = document.getElementById('pcCompensation2');
+            if (!coefficientField || !Object.prototype.hasOwnProperty.call(sectionData, 'pcCompensation2')) return;
+            coefficientField.value = sectionData.pcCompensation2 || '';
+            updateCompensationFields(currentProcessChartPrefill);
+        }
+
+        function restoreSavedTab4Dates(stepData = {}) {
+            const sectionData = getSavedStepSectionData(stepData, 4, 'step_4');
+            if (!sectionData || typeof sectionData !== 'object') return;
+            [
+                'section323_notice_date',
+                'objection_report_date',
+                'demarcation_date',
+                'pcSec6Date',
+            ].forEach((key) => {
+                if (!Object.prototype.hasOwnProperty.call(sectionData, key)) return;
+                const field = document.querySelector(`[name="${CSS.escape(key)}"], #${CSS.escape(key)}`);
+                if (field instanceof HTMLInputElement) {
+                    field.value = normalizeDateInputValue(sectionData[key]);
+                }
+            });
+        }
+
+        function restoreSavedTab3Fields(stepData = {}) {
+            const sectionData = getSavedStepSectionData(stepData, 3, 'step_3');
+            if (!sectionData || typeof sectionData !== 'object') return;
+            const noticeMatch = getNotifiedAreaMatchResult(currentProcessChartPrefill, 'notice');
+            const hasNoticeMatch = Boolean(noticeMatch.selectedGut && noticeMatch.matchedNotifiedArea);
+            const hasNoticeMiss = Boolean(noticeMatch.selectedGut && noticeMatch.hasRows && !noticeMatch.matchedNotifiedArea);
+            const savedNoticeValue = String(sectionData.notice_publication_included || '');
+
+            [
+                'notice_publication_included',
+                'proposal_included',
+            ].forEach((name) => {
+                if (name === 'notice_publication_included' && hasNoticeMatch && savedNoticeValue !== 'no') return;
+                if (!Object.prototype.hasOwnProperty.call(sectionData, name)) return;
+                const savedValue = String(sectionData[name] || '');
+                document.querySelectorAll(`input[type="radio"][name="${CSS.escape(name)}"]`).forEach((radio) => {
+                    radio.checked = radio.value === savedValue;
+                });
+            });
+
+            if (hasNoticeMatch) {
+                if (savedNoticeValue !== 'no') {
+                    document.querySelectorAll('input[type="radio"][name="notice_publication_included"]').forEach((radio) => {
+                        radio.checked = radio.value === 'yes';
+                    });
+                }
+            }
+
+            toggleNoticePublicationFields();
+            toggleProposalFields();
+
+            [
+                'pcSec4Date',
+                'sec5_date',
+                'section32_notice_date',
+            ].forEach((key) => {
+                if (!Object.prototype.hasOwnProperty.call(sectionData, key)) return;
+                const field = document.querySelector(`[name="${CSS.escape(key)}"], #${CSS.escape(key)}`);
+                if (field instanceof HTMLInputElement) {
+                    field.value = field.type === 'date' ? normalizeDateInputValue(sectionData[key]) : sectionData[key];
+                }
+            });
+
+            [
+                'section32_owner_name',
+                'objection_applicant_name',
+                'objection_applicant_address',
+                'objection_nature',
+            ].forEach((key) => {
+                if (!Object.prototype.hasOwnProperty.call(sectionData, key)) return;
+                const field = document.querySelector(`[name="${CSS.escape(key)}"], #${CSS.escape(key)}`);
+                if (field instanceof HTMLInputElement) {
+                    field.value = sectionData[key] || '';
+                }
+            });
+
+            [
+                'notice_publication_area',
+                'notice_publication_reason',
+                'proposal_area',
+                'proposal_reason',
+            ].forEach((key) => {
+                if ((hasNoticeMatch || hasNoticeMiss) && key === 'notice_publication_area') return;
+                if ((hasNoticeMatch || hasNoticeMiss) && key === 'notice_publication_reason' && savedNoticeValue !== 'no') return;
+                if (!Object.prototype.hasOwnProperty.call(sectionData, key)) return;
+                const field = document.querySelector(`[name="${CSS.escape(key)}"], #${CSS.escape(key)}`);
+                if (field instanceof HTMLInputElement) {
+                    field.value = sectionData[key] || '';
+                }
+            });
+        }
+
+        function restoreSavedTab12Fields(stepData = {}) {
+            const sectionData = getSavedStepSectionData(stepData, 12, 'step_12');
+            const tab12Panel = getProcessChartPanel(12);
+            if (!sectionData || typeof sectionData !== 'object' || !tab12Panel) return;
+
+            restoreSavedRadioValues(stepData, 12, [
+                'possession_taken',
+                'possession_handed',
+                'record_updated',
+                'new_agreement_process',
+            ]);
+            if (Object.keys(sectionData).some((key) => key.startsWith('arbitration_'))) {
+                renderArbitrationOwnerCards(sectionData);
+            }
+            applySectionDataFields(sectionData, tab12Panel);
+            togglePossessionHandedFields();
+            toggleRecordUpdatedFields();
+            toggleArbitrationFields();
+            applySectionDataFields(sectionData, tab12Panel);
+            renderProcessChartDocumentLinks();
+        }
+
+        function restoreSavedTab11Fields(stepData = {}) {
+            const sectionData = getSavedStepSectionData(stepData, 11, 'step_11');
+            const tab11Panel = getProcessChartPanel(11);
+            if (!sectionData || typeof sectionData !== 'object' || !tab11Panel) return;
+            applySectionDataFields(sectionData, tab11Panel);
+            renderProcessChartDocumentLinks();
+        }
+
+        function restoreSavedTab5Fields(stepData = {}) {
+            const sectionData = getSavedStepSectionData(stepData, 5, 'step_5');
+            if (!sectionData || typeof sectionData !== 'object') return;
+
+            if (Object.prototype.hasOwnProperty.call(sectionData, 'group_in_clause_one_included')) {
+                const savedValue = String(sectionData.group_in_clause_one_included || '');
+                document.querySelectorAll('input[type="radio"][name="group_in_clause_one_included"]').forEach((radio) => {
+                    radio.checked = radio.value === savedValue;
+                });
+            }
+
+            toggleGroupClauseFields(currentProcessChartPrefill);
+
+            [
+                'pcSec8Date',
+                'section325_notice_date',
+            ].forEach((key) => {
+                if (!Object.prototype.hasOwnProperty.call(sectionData, key)) return;
+                const field = document.querySelector(`[name="${CSS.escape(key)}"], #${CSS.escape(key)}`);
+                if (field instanceof HTMLInputElement) {
+                    field.value = normalizeDateInputValue(sectionData[key]);
+                }
+            });
+
+            [
+                'group_clause_area',
+                'group_clause_reason',
+            ].forEach((key) => {
+                if (!Object.prototype.hasOwnProperty.call(sectionData, key)) return;
+                const field = document.querySelector(`[name="${CSS.escape(key)}"], #${CSS.escape(key)}`);
+                if (field instanceof HTMLInputElement) {
+                    field.value = sectionData[key] || '';
+                }
+            });
+            window.setTimeout(() => toggleGroupClauseFields(currentProcessChartPrefill), 0);
+        }
+
         function restoreTab7Data(stepData = {}) {
             const tab7Data = stepData?.['7:step_7'] || getSavedStepSectionData(stepData, 7, 'step_7');
             if (forceRestoreTab7FlatData({ '7:step_7': tab7Data })) return true;
@@ -3584,6 +4145,30 @@
             return [row.source || '', row.rowIndex ?? '', row.owner_name || '', row.acquisition_area || ''].join('||');
         }
 
+        function getSelectedStep10OwnerRowKeysFromCards(tab4Rows = collectTab4AcquisitionOwnerRows()) {
+            const selectedNames = new Set(
+                getStep10OwnerCardValues()
+                    .map((row) => normalizeOwnerLookupName(row.owner_name || ''))
+                    .filter(Boolean)
+            );
+            if (!selectedNames.size) return [];
+            return tab4Rows
+                .filter((row) => selectedNames.has(normalizeOwnerLookupName(row.owner_name || '')))
+                .map((row) => buildArbitrationOwnerRowKey(row));
+        }
+
+        function getSelectedArbitrationOwnerRowKeysFromCards(sourceRows = collectArbitrationEligibleOwnerRows()) {
+            const selectedNames = new Set(
+                Array.from(arbitrationOwnerCardsContainer?.querySelectorAll('[name="arbitration_owner_name"]') || [])
+                    .map((field) => normalizeOwnerLookupName(field.value || ''))
+                    .filter(Boolean)
+            );
+            if (!selectedNames.size) return [];
+            return sourceRows
+                .filter((row) => selectedNames.has(normalizeOwnerLookupName(row.owner_name || '')))
+                .map((row) => buildArbitrationOwnerRowKey(row));
+        }
+
         function getSelectedJointSurveyKeys() {
             const field = getJointSurveySelectionField();
             if (!field) return [];
@@ -3644,8 +4229,16 @@
             const singleGroups = [];
             const multiGroups = [];
             groupedByKhata.forEach((rows, khataKey) => {
-                const filledNames = rows.filter((row) => String(row.owner_name || '').trim());
-                const targetRows = filledNames.length ? filledNames : rows;
+                const contactSource = rows.find((row) =>
+                    String(row.mobile_number || '').trim() || String(row.address || '').trim()
+                ) || {};
+                const hydratedRows = rows.map((row) => ({
+                    ...row,
+                    mobile_number: row.mobile_number || contactSource.mobile_number || '',
+                    address: row.address || contactSource.address || '',
+                }));
+                const filledNames = hydratedRows.filter((row) => String(row.owner_name || '').trim());
+                const targetRows = filledNames.length ? filledNames : hydratedRows;
                 if (targetRows.length <= 1) {
                     singleGroups.push({ khataKey, rows: targetRows });
                 } else {
@@ -3656,10 +4249,18 @@
             return { singleGroups, multiGroups };
         }
 
+        function setJointSurveyModalSectionMode(mode = 'default') {
+            const multiSection = document.getElementById('pcJointSurveyMultiNamesSection');
+            const isAssetOwnerMode = mode === 'asset';
+            const isPlainNamesMode = isAssetOwnerMode || mode === 'step10';
+            multiSection?.classList.toggle('hidden', isPlainNamesMode);
+        }
+
         function openJointSurveyNamesModal(prefill = currentProcessChartPrefill, options = {}) {
             if (!jointSurveyNamesModal || !jointSurveySingleNamesList || !jointSurveyMultiNamesList) return;
             currentJointSurveyApplyMode = options.mode || 'joint';
             currentAssetOwnerTargetId = options.targetId || '';
+            setJointSurveyModalSectionMode(currentJointSurveyApplyMode);
             if (currentJointSurveyApplyMode === 'asset') {
                 const rows = collectTab4AssetOwnerRows();
                 jointSurveySingleNamesList.innerHTML = rows.length
@@ -3680,7 +4281,8 @@
             }
             if (currentJointSurveyApplyMode === 'arbitration') {
                 const rows = collectArbitrationEligibleOwnerRows();
-                const selectedKeys = new Set(getSelectedArbitrationOwnerKeys());
+                const cardKeys = getSelectedArbitrationOwnerRowKeysFromCards(rows);
+                const selectedKeys = new Set(cardKeys.length ? cardKeys : getSelectedArbitrationOwnerKeys());
                 jointSurveySingleNamesList.innerHTML = rows.length
                     ? rows.map((row, index) => {
                         const rowKey = buildArbitrationOwnerRowKey(row);
@@ -3699,7 +4301,8 @@
             }
             if (currentJointSurveyApplyMode === 'step10') {
                 const rows = collectTab4AcquisitionOwnerRows();
-                const selectedKeys = new Set(currentStep10SelectedOwnerKeys);
+                const cardKeys = getSelectedStep10OwnerRowKeysFromCards(rows);
+                const selectedKeys = new Set(cardKeys.length ? cardKeys : currentStep10SelectedOwnerKeys);
                 jointSurveySingleNamesList.innerHTML = rows.length
                     ? rows.map((row, index) => {
                         const rowKey = buildArbitrationOwnerRowKey(row);
@@ -3711,7 +4314,7 @@
                         `;
                     }).join('')
                     : '<div class="rounded border border-dashed border-[#d6e3f5] px-3 py-3 text-sm text-[#6b7d99]">टॅब 4 मध्ये संपादन क्षेत्र भरलेली भूधारक नावे उपलब्ध नाहीत.</div>';
-                jointSurveyMultiNamesList.innerHTML = '<div class="rounded border border-dashed border-[#d6e3f5] px-3 py-3 text-sm text-[#6b7d99]">फक्त संयुक्त मोजणीमध्ये संपादन क्षेत्र भरलेल्या भूधारकांची नावे दाखवली आहेत.</div>';
+                jointSurveyMultiNamesList.innerHTML = '';
                 jointSurveyNamesModal.classList.remove('hidden');
                 document.body.style.overflow = 'hidden';
                 return;
@@ -3771,6 +4374,7 @@
             document.body.style.overflow = '';
             currentJointSurveyApplyMode = 'joint';
             currentAssetOwnerTargetId = '';
+            setJointSurveyModalSectionMode('default');
         }
 
         function populateAssetOwnerFieldFromSelection(prefill = currentProcessChartPrefill, targetId = '') {
@@ -3803,9 +4407,16 @@
             const { singleGroups, multiGroups } = groupJointSurveyRows(prefill);
             const tab4Rows = collectTab4AcquisitionOwnerRows();
             const checkboxes = Array.from(document.querySelectorAll('.pc-joint-survey-name-checkbox:checked'));
-            const selectedNames = [];
-            const selectedAreas = [];
+            const selectedRows = [];
             const selectedKeys = [];
+            const existingByOwner = new Map();
+
+            getStep10OwnerCardValues().forEach((values) => {
+                const ownerKey = normalizeOwnerLookupName(values.owner_name || '');
+                if (ownerKey && !existingByOwner.has(ownerKey)) {
+                    existingByOwner.set(ownerKey, values);
+                }
+            });
 
             checkboxes.forEach((checkbox) => {
                 const rowKey = checkbox.getAttribute('data-row-key') || '';
@@ -3820,16 +4431,39 @@
                         : multiGroups[groupIndex]?.rows?.[rowIndex];
                 const ownerName = String(row?.owner_name || '').trim();
                 if (ownerName) {
-                    selectedNames.push(ownerName);
-                    selectedAreas.push(row?.acquisition_area || '');
+                    selectedRows.push(row);
                 }
             });
 
             currentStep10SelectedOwnerKeys = Array.from(new Set(selectedKeys));
-            renderStep10OwnerCards(prefill, {
-                step10_owner_name: selectedNames,
-                step10_acquisition_area: selectedAreas,
+            const sectionData = {
+                step10_owner_name: [],
+                step10_aadhaar_number: [],
+                step10_bank_name: [],
+                step10_bank_account_number: [],
+                step10_bank_branch: [],
+                step10_ifsc_code: [],
+                step10_acquisition_area: [],
+                step10_compensation_amount: [],
+                step10_compensation_date: [],
+                step10_utr_number: [],
+            };
+
+            selectedRows.forEach((row) => {
+                const ownerName = String(row?.owner_name || '').trim();
+                const existing = existingByOwner.get(normalizeOwnerLookupName(ownerName)) || {};
+                sectionData.step10_owner_name.push(ownerName);
+                sectionData.step10_aadhaar_number.push(existing.aadhaar_number || '');
+                sectionData.step10_bank_name.push(existing.bank_name || '');
+                sectionData.step10_bank_account_number.push(existing.bank_account_number || '');
+                sectionData.step10_bank_branch.push(existing.bank_branch || '');
+                sectionData.step10_ifsc_code.push(existing.ifsc_code || '');
+                sectionData.step10_acquisition_area.push(row?.acquisition_area || existing.acquisition_area || '');
+                sectionData.step10_compensation_amount.push(existing.compensation_amount || '');
+                sectionData.step10_compensation_date.push(existing.compensation_date || '');
+                sectionData.step10_utr_number.push(existing.utr_number || '');
             });
+            renderStep10OwnerCards(prefill, sectionData);
             updateStep10AadhaarFromOwner(prefill);
             closeJointSurveyNamesModal();
         }
@@ -3839,6 +4473,34 @@
             const checkboxes = Array.from(document.querySelectorAll('.pc-joint-survey-name-checkbox:checked'));
             const selectedKeys = [];
             const selectedRows = [];
+            const currentData = collectPanelData(getProcessChartPanel(12));
+            const currentCount = getArbitrationOwnerCardCount(currentData);
+            const currentByOwner = new Map();
+            const arbitrationKeys = [
+                'arbitration_owner_name',
+                'arbitration_aadhaar_number',
+                'arbitration_bank_name',
+                'arbitration_bank_account_number',
+                'arbitration_bank_branch',
+                'arbitration_ifsc_code',
+                'arbitration_area',
+                'arbitration_agreement_date',
+                'arbitration_order_date',
+                'arbitration_cheque_number',
+                'arbitration_approved_increase_amount',
+                'arbitration_remaining_compensation',
+            ];
+
+            Array.from({ length: currentCount }, (_, index) => {
+                const ownerName = getArrayValue(currentData, 'arbitration_owner_name', index);
+                const ownerKey = normalizeOwnerLookupName(ownerName || '');
+                if (!ownerKey || currentByOwner.has(ownerKey)) return;
+                const values = {};
+                arbitrationKeys.forEach((key) => {
+                    values[key] = getArrayValue(currentData, key, index);
+                });
+                currentByOwner.set(ownerKey, values);
+            });
 
             checkboxes.forEach((checkbox) => {
                 const rowKey = checkbox.getAttribute('data-row-key') || '';
@@ -3849,7 +4511,24 @@
             });
 
             setSelectedArbitrationOwnerKeys(selectedKeys);
-            renderArbitrationOwnerCards({}, selectedRows);
+            const mergedData = {};
+            arbitrationKeys.forEach((key) => {
+                mergedData[key] = [];
+            });
+            selectedRows.forEach((row) => {
+                const ownerName = String(row?.owner_name || '').trim();
+                const existing = currentByOwner.get(normalizeOwnerLookupName(ownerName)) || {};
+                arbitrationKeys.forEach((key) => {
+                    if (key === 'arbitration_owner_name') {
+                        mergedData[key].push(ownerName);
+                    } else if (key === 'arbitration_area') {
+                        mergedData[key].push(row?.acquisition_area || existing[key] || '');
+                    } else {
+                        mergedData[key].push(existing[key] || '');
+                    }
+                });
+            });
+            renderArbitrationOwnerCards(mergedData, selectedRows);
             closeJointSurveyNamesModal();
         }
 
@@ -3971,8 +4650,116 @@
             }
         }
 
+        function setQuestionBlockVisible(block, visible) {
+            if (!block) return;
+            block.classList.toggle('hidden', !visible);
+            block.style.display = visible ? '' : 'none';
+            if (visible) {
+                block.removeAttribute('hidden');
+            } else {
+                block.setAttribute('hidden', 'hidden');
+            }
+        }
+
+        function forceToggleProposalQuestionBlock() {
+            const yesRadio = processChartForm?.querySelector('input[name="proposal_included"][value="yes"]');
+            const noRadio = processChartForm?.querySelector('input[name="proposal_included"][value="no"]');
+            const areaWrap = document.getElementById('pcProposalAreaWrap');
+            const reasonWrap = document.getElementById('pcProposalReasonWrap');
+            const areaField = document.getElementById('pcProposalArea');
+            const reasonField = document.getElementById('pcProposalReason');
+            if (!areaWrap || !reasonWrap) return;
+
+            if (noRadio?.checked) {
+                setQuestionBlockVisible(areaWrap, false);
+                setQuestionBlockVisible(reasonWrap, true);
+                areaWrap.setAttribute('hidden', 'hidden');
+                reasonWrap.removeAttribute('hidden');
+                if (areaField instanceof HTMLInputElement) {
+                    areaField.value = '';
+                    areaField.readOnly = false;
+                }
+                return;
+            }
+
+            if (yesRadio?.checked) {
+                const { selectedGut, matchedNotifiedArea, hasRows } = getNotifiedAreaMatchResult(currentProcessChartPrefill, 'proposal');
+                setQuestionBlockVisible(areaWrap, true);
+                setQuestionBlockVisible(reasonWrap, false);
+                areaWrap.removeAttribute('hidden');
+                reasonWrap.setAttribute('hidden', 'hidden');
+                if (areaField instanceof HTMLInputElement) {
+                    areaField.value = matchedNotifiedArea || ((selectedGut && hasRows) ? 'गट आढळला नाही' : '');
+                    areaField.readOnly = true;
+                }
+                if (reasonField instanceof HTMLInputElement) reasonField.value = '';
+            }
+        }
+        window.pcForceToggleProposalQuestion = () => {
+            forceToggleProposalQuestionBlock();
+            window.setTimeout(forceToggleProposalQuestionBlock, 0);
+            window.setTimeout(forceToggleProposalQuestionBlock, 50);
+        };
+
+        function forceToggleTab3QuestionBlocks() {
+            const noticeValue = processChartForm?.querySelector('input[name="notice_publication_included"]:checked')?.value || '';
+            const noticeAreaWrap = document.getElementById('pcNoticePublicationAreaWrap');
+            const noticeReasonWrap = document.getElementById('pcNoticePublicationReasonWrap');
+            const noticeAreaField = document.getElementById('pcNoticePublicationArea');
+            const noticeReasonField = document.getElementById('pcNoticePublicationReason');
+
+            if (noticeValue === 'yes') {
+                const { selectedGut, matchedNotifiedArea, hasRows } = getNotifiedAreaMatchResult(currentProcessChartPrefill, 'notice');
+                setQuestionBlockVisible(noticeAreaWrap, true);
+                setQuestionBlockVisible(noticeReasonWrap, false);
+                if (noticeAreaField instanceof HTMLInputElement) {
+                    noticeAreaField.value = matchedNotifiedArea || ((selectedGut && hasRows) ? 'गट आढळला नाही' : '');
+                    noticeAreaField.readOnly = true;
+                }
+                if (noticeReasonField instanceof HTMLInputElement) noticeReasonField.value = '';
+            } else if (noticeValue === 'no') {
+                setQuestionBlockVisible(noticeAreaWrap, false);
+                setQuestionBlockVisible(noticeReasonWrap, true);
+                if (noticeAreaField instanceof HTMLInputElement) {
+                    noticeAreaField.value = '';
+                    noticeAreaField.readOnly = false;
+                }
+            }
+
+            const proposalValue = processChartForm?.querySelector('input[name="proposal_included"]:checked')?.value || '';
+            const proposalAreaWrap = document.getElementById('pcProposalAreaWrap');
+            const proposalReasonWrap = document.getElementById('pcProposalReasonWrap');
+            const proposalAreaField = document.getElementById('pcProposalArea');
+            const proposalReasonField = document.getElementById('pcProposalReason');
+
+            if (proposalValue === 'yes') {
+                const { selectedGut, matchedNotifiedArea, hasRows } = getNotifiedAreaMatchResult(currentProcessChartPrefill, 'proposal');
+                setQuestionBlockVisible(proposalAreaWrap, true);
+                setQuestionBlockVisible(proposalReasonWrap, false);
+                if (proposalAreaField instanceof HTMLInputElement) {
+                    proposalAreaField.value = matchedNotifiedArea || ((selectedGut && hasRows) ? 'गट आढळला नाही' : '');
+                    proposalAreaField.readOnly = true;
+                }
+                if (proposalReasonField instanceof HTMLInputElement) proposalReasonField.value = '';
+            } else if (proposalValue === 'no') {
+                setQuestionBlockVisible(proposalAreaWrap, false);
+                setQuestionBlockVisible(proposalReasonWrap, true);
+                if (proposalAreaField instanceof HTMLInputElement) {
+                    proposalAreaField.value = '';
+                    proposalAreaField.readOnly = false;
+                }
+            }
+            forceToggleProposalQuestionBlock();
+        }
+        window.pcForceToggleTab3Questions = () => {
+            forceToggleTab3QuestionBlocks();
+            window.setTimeout(forceToggleTab3QuestionBlocks, 0);
+            window.setTimeout(forceToggleTab3QuestionBlocks, 50);
+            window.setTimeout(forceToggleTab3QuestionBlocks, 150);
+        };
+
         function toggleNoticePublicationFields(prefill = currentProcessChartPrefill) {
-            const selectedValue = processChartForm?.querySelector('input[name="notice_publication_included"]:checked')?.value || '';
+            let selectedValue = processChartForm?.querySelector('input[name="notice_publication_included"]:checked')?.value || '';
             const areaWrap = document.getElementById('pcNoticePublicationAreaWrap');
             const areaField = document.getElementById('pcNoticePublicationArea');
             const reasonWrap = document.getElementById('pcNoticePublicationReasonWrap');
@@ -3981,10 +4768,17 @@
 
             const { selectedGut, matchedNotifiedArea, hasRows } = getNotifiedAreaMatchResult(prefill, 'notice');
             const prefillArea = matchedNotifiedArea || ((selectedGut && hasRows) ? 'गट आढळला नाही' : '');
+            if (!selectedValue && selectedGut && hasRows) {
+                const defaultValue = matchedNotifiedArea ? 'yes' : '';
+                processChartForm?.querySelectorAll('input[name="notice_publication_included"]').forEach((radio) => {
+                    radio.checked = radio.value === defaultValue;
+                });
+                selectedValue = defaultValue;
+            }
 
             if (selectedValue === 'yes') {
-                areaWrap.classList.remove('hidden');
-                reasonWrap.classList.add('hidden');
+                setQuestionBlockVisible(areaWrap, true);
+                setQuestionBlockVisible(reasonWrap, false);
                 areaField.value = prefillArea;
                 areaField.readOnly = true;
                 reasonField.value = '';
@@ -3992,15 +4786,15 @@
             }
 
             if (selectedValue === 'no') {
-                areaWrap.classList.add('hidden');
-                reasonWrap.classList.remove('hidden');
+                setQuestionBlockVisible(areaWrap, false);
+                setQuestionBlockVisible(reasonWrap, true);
                 areaField.value = '';
                 areaField.readOnly = false;
                 return;
             }
 
-            areaWrap.classList.remove('hidden');
-            reasonWrap.classList.add('hidden');
+            setQuestionBlockVisible(areaWrap, true);
+            setQuestionBlockVisible(reasonWrap, false);
             if (prefillArea && !areaField.value) {
                 areaField.value = prefillArea;
             }
@@ -4019,8 +4813,8 @@
             const prefillArea = matchedNotifiedArea || ((selectedGut && hasRows) ? 'गट आढळला नाही' : '');
 
             if (selectedValue === 'yes') {
-                areaWrap.classList.remove('hidden');
-                reasonWrap.classList.add('hidden');
+                setQuestionBlockVisible(areaWrap, true);
+                setQuestionBlockVisible(reasonWrap, false);
                 areaField.value = prefillArea;
                 areaField.readOnly = true;
                 reasonField.value = '';
@@ -4028,15 +4822,15 @@
             }
 
             if (selectedValue === 'no') {
-                areaWrap.classList.add('hidden');
-                reasonWrap.classList.remove('hidden');
+                setQuestionBlockVisible(areaWrap, false);
+                setQuestionBlockVisible(reasonWrap, true);
                 areaField.value = '';
                 areaField.readOnly = false;
                 return;
             }
 
-            areaWrap.classList.remove('hidden');
-            reasonWrap.classList.add('hidden');
+            setQuestionBlockVisible(areaWrap, true);
+            setQuestionBlockVisible(reasonWrap, false);
             if (prefillArea && !areaField.value) {
                 areaField.value = prefillArea;
             }
@@ -4092,7 +4886,7 @@
                 applyFieldValue(dateField, matchedSec8Row.adhisuchana_date || '');
             }
             if (clauseAreaField && !clauseAreaField.value) {
-                applyFieldValue(clauseAreaField, matchedNotifiedArea || fallbackNotifiedArea || '');
+                applyFieldValue(clauseAreaField, matchedNotifiedArea || '');
             }
             if (matchedSec8Row?.files?.main?.length) {
                 currentVillageFiles.sec8_files = matchedSec8Row.files.main;
@@ -4103,7 +4897,7 @@
                 (matchedSec8Row.adhisuchana_kramank || '').trim()
                 || (matchedSec8Row.adhisuchana_date || '').trim()
                 || currentVillageFiles.sec8_files?.length
-                || (matchedNotifiedArea || fallbackNotifiedArea)
+                || matchedNotifiedArea
             );
             if (![...clauseOneRadios].some((radio) => radio.checked)) {
                 clauseOneRadios.forEach((radio) => {
@@ -4507,8 +5301,8 @@
             const prefillArea = matchedNotifiedArea || ((selectedGut && hasRows) ? 'गट आढळला नाही' : '');
 
             if (selectedValue === 'yes') {
-                areaWrap.classList.remove('hidden');
-                reasonWrap.classList.add('hidden');
+                setQuestionBlockVisible(areaWrap, true);
+                setQuestionBlockVisible(reasonWrap, false);
                 areaField.value = prefillArea;
                 areaField.readOnly = true;
                 reasonField.value = '';
@@ -4516,15 +5310,15 @@
             }
 
             if (selectedValue === 'no') {
-                areaWrap.classList.add('hidden');
-                reasonWrap.classList.remove('hidden');
+                setQuestionBlockVisible(areaWrap, false);
+                setQuestionBlockVisible(reasonWrap, true);
                 areaField.value = '';
                 areaField.readOnly = false;
                 return;
             }
 
-            areaWrap.classList.remove('hidden');
-            reasonWrap.classList.add('hidden');
+            setQuestionBlockVisible(areaWrap, true);
+            setQuestionBlockVisible(reasonWrap, false);
             areaField.readOnly = false;
         }
 
@@ -4540,8 +5334,10 @@
             const rawArea = matchedNotifiedArea || ((selectedGut && hasRows) ? 'गट आढळला नाही' : '');
 
             if (selectedValue === 'yes') {
-                areaWrap.classList.remove('hidden');
-                reasonWrap.classList.add('hidden');
+                setQuestionBlockVisible(areaWrap, true);
+                setQuestionBlockVisible(reasonWrap, false);
+                areaWrap.removeAttribute('hidden');
+                reasonWrap.setAttribute('hidden', 'hidden');
                 areaField.value = rawArea;
                 areaField.readOnly = true;
                 reasonField.value = '';
@@ -4549,17 +5345,38 @@
             }
 
             if (selectedValue === 'no') {
-                areaWrap.classList.add('hidden');
-                reasonWrap.classList.remove('hidden');
+                setQuestionBlockVisible(areaWrap, false);
+                setQuestionBlockVisible(reasonWrap, true);
+                areaWrap.setAttribute('hidden', 'hidden');
+                reasonWrap.removeAttribute('hidden');
                 areaField.value = '';
                 areaField.readOnly = false;
                 return;
             }
 
-            areaWrap.classList.remove('hidden');
-            reasonWrap.classList.add('hidden');
+            setQuestionBlockVisible(areaWrap, true);
+            setQuestionBlockVisible(reasonWrap, false);
+            areaWrap.removeAttribute('hidden');
+            reasonWrap.setAttribute('hidden', 'hidden');
             areaField.readOnly = false;
         }
+        window.pcForceToggleGroupClauseQuestion = () => {
+            toggleGroupClauseFields(currentProcessChartPrefill);
+            window.setTimeout(() => toggleGroupClauseFields(currentProcessChartPrefill), 0);
+            window.setTimeout(() => toggleGroupClauseFields(currentProcessChartPrefill), 50);
+        };
+        window.pcDebugTab5GroupClauseArea = () => {
+            const result = getNotifiedAreaMatchResult(currentProcessChartPrefill, 'clause_one');
+            const rows = getNotifiedRowsForSection(currentProcessChartPrefill, 'clause_one');
+            console.log('Tab 5 32(1) area debug:', {
+                selected_gut: result.selectedGut,
+                matched_area: result.matchedNotifiedArea,
+                has_rows: result.hasRows,
+                rows,
+                prefill: currentProcessChartPrefill,
+            });
+            return { result, rows };
+        };
 
         function togglePossessionHandedFields() {
             const selectedValue = possessionHandedRadios.find((radio) => radio.checked)?.value;
@@ -4597,6 +5414,8 @@
                 ifsc_code: sectionData.step10_ifsc_code?.[index] || '',
                 acquisition_area: sectionData.step10_acquisition_area?.[index] || '',
                 compensation_amount: sectionData.step10_compensation_amount?.[index] || '',
+                compensation_date: sectionData.step10_compensation_date?.[index] || '',
+                utr_number: sectionData.step10_utr_number?.[index] || '',
             })).filter((values) => Object.values(values).some((value) => String(value || '').trim()));
         }
 
@@ -4641,7 +5460,12 @@
                         <div><label class="pc-label">बँक खाते क्रमांक</label><input class="pc-input" name="arbitration_bank_account_number" type="text" inputmode="numeric" maxlength="18" pattern="[0-9]{9,18}" readonly placeholder="9 ते 18 अंक" value="${bankAccount}"></div>
                         <div><label class="pc-label">बँकेची शाखा</label><input class="pc-input" name="arbitration_bank_branch" type="text" maxlength="100" readonly placeholder="टॅब 10 मधून येईल" value="${bankBranch}"></div>
                         <div><label class="pc-label">IFSC Code</label><input class="pc-input" name="arbitration_ifsc_code" type="text" maxlength="11" pattern="[A-Z]{4}0[A-Z0-9]{6}" readonly placeholder="उदा. SBIN0001234" value="${ifsc}"></div>
-                        <div><label class="pc-label">पासबुक स्कॅन अपलोड</label><input class="pc-upload" name="arbitration_passbook_file" type="file"></div>
+                        <div>
+                            <label class="pc-label">पासबुक स्कॅन अपलोड</label>
+                            <input class="pc-upload" name="arbitration_passbook_file" type="file">
+                            <a class="mt-2 hidden text-xs font-semibold text-[#125fcb] underline" data-pc-doc-link-for="arbitration_passbook_file" target="_blank" rel="noopener"></a>
+                            <a class="mt-2 hidden text-xs font-semibold text-[#0f766e] underline" data-pc-doc-link-for="step10_passbook_file" target="_blank" rel="noopener"></a>
+                        </div>
                         <div><label class="pc-label">करार दिनांक</label><input class="pc-input" name="arbitration_agreement_date" type="date" value="${agreementDate}"></div>
                         <div><label class="pc-label">क्षेत्र</label><input class="pc-input" name="arbitration_area" type="text" readonly placeholder="हेक्टर.आर." value="${area}"></div>
                         <div><label class="pc-label">आदेश दिनांक</label><input class="pc-input" name="arbitration_order_date" type="date" value="${orderDate}"></div>
@@ -4688,6 +5512,7 @@
             }).join('');
             enhanceProcessChartDateInputs();
             enhanceProcessChartAreaInputs();
+            renderProcessChartDocumentLinks();
             updateArbitrationRemainingCompensation();
         }
 
@@ -4784,6 +5609,7 @@
             }
 
             populateLandAreaSummary(landRecord);
+            scheduleLandAreaSummaryNormalize();
             renderAcquisitionDetailTable(payload);
             applyCompensationPrefill(payload);
             toggleSurveyNotificationFields(payload);
@@ -4872,12 +5698,14 @@
             try {
                 const res = await fetch(`/api/process-chart-form/data/?district=${encodeURIComponent(districtSelect.value)}&taluka=${encodeURIComponent(talukaSelect.value)}&village=${encodeURIComponent(villageSelect.value)}&gut_number=${encodeURIComponent(gutSelect.value)}`);
                 const data = await res.json();
+                currentProcessChartPrefill = data.prefill || {};
                 populateOwnerInfoTable(data.prefill || {});
                 applyVillageDataPrefill(data.prefill?.village_data);
                 toggleSurveyNotificationFields(data.prefill || {});
                 toggleNoticePublicationFields(data.prefill || {});
                 toggleProposalFields(data.prefill || {});
                 toggleGroupClauseFields(data.prefill || {});
+                scheduleLandAreaSummaryNormalize();
             } catch (error) {
                 console.error(error);
                 populateOwnerInfoTable();
@@ -4890,6 +5718,7 @@
         async function refreshTabOneSevenTwelveData() {
             await loadOwnerNamesFrom712();
             await loadOwnerInfoFrom712();
+            scheduleLandAreaSummaryNormalize();
         }
 
         function toggleRecordUpdatedFields() {
@@ -4971,13 +5800,19 @@
                 }
             });
 
-            renderSec3Rows(sec3Rows.length ? sec3Rows : [{
-                upvibhag_name: villageData.sec3_upvibhag_name || '',
-                adhisuchana_kramank: villageData.sec3_adhisuchana_kramank || '',
-                officer_name: firstSec3Row?.officer_name || '',
-                address: firstSec3Row?.address || '',
-                date: villageData.sec3_date || '',
-            }]);
+            if (!hasSavedSec3Rows()) {
+                renderSec3Rows(sec3Rows.length ? sec3Rows : [{
+                    upvibhag_name: villageData.sec3_upvibhag_name || '',
+                    adhisuchana_kramank: villageData.sec3_adhisuchana_kramank || '',
+                    officer_name: firstSec3Row?.officer_name || '',
+                    address: firstSec3Row?.address || '',
+                    date: villageData.sec3_date || '',
+                }]);
+            }
+
+            if (!hasSavedSec21Rows()) {
+                renderSec21Rows(villageDataPayload?.sec21_rows || []);
+            }
 
             applyJointMeasurementPrefill(villageDataPayload);
             applyClauseOnePrefill(villageDataPayload);
@@ -5855,6 +6690,7 @@
                 if (!sectionData || typeof sectionData !== 'object') return;
                 ensureOwnerInfoRowsForData(sectionData);
                 ensureSec3RowsForData(sectionData);
+                ensureSec21RowsForData(sectionData);
                 ensureTab4OwnerRowsForData(sectionData);
                 if (hasTab7AssetData(sectionData)) {
                     ensureRepeatableAssetRowsForData(sectionData);
@@ -5867,7 +6703,7 @@
                     renderArbitrationOwnerCards(sectionData);
                 }
 
-                applySectionDataFields(sectionData);
+                applySectionDataFields(withoutBlankSec21Values(sectionData));
 
                 updateTotalAssetValuation();
                 updateAcquisitionDetailRowTotals();
@@ -5875,6 +6711,13 @@
             restoreTab7DataWithFallback(stepData);
             renderStep10OwnerCards(currentProcessChartPrefill, stepData.step_10 || {});
             updateStep10AadhaarFromOwner(currentProcessChartPrefill);
+            restoreSavedProcessChartRadios(stepData);
+            restoreSavedCompensationInput(stepData);
+            restoreSavedTab3Fields(stepData);
+            restoreSavedTab4Dates(stepData);
+            restoreSavedTab5Fields(stepData);
+            restoreSavedTab11Fields(stepData);
+            restoreSavedTab12Fields(stepData);
             requestAnimationFrame(updateTotalAssetValuation);
         }
 
@@ -5896,6 +6739,7 @@
                 window.pcForceRestoreTab7Draft = () => fetchAndForceRestoreTab7();
                 window.pcDebugTab7Restore = () => debugTab7Restore();
                 currentProcessChartDocuments = result.documents || {};
+                renderProcessChartDocumentLinks();
                 currentCaseStatus = caseData.status || currentCaseStatus || 'draft';
                 setStep(caseData.current_step || 1);
 
@@ -5943,12 +6787,37 @@
                     toggleNoticePublicationFields(prefill);
                     toggleProposalFields(prefill);
                     toggleGroupClauseFields(prefill);
-                    togglePossessionHandedFields();
-                    toggleArbitrationFields();
-                    if (prefill.village_data?.sec3_rows?.length) {
+                    restoreSavedProcessChartRadios(latestProcessChartStepData);
+                    restoreSavedCompensationInput(latestProcessChartStepData);
+                    restoreSavedTab3Fields(latestProcessChartStepData);
+                    restoreSavedTab4Dates(latestProcessChartStepData);
+                    restoreSavedTab5Fields(latestProcessChartStepData);
+                    restoreSavedTab11Fields(latestProcessChartStepData);
+                    restoreSavedTab12Fields(latestProcessChartStepData);
+                    scheduleLandAreaSummaryNormalize();
+                    if (prefill.village_data?.sec3_rows?.length && !hasSavedSec3Rows(latestProcessChartStepData)) {
                         renderSec3Rows(prefill.village_data.sec3_rows);
                     }
+                    if (prefill.village_data?.sec21_rows?.length && !hasSavedSec21Rows(latestProcessChartStepData)) {
+                        renderSec21Rows(prefill.village_data.sec21_rows);
+                    }
                     scheduleTab7Restore(latestProcessChartStepData);
+                    window.setTimeout(() => restoreSavedProcessChartRadios(latestProcessChartStepData), 0);
+                    window.setTimeout(() => restoreSavedProcessChartRadios(latestProcessChartStepData), 150);
+                    window.setTimeout(() => restoreSavedCompensationInput(latestProcessChartStepData), 0);
+                    window.setTimeout(() => restoreSavedCompensationInput(latestProcessChartStepData), 150);
+                    window.setTimeout(() => restoreSavedTab3Fields(latestProcessChartStepData), 0);
+                    window.setTimeout(() => restoreSavedTab3Fields(latestProcessChartStepData), 150);
+                    window.setTimeout(forceToggleTab3QuestionBlocks, 200);
+                    window.setTimeout(() => restoreSavedTab4Dates(latestProcessChartStepData), 0);
+                    window.setTimeout(() => restoreSavedTab4Dates(latestProcessChartStepData), 150);
+                    window.setTimeout(() => restoreSavedTab5Fields(latestProcessChartStepData), 0);
+                    window.setTimeout(() => restoreSavedTab5Fields(latestProcessChartStepData), 150);
+                    window.setTimeout(() => restoreSavedTab11Fields(latestProcessChartStepData), 0);
+                    window.setTimeout(() => restoreSavedTab11Fields(latestProcessChartStepData), 150);
+                    window.setTimeout(() => restoreSavedTab12Fields(latestProcessChartStepData), 0);
+                    window.setTimeout(() => restoreSavedTab12Fields(latestProcessChartStepData), 150);
+                    window.setTimeout(scheduleLandAreaSummaryNormalize, 200);
                 } catch (stepDataError) {
                     console.error('Step data apply failed:', stepDataError);
                 }
@@ -6007,6 +6876,17 @@
             console.log('Current Tab 7 payload:', payload);
             return payload;
         };
+        window.pcDebugCurrentTab11Payload = () => {
+            const tab11Panel = getProcessChartPanel(11);
+            const payload = buildStepDataPayload(11, tab11Panel);
+            console.log('Current Tab 11 payload:', payload);
+            return payload;
+        };
+        window.pcFixLandAreaSummary = () => {
+            const result = normalizeLandAreaSummaryFromVisibleValues();
+            console.log('Current 7/12 summary:', result);
+            return result;
+        };
         window.pcSaveTab7Now = () => saveProcessChart('draft', 7);
 
         async function saveProcessChart(statusValue = 'draft', savedCurrentStep = currentStep) {
@@ -6043,6 +6923,12 @@
                         }
                     });
                 }
+                getCurrentPanel()?.querySelectorAll('input[type="file"][name]').forEach((input) => {
+                    if (!(input instanceof HTMLInputElement) || input.dataset.fileField) return;
+                    Array.from(input.files || []).forEach((file) => {
+                        formData.append(input.name, file);
+                    });
+                });
                 const response = await fetch('/api/process-chart-form/save/', {
                     method: 'POST',
                     headers: {
@@ -6059,6 +6945,7 @@
                 saveTab7LocalDraft();
                 currentCaseStatus = result.status || payload.status || currentCaseStatus;
                 currentProcessChartDocuments = result.documents || currentProcessChartDocuments || {};
+                renderProcessChartDocumentLinks();
                 if (result.step_data && typeof result.step_data === 'object') {
                     latestProcessChartStepData = result.step_data;
                     window.pcLatestStepData = latestProcessChartStepData;
@@ -6089,6 +6976,12 @@
             panels.forEach((panel) => {
                 panel.classList.toggle('is-active', Number(panel.dataset.pcPanel) === currentStep);
             });
+            if (currentStep === 3) {
+                requestAnimationFrame(forceToggleTab3QuestionBlocks);
+            }
+            if (currentStep === 1) {
+                scheduleLandAreaSummaryNormalize();
+            }
             if (currentStep === 7) {
                 scheduleTab7Restore();
             }
@@ -6207,7 +7100,10 @@
             radio.addEventListener('change', () => toggleProposalFields());
         });
         processChartForm?.querySelectorAll('input[name="group_in_clause_one_included"]').forEach((radio) => {
-            radio.addEventListener('change', () => toggleGroupClauseFields());
+            radio.addEventListener('change', () => {
+                toggleGroupClauseFields();
+                window.pcForceToggleGroupClauseQuestion && window.pcForceToggleGroupClauseQuestion();
+            });
         });
         possessionHandedRadios.forEach((radio) => {
             radio.addEventListener('change', () => togglePossessionHandedFields());
@@ -6287,6 +7183,13 @@
             }
             if (event.target instanceof HTMLInputElement && event.target.classList.contains('pc-sec15-row-radio')) {
                 updateCompensationFields(currentProcessChartPrefill);
+            }
+            if (event.target instanceof HTMLInputElement && event.target.name === 'notice_publication_included') {
+                toggleNoticePublicationFields();
+            }
+            if (event.target instanceof HTMLInputElement && event.target.name === 'proposal_included') {
+                toggleProposalFields();
+                forceToggleProposalQuestionBlock();
             }
             if (event.target instanceof HTMLInputElement && event.target.classList.contains('pc-step10-owner-name')) {
                 updateStep10AadhaarFromOwner(currentProcessChartPrefill);
@@ -6378,7 +7281,9 @@
             const viewBtn = event.target.closest('.pc-sec3-row-files-view-btn');
             if (viewBtn) {
                 const rowIndex = Number(viewBtn.dataset.rowIndex || 0);
-                openFilesModal(currentVillageFiles[`sec3_row_${rowIndex}`] || (rowIndex === 0 ? currentVillageFiles.sec3_files || [] : []));
+                const savedDocument = currentProcessChartDocuments[`sec3_files_${rowIndex}`];
+                const villageFiles = currentVillageFiles[`sec3_row_${rowIndex}`] || (rowIndex === 0 ? currentVillageFiles.sec3_files || [] : []);
+                openFilesModal(savedDocument?.url ? [savedDocument, ...villageFiles] : villageFiles);
             }
         });
 
@@ -6569,6 +7474,7 @@
         recordUpdatedRadios.forEach((radio) => radio.addEventListener('change', toggleRecordUpdatedFields));
         toggleRecordUpdatedFields();
         renderSec3Rows([{}]);
+        renderSec21Rows([{}]);
         ensureTab4OwnerTablesHaveRows();
         enhanceProcessChartDateInputs();
         enhanceProcessChartAreaInputs();

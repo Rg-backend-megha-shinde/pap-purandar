@@ -150,6 +150,7 @@
                                 <th class="border border-[#d7e5f6] px-3 py-2 text-center font-semibold">तालुका</th>
                                 <th class="border border-[#d7e5f6] px-3 py-2 text-center font-semibold">गाव</th>
                                 <th class="border border-[#d7e5f6] px-3 py-2 text-center font-semibold">गट क्रमांक</th>
+                                <th class="border border-[#d7e5f6] px-3 py-2 text-center font-semibold">भूधारकाचे नाव</th>
                                 <th class="border border-[#d7e5f6] px-3 py-2 text-center font-semibold">Status</th>
                                 <th class="border border-[#d7e5f6] px-3 py-2 text-center font-semibold">टप्पा</th>
                                 <th class="border border-[#d7e5f6] px-3 py-2 text-center font-semibold">Updated</th>
@@ -165,6 +166,7 @@
                                 <td class="border border-[#d7e5f6] px-3 py-2 text-center">{{ item.taluka_mr|default:"-" }}</td>
                                 <td class="border border-[#d7e5f6] px-3 py-2 text-center">{{ item.village_mr|default:"-" }}</td>
                                 <td class="border border-[#d7e5f6] px-3 py-2 text-center">{{ item.gut_number|default:"-" }}</td>
+                                <td class="border border-[#d7e5f6] px-3 py-2 text-center min-w-[220px]">{{ item.owner_names_mr|default:"-" }}</td>
                                 <td class="border border-[#d7e5f6] px-3 py-2 text-center">
                                     <span class="pc-status-badge {% if item.status == 'submitted' %}pc-status-submitted{% elif item.status == 'approved' %}pc-status-approved{% else %}pc-status-draft{% endif %}">
                                         {% if item.status == 'draft' %}
