@@ -1109,6 +1109,39 @@ def land_record_712(request):
             return None
         return text
 
+    def normalize_712_area(value):
+        """
+        Normalize 7/12 area strings into H.AA.SS (hectare.aar.sq.m) format.
+        This prevents mixed inputs like "0.89" from being treated as 0.89.00
+        in some places and "0.00.89" (or other variants) elsewhere.
+        """
+        raw = clean_optional(value)
+        if raw is None:
+            return None
+
+        text = str(raw).strip()
+        # keep only digits and separators we expect in 7/12 (., -, /, space)
+        text = re.sub(r'[^0-9.\-\/\s]', ' ', text)
+        parts = [p for p in re.split(r'[.\-\/\s]+', text) if p]
+        if not parts:
+            return None
+
+        # Typical forms:
+        # - H.AA.SS  => 3 parts
+        # - H.AA     => 2 parts (assume SS=00)
+        # - AA.SS or AA (rare) => keep best-effort, but avoid breaking
+        nums = [int(re.sub(r'\D', '', p) or '0') for p in parts[:3]]
+        if len(nums) == 1:
+            # If it's a single number, leave it as-is (can't safely infer).
+            return str(raw).strip()
+        if len(nums) == 2:
+            hectare, aar = nums
+            sqm = 0
+        else:
+            hectare, aar, sqm = nums
+
+        return f"{hectare}.{str(aar).zfill(2)}.{str(sqm).zfill(2)}"
+
     def get_clean_khata_numbers(rows):
         khata_numbers = []
         for row in rows:
@@ -1263,12 +1296,12 @@ def land_record_712(request):
                         khata_number=clean_optional(row.get('khata_number')),
                         puid_ulip_no=clean_optional(row.get('puid_ulip_no')),
                         hissa_number=clean_optional(row.get('hissa_number')),
-                        jirayit=clean_optional(row.get('jirayit')),
-                        bagayat=clean_optional(row.get('bagayat')),
-                        potkharaba=clean_optional(row.get('potkharaba')),
-                        total_area=clean_optional(row.get('total_area')),
+                        jirayit=normalize_712_area(row.get('jirayit')),
+                        bagayat=normalize_712_area(row.get('bagayat')),
+                        potkharaba=normalize_712_area(row.get('potkharaba')),
+                        total_area=normalize_712_area(row.get('total_area')),
                         aakarni=clean_optional(row.get('aakarni')),
-                        khata_area=clean_optional(row.get('khata_area')),
+                        khata_area=normalize_712_area(row.get('khata_area')),
                         aakar=clean_optional(row.get('aakar')),
                         holder_name=clean_optional(clean_holder_name_list(row.get('holder_name'))),
                         kul_khand_other_rights=clean_optional(row.get('kul_khand_other_rights')),
@@ -1496,6 +1529,25 @@ def edit_land_record_712(request, id):
             return None
         return text
 
+    def normalize_712_area(value):
+        raw = clean_optional(value)
+        if raw is None:
+            return None
+        text = str(raw).strip()
+        text = re.sub(r'[^0-9.\-\/\s]', ' ', text)
+        parts = [p for p in re.split(r'[.\-\/\s]+', text) if p]
+        if not parts:
+            return None
+        nums = [int(re.sub(r'\D', '', p) or '0') for p in parts[:3]]
+        if len(nums) == 1:
+            return str(raw).strip()
+        if len(nums) == 2:
+            hectare, aar = nums
+            sqm = 0
+        else:
+            hectare, aar, sqm = nums
+        return f"{hectare}.{str(aar).zfill(2)}.{str(sqm).zfill(2)}"
+
     def clean_yes_no(value):
         val = str(value or '').strip().casefold()
         if val in {'yes', 'à¤¹à¥‹à¤¯', 'hoy'}:
@@ -1512,12 +1564,12 @@ def edit_land_record_712(request, id):
         obj.gut_number = clean_optional(request.POST.get('gut_number')) or obj.gut_number
         obj.khata_number = clean_optional(request.POST.get('khata_number'))
         obj.puid_ulip_no = clean_optional(request.POST.get('puid_ulip_no'))
-        obj.jirayit = clean_optional(request.POST.get('jirayit'))
-        obj.bagayat = clean_optional(request.POST.get('bagayat'))
-        obj.potkharaba = clean_optional(request.POST.get('potkharaba'))
-        obj.total_area = clean_optional(request.POST.get('total_area'))
+        obj.jirayit = normalize_712_area(request.POST.get('jirayit'))
+        obj.bagayat = normalize_712_area(request.POST.get('bagayat'))
+        obj.potkharaba = normalize_712_area(request.POST.get('potkharaba'))
+        obj.total_area = normalize_712_area(request.POST.get('total_area'))
         obj.aakarni = clean_optional(request.POST.get('aakarni'))
-        obj.khata_area = clean_optional(request.POST.get('khata_area'))
+        obj.khata_area = normalize_712_area(request.POST.get('khata_area'))
         obj.aakar = clean_optional(request.POST.get('aakar'))
         obj.holder_name = clean_optional(request.POST.get('holder_name'))
         obj.kul_khand_other_rights = clean_optional(request.POST.get('kul_khand_other_rights'))
@@ -3781,7 +3833,7 @@ def _serialize_land_record_for_process_chart(land_record):
         'hissa_number': land_record.hissa_number or '',
         'jirayit': land_record.jirayit or '',
         'bagayat': land_record.bagayat or '',
-        'potkharaba': land_record.potkharaba or '',
+        'potkharaba': _sanitize_potkharaba_for_record(land_record),
         'total_area': land_record.total_area or '',
         'aakarni': land_record.aakarni or '',
         'khata_number': land_record.khata_number or '',
@@ -3806,25 +3858,83 @@ def _serialize_farmers_for_process_chart(land_record):
     ]
 
 
-def _parse_area_decimal(value):
+def _parse_area_to_sqm(value):
+    """
+    Parses area strings used in 7/12 payload:
+    - "H.AA.SS" (hectare.aar.sq-m) e.g. "0.94.00"
+    - "H-R" (hectare-are) e.g. "1-65"
+    Returns integer sq-meters.
+    """
+    text = str(value or '').strip()
+    if not text or text in ('-', 'None', 'none', 'NULL', 'null'):
+        return 0
+
+    # H.AA.SS or variants with '-' instead of '.'
+    if any(sep in text for sep in ('.', '-')):
+        parts = [p for p in re.split(r'[.\-]', text) if p is not None]
+        nums = []
+        for part in parts:
+            raw = re.sub(r'[^0-9]', '', str(part))
+            nums.append(int(raw) if raw.isdigit() else 0)
+        if len(nums) >= 3:
+            h, a, s = nums[0], nums[1], nums[2]
+            return (h * 10000) + (a * 100) + s
+        if len(nums) == 2:
+            # Treat as H-R (hectare-are)
+            h, a = nums[0], nums[1]
+            return (h * 10000) + (a * 100)
+
+    # Pure decimal/number: treat as hectares (best-effort)
     try:
-        text = str(value or '').strip()
-        if not text:
-            return Decimal('0')
-        return Decimal(text)
+        dec = Decimal(text)
+        return int((dec * Decimal('10000')).to_integral_value())
     except (InvalidOperation, TypeError, ValueError):
-        return Decimal('0')
+        return 0
 
 
-def _format_area_decimal(value):
-    if value is None:
+def _format_sqm_to_har(value):
+    if not value or value <= 0:
         return ''
-    return f"{value.quantize(Decimal('0.01')):.2f}"
+    hectare = value // 10000
+    remaining = value % 10000
+    aar = remaining // 100
+    sqm = remaining % 100
+    return f"{hectare}.{aar:02d}.{sqm:02d}"
 
 
 def _combined_cultivable_area(land_record):
-    total = _parse_area_decimal(land_record.jirayit) + _parse_area_decimal(land_record.bagayat)
-    return _format_area_decimal(total) if total else ''
+    total_sqm = _parse_area_to_sqm(land_record.jirayit) + _parse_area_to_sqm(land_record.bagayat)
+    return _format_sqm_to_har(total_sqm)
+
+
+def _cultivable_from_total_minus_potkharaba(total_area, potkharaba):
+    total_sqm = _parse_area_to_sqm(total_area)
+    pot_sqm = _parse_area_to_sqm(potkharaba)
+    return _format_sqm_to_har(max(total_sqm - pot_sqm, 0))
+
+
+def _sanitize_potkharaba_for_record(land_record):
+    """
+    In some uploads/old data, potkharaba may get populated incorrectly even when
+    7/12 shows '-' for potkharaba. A practical signal of that case is:
+      jirayit + bagayat == total_area, but potkharaba is non-zero.
+    When that happens, treat potkharaba as empty/zero for process-chart UI math.
+    """
+    if not land_record:
+        return ''
+    total_sqm = _parse_area_to_sqm(getattr(land_record, 'total_area', '') or '')
+    jir_bag_sqm = _parse_area_to_sqm(getattr(land_record, 'jirayit', '') or '') + _parse_area_to_sqm(getattr(land_record, 'bagayat', '') or '')
+    pot_sqm = _parse_area_to_sqm(getattr(land_record, 'potkharaba', '') or '')
+
+    if total_sqm > 0 and jir_bag_sqm == total_sqm and pot_sqm > 0:
+        return ''
+    # If jirayit/bagayat are missing (common when only total/cultivable is present),
+    # but potkharaba almost equals total, it's very likely a bad value.
+    if total_sqm > 0 and jir_bag_sqm == 0 and pot_sqm > 0:
+        ratio = pot_sqm / total_sqm
+        if ratio >= 0.9:
+            return ''
+    return getattr(land_record, 'potkharaba', '') or ''
 
 
 def _get_matching_land_records_for_process_chart(district, taluka, village, gut_number):
@@ -3871,36 +3981,52 @@ def _get_matching_land_records_for_process_chart(district, taluka, village, gut_
 def _serialize_owner_rows_for_process_chart(land_records):
     rows = []
     for land_record in land_records:
-        cultivable_area = _combined_cultivable_area(land_record) or land_record.total_area or land_record.khata_area or ''
-        potkharaba = land_record.potkharaba or ''
-        total_area = land_record.total_area or ''
+        sanitized_potkharaba = _sanitize_potkharaba_for_record(land_record)
+        # For per-owner table we prefer per-khata area when present (matches 7/12 layout),
+        # otherwise fall back to full-gut totals.
+        base_total_area = land_record.khata_area or land_record.total_area or ''
+        cultivable_area = (
+            _cultivable_from_total_minus_potkharaba(base_total_area, sanitized_potkharaba)
+            or _combined_cultivable_area(land_record)
+            or base_total_area
+            or land_record.khata_area
+            or ''
+        )
+        potkharaba = sanitized_potkharaba
+        total_area = base_total_area
         farmers = list(land_record.farmers.all().order_by('id'))
         if farmers:
             for index, farmer in enumerate(farmers):
-                show_area = index == 0
+                farmer_total = farmer.total_area or total_area
+                farmer_pot = farmer.potkharaba or potkharaba
+                farmer_cultivable = (
+                    _cultivable_from_total_minus_potkharaba(farmer_total, farmer_pot)
+                    or (farmer_total or cultivable_area)
+                )
                 rows.append({
                     'source_land_record_id': land_record.id,
                     'owner_name': farmer.farmer_name or '',
-                    'cultivable_area': (farmer.total_area or cultivable_area) if show_area else '',
-                    'potkharaba': (farmer.potkharaba or potkharaba) if show_area else '',
-                    'total_area': total_area if show_area else '',
+                    # Repeat shared khata values for every name row (avoid blank cells).
+                    'cultivable_area': farmer_cultivable,
+                    'potkharaba': farmer_pot,
+                    'total_area': farmer_total,
+                    # Khata number is shared across names; show it for all rows.
                     'khata_number': land_record.khata_number or '',
-                    'aakarni': (land_record.aakarni or '') if show_area else '',
-                    'other_rights': land_record.kul_khand_other_rights or '',
+                    'aakarni': (land_record.aakarni or ''),
+                    'other_rights': (land_record.kul_khand_other_rights or ''),
                 })
             continue
 
         names = split_holder_names(land_record.holder_name)
         for index, name in enumerate(names or ['']):
-            show_area = index == 0
             rows.append({
                 'source_land_record_id': land_record.id,
                 'owner_name': name,
-                'cultivable_area': cultivable_area if show_area else '',
-                'potkharaba': potkharaba if show_area else '',
-                'total_area': total_area if show_area else '',
+                'cultivable_area': cultivable_area,
+                'potkharaba': potkharaba,
+                'total_area': total_area,
                 'khata_number': land_record.khata_number or '',
-                'aakarni': (land_record.aakarni or '') if show_area else '',
+                'aakarni': (land_record.aakarni or ''),
                 'other_rights': land_record.kul_khand_other_rights or '',
             })
 
