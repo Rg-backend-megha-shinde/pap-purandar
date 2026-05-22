@@ -221,6 +221,12 @@
         color: #6d7f9b;
     }
 
+    /* Lock fields that are prefilled from Village Info (still included in save payload). */
+    .pc-readonly-lock {
+        pointer-events: none;
+        user-select: none;
+    }
+
     .pc-input:user-invalid {
         border-color: #dc2626;
         box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.12);
@@ -1171,17 +1177,16 @@
                                         <div class="mt-5 grid gap-4 xl:grid-cols-[1.2fr_1.1fr_1.2fr_1.3fr] md:grid-cols-2 md:items-end">
                                             <div>
                                                 <label class="pc-label">अधिसूचना क्रमांक</label>
-                                                <input class="pc-input" id="pcSec8AdhisuchanaKramank" type="text">
+                                                <input class="pc-input pc-readonly-lock" id="pcSec8AdhisuchanaKramank" type="text" readonly>
                                             </div>
                                             <div>
                                                 <label class="pc-label">दिनांक</label>
-                                                <input class="pc-input pc-date-input" id="pcSec8Date" type="date" placeholder="दिनांक निवडा">
+                                                <input class="pc-input pc-date-input pc-readonly-lock" id="pcSec8Date" type="date" placeholder="दिनांक निवडा" readonly>
                                             </div>
                                            
                                             <div>
-                                                <label class="pc-label">अधिसूचना प्रत येथे अपलोड करा (scanned copy)</label>
+                                                <label class="pc-label">अधिसूचना प्रत (Village Info मधून येईल)</label>
                                                 <div class="flex items-end gap-3">
-                                                    <input class="pc-upload" id="pcSec8File" type="file">
                                                     <div class="pc-eye-col">
                                                         <button type="button" id="pcSec8FilesViewBtn" class="pc-eye-view" aria-label="View Documents" title="View Documents">
                                                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
@@ -1251,7 +1256,7 @@
                                 <div class="space-y-5 rounded-xl border border-[#d7e5f6] bg-[#f8fbff] p-5">
                                     <div>
                                         <h3 class="mb-4 text-lg font-bold text-[#244271]">शिघ्रसिद्ध गणणाचा प्रकार</h3>
-                                        <select class="pc-input max-w-md">
+                                        <select class="pc-input max-w-md" id="pcFastCalcType" name="fast_calc_type">
                                             <option value="">शिघ्रसिद्ध गणणाचा प्रकार निवडा</option>
                                             <option value="gramin">ग्रामीण</option>
                                             <option value="prabhav">प्रभाव</option>
@@ -2297,7 +2302,11 @@
                             <div><label class="pc-label">बँक खाते क्रमांक</label><input class="pc-input" name="step10_bank_account_number" type="text" inputmode="numeric" maxlength="18" pattern="[0-9]{9,18}" placeholder="9 ते 18 अंक" title="बँक खाते क्रमांक 9 ते 18 अंकांचा असावा." value="${bankAccount}"></div>
                             <div><label class="pc-label">बँकेची शाखा</label><input class="pc-input" name="step10_bank_branch" type="text" maxlength="100" placeholder="उदा. Pune Main Branch" value="${bankBranch}"></div>
                             <div><label class="pc-label">IFSC Code</label><input class="pc-input" name="step10_ifsc_code" type="text" maxlength="11" pattern="[A-Z]{4}0[A-Z0-9]{6}" placeholder="उदा. SBIN0001234" title="IFSC Code 11 अक्षरी असावा. उदा. SBIN0001234" value="${ifsc}"></div>
-                            <div class="md:col-span-2"><label class="pc-label">पासबुक / चेकबुक प्रत अपलोड करा</label><input class="pc-upload" name="step10_passbook_file" type="file"></div>
+                            <div class="md:col-span-2">
+                                <label class="pc-label">पासबुक / चेकबुक प्रत अपलोड करा</label>
+                                <input class="pc-upload" name="step10_passbook_file_${index}" type="file">
+                                <a class="mt-2 hidden text-xs font-semibold text-[#125fcb] underline" data-pc-doc-link-for="step10_passbook_file_${index}" target="_blank" rel="noopener"></a>
+                            </div>
                         </div>
                     </div>
                     <div class="mt-6">
@@ -2311,7 +2320,8 @@
                     </div>
                     <div class="mt-6 space-y-3">
                         <label class="pc-label">मोबदला पत्र येथे अपलोड करा (scanned copy)</label>
-                        <input class="pc-upload" name="step10_compensation_file" type="file">
+                        <input class="pc-upload" name="step10_compensation_file_${index}" type="file">
+                        <a class="mt-2 hidden text-xs font-semibold text-[#125fcb] underline" data-pc-doc-link-for="step10_compensation_file_${index}" target="_blank" rel="noopener"></a>
                     </div>
                 </div>
             `;
@@ -3008,6 +3018,24 @@
                 link.textContent = doc.name || 'अपलोड केलेली प्रत';
                 link.classList.remove('hidden');
             });
+            // Backward-compat: older drafts stored single keys for step10 files without an index.
+            // New UI expects `step10_passbook_file_<i>` and `step10_compensation_file_<i>`.
+            // If only legacy keys exist, show them on the first card.
+            const applyLegacyStep10Doc = (legacyKey, indexedKey) => {
+                const indexedDoc = documents?.[indexedKey] || null;
+                if (indexedDoc?.url) return;
+                const legacyDoc = documents?.[legacyKey] || null;
+                if (!legacyDoc?.url) return;
+                const link = document.querySelector(`[data-pc-doc-link-for="${indexedKey}"]`);
+                if (!(link instanceof HTMLAnchorElement)) return;
+                link.href = legacyDoc.url;
+                link.textContent = legacyDoc.name || 'अपलोड केलेली प्रत';
+                link.classList.remove('hidden');
+            };
+            applyLegacyStep10Doc('step10_passbook_file', 'step10_passbook_file_0');
+            applyLegacyStep10Doc('step10_compensation_file', 'step10_compensation_file_0');
+            applyLegacyStep10Doc('arbitration_passbook_file', 'arbitration_passbook_file_0');
+            applyLegacyStep10Doc('arbitration_letter_file', 'arbitration_letter_file_0');
             updateSec3RowDocumentLinks(documents);
             updateSec21RowDocumentLinks(documents);
         }
@@ -5536,8 +5564,8 @@
                         <div><label class="pc-label">IFSC Code</label><input class="pc-input" name="arbitration_ifsc_code" type="text" maxlength="11" pattern="[A-Z]{4}0[A-Z0-9]{6}" readonly placeholder="उदा. SBIN0001234" value="${ifsc}"></div>
                         <div>
                             <label class="pc-label">पासबुक स्कॅन अपलोड</label>
-                            <input class="pc-upload" name="arbitration_passbook_file" type="file">
-                            <a class="mt-2 hidden text-xs font-semibold text-[#125fcb] underline" data-pc-doc-link-for="arbitration_passbook_file" target="_blank" rel="noopener"></a>
+                            <input class="pc-upload" name="arbitration_passbook_file_${index}" type="file">
+                            <a class="mt-2 hidden text-xs font-semibold text-[#125fcb] underline" data-pc-doc-link-for="arbitration_passbook_file_${index}" target="_blank" rel="noopener"></a>
                             <a class="mt-2 hidden text-xs font-semibold text-[#0f766e] underline" data-pc-doc-link-for="step10_passbook_file" target="_blank" rel="noopener"></a>
                         </div>
                         <div><label class="pc-label">करार दिनांक</label><input class="pc-input" name="arbitration_agreement_date" type="date" value="${agreementDate}"></div>
@@ -5546,7 +5574,11 @@
                         <div><label class="pc-label">रक्कम अदा नोंदवही धनादेश क्र.</label><input class="pc-input" name="arbitration_cheque_number" type="text" value="${chequeNumber}"></div>
                         <div><label class="pc-label">मा. लवादाने मंजूर केलेली वाढीव रक्कम</label><input class="pc-input pc-arbitration-approved-increase" name="arbitration_approved_increase_amount" type="number" step="0.01" min="0" value="${approvedIncrease}" oninput="window.pcUpdateArbitrationRemainingCompensation && window.pcUpdateArbitrationRemainingCompensation()" onchange="window.pcUpdateArbitrationRemainingCompensation && window.pcUpdateArbitrationRemainingCompensation()"></div>
                         <div><label class="pc-label">बाकी मोबदला रक्कम</label><input class="pc-input pc-arbitration-remaining-compensation" name="arbitration_remaining_compensation" type="number" step="0.01" readonly placeholder="स्वयंरिया" value="${remainingCompensation}"></div>
-                        <div class="md:col-span-3"><label class="pc-label">पत्र अपलोड करा</label><input class="pc-upload" name="arbitration_letter_file" type="file"></div>
+                        <div class="md:col-span-3">
+                            <label class="pc-label">पत्र अपलोड करा</label>
+                            <input class="pc-upload" name="arbitration_letter_file_${index}" type="file">
+                            <a class="mt-2 hidden text-xs font-semibold text-[#125fcb] underline" data-pc-doc-link-for="arbitration_letter_file_${index}" target="_blank" rel="noopener"></a>
+                        </div>
                     </div>
                 </div>
             `;
@@ -6882,6 +6914,12 @@
             restoreSavedTab3Fields(stepData);
             restoreSavedTab4Dates(stepData);
             restoreSavedTab5Fields(stepData);
+            // Tab 6: ensure shigrasiddhi type dropdown is restored (field has a name now).
+            const step6Panel = getProcessChartPanel(6) || document.querySelector('[data-pc-panel="6"]');
+            if (step6Panel) {
+                const step6Data = getSavedStepSectionData(stepData, 6, 'step_6');
+                applySectionDataFields(step6Data, step6Panel);
+            }
             restoreSavedTab11Fields(stepData);
             restoreSavedTab12Fields(stepData);
             requestAnimationFrame(updateTotalAssetValuation);
@@ -7169,7 +7207,10 @@
                         }
                     });
                 }
-                getCurrentPanel()?.querySelectorAll('input[type="file"][name]').forEach((input) => {
+                // Use the panel that matches the step being saved (avoid mismatches if currentStep
+                // state is temporarily out of sync with the visible panel).
+                const filePanel = getProcessChartPanel(savedCurrentStep) || getCurrentPanel();
+                filePanel?.querySelectorAll('input[type="file"][name]').forEach((input) => {
                     if (!(input instanceof HTMLInputElement) || input.dataset.fileField) return;
                     Array.from(input.files || []).forEach((file) => {
                         formData.append(input.name, file);
