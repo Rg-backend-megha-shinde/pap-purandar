@@ -279,6 +279,10 @@
         border-color: #2164cf;
     }
 
+    .pc-eye-view.hidden {
+        display: none;
+    }
+
     .pc-eye-view svg {
         width: 1.1rem;
         height: 1.1rem;
@@ -2613,7 +2617,14 @@
                     return;
                 }
                 link.href = doc.url;
-                link.textContent = doc.name || 'अपलोड केलेली प्रत';
+                link.dataset.pcDocUrl = doc.url || '';
+                link.dataset.pcDocName = doc.name || 'अपलोड केलेली प्रत';
+                if (link.dataset.pcDocLinkIcon === 'true') {
+                    link.setAttribute('title', doc.name || 'अपलोड केलेली प्रत');
+                    link.setAttribute('aria-label', doc.name || 'अपलोड केलेली प्रत');
+                } else {
+                    link.textContent = doc.name || 'अपलोड केलेली प्रत';
+                }
                 link.classList.remove('hidden');
             });
         }
@@ -3015,18 +3026,33 @@
         }
 
         function renderProcessChartDocumentLinks(documents = currentProcessChartDocuments) {
+            const setDocumentLink = (link, doc) => {
+                link.href = doc.url;
+                link.dataset.pcDocUrl = doc.url || '';
+                link.dataset.pcDocName = doc.name || 'अपलोड केलेली प्रत';
+                if (link.dataset.pcDocLinkIcon === 'true') {
+                    link.setAttribute('title', doc.name || 'अपलोड केलेली प्रत');
+                    link.setAttribute('aria-label', doc.name || 'अपलोड केलेली प्रत');
+                } else {
+                    link.textContent = doc.name || 'अपलोड केलेली प्रत';
+                }
+                link.classList.remove('hidden');
+            };
+
             document.querySelectorAll('[data-pc-doc-link-for]').forEach((link) => {
                 const key = link.getAttribute('data-pc-doc-link-for') || '';
                 const doc = documents?.[key] || null;
                 if (!doc?.url) {
                     link.classList.add('hidden');
                     link.removeAttribute('href');
-                    link.textContent = '';
+                    delete link.dataset.pcDocUrl;
+                    delete link.dataset.pcDocName;
+                    if (link.dataset.pcDocLinkIcon !== 'true') {
+                        link.textContent = '';
+                    }
                     return;
                 }
-                link.href = doc.url;
-                link.textContent = doc.name || 'अपलोड केलेली प्रत';
-                link.classList.remove('hidden');
+                setDocumentLink(link, doc);
             });
             // Backward-compat: older drafts stored single keys for step10 files without an index.
             // New UI expects `step10_passbook_file_<i>` and `step10_compensation_file_<i>`.
@@ -3038,9 +3064,7 @@
                 if (!legacyDoc?.url) return;
                 const link = document.querySelector(`[data-pc-doc-link-for="${indexedKey}"]`);
                 if (!(link instanceof HTMLAnchorElement)) return;
-                link.href = legacyDoc.url;
-                link.textContent = legacyDoc.name || 'अपलोड केलेली प्रत';
-                link.classList.remove('hidden');
+                setDocumentLink(link, legacyDoc);
             };
             applyLegacyStep10Doc('step10_passbook_file', 'step10_passbook_file_0');
             applyLegacyStep10Doc('step10_compensation_file', 'step10_compensation_file_0');
@@ -5562,9 +5586,7 @@
             const ifsc = escapeHtml(values.ifsc_code || getArrayValue(sectionData, 'arbitration_ifsc_code', index));
             const area = escapeHtml(values.acquisition_area || getArrayValue(sectionData, 'arbitration_area', index));
             const step10FileKey = String(values.file_key || '').trim();
-            const step10PassbookLink = step10FileKey
-                ? `<a class="mt-2 hidden text-xs font-semibold text-[#0f766e] underline" data-pc-doc-link-for="step10_passbook_file_${escapeHtml(step10FileKey)}" target="_blank" rel="noopener"></a>`
-                : '';
+            const step10PassbookDocKey = step10FileKey ? `step10_passbook_file_${step10FileKey}` : '';
             const agreementDate = normalizeDateInputValue(getArrayValue(sectionData, 'arbitration_agreement_date', index));
             const orderDate = normalizeDateInputValue(getArrayValue(sectionData, 'arbitration_order_date', index));
             const chequeNumber = escapeHtml(getArrayValue(sectionData, 'arbitration_cheque_number', index));
@@ -5582,10 +5604,15 @@
                         <div><label class="pc-label">बँकेची शाखा</label><input class="pc-input" name="arbitration_bank_branch" type="text" maxlength="100" readonly placeholder="टॅब 10 मधून येईल" value="${bankBranch}"></div>
                         <div><label class="pc-label">IFSC Code</label><input class="pc-input" name="arbitration_ifsc_code" type="text" maxlength="11" pattern="[A-Z]{4}0[A-Z0-9]{6}" readonly placeholder="उदा. SBIN0001234" value="${ifsc}"></div>
                         <div>
-                            <label class="pc-label">पासबुक स्कॅन अपलोड</label>
-                            <input class="pc-upload" name="arbitration_passbook_file_${index}" type="file">
-                            <a class="mt-2 hidden text-xs font-semibold text-[#125fcb] underline" data-pc-doc-link-for="arbitration_passbook_file_${index}" target="_blank" rel="noopener"></a>
-                            ${step10PassbookLink}
+                            <label class="pc-label">पासबुक / चेकबुक प्रत</label>
+                            <div class="pc-eye-col min-h-[2.875rem]">
+                                <button type="button" class="pc-eye-view pc-arbitration-passbook-view-btn" data-pc-doc-key="${escapeHtml(step10PassbookDocKey)}" onclick="window.pcOpenArbitrationPassbookPopup && window.pcOpenArbitrationPassbookPopup(this)" aria-label="View Documents" title="View Documents">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                        <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"></path>
+                                        <circle cx="12" cy="12" r="3"></circle>
+                                    </svg>
+                                </button>
+                            </div>
                         </div>
                         <div><label class="pc-label">करार दिनांक</label><input class="pc-input" name="arbitration_agreement_date" type="date" value="${agreementDate}"></div>
                         <div><label class="pc-label">क्षेत्र</label><input class="pc-input" name="arbitration_area" type="text" readonly placeholder="हेक्टर.आर." value="${area}"></div>
@@ -5632,6 +5659,7 @@
                     bank_branch: step10Values.bank_branch || getArrayValue(sectionData, 'arbitration_bank_branch', index),
                     ifsc_code: step10Values.ifsc_code || getArrayValue(sectionData, 'arbitration_ifsc_code', index),
                     acquisition_area: tab4Row.acquisition_area || getArrayValue(sectionData, 'arbitration_area', index),
+                    file_key: step10Values.file_key || '',
                 };
                 return buildArbitrationOwnerCard(index, fallbackValues, sectionData);
             }).join('');
@@ -6020,6 +6048,31 @@
             filesModal.classList.add('hidden');
             document.body.style.overflow = '';
         }
+
+        function openDocumentLinkPopup(link) {
+            if (!(link instanceof HTMLAnchorElement)) return;
+            const url = link.dataset.pcDocUrl || link.getAttribute('href') || '';
+            if (!url) return;
+            openFilesModal([{
+                url,
+                name: link.dataset.pcDocName || link.getAttribute('aria-label') || 'अपलोड केलेली प्रत',
+            }]);
+        }
+
+        function getProcessChartDocumentByKey(key = '') {
+            if (!key) return null;
+            const doc = currentProcessChartDocuments?.[key] || null;
+            if (doc?.url) return doc;
+            if (key === 'step10_passbook_file_0') {
+                return currentProcessChartDocuments?.step10_passbook_file || null;
+            }
+            return null;
+        }
+        window.pcOpenArbitrationPassbookPopup = (button) => {
+            const docKey = button?.dataset?.pcDocKey || '';
+            const doc = getProcessChartDocumentByKey(docKey);
+            openFilesModal(doc?.url ? [doc] : []);
+        };
 
         function buildAgreementDraftHtml() {
             const prefill = currentProcessChartPrefill || {};
@@ -7459,6 +7512,13 @@
             });
         });
         processChartForm?.addEventListener('click', (event) => {
+            const documentIconLink = event.target.closest('a[data-pc-doc-link-icon="true"]');
+            if (documentIconLink instanceof HTMLAnchorElement) {
+                event.preventDefault();
+                openDocumentLinkPopup(documentIconLink);
+                return;
+            }
+
             const addAssetBtn = event.target.closest('.pc-add-asset-row-btn');
             if (addAssetBtn instanceof HTMLButtonElement) {
                 const targetId = addAssetBtn.dataset.target || '';
