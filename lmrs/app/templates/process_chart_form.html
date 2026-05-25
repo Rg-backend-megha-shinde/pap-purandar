@@ -1839,7 +1839,7 @@
             const keys = Object.keys(sectionData);
             const firstKey = keys[0];
             const count = Array.isArray(sectionData[firstKey]) ? sectionData[firstKey].length : 0;
-            if (count <= 1) return;
+            if (count <= 0) return;
             keys.forEach((key) => {
                 if (Array.isArray(sectionData[key])) {
                     sectionData[key].splice(index, 1);
@@ -1848,6 +1848,10 @@
             renderStep10OwnerCards(currentProcessChartPrefill, sectionData);
             updateStep10AadhaarFromOwner(currentProcessChartPrefill);
         };
+
+        function makeStep10FileKey() {
+            return `new_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+        }
 
         function getIdentityFieldType(field) {
             if (!(field instanceof HTMLInputElement)) return '';
@@ -2264,6 +2268,7 @@
 
         function buildStep10OwnerCard(index, ownerNames = [], values = {}) {
             const selectedOwner = String(values.step10_owner_name || '').trim();
+            const fileKey = escapeHtml(String(values.step10_file_key || index));
             const ownerOptions = Array.from(new Set(
                 (Array.isArray(ownerNames) ? ownerNames : [])
                     .map((item) => String(item || '').trim())
@@ -2281,6 +2286,7 @@
 
             return `
                 <div class="pc-section rounded-xl border border-[#d7e5f6] bg-[#f8fbff] p-5">
+                    <input type="hidden" name="step10_file_key" value="${fileKey}">
                     <div class="mb-4 flex items-center justify-between gap-3">
                         <h3 class="text-lg font-bold text-[#244271]">भूधारक ${index + 1}</h3>
                         <button type="button" class="pc-step10-remove-owner-card rounded-md border border-[#d4deec] px-3 py-1 text-xs text-[#5d7293]" onclick="window.pcStep10RemoveOwnerCard && window.pcStep10RemoveOwnerCard(${index})">काढा</button>
@@ -2304,8 +2310,8 @@
                             <div><label class="pc-label">IFSC Code</label><input class="pc-input" name="step10_ifsc_code" type="text" maxlength="11" pattern="[A-Z]{4}0[A-Z0-9]{6}" placeholder="उदा. SBIN0001234" title="IFSC Code 11 अक्षरी असावा. उदा. SBIN0001234" value="${ifsc}"></div>
                             <div class="md:col-span-2">
                                 <label class="pc-label">पासबुक / चेकबुक प्रत अपलोड करा</label>
-                                <input class="pc-upload" name="step10_passbook_file_${index}" type="file">
-                                <a class="mt-2 hidden text-xs font-semibold text-[#125fcb] underline" data-pc-doc-link-for="step10_passbook_file_${index}" target="_blank" rel="noopener"></a>
+                                <input class="pc-upload" name="step10_passbook_file_${fileKey}" type="file">
+                                <a class="mt-2 hidden text-xs font-semibold text-[#125fcb] underline" data-pc-doc-link-for="step10_passbook_file_${fileKey}" target="_blank" rel="noopener"></a>
                             </div>
                         </div>
                     </div>
@@ -2320,8 +2326,8 @@
                     </div>
                     <div class="mt-6 space-y-3">
                         <label class="pc-label">मोबदला पत्र येथे अपलोड करा (scanned copy)</label>
-                        <input class="pc-upload" name="step10_compensation_file_${index}" type="file">
-                        <a class="mt-2 hidden text-xs font-semibold text-[#125fcb] underline" data-pc-doc-link-for="step10_compensation_file_${index}" target="_blank" rel="noopener"></a>
+                        <input class="pc-upload" name="step10_compensation_file_${fileKey}" type="file">
+                        <a class="mt-2 hidden text-xs font-semibold text-[#125fcb] underline" data-pc-doc-link-for="step10_compensation_file_${fileKey}" target="_blank" rel="noopener"></a>
                     </div>
                 </div>
             `;
@@ -2339,6 +2345,7 @@
                 'step10_compensation_amount',
                 'step10_compensation_date',
                 'step10_utr_number',
+                'step10_file_key',
             ];
             return keys.reduce((maxCount, key) => {
                 const value = sectionData[key];
@@ -2380,6 +2387,7 @@
                 step10_compensation_amount: getStep10SavedValue(sectionData, 'step10_compensation_amount', index),
                 step10_compensation_date: getStep10SavedValue(sectionData, 'step10_compensation_date', index),
                 step10_utr_number: getStep10SavedValue(sectionData, 'step10_utr_number', index),
+                step10_file_key: getStep10SavedValue(sectionData, 'step10_file_key', index) || String(index),
             }));
             step10OwnerCardsContainer.innerHTML = `${suggestionsMarkup}${cards.map((values, index) => buildStep10OwnerCard(index, ownerNames, values)).join('')}`;
             renderProcessChartDocumentLinks();
@@ -2527,6 +2535,7 @@
                 step10_compensation_amount: [],
                 step10_compensation_date: [],
                 step10_utr_number: [],
+                step10_file_key: [],
             };
 
             cards.forEach((card) => {
@@ -2554,6 +2563,7 @@
             existing.step10_compensation_amount.push(values.step10_compensation_amount || '');
             existing.step10_compensation_date.push(values.step10_compensation_date || '');
             existing.step10_utr_number.push(values.step10_utr_number || '');
+            existing.step10_file_key.push(values.step10_file_key || makeStep10FileKey());
             renderStep10OwnerCards(currentProcessChartPrefill, existing);
             updateStep10AadhaarFromOwner(currentProcessChartPrefill);
         }
@@ -4505,7 +4515,7 @@
             closeJointSurveyNamesModal();
         }
 
-        function populateStep10OwnerSelection(prefill = currentProcessChartPrefill) {
+        function populateStep10OwnerSelection(prefill = currentProcessChartPrefill, options = {}) {
             const { singleGroups, multiGroups } = groupJointSurveyRows(prefill);
             const tab4Rows = collectTab4AcquisitionOwnerRows();
             const checkboxes = Array.from(document.querySelectorAll('.pc-joint-survey-name-checkbox:checked'));
@@ -4549,6 +4559,7 @@
                 step10_compensation_amount: [],
                 step10_compensation_date: [],
                 step10_utr_number: [],
+                step10_file_key: [],
             };
 
             selectedRows.forEach((row) => {
@@ -4564,10 +4575,13 @@
                 sectionData.step10_compensation_amount.push(existing.compensation_amount || '');
                 sectionData.step10_compensation_date.push(existing.compensation_date || '');
                 sectionData.step10_utr_number.push(existing.utr_number || '');
+                sectionData.step10_file_key.push(existing.file_key || makeStep10FileKey());
             });
             renderStep10OwnerCards(prefill, sectionData);
             updateStep10AadhaarFromOwner(prefill);
-            closeJointSurveyNamesModal();
+            if (options.closeModal !== false) {
+                closeJointSurveyNamesModal();
+            }
         }
 
         function populateArbitrationOwnerSelection() {
@@ -5518,6 +5532,7 @@
                 compensation_amount: sectionData.step10_compensation_amount?.[index] || '',
                 compensation_date: sectionData.step10_compensation_date?.[index] || '',
                 utr_number: sectionData.step10_utr_number?.[index] || '',
+                file_key: sectionData.step10_file_key?.[index] || String(index),
             })).filter((values) => Object.values(values).some((value) => String(value || '').trim()));
         }
 
@@ -5546,6 +5561,10 @@
             const bankBranch = escapeHtml(values.bank_branch || getArrayValue(sectionData, 'arbitration_bank_branch', index));
             const ifsc = escapeHtml(values.ifsc_code || getArrayValue(sectionData, 'arbitration_ifsc_code', index));
             const area = escapeHtml(values.acquisition_area || getArrayValue(sectionData, 'arbitration_area', index));
+            const step10FileKey = String(values.file_key || '').trim();
+            const step10PassbookLink = step10FileKey
+                ? `<a class="mt-2 hidden text-xs font-semibold text-[#0f766e] underline" data-pc-doc-link-for="step10_passbook_file_${escapeHtml(step10FileKey)}" target="_blank" rel="noopener"></a>`
+                : '';
             const agreementDate = normalizeDateInputValue(getArrayValue(sectionData, 'arbitration_agreement_date', index));
             const orderDate = normalizeDateInputValue(getArrayValue(sectionData, 'arbitration_order_date', index));
             const chequeNumber = escapeHtml(getArrayValue(sectionData, 'arbitration_cheque_number', index));
@@ -5566,7 +5585,7 @@
                             <label class="pc-label">पासबुक स्कॅन अपलोड</label>
                             <input class="pc-upload" name="arbitration_passbook_file_${index}" type="file">
                             <a class="mt-2 hidden text-xs font-semibold text-[#125fcb] underline" data-pc-doc-link-for="arbitration_passbook_file_${index}" target="_blank" rel="noopener"></a>
-                            <a class="mt-2 hidden text-xs font-semibold text-[#0f766e] underline" data-pc-doc-link-for="step10_passbook_file" target="_blank" rel="noopener"></a>
+                            ${step10PassbookLink}
                         </div>
                         <div><label class="pc-label">करार दिनांक</label><input class="pc-input" name="arbitration_agreement_date" type="date" value="${agreementDate}"></div>
                         <div><label class="pc-label">क्षेत्र</label><input class="pc-input" name="arbitration_area" type="text" readonly placeholder="हेक्टर.आर." value="${area}"></div>
@@ -7207,9 +7226,9 @@
                         }
                     });
                 }
-                // Use the panel that matches the step being saved (avoid mismatches if currentStep
-                // state is temporarily out of sync with the visible panel).
-                const filePanel = getProcessChartPanel(savedCurrentStep) || getCurrentPanel();
+                // Collect files from the visible/current step being saved. `savedCurrentStep`
+                // may be the navigation target (for Save & Next), not the source tab.
+                const filePanel = getProcessChartPanel(currentStep) || getCurrentPanel();
                 filePanel?.querySelectorAll('input[type="file"][name]').forEach((input) => {
                     if (!(input instanceof HTMLInputElement) || input.dataset.fileField) return;
                     Array.from(input.files || []).forEach((file) => {
@@ -7550,7 +7569,7 @@
             if (!removeBtn) return;
             const cards = Array.from(step10OwnerCardsContainer.querySelectorAll('.pc-section'));
             const card = removeBtn.closest('.pc-section');
-            if (!card || cards.length <= 1) return;
+            if (!card) return;
             const remaining = cards.filter((item) => item !== card);
             const sectionData = {
                 step10_owner_name: [],
@@ -7563,6 +7582,7 @@
                 step10_compensation_amount: [],
                 step10_compensation_date: [],
                 step10_utr_number: [],
+                step10_file_key: [],
             };
 
             remaining.forEach((item) => {
@@ -7756,6 +7776,10 @@
         jointSurveyNamesModal?.addEventListener('change', (event) => {
             const target = event.target;
             if (!(target instanceof HTMLInputElement)) return;
+            if (currentJointSurveyApplyMode === 'step10' && target.classList.contains('pc-joint-survey-name-checkbox')) {
+                populateStep10OwnerSelection(currentProcessChartPrefill, { closeModal: false });
+                return;
+            }
             if (target.classList.contains('pc-joint-survey-select-all')) {
                 const groupIndex = target.getAttribute('data-group-index');
                 if (groupIndex === null) return;
