@@ -1106,8 +1106,13 @@ def land_record_712(request):
         return ', '.join(parts)
 
     def normalize_gut_key(value):
-        parts = re.findall(r'\d+', str(value or ''))
-        return '/'.join(parts) if parts else ''
+        text = str(value or '').strip()
+        if not text:
+            return ''
+        parts = re.findall(r'\d+', text)
+        if parts:
+            return '/'.join(parts)
+        return normalize_match_text(text)
 
     def fetch_valid_guts_for_location(district_name, taluka_name, village_name):
         if not district_name or not taluka_name or not village_name:
@@ -1182,41 +1187,84 @@ def land_record_712(request):
             return render(request, 'landrecord.html', {'error_message': 'Please select district, taluka and village.'})
 
         valid_gut_keys = fetch_valid_guts_for_location(district, taluka, village)
+        skipped_rows = []
+        valid_rows = rows_to_create
         if valid_gut_keys:
-            invalid_guts = []
+            valid_rows = []
             for row in rows_to_create:
                 row_key = normalize_gut_key(row.get('gut_number'))
-                if not row_key or row_key not in valid_gut_keys:
-                    invalid_guts.append(row.get('gut_number') or '')
-            if invalid_guts:
-                return render(
-                    request,
-                    'landrecord.html',
-                    {'error_message': 'Selected location and gut mismatch: ' + ', '.join(invalid_guts[:10])}
-                )
+                if row_key and row_key in valid_gut_keys:
+                    valid_rows.append(row)
+                else:
+                    skipped_rows.append({
+                        'reason': 'Gut mismatch for selected district/taluka/village',
+                        'gut_number': row.get('gut_number') or '',
+                        'holder_name': row.get('holder_name') or '',
+                        'total_area': row.get('total_area') or '',
+                    })
 
+        if not valid_rows:
+            return render(
+                request,
+                'landrecord.html',
+                {'error_message': 'No matching gut rows found for selected location.'}
+            )
+
+        created_count = 0
+        duplicate_count = 0
         with transaction.atomic():
-            for row in rows_to_create:
-                LandRecord712.objects.create(
-                    user=request.user,
-                    document_712=uploaded_file,
-                    original_document_name=uploaded_file.name if uploaded_file else None,
-                    district=row.get('district') or district,
-                    taluka=row.get('taluka') or taluka,
-                    village=row.get('village') or village,
-                    gut_number=row.get('gut_number') or gut_number,
-                    khata_number=clean_optional(row.get('khata_number')),
-                    puid_ulip_no=clean_optional(row.get('puid_ulip_no')),
-                    jirayit=normalize_712_area(row.get('jirayit')),
-                    bagayat=normalize_712_area(row.get('bagayat')),
-                    potkharaba=normalize_712_area(row.get('potkharaba')),
-                    total_area=normalize_712_area(row.get('total_area')),
-                    aakarni=clean_optional(row.get('aakarni')),
-                    khata_area=normalize_712_area(row.get('khata_area')),
-                    aakar=clean_optional(row.get('aakar')),
-                    holder_name=clean_optional(clean_holder_name_list(row.get('holder_name'))),
-                    kul_khand_other_rights=clean_optional(row.get('kul_khand_other_rights')),
+            for row in valid_rows:
+                lookup_kwargs = {
+                    'district': row.get('district') or district,
+                    'taluka': row.get('taluka') or taluka,
+                    'village': row.get('village') or village,
+                    'gut_number': row.get('gut_number') or gut_number,
+                    'holder_name': clean_optional(clean_holder_name_list(row.get('holder_name'))),
+                    'total_area': normalize_712_area(row.get('total_area')),
+                    'aakarni': clean_optional(row.get('aakarni')),
+                }
+                defaults_kwargs = {
+                    'user': request.user,
+                    'document_712': uploaded_file,
+                    'original_document_name': uploaded_file.name if uploaded_file else None,
+                    'district': lookup_kwargs['district'],
+                    'taluka': lookup_kwargs['taluka'],
+                    'village': lookup_kwargs['village'],
+                    'gut_number': lookup_kwargs['gut_number'],
+                    'khata_number': clean_optional(row.get('khata_number')),
+                    'puid_ulip_no': clean_optional(row.get('puid_ulip_no')),
+                    'jirayit': normalize_712_area(row.get('jirayit')),
+                    'bagayat': normalize_712_area(row.get('bagayat')),
+                    'potkharaba': normalize_712_area(row.get('potkharaba')),
+                    'total_area': lookup_kwargs['total_area'],
+                    'aakarni': lookup_kwargs['aakarni'],
+                    'khata_area': normalize_712_area(row.get('khata_area')),
+                    'aakar': clean_optional(row.get('aakar')),
+                    'holder_name': lookup_kwargs['holder_name'],
+                    'kul_khand_other_rights': clean_optional(row.get('kul_khand_other_rights')),
+                }
+                _obj, created = LandRecord712.objects.get_or_create(
+                    **lookup_kwargs,
+                    defaults=defaults_kwargs,
                 )
+                if created:
+                    created_count += 1
+                else:
+                    duplicate_count += 1
+                    skipped_rows.append({
+                        'reason': 'Duplicate row (already saved)',
+                        'gut_number': row.get('gut_number') or '',
+                        'holder_name': row.get('holder_name') or '',
+                        'total_area': row.get('total_area') or '',
+                    })
+        if skipped_rows:
+            mismatch_count = sum(1 for item in skipped_rows if item.get('reason', '').startswith('Gut mismatch'))
+            duplicate_count_from_rows = sum(1 for item in skipped_rows if item.get('reason', '').startswith('Duplicate'))
+            msg = (
+                f'Saved {created_count} rows. '
+                f'Skipped {mismatch_count} gut mismatches and {duplicate_count_from_rows} duplicates.'
+            )
+            return render(request, 'landrecord.html', {'error_message': msg})
 
         return redirect('land_record_712_list')
 
@@ -1399,8 +1447,13 @@ def parse_land_record_712_html(request):
         return ''
 
     def normalize_gut_key(value):
-        parts = re.findall(r'\d+', str(value or ''))
-        return '/'.join(parts) if parts else ''
+        text = str(value or '').strip()
+        if not text:
+            return ''
+        parts = re.findall(r'\d+', text)
+        if parts:
+            return '/'.join(parts)
+        return normalize_match_text(text)
 
     upload_mode = (request.POST.get('upload_mode') or 'html').strip().lower()
     district = request.POST.get('district')
@@ -1453,7 +1506,9 @@ def parse_land_record_712_html(request):
     except ValueError:
         return JsonResponse({'success': False, 'error': '7/12 API did not return valid JSON.'}, status=502)
 
-    rows = payload.get('eligible', [])
+    eligible_rows = payload.get('eligible', []) or []
+    not_eligible_rows = payload.get('not_eligible', []) or []
+    rows = [*eligible_rows, *not_eligible_rows]
     if not rows:
         return JsonResponse({'success': False, 'error': 'No record found in uploaded file.'}, status=400)
 
@@ -1477,16 +1532,22 @@ def parse_land_record_712_html(request):
             village_matches = text_matches_aliases(row_village, location_aliases['village'])
             if not (district_matches and taluka_matches and village_matches):
                 continue
-        parsed_gut = normalize_gut_key(
-            row_get(row, '\u0917\u091f \u0928\u0902\u092c\u0930/\u0938\u0930\u094d\u0935\u0947 \u0928\u0902\u092c\u0930', '\u0917\u091f \u0928\u0902\u092c\u0930', '\u0938\u0930\u094d\u0935\u0947 \u0928\u0902\u092c\u0930', 'gut_number', 'gutnumber', 'survey_no')
+        raw_gut = row_get(
+            row,
+            '\u0917\u091f \u0928\u0902\u092c\u0930/\u0938\u0930\u094d\u0935\u0947 \u0928\u0902\u092c\u0930',
+            '\u0917\u091f \u0928\u0902\u092c\u0930',
+            '\u0938\u0930\u094d\u0935\u0947 \u0928\u0902\u092c\u0930',
+            'gut_number',
+            'gutnumber',
+            'survey_no'
         )
-        if not parsed_gut:
+        if not normalize_gut_key(raw_gut):
             continue
         records.append({
             'district': row_district or district,
             'taluka': row_taluka or taluka,
             'village': row_village or village,
-            'gut_number': parsed_gut,
+            'gut_number': raw_gut,
             'khata_number': row_get(row, '\u0916\u093e\u0924\u093e_\u0928\u0902', '\u0916\u093e\u0924\u093e \u0928\u0902', '\u0916\u093e\u0924\u093e \u0928\u0902\u092c\u0930', 'khata_number'),
             'puid_ulip_no': row_get(row, 'PUID_ULIP_No', 'puid_ulip_no'),
             'jirayit': row_get(row, '\u091c\u093f\u0930\u093e\u092f\u0924', 'jirayit'),

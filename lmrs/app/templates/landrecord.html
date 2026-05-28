@@ -70,7 +70,6 @@
             <button type="button" aria-label="Dismiss error" class="-my-1 rounded px-2 py-1 text-lg leading-none text-red-700 hover:bg-red-100" onclick="this.closest('div').remove()">&times;</button>
         </div>
     {% endif %}
-
     <div id="clientErrorBox" class="mb-4 hidden items-start justify-between gap-3 rounded border border-red-300 bg-red-50 p-3 text-sm text-red-700">
         <span id="clientErrorText"></span>
         <button type="button" aria-label="Dismiss error" class="-my-1 rounded px-2 py-1 text-lg leading-none text-red-700 hover:bg-red-100" onclick="this.parentElement.classList.add('hidden'); this.parentElement.classList.remove('flex');">&times;</button>
@@ -425,8 +424,11 @@ function setRows(rows) {
 }
 
 function normalizeGutKey(value) {
-    const parts = String(value || '').match(/\d+/g);
-    return parts ? parts.join('/') : '';
+    const text = String(value || '').trim();
+    if (!text) return '';
+    const parts = text.match(/\d+/g);
+    if (parts) return parts.join('/');
+    return normalizeLocationKey(text);
 }
 
 async function applyParsedLocation(location = {}) {
