@@ -79,8 +79,21 @@
 
     <form method="POST" enctype="multipart/form-data" id="landRecordForm" class="mt-6">
         {% csrf_token %}
-
         <div class="border rounded-lg p-4 bg-gray-50 mb-6">
+            <h3 class="font-bold text-lg mb-4">Upload Mode</h3>
+            <div class="flex flex-col sm:flex-row gap-3 sm:gap-6">
+                <label class="inline-flex items-center gap-2">
+                    <input type="radio" id="uploadModeHtml" name="upload_mode" value="html" checked>
+                    <span>Upload via HTML</span>
+                </label>
+                <label class="inline-flex items-center gap-2">
+                    <input type="radio" id="uploadModeExcel" name="upload_mode" value="excel">
+                    <span>Upload via Excel</span>
+                </label>
+            </div>
+        </div>
+
+        <div id="locationSection" class="border rounded-lg p-4 bg-gray-50 mb-6">
             <h3 class="font-bold text-lg mb-4">१. स्थान माहिती</h3>
             <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
                 <div>
@@ -117,7 +130,7 @@
             <h3 class="font-bold text-lg mb-4">२. ७/१२ HTML फाईल अपलोड</h3>
             <div class="flex flex-col items-center justify-center">
                 <div id="dropZone712" class="w-full max-w-xl border-2 border-dashed border-gray-400 rounded-lg p-6 bg-white text-center transition">
-                    <p class="text-sm font-semibold text-gray-700 mb-1">७/१२ HTML फाईल निवडा</p>
+                    <p class="text-sm font-semibold text-gray-700 mb-1">७/१२ फाईल निवडा</p>
                     <p id="file712Name" class="text-xs text-gray-500 mb-4">कोणतीही फाईल निवडलेली नाही</p>
                     <input type="file" id="document_712" name="document_712" accept=".html,.htm" class="hidden">
                     <div class="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center justify-center gap-2">
@@ -238,6 +251,7 @@ document.getElementById('kulKhandModal').addEventListener('click', function(e) {
 
 let htmlDataValidated = false;
 let loaderInterval = null;
+let isApplyingParsedLocation = false;
 
 const formEl = document.getElementById('landRecordForm');
 const districtEl = document.getElementById('district');
@@ -258,6 +272,35 @@ const loaderEl = document.getElementById('fetchLoader');
 const loaderBarEl = document.getElementById('fetchProgressBar');
 const loaderLabelEl = document.getElementById('fetchProgressLabel');
 const khataSectionEl = document.getElementById('khataSection');
+const locationSectionEl = document.getElementById('locationSection');
+const uploadModeHtmlEl = document.getElementById('uploadModeHtml');
+const uploadModeExcelEl = document.getElementById('uploadModeExcel');
+
+function currentUploadMode() {
+    return uploadModeExcelEl && uploadModeExcelEl.checked ? 'excel' : 'html';
+}
+
+function applyUploadMode() {
+    const isHtml = currentUploadMode() === 'html';
+    if (locationSectionEl) locationSectionEl.classList.remove('hidden');
+    districtEl.disabled = false;
+    talukaEl.disabled = false;
+    villageEl.disabled = false;
+    gutEl.disabled = !isHtml;
+    districtEl.setAttribute('required', 'required');
+    talukaEl.setAttribute('required', 'required');
+    villageEl.setAttribute('required', 'required');
+    if (isHtml) gutEl.setAttribute('required', 'required');
+    else gutEl.removeAttribute('required');
+    fetchBtnEl.classList.remove('hidden');
+    fileInputEl.accept = isHtml ? '.html,.htm' : '.xlsx,.xls';
+    htmlDataValidated = false;
+    setRows([]);
+    if (!isHtml) {
+        gutEl.innerHTML = '<option value=""></option>';
+        gutEl.value = '';
+    }
+}
 const MARATHI_NA = 'उपलब्ध नाही';
 
 function showError(message) {
@@ -306,6 +349,24 @@ function setLoading(isLoading) {
 
 function normalizeText(value) {
     return String(value || '').trim().toLowerCase();
+}
+
+function normalizeLocationKey(value) {
+    return String(value || '').trim().toLowerCase().replace(/\s+/g, ' ');
+}
+
+function setSelectByText(selectEl, targetValue) {
+    const target = normalizeLocationKey(targetValue);
+    if (!target) return false;
+    for (const option of selectEl.options) {
+        const valueKey = normalizeLocationKey(option.value);
+        const labelKey = normalizeLocationKey(option.textContent || option.label || '');
+        if (valueKey === target || labelKey === target) {
+            selectEl.value = option.value;
+            return true;
+        }
+    }
+    return false;
 }
 
 function yesNoOption(value) {
@@ -361,6 +422,65 @@ function setRows(rows) {
 
     rows.forEach(row => addKhataRow(row));
     khataSectionEl.classList.remove('hidden');
+}
+
+function normalizeGutKey(value) {
+    const parts = String(value || '').match(/\d+/g);
+    return parts ? parts.join('/') : '';
+}
+
+async function applyParsedLocation(location = {}) {
+    const district = String(location.district || '').trim();
+    const taluka = String(location.taluka || '').trim();
+    const village = String(location.village || '').trim();
+    const gut = String(location.gut_number || '').trim();
+    const isExcel = currentUploadMode() === 'excel';
+    if (!district || !taluka || !village) return;
+
+    isApplyingParsedLocation = true;
+    try {
+        setSelectByText(districtEl, district);
+        const selectedDistrict = districtEl.value || district;
+        await loadTalukasFor712(selectedDistrict);
+
+        setSelectByText(talukaEl, taluka);
+        const selectedTaluka = talukaEl.value || taluka;
+        await loadVillagesFor712(selectedDistrict, selectedTaluka);
+
+        setSelectByText(villageEl, village);
+        const selectedVillage = villageEl.value || village;
+
+        if (isExcel) {
+            gutEl.innerHTML = '<option value=""></option>';
+            gutEl.value = '';
+            return;
+        }
+
+        gutEl.innerHTML = '<option value="">à¤—à¤Ÿ à¤•à¥à¤°à¤®à¤¾à¤‚à¤• à¤¨à¤¿à¤µà¤¡à¤¾</option>';
+        const res = await fetch(`/api/locations/?district=${encodeURIComponent(selectedDistrict)}&taluka=${encodeURIComponent(selectedTaluka)}&village=${encodeURIComponent(selectedVillage)}`);
+        const data = await res.json();
+        const guts = data.data || [];
+        guts.forEach(g => gutEl.add(new Option(g, g)));
+
+        if (!isExcel && gut) {
+            const targetKey = normalizeGutKey(gut);
+            let match = '';
+            for (const g of guts) {
+                if (normalizeGutKey(g) === targetKey) {
+                    match = g;
+                    break;
+                }
+            }
+            if (!match) match = gut;
+            if (![...gutEl.options].some(o => o.value === match)) gutEl.add(new Option(match, match));
+            gutEl.value = match;
+        }
+        gutEl.value = '';
+    } catch {
+        // keep fetched records even if dropdown refresh fails
+    } finally {
+        isApplyingParsedLocation = false;
+    }
 }
 
 function clearLowerDropdowns(fromLevel) {
@@ -425,6 +545,7 @@ async function loadVillagesFor712(district, taluka) {
     }
 }
 districtEl.addEventListener('change', function () {
+    if (isApplyingParsedLocation) return;
     htmlDataValidated = false;
     clearMessages();
     setRows([]);
@@ -434,6 +555,7 @@ districtEl.addEventListener('change', function () {
 });
 
 talukaEl.addEventListener('change', function () {
+    if (isApplyingParsedLocation) return;
     htmlDataValidated = false;
     clearMessages();
     setRows([]);
@@ -443,6 +565,7 @@ talukaEl.addEventListener('change', function () {
 });
 
 villageEl.addEventListener('change', function () {
+    if (isApplyingParsedLocation) return;
     htmlDataValidated = false;
     clearMessages();
     setRows([]);
@@ -452,6 +575,11 @@ villageEl.addEventListener('change', function () {
     const taluka = talukaEl.value;
     const village = this.value;
     if (!district || !taluka || !village) return;
+    if (currentUploadMode() === 'excel') {
+        gutEl.innerHTML = '<option value=""></option>';
+        gutEl.value = '';
+        return;
+    }
 
     fetch(`/api/locations/?district=${encodeURIComponent(district)}&taluka=${encodeURIComponent(taluka)}&village=${encodeURIComponent(village)}`)
         .then(res => res.json())
@@ -462,6 +590,7 @@ villageEl.addEventListener('change', function () {
 });
 
 gutEl.addEventListener('change', function () {
+    if (isApplyingParsedLocation) return;
     htmlDataValidated = false;
     clearMessages();
     setRows([]);
@@ -480,6 +609,16 @@ function applySelected712File(file) {
         return;
     }
 
+    const mode = currentUploadMode();
+    const name = (file.name || '').toLowerCase();
+    if (mode === 'html' && !(name.endsWith('.html') || name.endsWith('.htm'))) {
+        showError('HTML mode: choose .html/.htm file.');
+        return;
+    }
+    if (mode === 'excel' && !(name.endsWith('.xlsx') || name.endsWith('.xls'))) {
+        showError('Excel mode: choose .xlsx/.xls file.');
+        return;
+    }
     const dt = new DataTransfer();
     dt.items.add(file);
     fileInputEl.files = dt.files;
@@ -512,8 +651,11 @@ dropZone712El.addEventListener('drop', function (e) {
     const dropped = e.dataTransfer?.files?.[0];
     if (!dropped) return;
     const name = dropped.name.toLowerCase();
-    if (!(name.endsWith('.html') || name.endsWith('.htm'))) {
-        showError('कृपया फक्त HTML फाईल ड्रॉप करा.');
+    const valid = currentUploadMode() === 'html'
+        ? (name.endsWith('.html') || name.endsWith('.htm'))
+        : (name.endsWith('.xlsx') || name.endsWith('.xls'));
+    if (!valid) {
+        showError('Invalid file type for selected upload mode.');
         return;
     }
     applySelected712File(dropped);
@@ -531,13 +673,18 @@ viewUploadedFileBtnEl.addEventListener('click', function () {
 fetchBtnEl.addEventListener('click', async function () {
     clearMessages();
 
+    const mode = currentUploadMode();
     const file = fileInputEl.files && fileInputEl.files[0];
-    if (!districtEl.value || !talukaEl.value || !villageEl.value || !gutEl.value) {
-        showError('कृपया आधी जिल्हा, तालुका, गाव आणि गट क्रमांक निवडा.');
+    if (!file) {
+        showError(mode === 'excel' ? 'Please choose 7/12 Excel file.' : 'Please choose 7/12 HTML file.');
         return;
     }
-    if (!file) {
-        showError('कृपया ७/१२ उतार नोंद HTML फाईल निवडा.');
+    if (mode === 'html' && (!districtEl.value || !talukaEl.value || !villageEl.value || !gutEl.value)) {
+        showError('Please select district, taluka, village and gut number first.');
+        return;
+    }
+    if (mode === 'excel' && (!districtEl.value || !talukaEl.value || !villageEl.value)) {
+        showError('Please select district, taluka and village first.');
         return;
     }
 
@@ -546,7 +693,8 @@ fetchBtnEl.addEventListener('click', async function () {
     formData.append('district', districtEl.value);
     formData.append('taluka', talukaEl.value);
     formData.append('village', villageEl.value);
-    formData.append('gut_number', gutEl.value);
+    if (mode === 'html') formData.append('gut_number', gutEl.value);
+    formData.append('upload_mode', mode);
     formData.append('document_712', file);
 
     setLoading(true);
@@ -560,32 +708,51 @@ fetchBtnEl.addEventListener('click', async function () {
 
         const data = await response.json();
         if (!response.ok || !data.success) {
-            throw new Error(data.error || 'HTML मधील डेटा fetch करताना समस्या आली.');
+            throw new Error(data.error || 'Failed to fetch data from file.');
         }
 
         setRows(data.records || []);
+        await applyParsedLocation(data.location || (data.records && data.records[0]) || {});
         htmlDataValidated = true;
-        showSuccess(`${data.count || 0} खाता नोंदी यशस्वीरित्या भरल्या.`);
+        showSuccess(`${data.count || 0} records loaded successfully.`);
     } catch (error) {
         htmlDataValidated = false;
         setRows([]);
-        showError(error.message || 'डेटा fetch करताना त्रुटी आली.');
+        showError(error.message || 'Failed to fetch data from file.');
     } finally {
         setLoading(false);
     }
 });
 
 formEl.addEventListener('submit', function (e) {
+    const mode = currentUploadMode();
     const file = fileInputEl.files && fileInputEl.files[0];
-    const hasRows = document.getElementById('khata-rows').rows.length > 0;
-    if (!hasRows) {
+    if (!file) {
         e.preventDefault();
-        showError('कृपया HTML अपलोड करून "HTML मधून माहिती भरा" वर क्लिक करा.');
+        showError('Please select a file.');
         return;
     }
-    if (file && !htmlDataValidated) {
+    const name = (file.name || '').toLowerCase();
+    if (mode === 'html' && !(name.endsWith('.html') || name.endsWith('.htm'))) {
         e.preventDefault();
-        showError('फाईल निवडल्यानंतर आधी "HTML मधून माहिती भरा" करून डेटा validate करा.');
+        showError('HTML mode: choose .html/.htm file.');
+        return;
+    }
+    if (mode === 'excel' && !(name.endsWith('.xlsx') || name.endsWith('.xls'))) {
+        e.preventDefault();
+        showError('Excel mode: choose .xlsx/.xls file.');
+        return;
+    }
+    if (!districtEl.value || !talukaEl.value || !villageEl.value) {
+        e.preventDefault();
+        showError('Please select district, taluka and village.');
+        return;
+    }
+
+    const hasRows = document.getElementById('khata-rows').rows.length > 0;
+    if (!hasRows || !htmlDataValidated) {
+        e.preventDefault();
+        showError('Please click "माहिती भरा" after choosing file.');
         return;
     }
 
@@ -596,7 +763,12 @@ formEl.addEventListener('submit', function (e) {
 
 setRows([]);
 loadDistrictsFor712();
+if (uploadModeHtmlEl) uploadModeHtmlEl.addEventListener('change', applyUploadMode);
+if (uploadModeExcelEl) uploadModeExcelEl.addEventListener('change', applyUploadMode);
+applyUploadMode();
 </script>
 </div>
 {% endblock %}
+
+
 
