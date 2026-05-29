@@ -324,6 +324,31 @@ def normalize_gut_value(value):
     return '/'.join(numbers) if numbers else clean_optional_char(value)
 
 
+def format_gut_number_for_storage(value):
+    """
+    Preserve descriptive gut text when present, but add a Marathi gut prefix
+    for plain numeric inputs so stored values match list display expectations.
+    """
+    text = str(value or '').strip()
+    if not text:
+        return ''
+
+    normalized = normalize_match_text(text)
+    if normalized in {'', '-', 'na', 'n/a'}:
+        return ''
+
+    # Keep already-labeled values untouched (e.g., "गट नं.109", "Gut No. 109").
+    if any(token in normalized for token in ('गट', 'gut', 'survey', 'सर्वे')):
+        return text
+
+    # For numeric-style values from parser (e.g., "109", "109/1"), apply prefix.
+    if re.fullmatch(r'[\d\s./-]+', text):
+        compact = re.sub(r'\s+', '', text)
+        return f'\u0917\u091f \u0928\u0902.{compact}'
+
+    return text
+
+
 def resolve_project_table_name(cursor, *table_candidates, schemas=("purandar_airport", "purandar_airport")):
     for schema_name in schemas:
         for table_name in table_candidates:
@@ -1135,7 +1160,7 @@ def land_record_712(request):
         district = request.POST.get('district')
         taluka = request.POST.get('taluka')
         village = request.POST.get('village')
-        gut_number = request.POST.get('gut_number')
+        gut_number = format_gut_number_for_storage(request.POST.get('gut_number'))
         uploaded_file = request.FILES.get('document_712')
 
         gut_numbers = request.POST.getlist('gut_number_row[]')
@@ -1159,7 +1184,7 @@ def land_record_712(request):
 
         rows_to_create = []
         for i in range(row_count):
-            row_gut = (gut_numbers[i] if i < len(gut_numbers) else '').strip()
+            row_gut = format_gut_number_for_storage(gut_numbers[i] if i < len(gut_numbers) else '')
             if not row_gut:
                 continue
             rows_to_create.append({
@@ -1459,7 +1484,7 @@ def parse_land_record_712_html(request):
     district = request.POST.get('district')
     taluka = request.POST.get('taluka')
     village = request.POST.get('village')
-    gut_number = request.POST.get('gut_number')
+    gut_number = format_gut_number_for_storage(request.POST.get('gut_number'))
     uploaded_file = request.FILES.get('document_712')
 
     if not uploaded_file:
@@ -1541,13 +1566,14 @@ def parse_land_record_712_html(request):
             'gutnumber',
             'survey_no'
         )
-        if not normalize_gut_key(raw_gut):
+        formatted_gut = format_gut_number_for_storage(raw_gut)
+        if not normalize_gut_key(formatted_gut):
             continue
         records.append({
             'district': row_district or district,
             'taluka': row_taluka or taluka,
             'village': row_village or village,
-            'gut_number': raw_gut,
+            'gut_number': formatted_gut,
             'khata_number': row_get(row, '\u0916\u093e\u0924\u093e_\u0928\u0902', '\u0916\u093e\u0924\u093e \u0928\u0902', '\u0916\u093e\u0924\u093e \u0928\u0902\u092c\u0930', 'khata_number'),
             'puid_ulip_no': row_get(row, 'PUID_ULIP_No', 'puid_ulip_no'),
             'jirayit': row_get(row, '\u091c\u093f\u0930\u093e\u092f\u0924', 'jirayit'),
@@ -1576,7 +1602,7 @@ def parse_land_record_712_html(request):
             'district': first.get('district', '') or district or '',
             'taluka': first.get('taluka', '') or taluka or '',
             'village': first.get('village', '') or village or '',
-            'gut_number': first.get('gut_number', ''),
+            'gut_number': format_gut_number_for_storage(first.get('gut_number', '')),
         }
     })
 
