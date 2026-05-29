@@ -15,6 +15,7 @@ import re
 import json
 import os
 import requests
+from collections import Counter
 from io import BytesIO
 import unicodedata
 from urllib.parse import urlparse, parse_qs
@@ -25,6 +26,7 @@ from django.views.decorators.http import require_http_methods
 from django.utils.dateparse import parse_date
 from datetime import date as datetime_date
 from django.utils import timezone
+from django.db.utils import OperationalError
 
 def clean_optional_char(value):
     if value is None:
@@ -1098,6 +1100,22 @@ def delete_document_attachment(request, attachment_id):
 
 @login_required
 def land_record_712(request):
+    is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+
+    def respond_error(message, status=400):
+        if is_ajax:
+            return JsonResponse({'success': False, 'error': message}, status=status)
+        return render(request, 'landrecord.html', {'error_message': message})
+
+    def respond_success(message, status=200):
+        if is_ajax:
+            return JsonResponse({
+                'success': True,
+                'message': message,
+                'redirect_url': reverse('land_record_712_list'),
+            }, status=status)
+        return redirect('land_record_712_list')
+
     def clean_optional(value):
         text = str(value or '').strip()
         if text.casefold() in {'', '-', 'na', 'n/a'}:
@@ -1206,10 +1224,10 @@ def land_record_712(request):
             })
 
         if not rows_to_create:
-            return render(request, 'landrecord.html', {'error_message': 'No rows found to save.'})
+            return respond_error('No rows found to save.')
 
         if not all([district, taluka, village]):
-            return render(request, 'landrecord.html', {'error_message': 'Please select district, taluka and village.'})
+            return respond_error('Please select district, taluka and village.')
 
         valid_gut_keys = fetch_valid_guts_for_location(district, taluka, village)
         skipped_rows = []
@@ -1229,15 +1247,49 @@ def land_record_712(request):
                     })
 
         if not valid_rows:
-            return render(
-                request,
-                'landrecord.html',
-                {'error_message': 'No matching gut rows found for selected location.'}
-            )
+            return respond_error('No matching gut rows found for selected location.')
+
+        # Khata number must stay unique globally and inside current submission.
+        khata_pairs = []
+        for row in valid_rows:
+            khata_raw = row.get('khata_number')
+            khata_clean = clean_optional(khata_raw)
+            if not khata_clean:
+                continue
+            khata_pairs.append((khata_clean, normalize_match_text(khata_clean)))
+
+        incoming_khatas = []
+        if khata_pairs:
+            seen_local = {}
+            local_duplicates = []
+            for khata_value, khata_key in khata_pairs:
+                if khata_key in seen_local:
+                    local_duplicates.append(khata_value)
+                else:
+                    seen_local[khata_key] = khata_value
+            if local_duplicates:
+                duplicate_text = ', '.join(sorted(set(local_duplicates)))
+                return respond_error(f'खाता नंबर unique असणे आवश्यक आहे. Duplicate: {duplicate_text}')
+
+            incoming_khatas = sorted({khata for khata, _key in khata_pairs})
 
         created_count = 0
         duplicate_count = 0
         with transaction.atomic():
+            if incoming_khatas:
+                existing_conflicts = []
+                with connection.cursor() as cursor:
+                    for khata in incoming_khatas:
+                        cursor.execute(
+                            "SELECT pg_advisory_xact_lock(hashtext(%s))",
+                            [f"land_record_712.khata_number:{khata}"]
+                        )
+                        if LandRecord712.objects.filter(khata_number__iexact=khata).exists():
+                            existing_conflicts.append(khata)
+                if existing_conflicts:
+                    conflict_text = ', '.join(sorted(set(existing_conflicts)))
+                    return respond_error(f'खाता नंबर आधीपासून उपलब्ध आहे: {conflict_text}')
+
             for row in valid_rows:
                 lookup_kwargs = {
                     'district': row.get('district') or district,
@@ -1289,9 +1341,16 @@ def land_record_712(request):
                 f'Saved {created_count} rows. '
                 f'Skipped {mismatch_count} gut mismatches and {duplicate_count_from_rows} duplicates.'
             )
+            if is_ajax:
+                return JsonResponse({
+                    'success': True,
+                    'message': msg,
+                    'created_count': created_count,
+                    'redirect_url': reverse('land_record_712_list'),
+                })
             return render(request, 'landrecord.html', {'error_message': msg})
 
-        return redirect('land_record_712_list')
+        return respond_success(f'Saved {created_count} rows successfully.')
 
     return render(request, 'landrecord.html')
 @login_required
@@ -1480,25 +1539,26 @@ def parse_land_record_712_html(request):
             return '/'.join(parts)
         return normalize_match_text(text)
 
-    upload_mode = (request.POST.get('upload_mode') or 'html').strip().lower()
-    district = request.POST.get('district')
-    taluka = request.POST.get('taluka')
-    village = request.POST.get('village')
+    def detect_file_type(filename):
+        name = (filename or '').lower()
+        if name.endswith(('.html', '.htm')):
+            return 'html'
+        if name.endswith(('.xlsx', '.xls')):
+            return 'excel'
+        return None
+
+    district = (request.POST.get('district') or '').strip()
+    taluka = (request.POST.get('taluka') or '').strip()
+    village = (request.POST.get('village') or '').strip()
     gut_number = format_gut_number_for_storage(request.POST.get('gut_number'))
     uploaded_file = request.FILES.get('document_712')
 
     if not uploaded_file:
         return JsonResponse({'success': False, 'error': 'Please choose a file.'}, status=400)
 
-    if upload_mode == 'excel' and not uploaded_file.name.lower().endswith(('.xlsx', '.xls')):
-        return JsonResponse({'success': False, 'error': 'Excel mode supports only .xlsx/.xls files.'}, status=400)
-    if upload_mode == 'html' and not uploaded_file.name.lower().endswith(('.html', '.htm')):
-        return JsonResponse({'success': False, 'error': 'HTML mode supports only .html/.htm files.'}, status=400)
-
-    if upload_mode == 'html' and not all([district, taluka, village, gut_number]):
-        return JsonResponse({'success': False, 'error': 'Please select district, taluka, village and gut number.'}, status=400)
-    if upload_mode == 'excel' and not all([district, taluka, village]):
-        return JsonResponse({'success': False, 'error': 'Please select district, taluka and village.'}, status=400)
+    upload_mode = detect_file_type(uploaded_file.name)
+    if not upload_mode:
+        return JsonResponse({'success': False, 'error': 'Supported files: .html, .htm, .xlsx, .xls'}, status=400)
 
     api_url = os.getenv(
         'LAND_RECORD_UPLOAD_API_URL',
@@ -1551,7 +1611,7 @@ def parse_land_record_712_html(request):
         row_district = row_get(row, '\u091c\u093f\u0932\u094d\u0939\u093e', 'district')
         row_taluka = row_get(row, '\u0924\u093e\u0932\u0941\u0915\u093e', 'taluka')
         row_village = row_get(row, '\u0917\u093e\u0935\u093e\u091a\u0947 \u0928\u093e\u0935', '\u0917\u093e\u0935', 'village', 'village_name')
-        if upload_mode == 'excel':
+        if upload_mode == 'excel' and all([district, taluka, village]):
             district_matches = text_matches_aliases(row_district, location_aliases['district'])
             taluka_matches = text_matches_aliases(row_taluka, location_aliases['taluka'])
             village_matches = text_matches_aliases(row_village, location_aliases['village'])
@@ -1588,21 +1648,50 @@ def parse_land_record_712_html(request):
             'area_more_than_20guntha': row_get(row, '\u0915\u094d\u0937\u0947\u0924\u094d\u0930_20_\u0917\u0941\u0902\u0920\u0947_\u092a\u0947\u0915\u094d\u0937\u093e_\u091c\u093e\u0938\u094d\u0924', 'area_more_than_20guntha'),
             'bagayat_more_than_10guntha': row_get(row, '\u092c\u093e\u0917\u093e\u092f\u0924_10_\u0917\u0941\u0902\u0920\u0947_\u092a\u0947\u0915\u094d\u0937\u093e_\u091c\u093e\u0938\u094d\u0924', 'bagayat_more_than_10guntha'),
         })
-    if upload_mode == 'excel' and not records:
+    if upload_mode == 'excel' and all([district, taluka, village]) and not records:
         return JsonResponse({
             'success': False,
             'error': 'Selected location and uploaded file location are not matching.'
         }, status=400)
+
+    if not records:
+        return JsonResponse({'success': False, 'error': 'No record found in uploaded file.'}, status=400)
+
     first = next((r for r in records if r.get('district') and r.get('taluka') and r.get('village')), {})
+    district_candidates = [r.get('district', '').strip() for r in records if r.get('district')]
+    taluka_candidates = [r.get('taluka', '').strip() for r in records if r.get('taluka')]
+    village_candidates = [r.get('village', '').strip() for r in records if r.get('village')]
+    gut_candidates = [format_gut_number_for_storage(r.get('gut_number', '')) for r in records if r.get('gut_number')]
+
+    def most_common(items):
+        normalized = [str(item or '').strip() for item in items if str(item or '').strip()]
+        if not normalized:
+            return ''
+        return Counter(normalized).most_common(1)[0][0]
+
+    detected_district = district or most_common(district_candidates) or first.get('district', '') or ''
+    detected_taluka = taluka or most_common(taluka_candidates) or first.get('taluka', '') or ''
+    detected_village = village or most_common(village_candidates) or first.get('village', '') or ''
+    detected_gut = gut_number or most_common(gut_candidates) or format_gut_number_for_storage(first.get('gut_number', ''))
+
+    for row in records:
+        if not row.get('district'):
+            row['district'] = detected_district
+        if not row.get('taluka'):
+            row['taluka'] = detected_taluka
+        if not row.get('village'):
+            row['village'] = detected_village
+
     return JsonResponse({
         'success': True,
         'records': records,
         'count': len(records),
+        'file_type': upload_mode,
         'location': {
-            'district': first.get('district', '') or district or '',
-            'taluka': first.get('taluka', '') or taluka or '',
-            'village': first.get('village', '') or village or '',
-            'gut_number': format_gut_number_for_storage(first.get('gut_number', '')),
+            'district': detected_district,
+            'taluka': detected_taluka,
+            'village': detected_village,
+            'gut_number': detected_gut,
         }
     })
 
@@ -1615,6 +1704,7 @@ def delete_selected_land_record_712(request):
         DocumentMaster.objects.filter(land_record_id__in=selected_ids).update(land_record=None)
         LandRecord712.objects.filter(id__in=selected_ids).delete()
     return redirect('land_record_712_list')
+
 
 @api_login_required
 def get_assessment_types_by_village(request, village):
@@ -1923,9 +2013,343 @@ def get_dashboard_progress(request):
         "bhusampadana_prakriya": bhusampadana_prakriya,
     })
 
+def _safe_schema_name(raw_schema):
+    schema = clean_optional_char(raw_schema)
+    if schema and re.match(r"^[A-Za-z_][A-Za-z0-9_]*$", schema):
+        return schema
+    return "purandar_airport"
 
 
+def _as_int_or_none(value):
+    try:
+        return int(str(value).strip())
+    except (TypeError, ValueError, AttributeError):
+        return None
 
+
+def _aligned_geom_expr(alias):
+    return f"""
+        CASE
+            WHEN ST_SRID({alias}.geom) = ST_SRID(p.geom)
+                 OR ST_SRID({alias}.geom) = 0
+                 OR ST_SRID(p.geom) = 0
+                THEN {alias}.geom
+            ELSE ST_Transform({alias}.geom, ST_SRID(p.geom))
+        END
+    """
+
+
+@api_login_required
+def get_dashboard_affected_counts(request):
+    project_id = _as_int_or_none(request.GET.get("project_id"))
+    tenant_id = clean_optional_char(request.GET.get("tenant_id"))
+
+    district_id = _as_int_or_none(request.GET.get("district_id"))
+    taluka_id = _as_int_or_none(request.GET.get("taluka_id"))
+    village_id = _as_int_or_none(request.GET.get("village_id"))
+    gut_id = clean_optional_char(request.GET.get("gut_id")) or clean_optional_char(request.GET.get("gut"))
+
+    district_name = clean_optional_char(request.GET.get("district"))
+    taluka_name = clean_optional_char(request.GET.get("taluka"))
+    village_name = clean_optional_char(request.GET.get("village"))
+
+    zero_payload = {
+        "affected_districts": 0,
+        "affected_talukas": 0,
+        "affected_villages": 0,
+        "affected_guts": 0,
+        "affected_area_ha": 0,
+    }
+
+    try:
+        with connection.cursor() as cursor:
+            project_conditions = ["geom IS NOT NULL"]
+            project_params = []
+
+            if project_id is not None:
+                project_conditions.append("id = %s")
+                project_params.append(project_id)
+            if tenant_id:
+                project_conditions.append("UPPER(COALESCE(schema_name, '')) = UPPER(%s)")
+                project_params.append(tenant_id)
+
+            cursor.execute(
+                f"""
+                SELECT id, COALESCE(NULLIF(schema_name, ''), 'purandar_airport') AS schema_name
+                FROM public.project_master
+                WHERE {' AND '.join(project_conditions)}
+                ORDER BY id
+                LIMIT 1;
+                """,
+                project_params,
+            )
+            project_row = cursor.fetchone()
+            if not project_row:
+                return JsonResponse(zero_payload)
+
+            resolved_project_id = int(project_row[0])
+            project_schema = _safe_schema_name(project_row[1])
+
+            district_table = resolve_project_table_name(cursor, "prj_district", schemas=(project_schema, "purandar_airport"))
+            taluka_table = resolve_project_table_name(cursor, "prj_taluka", schemas=(project_schema, "purandar_airport"))
+            village_table = resolve_project_table_name(cursor, "prj_village", schemas=(project_schema, "purandar_airport"))
+            gut_table = resolve_project_table_name(cursor, "prj_gut_bd", schemas=(project_schema, "purandar_airport"))
+
+            if not (district_table and taluka_table and village_table):
+                return JsonResponse(zero_payload)
+
+            # Resolve IDs from names when needed.
+            if district_id is None and district_name:
+                cursor.execute(
+                    """
+                    SELECT id
+                    FROM public.district_master
+                    WHERE UPPER(TRIM(COALESCE(district_name, ''))) = UPPER(TRIM(%s))
+                       OR UPPER(TRIM(COALESCE(district_name_m, ''))) = UPPER(TRIM(%s))
+                    LIMIT 1;
+                    """,
+                    [district_name, district_name],
+                )
+                row = cursor.fetchone()
+                district_id = int(row[0]) if row else None
+
+            if taluka_id is None and taluka_name:
+                params = [taluka_name, taluka_name]
+                sql = """
+                    SELECT id
+                    FROM public.taluka_master
+                    WHERE (
+                        UPPER(TRIM(COALESCE(taluka_name, ''))) = UPPER(TRIM(%s))
+                        OR UPPER(TRIM(COALESCE(taluka_name_m, ''))) = UPPER(TRIM(%s))
+                    )
+                """
+                if district_id is not None:
+                    sql += " AND district_id = %s"
+                    params.append(district_id)
+                sql += " LIMIT 1;"
+                cursor.execute(sql, params)
+                row = cursor.fetchone()
+                taluka_id = int(row[0]) if row else None
+
+            if village_id is None and village_name:
+                params = [village_name, village_name]
+                sql = """
+                    SELECT id, taluka_id
+                    FROM public.village_master
+                    WHERE (
+                        UPPER(TRIM(COALESCE(village_name, ''))) = UPPER(TRIM(%s))
+                        OR UPPER(TRIM(COALESCE(village_name_m, ''))) = UPPER(TRIM(%s))
+                    )
+                """
+                if taluka_id is not None:
+                    sql += " AND taluka_id = %s"
+                    params.append(taluka_id)
+                sql += " LIMIT 1;"
+                cursor.execute(sql, params)
+                row = cursor.fetchone()
+                if row:
+                    village_id = int(row[0])
+                    taluka_id = taluka_id or _as_int_or_none(row[1])
+
+            if village_id is not None and taluka_id is None:
+                cursor.execute("SELECT taluka_id FROM public.village_master WHERE id = %s LIMIT 1;", [village_id])
+                row = cursor.fetchone()
+                taluka_id = _as_int_or_none(row[0]) if row else taluka_id
+
+            if taluka_id is not None and district_id is None:
+                cursor.execute("SELECT district_id FROM public.taluka_master WHERE id = %s LIMIT 1;", [taluka_id])
+                row = cursor.fetchone()
+                district_id = _as_int_or_none(row[0]) if row else district_id
+
+            invalid_location = (
+                (district_name and district_id is None) or
+                (taluka_name and taluka_id is None) or
+                (village_name and village_id is None)
+            )
+            if invalid_location:
+                return JsonResponse(zero_payload)
+
+            district_filter = ""
+            taluka_filter = ""
+            village_filter = ""
+            gut_filter = ""
+            district_params = [resolved_project_id]
+            taluka_params = [resolved_project_id]
+            village_params = [resolved_project_id]
+            gut_params = [resolved_project_id]
+
+            if district_id is not None:
+                district_filter += " AND dm.id = %s"
+                taluka_filter += " AND tm.district_id = %s"
+                village_filter += " AND tm.district_id = %s"
+                gut_filter += " AND tm.district_id = %s"
+                district_params.append(district_id)
+                taluka_params.append(district_id)
+                village_params.append(district_id)
+                gut_params.append(district_id)
+
+            if taluka_id is not None:
+                taluka_filter += " AND tm.id = %s"
+                village_filter += " AND vm.taluka_id = %s"
+                gut_filter += " AND vm.taluka_id = %s"
+                taluka_params.append(taluka_id)
+                village_params.append(taluka_id)
+                gut_params.append(taluka_id)
+
+            if village_id is not None:
+                village_filter += " AND vm.id = %s"
+                gut_filter += " AND vm.id = %s"
+                village_params.append(village_id)
+                gut_params.append(village_id)
+
+            if gut_id:
+                gut_filter += " AND UPPER(TRIM(g.gut_no::text)) = UPPER(TRIM(%s))"
+                gut_params.append(gut_id)
+
+            district_geom = _aligned_geom_expr("dm")
+            taluka_geom = _aligned_geom_expr("tm")
+            village_geom = _aligned_geom_expr("vm")
+
+            cursor.execute(
+                f"""
+                WITH p AS (
+                    SELECT ST_MakeValid(geom) AS geom
+                    FROM public.project_master
+                    WHERE id = %s
+                )
+                SELECT COUNT(DISTINCT dm.id)
+                FROM {district_table} pd
+                JOIN public.district_master dm ON dm.id = pd.district_id
+                CROSS JOIN p
+                WHERE dm.geom IS NOT NULL
+                  AND p.geom && {district_geom}
+                  AND ST_Intersects(p.geom, {district_geom})
+                  {district_filter};
+                """,
+                district_params,
+            )
+            affected_districts = int(cursor.fetchone()[0] or 0)
+
+            cursor.execute(
+                f"""
+                WITH p AS (
+                    SELECT ST_MakeValid(geom) AS geom
+                    FROM public.project_master
+                    WHERE id = %s
+                )
+                SELECT COUNT(DISTINCT tm.id)
+                FROM {taluka_table} pt
+                JOIN public.taluka_master tm ON tm.id = pt.taluka_id
+                CROSS JOIN p
+                WHERE tm.geom IS NOT NULL
+                  AND p.geom && {taluka_geom}
+                  AND ST_Intersects(p.geom, {taluka_geom})
+                  {taluka_filter};
+                """,
+                taluka_params,
+            )
+            affected_talukas = int(cursor.fetchone()[0] or 0)
+
+            cursor.execute(
+                f"""
+                WITH p AS (
+                    SELECT ST_MakeValid(geom) AS geom
+                    FROM public.project_master
+                    WHERE id = %s
+                )
+                SELECT COUNT(DISTINCT vm.id)
+                FROM {village_table} pv
+                JOIN public.village_master vm ON vm.id = pv.village_id
+                JOIN public.taluka_master tm ON tm.id = vm.taluka_id
+                CROSS JOIN p
+                WHERE vm.geom IS NOT NULL
+                  AND p.geom && {village_geom}
+                  AND ST_Intersects(p.geom, {village_geom})
+                  {village_filter};
+                """,
+                village_params,
+            )
+            affected_villages = int(cursor.fetchone()[0] or 0)
+
+            affected_guts = 0
+            affected_area_ha = 0.0
+
+            if gut_table:
+                gut_geom = _aligned_geom_expr("g")
+
+                cursor.execute(
+                    f"""
+                    WITH p AS (
+                        SELECT ST_MakeValid(geom) AS geom
+                        FROM public.project_master
+                        WHERE id = %s
+                    )
+                    SELECT COUNT(DISTINCT g.id)
+                    FROM {gut_table} g
+                    JOIN public.village_master vm ON vm.id = g.village_id
+                    JOIN public.taluka_master tm ON tm.id = vm.taluka_id
+                    CROSS JOIN p
+                    WHERE g.geom IS NOT NULL
+                      AND p.geom && {gut_geom}
+                      AND ST_Intersects(p.geom, {gut_geom})
+                      {gut_filter};
+                    """,
+                    gut_params,
+                )
+                affected_guts = int(cursor.fetchone()[0] or 0)
+
+                cursor.execute(
+                    f"""
+                    WITH p AS (
+                        SELECT ST_MakeValid(geom) AS geom
+                        FROM public.project_master
+                        WHERE id = %s
+                    ),
+                    intersections AS (
+                        SELECT ST_Intersection(p.geom, {gut_geom}) AS i_geom
+                        FROM {gut_table} g
+                        JOIN public.village_master vm ON vm.id = g.village_id
+                        JOIN public.taluka_master tm ON tm.id = vm.taluka_id
+                        CROSS JOIN p
+                        WHERE g.geom IS NOT NULL
+                          AND p.geom && {gut_geom}
+                          AND ST_Intersects(p.geom, {gut_geom})
+                          {gut_filter}
+                    )
+                    SELECT COALESCE(
+                        SUM(
+                            CASE
+                                WHEN ST_IsEmpty(i_geom) THEN 0
+                                WHEN ST_SRID(i_geom) = 4326 THEN ST_Area(i_geom::geography)
+                                ELSE ST_Area(i_geom)
+                            END
+                        ) / 10000.0,
+                        0
+                    )
+                    FROM intersections;
+                    """,
+                    gut_params,
+                )
+                affected_area_ha = float(cursor.fetchone()[0] or 0)
+
+        return JsonResponse(
+            {
+                "affected_districts": int(affected_districts or 0),
+                "affected_talukas": int(affected_talukas or 0),
+                "affected_villages": int(affected_villages or 0),
+                "affected_guts": int(affected_guts or 0),
+                "affected_area_ha": round(float(affected_area_ha or 0), 2),
+                "project_id": resolved_project_id,
+                "tenant_id": tenant_id or project_schema,
+            }
+        )
+    except OperationalError:
+        return JsonResponse(zero_payload)
+    except Exception as exc:
+        payload = dict(zero_payload)
+        if getattr(request, "user", None) and request.user.is_superuser:
+            payload["error"] = str(exc)
+        return JsonResponse(payload)
 
 
 @api_login_required

@@ -44,7 +44,7 @@
 <div class="w-full px-2 sm:px-3 md:px-4 py-4">
     <div class="tool-tabs-shell">
         <nav class="tool-tabs" aria-label="Tool views">
-            <a href="{% url 'land_record_712_list' %}" class="tool-tab-link is-active">७/१२ उतार नोंद</a>
+            <a href="{% url 'land_record_712_list' %}" class="tool-tab-link is-active">७/१२ उतारा नोंद</a>
             <a href="{% url 'ready_reckoner_list' %}" class="tool-tab-link">रेडी रेकनर दर</a>
             <a href="{% url 'village_info' %}" class="tool-tab-link">गावाची माहिती</a>
             <a href="{% url 'add_entry' %}" class="tool-tab-link">नुकसान भरपाई नोंद</a>
@@ -126,7 +126,7 @@
                 </div>
 
                 <div class="md:col-span-3">
-                    <label class="font-semibold">भोगवटादाराचे नांव</label>
+                    <label class="font-semibold">भोगवटदाराचे नांव</label>
                     <textarea name="holder_name" rows="3" class="w-full border p-2 rounded">{{ obj.holder_name|default:'उपलब्ध नाही' }}</textarea>
                 </div>
 

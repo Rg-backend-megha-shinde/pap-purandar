@@ -2,6 +2,16 @@
 
 {% block content %}
 <style>
+    :root {
+        --slate-25: #fcfdff;
+        --slate-50: #f8fafc;
+        --slate-100: #f1f5f9;
+        --slate-200: #e2e8f0;
+        --slate-300: #cbd5e1;
+        --slate-700: #334155;
+        --brand-600: #2563eb;
+        --brand-700: #1d4ed8;
+    }
     .tool-tabs-shell {
         border: 1px solid #d8e4f2;
         background: #f8fbff;
@@ -34,9 +44,107 @@
         border-color: #cad8ea;
         box-shadow: 0 1px 3px rgba(18, 95, 203, 0.15);
     }
-    .dropzone-active {
-        border-color: #2563eb !important;
-        background: #eff6ff !important;
+    .entry-tab-btn.is-active {
+        background: var(--brand-700);
+        color: #ffffff;
+        border-color: var(--brand-700);
+        box-shadow: 0 6px 14px rgba(37, 99, 235, 0.2);
+    }
+    .entry-tab-btn {
+        transition: all 160ms ease;
+    }
+    .entry-tab-btn:hover {
+        border-color: #93c5fd;
+        color: #1e3a8a;
+        transform: translateY(-1px);
+    }
+    .entry-surface {
+        border: 1px solid var(--slate-200);
+        background: #ffffff;
+        border-radius: 0.8rem;
+        box-shadow: 0 6px 16px rgba(15, 23, 42, 0.04);
+    }
+    .entry-title {
+        letter-spacing: 0.01em;
+        color: #0f172a;
+    }
+    #detectedLocationBox {
+        background: linear-gradient(180deg, #f3f7ff 0%, #edf4ff 100%);
+        border-color: #bfdbfe;
+    }
+    #recordsSection table {
+        min-width: 1220px;
+    }
+    #recordsSection thead th {
+        background: var(--slate-50);
+        color: #1e293b;
+        border-color: var(--slate-200);
+    }
+    #recordsSection tbody td {
+        border-color: var(--slate-200);
+        background: #ffffff;
+    }
+    #recordsSection tbody tr:nth-child(even) td {
+        background: var(--slate-25);
+    }
+    #manualReferenceBottomSection {
+        background: var(--slate-50);
+        border: 1px dashed var(--slate-300);
+        border-radius: 0.7rem;
+        padding: 0.9rem;
+    }
+    #uploadChooseFileBtn,
+    #manualChooseFileBtn,
+    #addManualRowBtn {
+        background: var(--slate-700);
+    }
+    #uploadChooseFileBtn:hover,
+    #manualChooseFileBtn:hover,
+    #addManualRowBtn:hover {
+        background: #1f2937;
+    }
+    #saveUploadBtn,
+    #saveManualBtn {
+        background: var(--brand-600);
+        box-shadow: 0 6px 12px rgba(37, 99, 235, 0.25);
+    }
+    #saveUploadBtn:hover,
+    #saveManualBtn:hover {
+        background: var(--brand-700);
+    }
+    #resetUploadBtn,
+    #resetManualBtn {
+        background: #64748b;
+    }
+    #resetUploadBtn:hover,
+    #resetManualBtn:hover {
+        background: #475569;
+    }
+    .record-cell-input {
+        width: 100%;
+        min-width: 88px;
+        border: 1px solid #cbd5e1;
+        border-radius: 0.25rem;
+        padding: 0.34rem 0.4rem;
+        font-size: 0.75rem;
+        line-height: 1rem;
+        background: #fff;
+        transition: border-color 120ms ease, box-shadow 120ms ease;
+    }
+    .record-cell-input:focus {
+        outline: none;
+        border-color: var(--brand-600);
+        box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
+    }
+    .table-chip {
+        display: inline-flex;
+        align-items: center;
+        border: 1px solid #cbd5e1;
+        border-radius: 999px;
+        padding: 0.15rem 0.5rem;
+        font-size: 0.7rem;
+        color: #1e293b;
+        background: #f8fafc;
     }
     @media (max-width: 640px) {
         .tool-tab-link {
@@ -45,123 +153,106 @@
         }
     }
 </style>
+
 <div class="w-full px-2 sm:px-3 md:px-4 py-4">
     <div class="tool-tabs-shell">
         <nav class="tool-tabs" aria-label="Tool views">
-            <a href="{% url 'land_record_712_list' %}" class="tool-tab-link is-active">७/१२ उतार नोंद</a>
+            <a href="{% url 'land_record_712_list' %}" class="tool-tab-link is-active">७/१२ उतारा नोंद</a>
             <a href="{% url 'ready_reckoner_list' %}" class="tool-tab-link">रेडी रेकनर दर</a>
             <a href="{% url 'village_info' %}" class="tool-tab-link">गावाची माहिती</a>
             <a href="{% url 'add_entry' %}" class="tool-tab-link">नुकसान भरपाई नोंद</a>
             <a href="{% url 'process_chart_form' %}" class="tool-tab-link">भूसंपादन प्रक्रिया</a>
         </nav>
     </div>
-<div class="w-full mx-auto bg-white p-3 sm:p-4 md:p-6 border border-gray-300 mt-4 sm:mt-6 rounded-lg shadow">
-    <h2 class="text-center font-bold text-xl underline mb-2">
-        ७/१२ उतारा नोंद
-    </h2>
 
-    <p class="text-center text-sm mb-6">
-        जमीन नोंदवही माहिती भरा
-    </p>
+    <div class="w-full mx-auto bg-white p-3 sm:p-4 md:p-6 border border-gray-300 mt-4 sm:mt-6 rounded-lg shadow-sm">
+        <h2 class="text-center font-bold text-xl underline mb-2">७/१२ उतारा नोंद</h2>
+        <p class="text-center text-sm mb-6">   </p>
 
-    {% if error_message %}
-        <div class="mb-4 flex items-start justify-between gap-3 rounded border border-red-300 bg-red-50 p-3 text-sm font-semibold text-red-700">
-            <span>{{ error_message }}</span>
-            <button type="button" aria-label="Dismiss error" class="-my-1 rounded px-2 py-1 text-lg leading-none text-red-700 hover:bg-red-100" onclick="this.closest('div').remove()">&times;</button>
+        {% if error_message %}
+            <div class="mb-4 rounded border border-red-300 bg-red-50 p-3 text-sm font-semibold text-red-700">{{ error_message }}</div>
+        {% endif %}
+        <div id="clientErrorBox" class="mb-4 hidden items-start justify-between gap-3 rounded border border-red-300 bg-red-50 p-3 text-sm text-red-700">
+            <span id="clientErrorText"></span>
+            <button type="button" class="-my-1 rounded px-2 py-1 text-lg leading-none text-red-700 hover:bg-red-100" onclick="hideError()">&times;</button>
         </div>
-    {% endif %}
-    <div id="clientErrorBox" class="mb-4 hidden items-start justify-between gap-3 rounded border border-red-300 bg-red-50 p-3 text-sm text-red-700">
-        <span id="clientErrorText"></span>
-        <button type="button" aria-label="Dismiss error" class="-my-1 rounded px-2 py-1 text-lg leading-none text-red-700 hover:bg-red-100" onclick="this.parentElement.classList.add('hidden'); this.parentElement.classList.remove('flex');">&times;</button>
-    </div>
-    <div id="clientSuccessBox" class="mb-4 hidden rounded border border-green-300 bg-green-50 p-3 text-sm text-green-700"></div>
+        <div id="clientSuccessBox" class="mb-4 hidden items-start justify-between gap-3 rounded border border-green-300 bg-green-50 p-3 text-sm text-green-700">
+            <span id="clientSuccessText"></span>
+            <button type="button" class="-my-1 rounded px-2 py-1 text-lg leading-none text-green-700 hover:bg-green-100" onclick="hideSuccess()">&times;</button>
+        </div>
 
-    <form method="POST" enctype="multipart/form-data" id="landRecordForm" class="mt-6">
-        {% csrf_token %}
-        <div class="border rounded-lg p-4 bg-gray-50 mb-6">
-            <h3 class="font-bold text-lg mb-4">Upload Mode</h3>
-            <div class="flex flex-col sm:flex-row gap-3 sm:gap-6">
-                <label class="inline-flex items-center gap-2">
-                    <input type="radio" id="uploadModeHtml" name="upload_mode" value="html" checked>
-                    <span>Upload via HTML</span>
-                </label>
-                <label class="inline-flex items-center gap-2">
-                    <input type="radio" id="uploadModeExcel" name="upload_mode" value="excel">
-                    <span>Upload via Excel</span>
-                </label>
+        <form id="csrfBridgeForm" class="hidden">{% csrf_token %}</form>
+
+        <div class="border rounded-lg p-3 bg-gray-50 mb-5">
+            <div class="flex flex-wrap gap-2">
+                <button type="button" data-entry-tab="upload" class="entry-tab-btn is-active border border-blue-300 bg-white px-4 py-2 rounded-md text-sm font-semibold text-blue-700">Upload File</button>
+                <button type="button" data-entry-tab="manual" class="entry-tab-btn border border-gray-300 bg-white px-4 py-2 rounded-md text-sm font-semibold text-gray-700">Manual Entry</button>
             </div>
         </div>
 
-        <div id="locationSection" class="border rounded-lg p-4 bg-gray-50 mb-6">
-            <h3 class="font-bold text-lg mb-4">१. स्थान माहिती</h3>
-            <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-                <div>
-                    <label class="font-semibold">जिल्हा</label>
-                    <select id="district" name="district" required class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-400">
-                        <option value="">जिल्हा निवडा</option>
-                    </select>
+        <section id="entryTabUpload" class="space-y-4">
+            <div class="entry-surface p-4">
+                <h3 class="entry-title font-bold text-lg mb-3">Upload File</h3>
+                <div class="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
+                    <input type="file" id="uploadInputFile" accept=".html,.htm,.xlsx,.xls" class="hidden">
+                    <button type="button" id="uploadChooseFileBtn" class="bg-gray-700 hover:bg-gray-800 text-white px-4 py-2 rounded-md">Select File</button>
+                    <span id="uploadFileName" class="text-sm text-gray-600">No file selected</span>
                 </div>
+                <p class="mt-3 text-sm text-gray-600">Supported: HTML (.html, .htm), Excel (.xlsx, .xls)</p>
+                <div id="uploadLoader" class="hidden mt-3 text-sm font-semibold text-blue-700">Extracting 7/12 information...</div>
+            </div>
 
-                <div>
-                    <label class="font-semibold">तालुका</label>
-                    <select id="taluka" name="taluka" required class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-400">
-                        <option value="">तालुका निवडा</option>
-                    </select>
-                </div>
-
-                <div>
-                    <label class="font-semibold">गाव</label>
-                    <select id="village" name="village" required class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-400">
-                        <option value="">गाव निवडा</option>
-                    </select>
-                </div>
-
-                <div>
-                    <label class="font-semibold">गट क्रमांक</label>
-                    <select id="gut" name="gut_number" required class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-400">
-                        <option value="">गट क्रमांक निवडा</option>
-                    </select>
+            <div id="detectedLocationBox" class="hidden border rounded-lg p-4 bg-blue-50 border-blue-200">
+                <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 text-sm mt-3">
+                    <div><span class="font-semibold">District:</span> <span id="detectedDistrictText">-</span></div>
+                    <div><span class="font-semibold">Taluka:</span> <span id="detectedTalukaText">-</span></div>
+                    <div><span class="font-semibold">Village:</span> <span id="detectedVillageText">-</span></div>
+                    <div id="detectedGutWrap"><span class="font-semibold">Gut No:</span> <span id="detectedGutText">-</span></div>
                 </div>
             </div>
-        </div>
 
-        <div class="border rounded-lg p-4 bg-gray-50 mb-6">
-            <h3 class="font-bold text-lg mb-4">२. ७/१२ HTML फाईल अपलोड</h3>
-            <div class="flex flex-col items-center justify-center">
-                <div id="dropZone712" class="w-full max-w-xl border-2 border-dashed border-gray-400 rounded-lg p-6 bg-white text-center transition">
-                    <p class="text-sm font-semibold text-gray-700 mb-1">७/१२ फाईल निवडा</p>
-                    <p id="file712Name" class="text-xs text-gray-500 mb-4">कोणतीही फाईल निवडलेली नाही</p>
-                    <input type="file" id="document_712" name="document_712" accept=".html,.htm" class="hidden">
-                    <div class="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center justify-center gap-2">
-                        <button type="button" id="chooseFileBtn" class="bg-gray-600 hover:bg-gray-700 text-white px-5 py-2 rounded-md shadow-sm transition duration-200">
-                            फाईल निवडा
-                        </button>
-                        <button type="button" id="fetchFromHtmlBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-md shadow-sm transition duration-200">
-                            माहिती भरा
-                        </button>
-                        <button type="button" id="viewUploadedFileBtn" class="hidden bg-slate-600 hover:bg-slate-700 text-white px-5 py-2 rounded-md shadow-sm transition duration-200">
-                            View file
-                        </button>
+            <div class="flex justify-end gap-2">
+                <button type="button" id="resetUploadBtn" class="bg-gray-500 hover:bg-gray-600 text-white px-5 py-2 rounded-md">Reset</button>
+                <button type="button" id="saveUploadBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-md">Save Uploaded Records</button>
+            </div>
+        </section>
+
+        <section id="entryTabManual" class="hidden space-y-4">
+            <div class="entry-surface p-4">
+                <h3 class="entry-title font-bold text-lg mb-3">Manual Entry</h3>
+                <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
+                    <div>
+                        <label class="text-sm font-semibold">District</label>
+                        <select id="manualDistrict" class="w-full border p-2 rounded text-sm"></select>
+                    </div>
+                    <div>
+                        <label class="text-sm font-semibold">Taluka</label>
+                        <select id="manualTaluka" class="w-full border p-2 rounded text-sm"></select>
+                    </div>
+                    <div>
+                        <label class="text-sm font-semibold">Village</label>
+                        <select id="manualVillage" class="w-full border p-2 rounded text-sm"></select>
+                    </div>
+                    <div>
+                        <label class="text-sm font-semibold">Gut Number</label>
+                        <select id="manualGut" class="w-full border p-2 rounded text-sm"></select>
                     </div>
                 </div>
-            </div>
-
-            <div id="fetchLoader" class="hidden mt-4 w-full max-w-xl mx-auto">
-                <div class="flex items-center justify-between text-xs text-gray-600 mb-1">
-                    <span>HTML मधून डेटा fetch होत आहे...</span>
-                    <span id="fetchProgressLabel">0%</span>
-                </div>
-                <div class="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
-                    <div id="fetchProgressBar" class="bg-blue-600 h-2 rounded-full" style="width: 0%"></div>
+                <div class="mt-4 flex flex-wrap gap-2">
+                    <button type="button" id="addManualRowBtn" class="bg-gray-700 hover:bg-gray-800 text-white px-4 py-2 rounded-md text-sm">Add Record</button>
+                    <button type="button" id="resetManualBtn" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-md text-sm">Reset</button>
+                    <button type="button" id="saveManualBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm">Save Manual Records</button>
                 </div>
             </div>
-        </div>
+        </section>
 
-        <div id="khataSection" class="border rounded-lg p-4 bg-gray-50 mb-6 hidden">
-            <h3 class="font-bold text-lg mb-4">३. ७/१२ माहिती</h3>
-
-            <div class="overflow-x-auto">
-                <table class="w-full border text-sm text-center border-collapse" id="khata-table">
+        <section id="recordsSection" class="hidden entry-surface p-4 mt-5">
+            <div class="flex items-center justify-between gap-2 flex-wrap">
+                <h3 class="font-bold text-lg">७/१२ माहिती</h3>
+                <span id="recordsMetaText" class="text-sm text-gray-600">0 नोंदी</span>
+            </div>
+            <div class="overflow-x-auto mt-4">
+                <table class="w-full border text-xs text-center border-collapse">
                     <thead class="bg-gray-100 font-semibold">
                         <tr>
                             <th class="border p-2">गट नंबर/सर्वे नंबर</th>
@@ -171,47 +262,51 @@
                             <th class="border p-2">जिरायत</th>
                             <th class="border p-2">बागायत</th>
                             <th class="border p-2">पोटखराब</th>
-                            <th class="border p-2">आकार</th>
                             <th class="border p-2">आकारणी</th>
+                            <th class="border p-2">आकार</th>
                             <th class="border p-2">एकूण क्षेत्र</th>
-                            <th class="border p-2">भोगवटादाराचे नांव</th>
+                            <th class="border p-2">भोगवटदाराचे नाव</th>
                             <th class="border p-2">कुळ, खंड व इतर अधिकार</th>
+                            <th class="border p-2">कृती</th>
                         </tr>
                     </thead>
-                    <tbody id="khata-rows"></tbody>
+                    <tbody id="recordsTableBody"></tbody>
                 </table>
             </div>
-        </div>
+            <div id="manualReferenceBottomSection" class="hidden mt-4 border-t border-gray-200 pt-4">
+                <h4 class="font-semibold text-base mb-2">Upload File</h4>
+                <div class="flex flex-col sm:flex-row gap-2 sm:items-center">
+                    <input type="file" id="manualReferenceFile" accept="*/*" class="hidden">
+                    <button type="button" id="manualChooseFileBtn" class="bg-gray-700 hover:bg-gray-800 text-white px-4 py-2 rounded-md text-sm">Select File</button>
+                    <span id="manualReferenceFileName" class="text-sm text-gray-600">No file selected</span>
+                </div>
+                <p class="text-xs text-gray-500 mt-1">Manual row नंतर reference file upload करा.</p>
+            </div>
+        </section>
 
         <div class="flex flex-col sm:flex-row gap-3 mt-6 border-t pt-6 justify-center">
-            <button type="button" onclick="window.history.back()" class="bg-gray-600 hover:bg-gray-700 text-white px-5 py-2 rounded-md shadow-sm transition duration-200">
-                मागे जा
-            </button>
-
-            <button type="submit" id="submit712Btn" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-md shadow-sm transition duration-200">
-                सबमिट करा
-            </button>
-
-            <a href="{% url 'land_record_712_list' %}" class="bg-gray-800 hover:bg-gray-900 text-white px-5 py-2 rounded-md">
-                नोंदी पहा
-            </a>
+            <button type="button" onclick="window.history.back()" class="bg-gray-600 hover:bg-gray-700 text-white px-5 py-2 rounded-md shadow-sm transition duration-200">मागे जा</button>
+            <a href="{% url 'land_record_712_list' %}" class="bg-gray-800 hover:bg-gray-900 text-white px-5 py-2 rounded-md">नोंदी पहा</a>
         </div>
-    </form>
+    </div>
 </div>
 
-<!-- Modal for कुळ, खंड व इतर अधिकार -->
-<div id="kulKhandModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+<div id="ownerModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
     <div class="flex items-center justify-center min-h-screen p-4">
-        <div class="bg-white rounded-lg max-w-4xl w-full max-h-[80vh] overflow-y-auto">
+        <div class="bg-white rounded-lg max-w-xl w-full">
             <div class="flex justify-between items-center p-4 border-b">
-                <h3 class="text-lg font-semibold">कुळ, खंड व इतर अधिकार</h3>
-                <button onclick="closeKulKhandModal()" class="text-gray-500 hover:text-gray-700">
-                    <span class="text-2xl">&times;</span>
-                </button>
+                <h3 class="text-base font-semibold">भोगवटादारांची नावे</h3>
+                <button type="button" id="ownerModalCloseBtn" class="text-2xl leading-none text-gray-500 hover:text-gray-700">&times;</button>
             </div>
-            <div class="p-4">
-                <div class="bg-gray-50 p-4 rounded border">
-                    <div id="kulKhandContent" class="whitespace-pre-wrap text-sm"></div>
+            <div class="p-4 space-y-3">
+                <div class="flex gap-2">
+                    <input type="text" id="ownerNewInput" class="flex-1 border p-2 rounded text-sm" placeholder="Enter owner name">
+                    <button type="button" id="ownerAddBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-3 rounded text-sm">Add</button>
+                </div>
+                <div id="ownerListBox" class="max-h-64 overflow-y-auto border rounded p-2 bg-gray-50 text-sm"></div>
+                <div class="flex justify-end gap-2">
+                    <button type="button" id="ownerCancelBtn" class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded text-sm">Cancel</button>
+                    <button type="button" id="ownerSaveBtn" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded text-sm">Save Owners</button>
                 </div>
             </div>
         </div>
@@ -219,131 +314,87 @@
 </div>
 
 <script>
-function showKulKhandInfo(_ignored, kulKhandData) {
-    const modal = document.getElementById('kulKhandModal');
-    const contentEl = document.getElementById('kulKhandContent');
+const state712 = {
+    activeTab: 'upload',
+    uploadFile: null,
+    manualFile: null,
+    uploadFileType: '',
+    detectedLocation: { district: '', taluka: '', village: '', gut_number: '' },
+    recordsByTab: {
+        upload: [],
+        manual: [],
+    },
+    ownerModal: { rowIndex: -1, owners: [], editIndex: -1 },
+};
+let successToastTimer = null;
 
-    if (kulKhandData && kulKhandData.trim() && kulKhandData !== 'Not available') {
-        contentEl.textContent = kulKhandData;
-    } else {
-        contentEl.textContent = 'Information not available';
-    }
-
-    modal.classList.remove('hidden');
-}
-
-function showKulKhandInfoFromButton(button) {
-    const kulKhandData = button.getAttribute('data-kul-khand');
-    showKulKhandInfo('', kulKhandData);
-}
-
-function closeKulKhandModal() {
-    document.getElementById('kulKhandModal').classList.add('hidden');
-}
-
-// Close modal when clicking outside
-document.getElementById('kulKhandModal').addEventListener('click', function(e) {
-    if (e.target === this) {
-        closeKulKhandModal();
-    }
-});
-
-let htmlDataValidated = false;
-let loaderInterval = null;
-let isApplyingParsedLocation = false;
-
-const formEl = document.getElementById('landRecordForm');
-const districtEl = document.getElementById('district');
-const talukaEl = document.getElementById('taluka');
-const villageEl = document.getElementById('village');
-const gutEl = document.getElementById('gut');
-const fileInputEl = document.getElementById('document_712');
-const fileNameEl = document.getElementById('file712Name');
-const chooseFileBtnEl = document.getElementById('chooseFileBtn');
-const dropZone712El = document.getElementById('dropZone712');
-const fetchBtnEl = document.getElementById('fetchFromHtmlBtn');
-const viewUploadedFileBtnEl = document.getElementById('viewUploadedFileBtn');
-const errorBoxEl = document.getElementById('clientErrorBox');
-const errorTextEl = document.getElementById('clientErrorText');
-const successBoxEl = document.getElementById('clientSuccessBox');
-const submitBtnEl = document.getElementById('submit712Btn');
-const loaderEl = document.getElementById('fetchLoader');
-const loaderBarEl = document.getElementById('fetchProgressBar');
-const loaderLabelEl = document.getElementById('fetchProgressLabel');
-const khataSectionEl = document.getElementById('khataSection');
-const locationSectionEl = document.getElementById('locationSection');
-const uploadModeHtmlEl = document.getElementById('uploadModeHtml');
-const uploadModeExcelEl = document.getElementById('uploadModeExcel');
-
-function currentUploadMode() {
-    return uploadModeExcelEl && uploadModeExcelEl.checked ? 'excel' : 'html';
-}
-
-function applyUploadMode() {
-    const isHtml = currentUploadMode() === 'html';
-    if (locationSectionEl) locationSectionEl.classList.remove('hidden');
-    districtEl.disabled = false;
-    talukaEl.disabled = false;
-    villageEl.disabled = false;
-    gutEl.disabled = !isHtml;
-    districtEl.setAttribute('required', 'required');
-    talukaEl.setAttribute('required', 'required');
-    villageEl.setAttribute('required', 'required');
-    if (isHtml) gutEl.setAttribute('required', 'required');
-    else gutEl.removeAttribute('required');
-    fetchBtnEl.classList.remove('hidden');
-    fileInputEl.accept = isHtml ? '.html,.htm' : '.xlsx,.xls';
-    htmlDataValidated = false;
-    setRows([]);
-    if (!isHtml) {
-        gutEl.innerHTML = '<option value=""></option>';
-        gutEl.value = '';
-    }
-}
 const MARATHI_NA = 'उपलब्ध नाही';
+const PLACEHOLDERS = {
+    district: 'जिल्हा निवडा',
+    taluka: 'तालुका निवडा',
+    village: 'गाव निवडा',
+    gut: 'गट क्रमांक निवडा',
+};
+
+const tabSections = {
+    upload: document.getElementById('entryTabUpload'),
+    manual: document.getElementById('entryTabManual'),
+};
+
+const manualGroup = makeLocationGroup('manualDistrict', 'manualTaluka', 'manualVillage', 'manualGut');
+const LAND_RECORD_LIST_URL = "{% url 'land_record_712_list' %}";
+
+const recordsSectionEl = document.getElementById('recordsSection');
+const recordsTableBodyEl = document.getElementById('recordsTableBody');
+const recordsMetaTextEl = document.getElementById('recordsMetaText');
+const manualReferenceBottomEl = document.getElementById('manualReferenceBottomSection');
+
+function hideError() {
+    const box = document.getElementById('clientErrorBox');
+    box.classList.add('hidden');
+    box.classList.remove('flex');
+}
+
+function hideSuccess() {
+    const box = document.getElementById('clientSuccessBox');
+    box.classList.add('hidden');
+    box.classList.remove('flex');
+    if (successToastTimer) {
+        clearTimeout(successToastTimer);
+        successToastTimer = null;
+    }
+}
 
 function showError(message) {
-    successBoxEl.classList.add('hidden');
-    errorTextEl.textContent = message;
-    errorBoxEl.classList.remove('hidden');
-    errorBoxEl.classList.add('flex');
+    const text = document.getElementById('clientErrorText');
+    const box = document.getElementById('clientErrorBox');
+    hideSuccess();
+    text.textContent = message;
+    box.classList.remove('hidden');
+    box.classList.add('flex');
 }
 
 function showSuccess(message) {
-    errorBoxEl.classList.add('hidden');
-    successBoxEl.textContent = message;
-    successBoxEl.classList.remove('hidden');
+    hideError();
+    hideSuccess();
+    const success = document.getElementById('clientSuccessBox');
+    const successText = document.getElementById('clientSuccessText');
+    successText.textContent = message;
+    success.classList.remove('hidden');
+    success.classList.add('flex');
+    successToastTimer = setTimeout(() => {
+        hideSuccess();
+    }, 5000);
 }
 
 function clearMessages() {
-    errorBoxEl.classList.add('hidden');
-    errorBoxEl.classList.remove('flex');
-    successBoxEl.classList.add('hidden');
+    hideError();
+    hideSuccess();
 }
 
-function setLoading(isLoading) {
-    if (!isLoading) {
-        loaderEl.classList.add('hidden');
-        if (loaderInterval) {
-            clearInterval(loaderInterval);
-            loaderInterval = null;
-        }
-        loaderBarEl.style.width = '100%';
-        loaderLabelEl.textContent = '100%';
-        return;
-    }
-
-    let progress = 0;
-    loaderEl.classList.remove('hidden');
-    loaderBarEl.style.width = '0%';
-    loaderLabelEl.textContent = '0%';
-
-    if (loaderInterval) clearInterval(loaderInterval);
-    loaderInterval = setInterval(() => {
-        progress = Math.min(progress + 7, 90);
-        loaderBarEl.style.width = `${progress}%`;
-        loaderLabelEl.textContent = `${progress}%`;
-    }, 150);
+function getCsrfToken() {
+    const tokenEl = document.querySelector('#csrfBridgeForm input[name="csrfmiddlewaretoken"]');
+    return tokenEl ? tokenEl.value : '';
 }
 
 function normalizeText(value) {
@@ -352,6 +403,41 @@ function normalizeText(value) {
 
 function normalizeLocationKey(value) {
     return String(value || '').trim().toLowerCase().replace(/\s+/g, ' ');
+}
+
+function withMarathiNA(value) {
+    const text = String(value || '').trim();
+    return text || MARATHI_NA;
+}
+
+function makeLocationGroup(districtId, talukaId, villageId, gutId) {
+    return {
+        district: document.getElementById(districtId),
+        taluka: document.getElementById(talukaId),
+        village: document.getElementById(villageId),
+        gut: document.getElementById(gutId),
+    };
+}
+
+function resetSelect(selectEl, placeholder) {
+    selectEl.innerHTML = '';
+    selectEl.add(new Option(placeholder, ''));
+}
+
+function addOptions(selectEl, items = []) {
+    items.forEach((item) => {
+        const value = typeof item === 'string' ? item : (item.value || '');
+        const label = typeof item === 'string' ? item : (item.label || item.value || '');
+        if (!value) return;
+        selectEl.add(new Option(label, value));
+    });
+}
+
+async function fetchLocations(params = {}) {
+    const query = new URLSearchParams(params);
+    const response = await fetch(`/api/locations/?${query.toString()}`);
+    if (!response.ok) throw new Error('Failed to load locations.');
+    return response.json();
 }
 
 function setSelectByText(selectEl, targetValue) {
@@ -368,451 +454,680 @@ function setSelectByText(selectEl, targetValue) {
     return false;
 }
 
-function yesNoOption(value) {
-    const v = normalizeText(value);
-    if (v === 'yes' || v === 'होय' || v === 'hoy') return 'Yes';
-    if (v === 'no' || v === 'नाही' || v === 'nahi') return 'No';
-    return '';
+async function loadDistricts(group) {
+    resetSelect(group.district, PLACEHOLDERS.district);
+    resetSelect(group.taluka, PLACEHOLDERS.taluka);
+    resetSelect(group.village, PLACEHOLDERS.village);
+    resetSelect(group.gut, PLACEHOLDERS.gut);
+    const data = await fetchLocations({ lang: 'mr' });
+    addOptions(group.district, data.data || []);
 }
 
-function withMarathiNA(value) {
-    if (value === null || value === undefined) return MARATHI_NA;
-    const text = String(value).trim();
-    return text === '' ? MARATHI_NA : text;
+async function loadTalukas(group, district) {
+    resetSelect(group.taluka, PLACEHOLDERS.taluka);
+    resetSelect(group.village, PLACEHOLDERS.village);
+    resetSelect(group.gut, PLACEHOLDERS.gut);
+    if (!district) return;
+    const data = await fetchLocations({ district, lang: 'mr' });
+    addOptions(group.taluka, data.data || []);
 }
 
-function createKhataRow(data = {}) {
-    const tr = document.createElement('tr');
-    const kulKhandData = (data.kul_khand_other_rights || '').replace(/'/g, "&#39;").replace(/"/g, "&quot;");
-    const holderNameFull = withMarathiNA(data.holder_name);
-    const holderNameShort = holderNameFull.length > 45 ? `${holderNameFull.slice(0, 45)}...` : holderNameFull;
-    tr.innerHTML = `
-        <td class="border px-1 py-1"><input type="text" name="gut_number_row[]" value="${withMarathiNA(data.gut_number)}" class="w-24 border-0 p-1 text-xs focus:ring-1 focus:ring-green-400 rounded"></td>
-        <td class="border px-1 py-1"><input type="text" name="puid_ulip_no[]" value="${withMarathiNA(data.puid_ulip_no)}" class="w-28 border-0 p-1 text-xs focus:ring-1 focus:ring-green-400 rounded"></td>
-        <td class="border px-1 py-1"><input type="text" name="khata_number[]" value="${withMarathiNA(data.khata_number)}" class="w-20 border-0 p-1 text-xs focus:ring-1 focus:ring-green-400 rounded"></td>
-        <td class="border px-1 py-1"><input type="text" name="khata_area[]" value="${withMarathiNA(data.khata_area)}" class="w-16 border-0 p-1 text-xs focus:ring-1 focus:ring-green-400 rounded"></td>        
-<td class="border px-1 py-1"><input type="text" name="jirayit[]" value="${withMarathiNA(data.jirayit)}" class="w-20 border-0 p-1 text-xs focus:ring-1 focus:ring-green-400 rounded"></td>
-        <td class="border px-1 py-1"><input type="text" name="bagayat[]" value="${withMarathiNA(data.bagayat)}" class="w-20 border-0 p-1 text-xs focus:ring-1 focus:ring-green-400 rounded"></td>
-        <td class="border px-1 py-1"><input type="text" name="potkharaba[]" value="${withMarathiNA(data.potkharaba)}" class="w-20 border-0 p-1 text-xs focus:ring-1 focus:ring-green-400 rounded"></td>
-        <td class="border px-1 py-1"><input type="text" name="aakar[]" value="${withMarathiNA(data.aakar)}" class="w-16 border-0 p-1 text-xs focus:ring-1 focus:ring-green-400 rounded"></td>
-        <td class="border px-1 py-1"><input type="text" name="aakarni[]" value="${withMarathiNA(data.aakarni)}" class="w-16 border-0 p-1 text-xs focus:ring-1 focus:ring-green-400 rounded"></td>
-        <td class="border px-1 py-1"><input type="text" name="total_area[]" value="${withMarathiNA(data.total_area)}" class="w-20 border-0 p-1 text-xs focus:ring-1 focus:ring-green-400 rounded"></td>
-        <td class="border px-1 py-1"><span class="inline-block w-44 truncate text-xs align-middle" title="${holderNameFull.replace(/"/g, '&quot;')}">${holderNameShort}</span><input type="hidden" name="holder_name[]" value="${holderNameFull.replace(/"/g, '&quot;')}"></td>
-        <td class="border px-1 py-1 text-center"><button type="button" data-kul-khand="${kulKhandData}" onclick="showKulKhandInfoFromButton(this)" class="bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded text-xs">View</button></td>
-    `;
-    return tr;
+async function loadVillages(group, district, taluka) {
+    resetSelect(group.village, PLACEHOLDERS.village);
+    resetSelect(group.gut, PLACEHOLDERS.gut);
+    if (!district || !taluka) return;
+    const data = await fetchLocations({ district, taluka, lang: 'mr' });
+    addOptions(group.village, data.data || []);
 }
 
-function addKhataRow(data = {}) {
-    const tbody = document.getElementById('khata-rows');
-    tbody.appendChild(createKhataRow(data));
+async function loadGuts(group, district, taluka, village) {
+    resetSelect(group.gut, PLACEHOLDERS.gut);
+    if (!district || !taluka || !village) return;
+    const data = await fetchLocations({ district, taluka, village });
+    const guts = (data.data || []).map((item) => typeof item === 'string' ? item : (item.value || '')).filter(Boolean);
+    addOptions(group.gut, guts);
 }
 
-window.addKhataRow = addKhataRow;
+function bindLocationGroup(group, { onGutChanged } = {}) {
+    group.district.addEventListener('change', async () => {
+        try {
+            await loadTalukas(group, group.district.value);
+            updateManualReferenceVisibility();
+        } catch {
+            showError('Failed to load taluka list.');
+        }
+    });
+    group.taluka.addEventListener('change', async () => {
+        try {
+            await loadVillages(group, group.district.value, group.taluka.value);
+            updateManualReferenceVisibility();
+        } catch {
+            showError('Failed to load village list.');
+        }
+    });
+    group.village.addEventListener('change', async () => {
+        try {
+            await loadGuts(group, group.district.value, group.taluka.value, group.village.value);
+            updateManualReferenceVisibility();
+        } catch {
+            showError('Failed to load gut list.');
+        }
+    });
+    group.gut.addEventListener('change', () => {
+        if (typeof onGutChanged === 'function') onGutChanged();
+        updateManualReferenceVisibility();
+    });
+}
 
-function setRows(rows) {
-    const tbody = document.getElementById('khata-rows');
-    tbody.innerHTML = '';
+function switchTab(tabKey) {
+    state712.activeTab = tabKey;
+    document.querySelectorAll('[data-entry-tab]').forEach((btn) => {
+        btn.classList.toggle('is-active', btn.getAttribute('data-entry-tab') === tabKey);
+    });
+    Object.entries(tabSections).forEach(([key, section]) => {
+        section.classList.toggle('hidden', key !== tabKey);
+    });
+    updateManualReferenceVisibility();
+    renderRecords();
+}
 
-    if (!rows || !rows.length) {
-        khataSectionEl.classList.add('hidden');
+function getRecordsForTab(tabKey) {
+    if (!state712.recordsByTab[tabKey]) state712.recordsByTab[tabKey] = [];
+    return state712.recordsByTab[tabKey];
+}
+
+function setRecordsForTab(tabKey, records) {
+    state712.recordsByTab[tabKey] = records;
+}
+
+function getActiveRecords() {
+    return getRecordsForTab(state712.activeTab);
+}
+
+function setActiveRecords(records) {
+    setRecordsForTab(state712.activeTab, records);
+}
+
+function ensureRecordsVisible() {
+    if (!getActiveRecords().length) {
+        recordsSectionEl.classList.add('hidden');
+        updateManualReferenceVisibility();
         return;
     }
-
-    rows.forEach(row => addKhataRow(row));
-    khataSectionEl.classList.remove('hidden');
+    recordsSectionEl.classList.remove('hidden');
+    updateManualReferenceVisibility();
 }
 
-function normalizeGutKey(value) {
+function isManualLocationSelected() {
+    const location = getManualLocation();
+    return !!(location.district && location.taluka && location.village && location.gut_number);
+}
+
+function updateManualReferenceVisibility() {
+    if (!manualReferenceBottomEl) return;
+    const shouldShow =
+        state712.activeTab === 'manual' &&
+        isManualLocationSelected() &&
+        getRecordsForTab('manual').length > 0 &&
+        !recordsSectionEl.classList.contains('hidden');
+    manualReferenceBottomEl.classList.toggle('hidden', !shouldShow);
+}
+
+function defaultRecord() {
+    return {
+        gut_number: '',
+        puid_ulip_no: '',
+        khata_number: '',
+        khata_area: '',
+        jirayit: '',
+        bagayat: '',
+        potkharaba: '',
+        aakarni: '',
+        aakar: '',
+        total_area: '',
+        holder_name: '',
+        kul_khand_other_rights: '',
+    };
+}
+
+function ownersFromText(text) {
+    return String(text || '')
+        .split(',')
+        .map((part) => part.trim())
+        .filter(Boolean);
+}
+
+function ownersToText(owners) {
+    return owners.map((owner) => owner.trim()).filter(Boolean).join(', ');
+}
+
+function rowOwnerSummary(text) {
+    const owners = ownersFromText(text);
+    if (!owners.length) return MARATHI_NA;
+    if (owners.length === 1) return owners[0];
+    return `${owners[0]} +${owners.length - 1}`;
+}
+
+function renderRecords() {
+    const activeRecords = getActiveRecords();
+    recordsTableBodyEl.innerHTML = '';
+    recordsMetaTextEl.textContent = `${activeRecords.length} नोंदी`;
+    ensureRecordsVisible();
+    updateManualReferenceVisibility();
+
+    activeRecords.forEach((row, index) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td class="border p-1"><input class="record-cell-input" data-row="${index}" data-field="gut_number" value="${escapeAttr(row.gut_number || '')}"></td>
+            <td class="border p-1"><input class="record-cell-input" data-row="${index}" data-field="puid_ulip_no" value="${escapeAttr(row.puid_ulip_no || '')}"></td>
+            <td class="border p-1"><input class="record-cell-input" data-row="${index}" data-field="khata_number" value="${escapeAttr(row.khata_number || '')}"></td>
+            <td class="border p-1"><input class="record-cell-input" data-row="${index}" data-field="khata_area" value="${escapeAttr(row.khata_area || '')}"></td>
+            <td class="border p-1"><input class="record-cell-input" data-row="${index}" data-field="jirayit" value="${escapeAttr(row.jirayit || '')}"></td>
+            <td class="border p-1"><input class="record-cell-input" data-row="${index}" data-field="bagayat" value="${escapeAttr(row.bagayat || '')}"></td>
+            <td class="border p-1"><input class="record-cell-input" data-row="${index}" data-field="potkharaba" value="${escapeAttr(row.potkharaba || '')}"></td>
+            <td class="border p-1"><input class="record-cell-input" data-row="${index}" data-field="aakarni" value="${escapeAttr(row.aakarni || '')}"></td>
+            <td class="border p-1"><input class="record-cell-input" data-row="${index}" data-field="aakar" value="${escapeAttr(row.aakar || '')}"></td>
+            <td class="border p-1"><input class="record-cell-input" data-row="${index}" data-field="total_area" value="${escapeAttr(row.total_area || '')}"></td>
+            <td class="border p-1">
+                <div class="flex items-center gap-1 whitespace-nowrap">
+                    <span class="table-chip" title="${escapeAttr(row.holder_name || MARATHI_NA)}">${escapeHtml(rowOwnerSummary(row.holder_name))}</span>
+                    <button type="button" class="inline-flex h-7 w-7 items-center justify-center rounded-md border border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100" data-owner-manage="${index}" title="Manage owners" aria-label="Manage owners">&#128101;</button>
+                </div>
+            </td>
+            <td class="border p-1"><textarea class="record-cell-input min-h-[52px]" data-row="${index}" data-field="kul_khand_other_rights">${escapeHtml(row.kul_khand_other_rights || '')}</textarea></td>
+            <td class="border p-1">
+                <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md border border-red-200 bg-red-50 text-red-700 hover:bg-red-100" data-row-remove="${index}" title="Delete" aria-label="Delete">&#128465;</button>
+            </td>
+        `;
+        recordsTableBodyEl.appendChild(tr);
+    });
+}
+
+function escapeAttr(value) {
+    return String(value || '')
+        .replace(/&/g, '&amp;')
+        .replace(/"/g, '&quot;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+}
+
+function escapeHtml(value) {
+    return String(value || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+}
+
+function sanitizeCellValue(value) {
     const text = String(value || '').trim();
-    if (!text) return '';
-    const parts = text.match(/\d+/g);
-    if (parts) return parts.join('/');
-    return normalizeLocationKey(text);
+    return normalizeText(text) === normalizeText(MARATHI_NA) ? '' : text;
 }
 
-function decodePossibleMojibake(text) {
-    const input = String(text || '');
-    if (!input) return '';
-    try {
-        if (/[Ãà¤]/.test(input)) return decodeURIComponent(escape(input));
-    } catch {
-        // Keep original text if decoding fails.
-    }
-    return input;
-}
+function setupTableInteractions() {
+    recordsTableBodyEl.addEventListener('input', (event) => {
+        const activeRecords = getActiveRecords();
+        const target = event.target;
+        if (!target.matches('[data-row][data-field]')) return;
+        const rowIndex = Number(target.getAttribute('data-row'));
+        const field = target.getAttribute('data-field');
+        if (!activeRecords[rowIndex]) return;
+        activeRecords[rowIndex][field] = sanitizeCellValue(target.value);
+    });
 
-function extractGutValue(item) {
-    if (item === null || item === undefined) return '';
-    if (typeof item === 'string' || typeof item === 'number') {
-        return decodePossibleMojibake(String(item)).trim();
-    }
-    if (typeof item === 'object') {
-        const direct =
-            item.gut_number ??
-            item.gutnumber ??
-            item.survey_no ??
-            item['गट नंबर/सर्वे नंबर'] ??
-            item.value ??
-            item.label;
-        return decodePossibleMojibake(String(direct || '')).trim();
-    }
-    return '';
-}
-
-function normalizeGutOptions(rawItems = []) {
-    const seen = new Set();
-    const options = [];
-    for (const item of rawItems) {
-        const value = extractGutValue(item);
-        if (!value || seen.has(value)) continue;
-        seen.add(value);
-        options.push({ value, label: value });
-    }
-    return options;
-}
-
-async function applyParsedLocation(location = {}) {
-    const district = String(location.district || '').trim();
-    const taluka = String(location.taluka || '').trim();
-    const village = String(location.village || '').trim();
-    const gut = String(location.gut_number || '').trim();
-    const isExcel = currentUploadMode() === 'excel';
-    if (!district || !taluka || !village) return;
-
-    isApplyingParsedLocation = true;
-    try {
-        setSelectByText(districtEl, district);
-        const selectedDistrict = districtEl.value || district;
-        await loadTalukasFor712(selectedDistrict);
-
-        setSelectByText(talukaEl, taluka);
-        const selectedTaluka = talukaEl.value || taluka;
-        await loadVillagesFor712(selectedDistrict, selectedTaluka);
-
-        setSelectByText(villageEl, village);
-        const selectedVillage = villageEl.value || village;
-
-        if (isExcel) {
-            gutEl.innerHTML = '<option value=""></option>';
-            gutEl.value = '';
+    recordsTableBodyEl.addEventListener('click', (event) => {
+        const activeRecords = getActiveRecords();
+        const removeBtn = event.target.closest('[data-row-remove]');
+        if (removeBtn) {
+            const rowIndex = Number(removeBtn.getAttribute('data-row-remove'));
+            activeRecords.splice(rowIndex, 1);
+            setActiveRecords(activeRecords);
+            renderRecords();
             return;
         }
-
-        gutEl.innerHTML = '<option value="">à¤—à¤Ÿ à¤•à¥à¤°à¤®à¤¾à¤‚à¤• à¤¨à¤¿à¤µà¤¡à¤¾</option>';
-        const res = await fetch(`/api/locations/?district=${encodeURIComponent(selectedDistrict)}&taluka=${encodeURIComponent(selectedTaluka)}&village=${encodeURIComponent(selectedVillage)}`);
-        const data = await res.json();
-        const guts = normalizeGutOptions(data.data || []).map(option => option.value);
-        guts.forEach(g => gutEl.add(new Option(g, g)));
-
-        if (!isExcel && gut) {
-            const targetKey = normalizeGutKey(gut);
-            let match = '';
-            for (const g of guts) {
-                if (normalizeGutKey(g) === targetKey) {
-                    match = g;
-                    break;
-                }
-            }
-            if (!match) match = gut;
-            if (![...gutEl.options].some(o => o.value === match)) gutEl.add(new Option(match, match));
-            gutEl.value = match;
-        } else {
-            gutEl.value = '';
+        const ownerBtn = event.target.closest('[data-owner-manage]');
+        if (ownerBtn) {
+            const rowIndex = Number(ownerBtn.getAttribute('data-owner-manage'));
+            openOwnerModal(rowIndex);
         }
-    } catch {
-        // keep fetched records even if dropdown refresh fails
-    } finally {
-        isApplyingParsedLocation = false;
-    }
-}
-
-function clearLowerDropdowns(fromLevel) {
-    if (fromLevel === 'district') {
-        talukaEl.innerHTML = '<option value="">तालुका निवडा</option>';
-        villageEl.innerHTML = '<option value="">गाव निवडा</option>';
-        gutEl.innerHTML = '<option value="">गट क्रमांक निवडा</option>';
-    }
-    if (fromLevel === 'taluka') {
-        villageEl.innerHTML = '<option value="">गाव निवडा</option>';
-        gutEl.innerHTML = '<option value="">गट क्रमांक निवडा</option>';
-    }
-    if (fromLevel === 'village') {
-        gutEl.innerHTML = '<option value="">गट क्रमांक निवडा</option>';
-    }
-}
-
-function addSelectOptions(selectEl, items = []) {
-    items.forEach(item => {
-        const value = typeof item === 'string' ? item : (item.value || '');
-        const label = typeof item === 'string' ? item : (item.label || item.value || '');
-        if (!value) return;
-        selectEl.add(new Option(label, value));
     });
 }
 
-async function loadDistrictsFor712() {
-    districtEl.innerHTML = '<option value="">जिल्हा निवडा</option>';
-    clearLowerDropdowns('district');
-    try {
-        const res = await fetch('/api/locations/?lang=mr');
-        const data = await res.json();
-        addSelectOptions(districtEl, data.data || []);
-    } catch {
-        showError('जिल्हा यादी load करताना समस्या आली.');
-    }
+function getUploadChosenLocation() {
+    const uploadRecords = getRecordsForTab('upload');
+    const firstRecord = uploadRecords[0] || {};
+    return {
+        district: state712.detectedLocation.district || firstRecord.district || '',
+        taluka: state712.detectedLocation.taluka || firstRecord.taluka || '',
+        village: state712.detectedLocation.village || firstRecord.village || '',
+        gut_number: state712.uploadFileType === 'excel' ? '' : (state712.detectedLocation.gut_number || firstRecord.gut_number || ''),
+    };
 }
 
-async function loadTalukasFor712(district) {
-    talukaEl.innerHTML = '<option value="">तालुका निवडा</option>';
-    clearLowerDropdowns('taluka');
-    if (!district) return;
-    try {
-        const res = await fetch(`/api/locations/?district=${encodeURIComponent(district)}&lang=mr`);
-        const data = await res.json();
-        addSelectOptions(talukaEl, data.data || []);
-    } catch {
-        showError('तालुका यादी load करताना समस्या आली.');
-    }
+function getManualLocation() {
+    return {
+        district: manualGroup.district.value,
+        taluka: manualGroup.taluka.value,
+        village: manualGroup.village.value,
+        gut_number: manualGroup.gut.value,
+    };
 }
 
-async function loadVillagesFor712(district, taluka) {
-    villageEl.innerHTML = '<option value="">गाव निवडा</option>';
-    clearLowerDropdowns('village');
-    if (!district || !taluka) return;
-    try {
-        const res = await fetch(`/api/locations/?district=${encodeURIComponent(district)}&taluka=${encodeURIComponent(taluka)}&lang=mr`);
-        const data = await res.json();
-        addSelectOptions(villageEl, data.data || []);
-    } catch {
-        showError('गाव यादी load करताना समस्या आली.');
-    }
+function applyDetectedLocationCard(location = {}) {
+    const isExcelFile = state712.uploadFileType === 'excel';
+    state712.detectedLocation = {
+        district: location.district || '',
+        taluka: location.taluka || '',
+        village: location.village || '',
+        gut_number: location.gut_number || '',
+    };
+    document.getElementById('detectedDistrictText').textContent = withMarathiNA(state712.detectedLocation.district);
+    document.getElementById('detectedTalukaText').textContent = withMarathiNA(state712.detectedLocation.taluka);
+    document.getElementById('detectedVillageText').textContent = withMarathiNA(state712.detectedLocation.village);
+    document.getElementById('detectedGutText').textContent = withMarathiNA(state712.detectedLocation.gut_number);
+    document.getElementById('detectedGutWrap').classList.toggle('hidden', isExcelFile);
+    document.getElementById('detectedLocationBox').classList.remove('hidden');
 }
-districtEl.addEventListener('change', function () {
-    if (isApplyingParsedLocation) return;
-    htmlDataValidated = false;
-    clearMessages();
-    setRows([]);
-    clearLowerDropdowns('district');
 
-    loadTalukasFor712(this.value);
-});
+function resetDetectedLocationCard() {
+    state712.detectedLocation = { district: '', taluka: '', village: '', gut_number: '' };
+    document.getElementById('detectedDistrictText').textContent = '-';
+    document.getElementById('detectedTalukaText').textContent = '-';
+    document.getElementById('detectedVillageText').textContent = '-';
+    document.getElementById('detectedGutText').textContent = '-';
+    document.getElementById('detectedGutWrap').classList.remove('hidden');
+    document.getElementById('detectedLocationBox').classList.add('hidden');
+}
 
-talukaEl.addEventListener('change', function () {
-    if (isApplyingParsedLocation) return;
-    htmlDataValidated = false;
-    clearMessages();
-    setRows([]);
-    clearLowerDropdowns('taluka');
+async function applyDetectedToCorrectionDropdowns() {
+    return Promise.resolve();
+}
 
-    loadVillagesFor712(districtEl.value, this.value);
-});
-
-villageEl.addEventListener('change', function () {
-    if (isApplyingParsedLocation) return;
-    htmlDataValidated = false;
-    clearMessages();
-    setRows([]);
-    clearLowerDropdowns('village');
-
-    const district = districtEl.value;
-    const taluka = talukaEl.value;
-    const village = this.value;
-    if (!district || !taluka || !village) return;
-    if (currentUploadMode() === 'excel') {
-        gutEl.innerHTML = '<option value=""></option>';
-        gutEl.value = '';
-        return;
-    }
-
-    fetch(`/api/locations/?district=${encodeURIComponent(district)}&taluka=${encodeURIComponent(taluka)}&village=${encodeURIComponent(village)}`)
-        .then(res => res.json())
-        .then(data => {
-            const guts = normalizeGutOptions(data.data || []);
-            guts.forEach(({ label, value }) => gutEl.add(new Option(label, value)));
-        })
-        .catch(() => showError('गट क्रमांक load करताना समस्या आली.'));
-});
-
-gutEl.addEventListener('change', function () {
-    if (isApplyingParsedLocation) return;
-    htmlDataValidated = false;
-    clearMessages();
-    setRows([]);
-});
-
-chooseFileBtnEl.addEventListener('click', () => fileInputEl.click());
-
-function applySelected712File(file) {
-    htmlDataValidated = false;
-    clearMessages();
-    setRows([]);
-
-    if (!file) {
-        fileNameEl.textContent = 'कोणतीही फाईल निवडलेली नाही';
-        viewUploadedFileBtnEl.classList.add('hidden');
-        return;
-    }
-
-    const mode = currentUploadMode();
+async function parseUploadedFile(file) {
     const name = (file.name || '').toLowerCase();
-    if (mode === 'html' && !(name.endsWith('.html') || name.endsWith('.htm'))) {
-        showError('HTML mode: choose .html/.htm file.');
+    if (!(name.endsWith('.html') || name.endsWith('.htm') || name.endsWith('.xlsx') || name.endsWith('.xls'))) {
+        showError('Supported files: .html, .htm, .xlsx, .xls');
         return;
     }
-    if (mode === 'excel' && !(name.endsWith('.xlsx') || name.endsWith('.xls'))) {
-        showError('Excel mode: choose .xlsx/.xls file.');
-        return;
-    }
-    const dt = new DataTransfer();
-    dt.items.add(file);
-    fileInputEl.files = dt.files;
 
-    fileNameEl.textContent = file ? file.name : 'कोणतीही फाईल निवडलेली नाही';
-    if (file) viewUploadedFileBtnEl.classList.remove('hidden');
-    else viewUploadedFileBtnEl.classList.add('hidden');
-}
-
-fileInputEl.addEventListener('change', function () {
-    const file = this.files && this.files[0];
-    applySelected712File(file);
-});
-
-['dragenter', 'dragover'].forEach(evt => {
-    dropZone712El.addEventListener(evt, function (e) {
-        e.preventDefault();
-        e.stopPropagation();
-        dropZone712El.classList.add('dropzone-active');
-    });
-});
-['dragleave', 'drop'].forEach(evt => {
-    dropZone712El.addEventListener(evt, function (e) {
-        e.preventDefault();
-        e.stopPropagation();
-        dropZone712El.classList.remove('dropzone-active');
-    });
-});
-dropZone712El.addEventListener('drop', function (e) {
-    const dropped = e.dataTransfer?.files?.[0];
-    if (!dropped) return;
-    const name = dropped.name.toLowerCase();
-    const valid = currentUploadMode() === 'html'
-        ? (name.endsWith('.html') || name.endsWith('.htm'))
-        : (name.endsWith('.xlsx') || name.endsWith('.xls'));
-    if (!valid) {
-        showError('Invalid file type for selected upload mode.');
-        return;
-    }
-    applySelected712File(dropped);
-});
-viewUploadedFileBtnEl.addEventListener('click', function () {
-    const file = fileInputEl.files && fileInputEl.files[0];
-    if (!file) {
-        showError('आधी HTML फाईल निवडा.');
-        return;
-    }
-    const fileUrl = URL.createObjectURL(file);
-    window.open(fileUrl, '_blank');
-});
-
-fetchBtnEl.addEventListener('click', async function (event) {
-    event.preventDefault();
     clearMessages();
-
-    const mode = currentUploadMode();
-    const file = fileInputEl.files && fileInputEl.files[0];
-    if (!file) {
-        showError(mode === 'excel' ? 'Please choose 7/12 Excel file.' : 'Please choose 7/12 HTML file.');
-        return;
-    }
-    if (mode === 'html' && (!districtEl.value || !talukaEl.value || !villageEl.value || !gutEl.value)) {
-        showError('Please select district, taluka, village and gut number first.');
-        return;
-    }
-    if (mode === 'excel' && (!districtEl.value || !talukaEl.value || !villageEl.value)) {
-        showError('Please select district, taluka and village first.');
-        return;
-    }
-
-    const csrfToken = formEl.querySelector('input[name="csrfmiddlewaretoken"]').value;
+    document.getElementById('uploadLoader').classList.remove('hidden');
     const formData = new FormData();
-    formData.append('district', districtEl.value);
-    formData.append('taluka', talukaEl.value);
-    formData.append('village', villageEl.value);
-    if (mode === 'html') formData.append('gut_number', gutEl.value);
-    formData.append('upload_mode', mode);
     formData.append('document_712', file);
-
-    setLoading(true);
 
     try {
         const response = await fetch('/api/land-record-712/parse/', {
             method: 'POST',
-            headers: { 'X-CSRFToken': csrfToken },
-            body: formData
+            headers: {
+                'X-CSRFToken': getCsrfToken(),
+            },
+            body: formData,
         });
-
         const data = await response.json();
-        if (!response.ok || !data.success) {
-            throw new Error(data.error || 'Failed to fetch data from file.');
+        if (!response.ok || !data.success) throw new Error(data.error || 'Failed to extract file data.');
+
+        state712.uploadFileType = (data.file_type || '').toLowerCase();
+        setRecordsForTab('upload', (data.records || []).map((row) => ({ ...defaultRecord(), ...row })));
+        applyDetectedLocationCard(data.location || {});
+        await applyDetectedToCorrectionDropdowns();
+        renderRecords();
+        showSuccess(`${data.count || 0} records extracted successfully.`);
+    } catch (error) {
+        state712.uploadFileType = '';
+        setRecordsForTab('upload', []);
+        renderRecords();
+        showError(error.message || 'Failed to extract file data.');
+    } finally {
+        document.getElementById('uploadLoader').classList.add('hidden');
+    }
+}
+
+function normalizeRowForSave(row, fallbackLocation = {}) {
+    return {
+        gut_number: sanitizeCellValue(row.gut_number || fallbackLocation.gut_number || ''),
+        puid_ulip_no: sanitizeCellValue(row.puid_ulip_no || ''),
+        khata_number: sanitizeCellValue(row.khata_number || ''),
+        khata_area: sanitizeCellValue(row.khata_area || ''),
+        jirayit: sanitizeCellValue(row.jirayit || ''),
+        bagayat: sanitizeCellValue(row.bagayat || ''),
+        potkharaba: sanitizeCellValue(row.potkharaba || ''),
+        aakarni: sanitizeCellValue(row.aakarni || ''),
+        aakar: sanitizeCellValue(row.aakar || ''),
+        total_area: sanitizeCellValue(row.total_area || ''),
+        holder_name: sanitizeCellValue(row.holder_name || ''),
+        kul_khand_other_rights: sanitizeCellValue(row.kul_khand_other_rights || ''),
+    };
+}
+
+async function saveCurrentRecords(mode) {
+    const records = getRecordsForTab(mode);
+    clearMessages();
+    if (!records.length) {
+        showError('No records available to save.');
+        return;
+    }
+
+    const location = mode === 'manual' ? getManualLocation() : getUploadChosenLocation();
+    if (!location.district || !location.taluka || !location.village) {
+        showError('Please set district, taluka and village before save.');
+        return;
+    }
+    if (mode === 'manual' && !location.gut_number) {
+        showError('Please select gut number for manual entry.');
+        return;
+    }
+
+    const normalizedRows = records.map((row) => normalizeRowForSave(row, location)).filter((row) => row.gut_number);
+    if (!normalizedRows.length) {
+        showError('At least one row must have a gut number.');
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('district', location.district);
+    formData.append('taluka', location.taluka);
+    formData.append('village', location.village);
+    formData.append('gut_number', location.gut_number || normalizedRows[0].gut_number || '');
+    if (mode === 'upload' && state712.uploadFile) {
+        formData.append('document_712', state712.uploadFile);
+    }
+    if (mode === 'manual' && state712.manualFile) {
+        formData.append('document_712', state712.manualFile);
+    }
+
+    normalizedRows.forEach((row) => {
+        formData.append('gut_number_row[]', row.gut_number);
+        formData.append('puid_ulip_no[]', row.puid_ulip_no);
+        formData.append('khata_number[]', row.khata_number);
+        formData.append('khata_area[]', row.khata_area);
+        formData.append('jirayit[]', row.jirayit);
+        formData.append('bagayat[]', row.bagayat);
+        formData.append('potkharaba[]', row.potkharaba);
+        formData.append('aakar[]', row.aakar);
+        formData.append('aakarni[]', row.aakarni);
+        formData.append('total_area[]', row.total_area);
+        formData.append('holder_name[]', row.holder_name);
+        formData.append('kul_khand_other_rights[]', row.kul_khand_other_rights);
+    });
+
+    try {
+        const response = await fetch('/tools/712/', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCsrfToken(),
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+            body: formData,
+        });
+        const data = await response.json();
+        if (!response.ok || !data.success) throw new Error(data.error || 'Save failed.');
+        showSuccess(data.message || 'Records saved successfully.');
+        const redirectUrl = data.redirect_url || LAND_RECORD_LIST_URL;
+        setTimeout(() => {
+            window.location.href = redirectUrl;
+        }, 250);
+    } catch (error) {
+        showError(error.message || 'Save failed.');
+    }
+}
+
+function addManualRecord() {
+    clearMessages();
+    const location = getManualLocation();
+    if (!location.district || !location.taluka || !location.village || !location.gut_number) {
+        showError('Select district, taluka, village and gut number first for manual entry.');
+        return;
+    }
+    const row = defaultRecord();
+    row.gut_number = location.gut_number;
+    const manualRecords = getRecordsForTab('manual');
+    manualRecords.push(row);
+    setRecordsForTab('manual', manualRecords);
+    renderRecords();
+    updateManualReferenceVisibility();
+}
+
+function resetUploadTab() {
+    state712.uploadFile = null;
+    state712.uploadFileType = '';
+    setRecordsForTab('upload', []);
+    const fileInput = document.getElementById('uploadInputFile');
+    const fileName = document.getElementById('uploadFileName');
+    if (fileInput) fileInput.value = '';
+    if (fileName) fileName.textContent = 'No file selected';
+    resetDetectedLocationCard();
+    clearMessages();
+    if (state712.activeTab === 'upload') renderRecords();
+}
+
+async function resetManualTab() {
+    setRecordsForTab('manual', []);
+    state712.manualFile = null;
+    const manualFileInput = document.getElementById('manualReferenceFile');
+    const manualFileName = document.getElementById('manualReferenceFileName');
+    if (manualFileInput) manualFileInput.value = '';
+    if (manualFileName) manualFileName.textContent = 'No file selected';
+    try {
+        await loadDistricts(manualGroup);
+    } catch {
+        showError('Failed to reset manual location dropdowns.');
+    }
+    clearMessages();
+    if (state712.activeTab === 'manual') renderRecords();
+    updateManualReferenceVisibility();
+}
+
+function openOwnerModal(rowIndex) {
+    const activeRecords = getActiveRecords();
+    if (!activeRecords[rowIndex]) return;
+    state712.ownerModal.rowIndex = rowIndex;
+    state712.ownerModal.owners = ownersFromText(activeRecords[rowIndex].holder_name);
+    setOwnerFormMode(-1);
+    renderOwnerList();
+    document.getElementById('ownerModal').classList.remove('hidden');
+}
+
+function closeOwnerModal() {
+    document.getElementById('ownerModal').classList.add('hidden');
+    state712.ownerModal = { rowIndex: -1, owners: [], editIndex: -1 };
+    setOwnerFormMode(-1);
+}
+
+function setOwnerFormMode(editIndex) {
+    state712.ownerModal.editIndex = Number.isInteger(editIndex) ? editIndex : -1;
+    const input = document.getElementById('ownerNewInput');
+    const addBtn = document.getElementById('ownerAddBtn');
+
+    if (state712.ownerModal.editIndex >= 0 && state712.ownerModal.owners[state712.ownerModal.editIndex]) {
+        input.value = state712.ownerModal.owners[state712.ownerModal.editIndex];
+        addBtn.textContent = 'Update';
+    } else {
+        input.value = '';
+        addBtn.textContent = 'Add';
+        state712.ownerModal.editIndex = -1;
+    }
+    input.focus();
+}
+
+function renderOwnerList() {
+    const box = document.getElementById('ownerListBox');
+    box.innerHTML = '';
+    if (!state712.ownerModal.owners.length) {
+        box.innerHTML = '<p class="text-gray-500 text-xs">अद्याप नावे जोडलेली नाहीत.</p>';
+        return;
+    }
+    state712.ownerModal.owners.forEach((owner, index) => {
+        const row = document.createElement('div');
+        row.className = 'flex items-center justify-between border-b py-1 gap-2';
+        row.innerHTML = `
+            <span class="text-sm flex-1">${escapeHtml(owner)}</span>
+            <div class="flex items-center gap-2">
+                <button type="button" data-owner-edit="${index}" title="संपादित करा" aria-label="संपादित करा" class="inline-flex items-center justify-center rounded p-1 text-blue-700 hover:bg-blue-50">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-4 w-4">
+                        <path d="M13.586 3.586a2 2 0 0 1 2.828 2.828l-8.9 8.9a2 2 0 0 1-.878.513l-2.6.743a.5.5 0 0 1-.618-.618l.743-2.6a2 2 0 0 1 .513-.878l8.9-8.9ZM12.879 5l2.121 2.121" />
+                    </svg>
+                </button>
+                <button type="button" data-owner-remove="${index}" title="काढा" aria-label="काढा" class="inline-flex items-center justify-center rounded p-1 text-red-600 hover:bg-red-50">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-4 w-4">
+                        <path fill-rule="evenodd" d="M8.5 2a1 1 0 0 0-.894.553L7.382 3H5a.75.75 0 0 0 0 1.5h.386l.73 10.218A2 2 0 0 0 8.111 16.6h3.778a2 2 0 0 0 1.995-1.882l.73-10.218H15a.75.75 0 0 0 0-1.5h-2.382l-.224-.447A1 1 0 0 0 11.5 2h-3ZM8 7.25a.75.75 0 0 1 1.5 0v6a.75.75 0 0 1-1.5 0v-6Zm3 0a.75.75 0 0 1 1.5 0v6a.75.75 0 0 1-1.5 0v-6Z" clip-rule="evenodd" />
+                    </svg>
+                </button>
+            </div>
+        `;
+        box.appendChild(row);
+    });
+}
+
+function bindOwnerModalActions() {
+    document.getElementById('ownerAddBtn').addEventListener('click', () => {
+        const input = document.getElementById('ownerNewInput');
+        const value = input.value.trim();
+        if (!value) return;
+
+        if (state712.ownerModal.editIndex >= 0 && state712.ownerModal.owners[state712.ownerModal.editIndex] !== undefined) {
+            state712.ownerModal.owners[state712.ownerModal.editIndex] = value;
+        } else {
+            state712.ownerModal.owners.push(value);
+        }
+        setOwnerFormMode(-1);
+        renderOwnerList();
+    });
+
+    document.getElementById('ownerListBox').addEventListener('click', (event) => {
+        const editBtn = event.target.closest('[data-owner-edit]');
+        if (editBtn) {
+            const index = Number(editBtn.getAttribute('data-owner-edit'));
+            setOwnerFormMode(index);
+            return;
+        }
+        const removeBtn = event.target.closest('[data-owner-remove]');
+        if (removeBtn) {
+            const index = Number(removeBtn.getAttribute('data-owner-remove'));
+            state712.ownerModal.owners.splice(index, 1);
+            if (state712.ownerModal.editIndex === index) {
+                setOwnerFormMode(-1);
+            } else if (state712.ownerModal.editIndex > index) {
+                state712.ownerModal.editIndex -= 1;
+            }
+            renderOwnerList();
+        }
+    });
+
+    document.getElementById('ownerSaveBtn').addEventListener('click', () => {
+        const activeRecords = getActiveRecords();
+        const rowIndex = state712.ownerModal.rowIndex;
+        if (rowIndex < 0 || !activeRecords[rowIndex]) {
+            closeOwnerModal();
+            return;
+        }
+        activeRecords[rowIndex].holder_name = ownersToText(state712.ownerModal.owners);
+        setActiveRecords(activeRecords);
+        closeOwnerModal();
+        renderRecords();
+    });
+
+    document.getElementById('ownerCancelBtn').addEventListener('click', closeOwnerModal);
+    document.getElementById('ownerModalCloseBtn').addEventListener('click', closeOwnerModal);
+    document.getElementById('ownerModal').addEventListener('click', (event) => {
+        if (event.target === event.currentTarget) closeOwnerModal();
+    });
+}
+
+function initTabs() {
+    document.querySelectorAll('[data-entry-tab]').forEach((btn) => {
+        btn.addEventListener('click', () => switchTab(btn.getAttribute('data-entry-tab')));
+    });
+}
+
+function initUploadFlow() {
+    const fileInput = document.getElementById('uploadInputFile');
+    const chooseBtn = document.getElementById('uploadChooseFileBtn');
+    const nameLabel = document.getElementById('uploadFileName');
+
+    chooseBtn.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', async () => {
+        const file = fileInput.files && fileInput.files[0];
+        if (!file) return;
+        state712.uploadFile = file;
+        nameLabel.textContent = file.name;
+        await parseUploadedFile(file);
+    });
+
+    document.getElementById('saveUploadBtn').addEventListener('click', () => saveCurrentRecords('upload'));
+    document.getElementById('resetUploadBtn').addEventListener('click', resetUploadTab);
+}
+
+function initManualFlow() {
+    const manualFileInput = document.getElementById('manualReferenceFile');
+    const manualChooseBtn = document.getElementById('manualChooseFileBtn');
+    const manualFileName = document.getElementById('manualReferenceFileName');
+    const blockedVideoExts = new Set(['.mp4', '.avi', '.mov', '.mkv', '.wmv', '.flv', '.webm', '.m4v', '.3gp', '.mpeg', '.mpg']);
+
+    manualChooseBtn.addEventListener('click', () => manualFileInput.click());
+    manualFileInput.addEventListener('change', () => {
+        const file = manualFileInput.files && manualFileInput.files[0];
+        if (!file) {
+            state712.manualFile = null;
+            manualFileName.textContent = 'No file selected';
+            return;
         }
 
-        setRows(data.records || []);
-        htmlDataValidated = true;
-        showSuccess(`${data.count || 0} records loaded successfully.`);
-    } catch (error) {
-        htmlDataValidated = false;
-        setRows([]);
-        showError(error.message || 'Failed to fetch data from file.');
-    } finally {
-        setLoading(false);
-    }
-});
+        const lowerName = (file.name || '').toLowerCase();
+        const dotIndex = lowerName.lastIndexOf('.');
+        const ext = dotIndex >= 0 ? lowerName.slice(dotIndex) : '';
+        const isVideoByType = String(file.type || '').toLowerCase().startsWith('video/');
+        const isVideoByExt = blockedVideoExts.has(ext);
 
-formEl.addEventListener('submit', function (e) {
-    const mode = currentUploadMode();
-    const file = fileInputEl.files && fileInputEl.files[0];
-    if (!file) {
-        e.preventDefault();
-        showError('Please select a file.');
-        return;
-    }
-    const name = (file.name || '').toLowerCase();
-    if (mode === 'html' && !(name.endsWith('.html') || name.endsWith('.htm'))) {
-        e.preventDefault();
-        showError('HTML mode: choose .html/.htm file.');
-        return;
-    }
-    if (mode === 'excel' && !(name.endsWith('.xlsx') || name.endsWith('.xls'))) {
-        e.preventDefault();
-        showError('Excel mode: choose .xlsx/.xls file.');
-        return;
-    }
-    if (!districtEl.value || !talukaEl.value || !villageEl.value) {
-        e.preventDefault();
-        showError('Please select district, taluka and village.');
-        return;
-    }
+        if (isVideoByType || isVideoByExt) {
+            state712.manualFile = null;
+            manualFileInput.value = '';
+            manualFileName.textContent = 'No file selected';
+            showError('Video files are not allowed for reference upload.');
+            return;
+        }
 
-    const hasRows = document.getElementById('khata-rows').rows.length > 0;
-    if (!hasRows || !htmlDataValidated) {
-        e.preventDefault();
-        showError('Please click "माहिती भरा" after choosing file.');
-        return;
+        state712.manualFile = file;
+        manualFileName.textContent = file.name;
+    });
+
+    document.getElementById('addManualRowBtn').addEventListener('click', addManualRecord);
+    document.getElementById('saveManualBtn').addEventListener('click', () => saveCurrentRecords('manual'));
+    document.getElementById('resetManualBtn').addEventListener('click', resetManualTab);
+}
+
+async function initLocationGroups() {
+    try {
+        bindLocationGroup(manualGroup, {
+            onGutChanged: () => {
+                const selectedGut = manualGroup.gut.value;
+                const manualRecords = getRecordsForTab('manual');
+                manualRecords.forEach((row) => {
+                    if (!row.gut_number) row.gut_number = selectedGut;
+                });
+                setRecordsForTab('manual', manualRecords);
+                renderRecords();
+            }
+        });
+        await Promise.all([
+            loadDistricts(manualGroup),
+        ]);
+
+    } catch {
+        showError('Failed to initialize location dropdowns.');
     }
+}
 
-    submitBtnEl.disabled = true;
-    submitBtnEl.classList.add('opacity-60', 'cursor-not-allowed');
-    submitBtnEl.textContent = 'Submitting...';
-});
+function bootstrap() {
+    initTabs();
+    initUploadFlow();
+    initManualFlow();
+    setupTableInteractions();
+    bindOwnerModalActions();
+    initLocationGroups();
+    renderRecords();
+}
 
-setRows([]);
-loadDistrictsFor712();
-if (uploadModeHtmlEl) uploadModeHtmlEl.addEventListener('change', applyUploadMode);
-if (uploadModeExcelEl) uploadModeExcelEl.addEventListener('change', applyUploadMode);
-applyUploadMode();
+bootstrap();
 </script>
-</div>
 {% endblock %}
 
 
