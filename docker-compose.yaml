@@ -1,29 +1,21 @@
 services:
   web:
     build: .
-    container_name: lmrs-web
-    working_dir: /app/lmrs
-    command: sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
-    volumes:
-      - .:/app
-    ports:
-      - "8000:8000"
+    container_name: purandar-airport-web
+
+    command: >
+      gunicorn lmrs.wsgi:application
+      --bind 127.0.0.1:8000
+      --workers 4
+      --threads 2
+      --timeout 120
+
     env_file:
       - .env
-    depends_on:
-      - db
 
-  db:
-    image: postgres:16
-    container_name: lmrs-db
-    environment:
-      POSTGRES_DB: lmrs
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-    ports:
-      - "5432:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - /var/www/media/purandar-airport:/app/media
 
-volumes:
-  postgres_data:
+    network_mode: host
+
+    restart: always
