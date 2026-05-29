@@ -431,6 +431,47 @@ function normalizeGutKey(value) {
     return normalizeLocationKey(text);
 }
 
+function decodePossibleMojibake(text) {
+    const input = String(text || '');
+    if (!input) return '';
+    try {
+        if (/[Ãà¤]/.test(input)) return decodeURIComponent(escape(input));
+    } catch {
+        // Keep original text if decoding fails.
+    }
+    return input;
+}
+
+function extractGutValue(item) {
+    if (item === null || item === undefined) return '';
+    if (typeof item === 'string' || typeof item === 'number') {
+        return decodePossibleMojibake(String(item)).trim();
+    }
+    if (typeof item === 'object') {
+        const direct =
+            item.gut_number ??
+            item.gutnumber ??
+            item.survey_no ??
+            item['गट नंबर/सर्वे नंबर'] ??
+            item.value ??
+            item.label;
+        return decodePossibleMojibake(String(direct || '')).trim();
+    }
+    return '';
+}
+
+function normalizeGutOptions(rawItems = []) {
+    const seen = new Set();
+    const options = [];
+    for (const item of rawItems) {
+        const value = extractGutValue(item);
+        if (!value || seen.has(value)) continue;
+        seen.add(value);
+        options.push({ value, label: value });
+    }
+    return options;
+}
+
 async function applyParsedLocation(location = {}) {
     const district = String(location.district || '').trim();
     const taluka = String(location.taluka || '').trim();
@@ -461,7 +502,7 @@ async function applyParsedLocation(location = {}) {
         gutEl.innerHTML = '<option value="">à¤—à¤Ÿ à¤•à¥à¤°à¤®à¤¾à¤‚à¤• à¤¨à¤¿à¤µà¤¡à¤¾</option>';
         const res = await fetch(`/api/locations/?district=${encodeURIComponent(selectedDistrict)}&taluka=${encodeURIComponent(selectedTaluka)}&village=${encodeURIComponent(selectedVillage)}`);
         const data = await res.json();
-        const guts = data.data || [];
+        const guts = normalizeGutOptions(data.data || []).map(option => option.value);
         guts.forEach(g => gutEl.add(new Option(g, g)));
 
         if (!isExcel && gut) {
@@ -476,8 +517,9 @@ async function applyParsedLocation(location = {}) {
             if (!match) match = gut;
             if (![...gutEl.options].some(o => o.value === match)) gutEl.add(new Option(match, match));
             gutEl.value = match;
+        } else {
+            gutEl.value = '';
         }
-        gutEl.value = '';
     } catch {
         // keep fetched records even if dropdown refresh fails
     } finally {
@@ -586,7 +628,8 @@ villageEl.addEventListener('change', function () {
     fetch(`/api/locations/?district=${encodeURIComponent(district)}&taluka=${encodeURIComponent(taluka)}&village=${encodeURIComponent(village)}`)
         .then(res => res.json())
         .then(data => {
-            (data.data || []).forEach(g => gutEl.add(new Option(g, g)));
+            const guts = normalizeGutOptions(data.data || []);
+            guts.forEach(({ label, value }) => gutEl.add(new Option(label, value)));
         })
         .catch(() => showError('गट क्रमांक load करताना समस्या आली.'));
 });
@@ -672,7 +715,8 @@ viewUploadedFileBtnEl.addEventListener('click', function () {
     window.open(fileUrl, '_blank');
 });
 
-fetchBtnEl.addEventListener('click', async function () {
+fetchBtnEl.addEventListener('click', async function (event) {
+    event.preventDefault();
     clearMessages();
 
     const mode = currentUploadMode();
@@ -714,7 +758,6 @@ fetchBtnEl.addEventListener('click', async function () {
         }
 
         setRows(data.records || []);
-        await applyParsedLocation(data.location || (data.records && data.records[0]) || {});
         htmlDataValidated = true;
         showSuccess(`${data.count || 0} records loaded successfully.`);
     } catch (error) {

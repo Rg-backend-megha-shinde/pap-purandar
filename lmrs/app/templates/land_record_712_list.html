@@ -477,6 +477,193 @@ $(document).ready(function () {
         return parts.length ? parts[parts.length - 1] : cleaned;
     }
 
+    const EXCEL_EXTENSIONS = ['xls', 'xlsx'];
+    const EXCEL_MIME_TYPES = [
+        'application/vnd.ms-excel',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'application/octet-stream',
+    ];
+    const EXCEL_PREVIEW_MAX_ROWS = 100;
+    let xlsxLibraryPromise = null;
+
+    function ensureXlsxLibrary() {
+        if (window.XLSX) return Promise.resolve(window.XLSX);
+        if (xlsxLibraryPromise) return xlsxLibraryPromise;
+
+        xlsxLibraryPromise = new Promise((resolve, reject) => {
+            const script = document.createElement('script');
+            script.src = 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';
+            script.onload = () => resolve(window.XLSX);
+            script.onerror = () => reject(new Error('Excel preview library failed to load.'));
+            document.head.appendChild(script);
+        });
+
+        return xlsxLibraryPromise;
+    }
+
+    function escapeHtml(value) {
+        return String(value ?? '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
+    function getSheetRowCount(sheet) {
+        if (!sheet || !sheet['!ref']) return 0;
+        try {
+            const range = window.XLSX.utils.decode_range(sheet['!ref']);
+            return (range.e.r - range.s.r) + 1;
+        } catch {
+            return 0;
+        }
+    }
+
+    function applyExcelColumnWidths(tableEl, sheet) {
+        const cols = (sheet && sheet['!cols']) || [];
+        if (!cols.length || !tableEl) return;
+
+        let colgroup = tableEl.querySelector('colgroup');
+        if (!colgroup) {
+            colgroup = document.createElement('colgroup');
+            tableEl.insertBefore(colgroup, tableEl.firstChild);
+        } else {
+            colgroup.innerHTML = '';
+        }
+
+        cols.forEach(col => {
+            const colEl = document.createElement('col');
+            const widthPx = col && (col.wpx || (col.wch ? Math.round(col.wch * 8 + 12) : null));
+            if (widthPx) colEl.style.width = `${widthPx}px`;
+            colgroup.appendChild(colEl);
+        });
+    }
+
+    function applyExcelRowHeights(tableEl, sheet) {
+        const rows = (sheet && sheet['!rows']) || [];
+        if (!rows.length || !tableEl) return;
+
+        const trList = tableEl.querySelectorAll('tr');
+        rows.forEach((rowMeta, idx) => {
+            const tr = trList[idx];
+            if (!tr || !rowMeta) return;
+            const heightPx = rowMeta.hpx || (rowMeta.hpt ? Math.round(rowMeta.hpt * 1.333) : null);
+            if (heightPx) tr.style.height = `${heightPx}px`;
+        });
+    }
+
+    function renderExcelSheetHtml(sheet, sheetName, $tableWrap, $meta) {
+        const totalRows = getSheetRowCount(sheet);
+        const shownRows = Math.min(totalRows, EXCEL_PREVIEW_MAX_ROWS);
+        $meta.text(`Sheet: ${sheetName} | Rows: ${totalRows} | Showing: ${shownRows}`);
+
+        if (!totalRows) {
+            $tableWrap.html('<div class="text-sm text-gray-600 p-4">No rows found in this sheet.</div>');
+            return;
+        }
+
+        const sheetHtml = window.XLSX.utils.sheet_to_html(sheet, {
+            id: 'excel-preview-table',
+            editable: false,
+            header: '',
+            footer: '',
+        });
+
+        const html = `
+            <style>
+                #excel-preview-shell { overflow: auto; border: 1px solid #d1d5db; border-radius: 6px; background: #fff; }
+                #excel-preview-shell table { border-collapse: collapse !important; table-layout: fixed; width: max-content; min-width: 100%; font-size: 13px; color: #111827; }
+                #excel-preview-shell td, #excel-preview-shell th { border: 1px solid #cbd5e1 !important; padding: 6px 8px !important; white-space: pre-wrap !important; word-break: break-word; vertical-align: top; }
+                #excel-preview-shell tr:nth-child(even) td { background: #fcfcfd; }
+            </style>
+            <div id="excel-preview-shell">${sheetHtml}</div>
+        `;
+        $tableWrap.html(html);
+
+        const tableEl = $tableWrap.find('#excel-preview-table').get(0);
+        if (!tableEl) return;
+
+        applyExcelColumnWidths(tableEl, sheet);
+        applyExcelRowHeights(tableEl, sheet);
+
+        const rows = tableEl.querySelectorAll('tr');
+        if (rows.length > EXCEL_PREVIEW_MAX_ROWS) {
+            for (let i = EXCEL_PREVIEW_MAX_ROWS; i < rows.length; i += 1) {
+                rows[i].style.display = 'none';
+            }
+            $tableWrap.append(`<div class="text-xs text-gray-500 mt-2">Showing first ${EXCEL_PREVIEW_MAX_ROWS} rows only.</div>`);
+        }
+    }
+
+    async function previewExcelInModal(fileUrl, fileNameOnly, $content) {
+        $content.html('<div class="h-full w-full flex items-center justify-center text-gray-600 text-sm">Loading Excel preview...</div>');
+
+        try {
+            await ensureXlsxLibrary();
+
+            const response = await fetch(fileUrl, { credentials: 'same-origin' });
+            if (!response.ok) {
+                throw new Error(`Failed to download file (HTTP ${response.status})`);
+            }
+
+            const contentType = String(response.headers.get('content-type') || '').toLowerCase();
+            const ext = getFileExtension(fileNameOnly || fileUrl);
+            const isExcelByExt = EXCEL_EXTENSIONS.includes(ext);
+            const isExcelByMime = EXCEL_MIME_TYPES.some(type => contentType.includes(type));
+
+            if (!isExcelByExt && !isExcelByMime) {
+                throw new Error(`Unsupported Excel MIME type: ${contentType || 'unknown'}`);
+            }
+
+            const arrayBuffer = await response.arrayBuffer();
+            const workbook = window.XLSX.read(arrayBuffer, {
+                type: 'array',
+                cellStyles: true,
+                cellHTML: true,
+                cellText: true,
+            });
+
+            if (!workbook || !Array.isArray(workbook.SheetNames) || !workbook.SheetNames.length) {
+                throw new Error('No worksheet found in Excel file.');
+            }
+
+            const shellHtml = `
+                <div class="h-full w-full flex flex-col">
+                    <div class="border-b bg-gray-50 p-3 flex flex-col sm:flex-row gap-2 sm:items-center sm:justify-between">
+                        <div id="excelPreviewMeta" class="text-xs text-gray-600"></div>
+                        <label class="text-xs text-gray-700 flex items-center gap-2">
+                            <span>Sheet:</span>
+                            <select id="excelSheetSelector" class="border rounded px-2 py-1 text-xs bg-white"></select>
+                        </label>
+                    </div>
+                    <div id="excelTableWrap" class="flex-1 overflow-auto p-3 bg-gray-50"></div>
+                </div>
+            `;
+            $content.html(shellHtml);
+
+            const $selector = $('#excelSheetSelector');
+            const $tableWrap = $('#excelTableWrap');
+            const $meta = $('#excelPreviewMeta');
+
+            workbook.SheetNames.forEach(sheetName => {
+                $selector.append($('<option/>', { value: sheetName, text: sheetName }));
+            });
+
+            function renderSelectedSheet() {
+                const selectedSheet = $selector.val() || workbook.SheetNames[0];
+                const sheet = workbook.Sheets[selectedSheet];
+                renderExcelSheetHtml(sheet, selectedSheet, $tableWrap, $meta);
+            }
+
+            $selector.on('change', renderSelectedSheet);
+            renderSelectedSheet();
+        } catch (error) {
+            const message = error && error.message ? error.message : 'Unknown error';
+            $content.html(`<div class="h-full w-full flex items-center justify-center p-6 text-center text-red-600 text-sm">Excel preview failed: ${escapeHtml(message)}</div>`);
+        }
+    }
+
     function open712FilePreview(url, filename, dateText) {
         if (!url) {
             alert('फाईल उपलब्ध नाही');
@@ -496,7 +683,9 @@ $(document).ready(function () {
             $content.html('<iframe src="' + url + '" style="width:100%;height:100%;border:none;" title="' + fileNameOnly + '"></iframe>');
         } else if (ext === 'html' || ext === 'htm') {
             $content.html('<iframe src="' + url + '" style="width:100%;height:100%;border:none;background:#fff;" title="' + fileNameOnly + '"></iframe>');
-        } else if (['doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx'].includes(ext)) {
+        } else if (EXCEL_EXTENSIONS.includes(ext)) {
+            previewExcelInModal(url, fileNameOnly, $content);
+        } else if (['doc', 'docx', 'ppt', 'pptx'].includes(ext)) {
             const fullUrl = window.location.origin + url;
             $content.html('<iframe src="https://docs.google.com/viewer?url=' + encodeURIComponent(fullUrl) + '&embedded=true" style="width:100%;height:100%;border:none;" title="' + fileNameOnly + '"></iframe>');
         } else {
