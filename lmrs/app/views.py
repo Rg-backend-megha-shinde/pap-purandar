@@ -15,6 +15,7 @@ import re
 import json
 import os
 import requests
+from collections import Counter
 from io import BytesIO
 import unicodedata
 from urllib.parse import urlparse, parse_qs
@@ -1098,6 +1099,18 @@ def delete_document_attachment(request, attachment_id):
 
 @login_required
 def land_record_712(request):
+    is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+
+    def respond_error(message, status=400):
+        if is_ajax:
+            return JsonResponse({'success': False, 'error': message}, status=status)
+        return render(request, 'landrecord.html', {'error_message': message})
+
+    def respond_success(message, status=200):
+        if is_ajax:
+            return JsonResponse({'success': True, 'message': message}, status=status)
+        return redirect('land_record_712_list')
+
     def clean_optional(value):
         text = str(value or '').strip()
         if text.casefold() in {'', '-', 'na', 'n/a'}:
@@ -1206,10 +1219,10 @@ def land_record_712(request):
             })
 
         if not rows_to_create:
-            return render(request, 'landrecord.html', {'error_message': 'No rows found to save.'})
+            return respond_error('No rows found to save.')
 
         if not all([district, taluka, village]):
-            return render(request, 'landrecord.html', {'error_message': 'Please select district, taluka and village.'})
+            return respond_error('Please select district, taluka and village.')
 
         valid_gut_keys = fetch_valid_guts_for_location(district, taluka, village)
         skipped_rows = []
@@ -1229,11 +1242,7 @@ def land_record_712(request):
                     })
 
         if not valid_rows:
-            return render(
-                request,
-                'landrecord.html',
-                {'error_message': 'No matching gut rows found for selected location.'}
-            )
+            return respond_error('No matching gut rows found for selected location.')
 
         created_count = 0
         duplicate_count = 0
@@ -1289,9 +1298,11 @@ def land_record_712(request):
                 f'Saved {created_count} rows. '
                 f'Skipped {mismatch_count} gut mismatches and {duplicate_count_from_rows} duplicates.'
             )
+            if is_ajax:
+                return JsonResponse({'success': True, 'message': msg, 'created_count': created_count})
             return render(request, 'landrecord.html', {'error_message': msg})
 
-        return redirect('land_record_712_list')
+        return respond_success(f'Saved {created_count} rows successfully.')
 
     return render(request, 'landrecord.html')
 @login_required
@@ -1480,25 +1491,26 @@ def parse_land_record_712_html(request):
             return '/'.join(parts)
         return normalize_match_text(text)
 
-    upload_mode = (request.POST.get('upload_mode') or 'html').strip().lower()
-    district = request.POST.get('district')
-    taluka = request.POST.get('taluka')
-    village = request.POST.get('village')
+    def detect_file_type(filename):
+        name = (filename or '').lower()
+        if name.endswith(('.html', '.htm')):
+            return 'html'
+        if name.endswith(('.xlsx', '.xls')):
+            return 'excel'
+        return None
+
+    district = (request.POST.get('district') or '').strip()
+    taluka = (request.POST.get('taluka') or '').strip()
+    village = (request.POST.get('village') or '').strip()
     gut_number = format_gut_number_for_storage(request.POST.get('gut_number'))
     uploaded_file = request.FILES.get('document_712')
 
     if not uploaded_file:
         return JsonResponse({'success': False, 'error': 'Please choose a file.'}, status=400)
 
-    if upload_mode == 'excel' and not uploaded_file.name.lower().endswith(('.xlsx', '.xls')):
-        return JsonResponse({'success': False, 'error': 'Excel mode supports only .xlsx/.xls files.'}, status=400)
-    if upload_mode == 'html' and not uploaded_file.name.lower().endswith(('.html', '.htm')):
-        return JsonResponse({'success': False, 'error': 'HTML mode supports only .html/.htm files.'}, status=400)
-
-    if upload_mode == 'html' and not all([district, taluka, village, gut_number]):
-        return JsonResponse({'success': False, 'error': 'Please select district, taluka, village and gut number.'}, status=400)
-    if upload_mode == 'excel' and not all([district, taluka, village]):
-        return JsonResponse({'success': False, 'error': 'Please select district, taluka and village.'}, status=400)
+    upload_mode = detect_file_type(uploaded_file.name)
+    if not upload_mode:
+        return JsonResponse({'success': False, 'error': 'Supported files: .html, .htm, .xlsx, .xls'}, status=400)
 
     api_url = os.getenv(
         'LAND_RECORD_UPLOAD_API_URL',
@@ -1551,7 +1563,7 @@ def parse_land_record_712_html(request):
         row_district = row_get(row, '\u091c\u093f\u0932\u094d\u0939\u093e', 'district')
         row_taluka = row_get(row, '\u0924\u093e\u0932\u0941\u0915\u093e', 'taluka')
         row_village = row_get(row, '\u0917\u093e\u0935\u093e\u091a\u0947 \u0928\u093e\u0935', '\u0917\u093e\u0935', 'village', 'village_name')
-        if upload_mode == 'excel':
+        if upload_mode == 'excel' and all([district, taluka, village]):
             district_matches = text_matches_aliases(row_district, location_aliases['district'])
             taluka_matches = text_matches_aliases(row_taluka, location_aliases['taluka'])
             village_matches = text_matches_aliases(row_village, location_aliases['village'])
@@ -1588,21 +1600,50 @@ def parse_land_record_712_html(request):
             'area_more_than_20guntha': row_get(row, '\u0915\u094d\u0937\u0947\u0924\u094d\u0930_20_\u0917\u0941\u0902\u0920\u0947_\u092a\u0947\u0915\u094d\u0937\u093e_\u091c\u093e\u0938\u094d\u0924', 'area_more_than_20guntha'),
             'bagayat_more_than_10guntha': row_get(row, '\u092c\u093e\u0917\u093e\u092f\u0924_10_\u0917\u0941\u0902\u0920\u0947_\u092a\u0947\u0915\u094d\u0937\u093e_\u091c\u093e\u0938\u094d\u0924', 'bagayat_more_than_10guntha'),
         })
-    if upload_mode == 'excel' and not records:
+    if upload_mode == 'excel' and all([district, taluka, village]) and not records:
         return JsonResponse({
             'success': False,
             'error': 'Selected location and uploaded file location are not matching.'
         }, status=400)
+
+    if not records:
+        return JsonResponse({'success': False, 'error': 'No record found in uploaded file.'}, status=400)
+
     first = next((r for r in records if r.get('district') and r.get('taluka') and r.get('village')), {})
+    district_candidates = [r.get('district', '').strip() for r in records if r.get('district')]
+    taluka_candidates = [r.get('taluka', '').strip() for r in records if r.get('taluka')]
+    village_candidates = [r.get('village', '').strip() for r in records if r.get('village')]
+    gut_candidates = [format_gut_number_for_storage(r.get('gut_number', '')) for r in records if r.get('gut_number')]
+
+    def most_common(items):
+        normalized = [str(item or '').strip() for item in items if str(item or '').strip()]
+        if not normalized:
+            return ''
+        return Counter(normalized).most_common(1)[0][0]
+
+    detected_district = district or most_common(district_candidates) or first.get('district', '') or ''
+    detected_taluka = taluka or most_common(taluka_candidates) or first.get('taluka', '') or ''
+    detected_village = village or most_common(village_candidates) or first.get('village', '') or ''
+    detected_gut = gut_number or most_common(gut_candidates) or format_gut_number_for_storage(first.get('gut_number', ''))
+
+    for row in records:
+        if not row.get('district'):
+            row['district'] = detected_district
+        if not row.get('taluka'):
+            row['taluka'] = detected_taluka
+        if not row.get('village'):
+            row['village'] = detected_village
+
     return JsonResponse({
         'success': True,
         'records': records,
         'count': len(records),
+        'file_type': upload_mode,
         'location': {
-            'district': first.get('district', '') or district or '',
-            'taluka': first.get('taluka', '') or taluka or '',
-            'village': first.get('village', '') or village or '',
-            'gut_number': format_gut_number_for_storage(first.get('gut_number', '')),
+            'district': detected_district,
+            'taluka': detected_taluka,
+            'village': detected_village,
+            'gut_number': detected_gut,
         }
     })
 
@@ -1615,6 +1656,7 @@ def delete_selected_land_record_712(request):
         DocumentMaster.objects.filter(land_record_id__in=selected_ids).update(land_record=None)
         LandRecord712.objects.filter(id__in=selected_ids).delete()
     return redirect('land_record_712_list')
+
 
 @api_login_required
 def get_assessment_types_by_village(request, village):
