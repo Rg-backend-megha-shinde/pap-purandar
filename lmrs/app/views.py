@@ -1108,7 +1108,11 @@ def land_record_712(request):
 
     def respond_success(message, status=200):
         if is_ajax:
-            return JsonResponse({'success': True, 'message': message}, status=status)
+            return JsonResponse({
+                'success': True,
+                'message': message,
+                'redirect_url': reverse('land_record_712_list'),
+            }, status=status)
         return redirect('land_record_712_list')
 
     def clean_optional(value):
@@ -1244,9 +1248,47 @@ def land_record_712(request):
         if not valid_rows:
             return respond_error('No matching gut rows found for selected location.')
 
+        # Khata number must stay unique globally and inside current submission.
+        khata_pairs = []
+        for row in valid_rows:
+            khata_raw = row.get('khata_number')
+            khata_clean = clean_optional(khata_raw)
+            if not khata_clean:
+                continue
+            khata_pairs.append((khata_clean, normalize_match_text(khata_clean)))
+
+        incoming_khatas = []
+        if khata_pairs:
+            seen_local = {}
+            local_duplicates = []
+            for khata_value, khata_key in khata_pairs:
+                if khata_key in seen_local:
+                    local_duplicates.append(khata_value)
+                else:
+                    seen_local[khata_key] = khata_value
+            if local_duplicates:
+                duplicate_text = ', '.join(sorted(set(local_duplicates)))
+                return respond_error(f'खाता नंबर unique असणे आवश्यक आहे. Duplicate: {duplicate_text}')
+
+            incoming_khatas = sorted({khata for khata, _key in khata_pairs})
+
         created_count = 0
         duplicate_count = 0
         with transaction.atomic():
+            if incoming_khatas:
+                existing_conflicts = []
+                with connection.cursor() as cursor:
+                    for khata in incoming_khatas:
+                        cursor.execute(
+                            "SELECT pg_advisory_xact_lock(hashtext(%s))",
+                            [f"land_record_712.khata_number:{khata}"]
+                        )
+                        if LandRecord712.objects.filter(khata_number__iexact=khata).exists():
+                            existing_conflicts.append(khata)
+                if existing_conflicts:
+                    conflict_text = ', '.join(sorted(set(existing_conflicts)))
+                    return respond_error(f'खाता नंबर आधीपासून उपलब्ध आहे: {conflict_text}')
+
             for row in valid_rows:
                 lookup_kwargs = {
                     'district': row.get('district') or district,
@@ -1299,7 +1341,12 @@ def land_record_712(request):
                 f'Skipped {mismatch_count} gut mismatches and {duplicate_count_from_rows} duplicates.'
             )
             if is_ajax:
-                return JsonResponse({'success': True, 'message': msg, 'created_count': created_count})
+                return JsonResponse({
+                    'success': True,
+                    'message': msg,
+                    'created_count': created_count,
+                    'redirect_url': reverse('land_record_712_list'),
+                })
             return render(request, 'landrecord.html', {'error_message': msg})
 
         return respond_success(f'Saved {created_count} rows successfully.')

@@ -127,34 +127,10 @@
                     <div><span class="font-semibold">Village:</span> <span id="detectedVillageText">-</span></div>
                     <div id="detectedGutWrap"><span class="font-semibold">Gut No:</span> <span id="detectedGutText">-</span></div>
                 </div>
-                <div class="mt-3">
-                    <button type="button" id="toggleCorrectionBtn" class="text-sm font-semibold text-blue-700 underline">Modify detected location</button>
-                </div>
-
-                <div id="locationCorrectionBox" class="hidden mt-4 border-t border-blue-200 pt-4">
-                    <p class="text-sm text-blue-900 mb-3">Optional correction only. Keep blank to use detected values.</p>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
-                        <div>
-                            <label class="text-sm font-semibold">District</label>
-                            <select id="uploadDistrict" class="w-full border p-2 rounded text-sm"></select>
-                        </div>
-                        <div>
-                            <label class="text-sm font-semibold">Taluka</label>
-                            <select id="uploadTaluka" class="w-full border p-2 rounded text-sm"></select>
-                        </div>
-                        <div>
-                            <label class="text-sm font-semibold">Village</label>
-                            <select id="uploadVillage" class="w-full border p-2 rounded text-sm"></select>
-                        </div>
-                        <div id="uploadGutFieldWrap">
-                            <label class="text-sm font-semibold">Gut Number</label>
-                            <select id="uploadGut" class="w-full border p-2 rounded text-sm"></select>
-                        </div>
-                    </div>
-                </div>
             </div>
 
-            <div class="flex justify-end">
+            <div class="flex justify-end gap-2">
+                <button type="button" id="resetUploadBtn" class="bg-gray-500 hover:bg-gray-600 text-white px-5 py-2 rounded-md">Reset</button>
                 <button type="button" id="saveUploadBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-md">Save Uploaded Records</button>
             </div>
         </section>
@@ -182,6 +158,7 @@
                 </div>
                 <div class="mt-4 flex flex-wrap gap-2">
                     <button type="button" id="addManualRowBtn" class="bg-gray-700 hover:bg-gray-800 text-white px-4 py-2 rounded-md text-sm">Add Record</button>
+                    <button type="button" id="resetManualBtn" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-md text-sm">Reset</button>
                     <button type="button" id="saveManualBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm">Save Manual Records</button>
                 </div>
             </div>
@@ -189,30 +166,39 @@
 
         <section id="recordsSection" class="hidden border rounded-lg p-4 bg-gray-50 mt-5">
             <div class="flex items-center justify-between gap-2 flex-wrap">
-                <h3 class="font-bold text-lg">Extracted / Entered 7/12 Records</h3>
-                <span id="recordsMetaText" class="text-sm text-gray-600">0 records</span>
+                <h3 class="font-bold text-lg">७/१२ माहिती</h3>
+                <span id="recordsMetaText" class="text-sm text-gray-600">0 नोंदी</span>
             </div>
             <div class="overflow-x-auto mt-4">
                 <table class="w-full border text-xs text-center border-collapse">
                     <thead class="bg-gray-100 font-semibold">
                         <tr>
-                            <th class="border p-2">Survey / Gut</th>
-                            <th class="border p-2">PUID/ULIP</th>
-                            <th class="border p-2">Khata No</th>
-                            <th class="border p-2">Khata Area</th>
-                            <th class="border p-2">Jirayat</th>
-                            <th class="border p-2">Bagayat</th>
-                            <th class="border p-2">Potkharab</th>
-                            <th class="border p-2">Assessment</th>
-                            <th class="border p-2">Shape/Area</th>
-                            <th class="border p-2">Total Area</th>
-                            <th class="border p-2">Occupant Name</th>
-                            <th class="border p-2">Kul/Khanda/Other Rights</th>
-                            <th class="border p-2">Actions</th>
+                            <th class="border p-2">गट नंबर/सर्वे नंबर</th>
+                            <th class="border p-2">PUID/ULIP नं</th>
+                            <th class="border p-2">खाता नं</th>
+                            <th class="border p-2">खाता क्षेत्र</th>
+                            <th class="border p-2">जिरायत</th>
+                            <th class="border p-2">बागायत</th>
+                            <th class="border p-2">पोटखराब</th>
+                            <th class="border p-2">आकारणी</th>
+                            <th class="border p-2">आकार</th>
+                            <th class="border p-2">एकूण क्षेत्र</th>
+                            <th class="border p-2">भोगवटादाराचे नाव</th>
+                            <th class="border p-2">कुळ, खंड व इतर अधिकार</th>
+                            <th class="border p-2">कृती</th>
                         </tr>
                     </thead>
                     <tbody id="recordsTableBody"></tbody>
                 </table>
+            </div>
+            <div id="manualReferenceBottomSection" class="hidden mt-4 border-t border-gray-200 pt-4">
+                <h4 class="font-semibold text-base mb-2">७/१२ संदर्भ फाइल (PDF)</h4>
+                <div class="flex flex-col sm:flex-row gap-2 sm:items-center">
+                    <input type="file" id="manualReferenceFile" accept=".pdf" class="hidden">
+                    <button type="button" id="manualChooseFileBtn" class="bg-gray-700 hover:bg-gray-800 text-white px-4 py-2 rounded-md text-sm">Select File</button>
+                    <span id="manualReferenceFileName" class="text-sm text-gray-600">No file selected</span>
+                </div>
+                <p class="text-xs text-gray-500 mt-1">Manual row जोडल्यानंतरच संदर्भ PDF अपलोड करा.</p>
             </div>
         </section>
 
@@ -227,7 +213,7 @@
     <div class="flex items-center justify-center min-h-screen p-4">
         <div class="bg-white rounded-lg max-w-xl w-full">
             <div class="flex justify-between items-center p-4 border-b">
-                <h3 class="text-base font-semibold">Manage Owners</h3>
+                <h3 class="text-base font-semibold">भोगवटादारांची नावे</h3>
                 <button type="button" id="ownerModalCloseBtn" class="text-2xl leading-none text-gray-500 hover:text-gray-700">&times;</button>
             </div>
             <div class="p-4 space-y-3">
@@ -249,6 +235,7 @@
 const state712 = {
     activeTab: 'upload',
     uploadFile: null,
+    manualFile: null,
     uploadFileType: '',
     detectedLocation: { district: '', taluka: '', village: '', gut_number: '' },
     recordsByTab: {
@@ -272,12 +259,13 @@ const tabSections = {
     manual: document.getElementById('entryTabManual'),
 };
 
-const uploadGroup = makeLocationGroup('uploadDistrict', 'uploadTaluka', 'uploadVillage', 'uploadGut');
 const manualGroup = makeLocationGroup('manualDistrict', 'manualTaluka', 'manualVillage', 'manualGut');
+const LAND_RECORD_LIST_URL = "{% url 'land_record_712_list' %}";
 
 const recordsSectionEl = document.getElementById('recordsSection');
 const recordsTableBodyEl = document.getElementById('recordsTableBody');
 const recordsMetaTextEl = document.getElementById('recordsMetaText');
+const manualReferenceBottomEl = document.getElementById('manualReferenceBottomSection');
 
 function hideError() {
     const box = document.getElementById('clientErrorBox');
@@ -422,6 +410,7 @@ function bindLocationGroup(group, { onGutChanged } = {}) {
     group.district.addEventListener('change', async () => {
         try {
             await loadTalukas(group, group.district.value);
+            updateManualReferenceVisibility();
         } catch {
             showError('Failed to load taluka list.');
         }
@@ -429,23 +418,22 @@ function bindLocationGroup(group, { onGutChanged } = {}) {
     group.taluka.addEventListener('change', async () => {
         try {
             await loadVillages(group, group.district.value, group.taluka.value);
+            updateManualReferenceVisibility();
         } catch {
             showError('Failed to load village list.');
         }
     });
     group.village.addEventListener('change', async () => {
         try {
-            if (group === uploadGroup && state712.uploadFileType === 'excel') {
-                resetSelect(group.gut, PLACEHOLDERS.gut);
-                return;
-            }
             await loadGuts(group, group.district.value, group.taluka.value, group.village.value);
+            updateManualReferenceVisibility();
         } catch {
             showError('Failed to load gut list.');
         }
     });
     group.gut.addEventListener('change', () => {
         if (typeof onGutChanged === 'function') onGutChanged();
+        updateManualReferenceVisibility();
     });
 }
 
@@ -457,6 +445,7 @@ function switchTab(tabKey) {
     Object.entries(tabSections).forEach(([key, section]) => {
         section.classList.toggle('hidden', key !== tabKey);
     });
+    updateManualReferenceVisibility();
     renderRecords();
 }
 
@@ -480,9 +469,26 @@ function setActiveRecords(records) {
 function ensureRecordsVisible() {
     if (!getActiveRecords().length) {
         recordsSectionEl.classList.add('hidden');
+        updateManualReferenceVisibility();
         return;
     }
     recordsSectionEl.classList.remove('hidden');
+    updateManualReferenceVisibility();
+}
+
+function isManualLocationSelected() {
+    const location = getManualLocation();
+    return !!(location.district && location.taluka && location.village && location.gut_number);
+}
+
+function updateManualReferenceVisibility() {
+    if (!manualReferenceBottomEl) return;
+    const shouldShow =
+        state712.activeTab === 'manual' &&
+        isManualLocationSelected() &&
+        getRecordsForTab('manual').length > 0 &&
+        !recordsSectionEl.classList.contains('hidden');
+    manualReferenceBottomEl.classList.toggle('hidden', !shouldShow);
 }
 
 function defaultRecord() {
@@ -523,8 +529,9 @@ function rowOwnerSummary(text) {
 function renderRecords() {
     const activeRecords = getActiveRecords();
     recordsTableBodyEl.innerHTML = '';
-    recordsMetaTextEl.textContent = `${activeRecords.length} records`;
+    recordsMetaTextEl.textContent = `${activeRecords.length} नोंदी`;
     ensureRecordsVisible();
+    updateManualReferenceVisibility();
 
     activeRecords.forEach((row, index) => {
         const tr = document.createElement('tr');
@@ -542,12 +549,12 @@ function renderRecords() {
             <td class="border p-1">
                 <div class="flex flex-col items-start gap-1">
                     <span class="table-chip" title="${escapeAttr(row.holder_name || MARATHI_NA)}">${escapeHtml(rowOwnerSummary(row.holder_name))}</span>
-                    <button type="button" class="text-xs text-blue-700 underline" data-owner-manage="${index}">Manage Owners</button>
+                    <button type="button" class="text-xs text-blue-700 underline" data-owner-manage="${index}">नावे व्यवस्थापित करा</button>
                 </div>
             </td>
             <td class="border p-1"><textarea class="record-cell-input min-h-[52px]" data-row="${index}" data-field="kul_khand_other_rights">${escapeHtml(row.kul_khand_other_rights || '')}</textarea></td>
             <td class="border p-1">
-                <button type="button" class="text-xs text-red-600 underline" data-row-remove="${index}">Remove</button>
+                <button type="button" class="text-xs text-red-600 underline" data-row-remove="${index}">काढा</button>
             </td>
         `;
         recordsTableBodyEl.appendChild(tr);
@@ -604,12 +611,13 @@ function setupTableInteractions() {
 }
 
 function getUploadChosenLocation() {
-    const isExcelFile = state712.uploadFileType === 'excel';
+    const uploadRecords = getRecordsForTab('upload');
+    const firstRecord = uploadRecords[0] || {};
     return {
-        district: uploadGroup.district.value || state712.detectedLocation.district || '',
-        taluka: uploadGroup.taluka.value || state712.detectedLocation.taluka || '',
-        village: uploadGroup.village.value || state712.detectedLocation.village || '',
-        gut_number: isExcelFile ? '' : (uploadGroup.gut.value || state712.detectedLocation.gut_number || ''),
+        district: state712.detectedLocation.district || firstRecord.district || '',
+        taluka: state712.detectedLocation.taluka || firstRecord.taluka || '',
+        village: state712.detectedLocation.village || firstRecord.village || '',
+        gut_number: state712.uploadFileType === 'excel' ? '' : (state712.detectedLocation.gut_number || firstRecord.gut_number || ''),
     };
 }
 
@@ -638,34 +646,18 @@ function applyDetectedLocationCard(location = {}) {
     document.getElementById('detectedLocationBox').classList.remove('hidden');
 }
 
+function resetDetectedLocationCard() {
+    state712.detectedLocation = { district: '', taluka: '', village: '', gut_number: '' };
+    document.getElementById('detectedDistrictText').textContent = '-';
+    document.getElementById('detectedTalukaText').textContent = '-';
+    document.getElementById('detectedVillageText').textContent = '-';
+    document.getElementById('detectedGutText').textContent = '-';
+    document.getElementById('detectedGutWrap').classList.remove('hidden');
+    document.getElementById('detectedLocationBox').classList.add('hidden');
+}
+
 async function applyDetectedToCorrectionDropdowns() {
-    const isExcelFile = state712.uploadFileType === 'excel';
-    document.getElementById('uploadGutFieldWrap').classList.toggle('hidden', isExcelFile);
-    try {
-        await loadDistricts(uploadGroup);
-        if (state712.detectedLocation.district) {
-            setSelectByText(uploadGroup.district, state712.detectedLocation.district);
-            await loadTalukas(uploadGroup, uploadGroup.district.value || state712.detectedLocation.district);
-        }
-        if (state712.detectedLocation.taluka) {
-            setSelectByText(uploadGroup.taluka, state712.detectedLocation.taluka);
-            await loadVillages(uploadGroup, uploadGroup.district.value, uploadGroup.taluka.value || state712.detectedLocation.taluka);
-        }
-        if (state712.detectedLocation.village) {
-            setSelectByText(uploadGroup.village, state712.detectedLocation.village);
-            if (!isExcelFile) {
-                await loadGuts(uploadGroup, uploadGroup.district.value, uploadGroup.taluka.value, uploadGroup.village.value || state712.detectedLocation.village);
-            } else {
-                resetSelect(uploadGroup.gut, PLACEHOLDERS.gut);
-            }
-        }
-        if (!isExcelFile && state712.detectedLocation.gut_number) {
-            setSelectByText(uploadGroup.gut, state712.detectedLocation.gut_number);
-            if (!uploadGroup.gut.value) uploadGroup.gut.add(new Option(state712.detectedLocation.gut_number, state712.detectedLocation.gut_number));
-        }
-    } catch {
-        showError('Detected location is shown, but correction dropdowns could not be fully loaded.');
-    }
+    return Promise.resolve();
 }
 
 async function parseUploadedFile(file) {
@@ -756,6 +748,9 @@ async function saveCurrentRecords(mode) {
     if (mode === 'upload' && state712.uploadFile) {
         formData.append('document_712', state712.uploadFile);
     }
+    if (mode === 'manual' && state712.manualFile) {
+        formData.append('document_712', state712.manualFile);
+    }
 
     normalizedRows.forEach((row) => {
         formData.append('gut_number_row[]', row.gut_number);
@@ -784,6 +779,10 @@ async function saveCurrentRecords(mode) {
         const data = await response.json();
         if (!response.ok || !data.success) throw new Error(data.error || 'Save failed.');
         showSuccess(data.message || 'Records saved successfully.');
+        const redirectUrl = data.redirect_url || LAND_RECORD_LIST_URL;
+        setTimeout(() => {
+            window.location.href = redirectUrl;
+        }, 250);
     } catch (error) {
         showError(error.message || 'Save failed.');
     }
@@ -802,6 +801,37 @@ function addManualRecord() {
     manualRecords.push(row);
     setRecordsForTab('manual', manualRecords);
     renderRecords();
+    updateManualReferenceVisibility();
+}
+
+function resetUploadTab() {
+    state712.uploadFile = null;
+    state712.uploadFileType = '';
+    setRecordsForTab('upload', []);
+    const fileInput = document.getElementById('uploadInputFile');
+    const fileName = document.getElementById('uploadFileName');
+    if (fileInput) fileInput.value = '';
+    if (fileName) fileName.textContent = 'No file selected';
+    resetDetectedLocationCard();
+    clearMessages();
+    if (state712.activeTab === 'upload') renderRecords();
+}
+
+async function resetManualTab() {
+    setRecordsForTab('manual', []);
+    state712.manualFile = null;
+    const manualFileInput = document.getElementById('manualReferenceFile');
+    const manualFileName = document.getElementById('manualReferenceFileName');
+    if (manualFileInput) manualFileInput.value = '';
+    if (manualFileName) manualFileName.textContent = 'No file selected';
+    try {
+        await loadDistricts(manualGroup);
+    } catch {
+        showError('Failed to reset manual location dropdowns.');
+    }
+    clearMessages();
+    if (state712.activeTab === 'manual') renderRecords();
+    updateManualReferenceVisibility();
 }
 
 function openOwnerModal(rowIndex) {
@@ -840,7 +870,7 @@ function renderOwnerList() {
     const box = document.getElementById('ownerListBox');
     box.innerHTML = '';
     if (!state712.ownerModal.owners.length) {
-        box.innerHTML = '<p class="text-gray-500 text-xs">No owners added yet.</p>';
+        box.innerHTML = '<p class="text-gray-500 text-xs">अद्याप नावे जोडलेली नाहीत.</p>';
         return;
     }
     state712.ownerModal.owners.forEach((owner, index) => {
@@ -848,8 +878,18 @@ function renderOwnerList() {
         row.className = 'flex items-center justify-between border-b py-1 gap-2';
         row.innerHTML = `
             <span class="text-sm flex-1">${escapeHtml(owner)}</span>
-            <button type="button" class="text-xs text-blue-700 underline" data-owner-edit="${index}">Edit</button>
-            <button type="button" class="text-xs text-red-600 underline" data-owner-remove="${index}">Remove</button>
+            <div class="flex items-center gap-2">
+                <button type="button" data-owner-edit="${index}" title="संपादित करा" aria-label="संपादित करा" class="inline-flex items-center justify-center rounded p-1 text-blue-700 hover:bg-blue-50">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-4 w-4">
+                        <path d="M13.586 3.586a2 2 0 0 1 2.828 2.828l-8.9 8.9a2 2 0 0 1-.878.513l-2.6.743a.5.5 0 0 1-.618-.618l.743-2.6a2 2 0 0 1 .513-.878l8.9-8.9ZM12.879 5l2.121 2.121" />
+                    </svg>
+                </button>
+                <button type="button" data-owner-remove="${index}" title="काढा" aria-label="काढा" class="inline-flex items-center justify-center rounded p-1 text-red-600 hover:bg-red-50">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-4 w-4">
+                        <path fill-rule="evenodd" d="M8.5 2a1 1 0 0 0-.894.553L7.382 3H5a.75.75 0 0 0 0 1.5h.386l.73 10.218A2 2 0 0 0 8.111 16.6h3.778a2 2 0 0 0 1.995-1.882l.73-10.218H15a.75.75 0 0 0 0-1.5h-2.382l-.224-.447A1 1 0 0 0 11.5 2h-3ZM8 7.25a.75.75 0 0 1 1.5 0v6a.75.75 0 0 1-1.5 0v-6Zm3 0a.75.75 0 0 1 1.5 0v6a.75.75 0 0 1-1.5 0v-6Z" clip-rule="evenodd" />
+                    </svg>
+                </button>
+            </div>
         `;
         box.appendChild(row);
     });
@@ -930,24 +970,29 @@ function initUploadFlow() {
         await parseUploadedFile(file);
     });
 
-    document.getElementById('toggleCorrectionBtn').addEventListener('click', () => {
-        const box = document.getElementById('locationCorrectionBox');
-        box.classList.toggle('hidden');
-    });
-
     document.getElementById('saveUploadBtn').addEventListener('click', () => saveCurrentRecords('upload'));
+    document.getElementById('resetUploadBtn').addEventListener('click', resetUploadTab);
 }
 
 function initManualFlow() {
+    const manualFileInput = document.getElementById('manualReferenceFile');
+    const manualChooseBtn = document.getElementById('manualChooseFileBtn');
+    const manualFileName = document.getElementById('manualReferenceFileName');
+
+    manualChooseBtn.addEventListener('click', () => manualFileInput.click());
+    manualFileInput.addEventListener('change', () => {
+        const file = manualFileInput.files && manualFileInput.files[0];
+        state712.manualFile = file || null;
+        manualFileName.textContent = file ? file.name : 'No file selected';
+    });
+
     document.getElementById('addManualRowBtn').addEventListener('click', addManualRecord);
     document.getElementById('saveManualBtn').addEventListener('click', () => saveCurrentRecords('manual'));
+    document.getElementById('resetManualBtn').addEventListener('click', resetManualTab);
 }
 
 async function initLocationGroups() {
     try {
-        bindLocationGroup(uploadGroup, {
-            onGutChanged: () => {}
-        });
         bindLocationGroup(manualGroup, {
             onGutChanged: () => {
                 const selectedGut = manualGroup.gut.value;
@@ -960,7 +1005,6 @@ async function initLocationGroups() {
             }
         });
         await Promise.all([
-            loadDistricts(uploadGroup),
             loadDistricts(manualGroup),
         ]);
 
