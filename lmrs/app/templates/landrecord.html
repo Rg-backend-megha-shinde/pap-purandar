@@ -2,6 +2,16 @@
 
 {% block content %}
 <style>
+    :root {
+        --slate-25: #fcfdff;
+        --slate-50: #f8fafc;
+        --slate-100: #f1f5f9;
+        --slate-200: #e2e8f0;
+        --slate-300: #cbd5e1;
+        --slate-700: #334155;
+        --brand-600: #2563eb;
+        --brand-700: #1d4ed8;
+    }
     .tool-tabs-shell {
         border: 1px solid #d8e4f2;
         background: #f8fbff;
@@ -35,22 +45,95 @@
         box-shadow: 0 1px 3px rgba(18, 95, 203, 0.15);
     }
     .entry-tab-btn.is-active {
-        background: #1d4ed8;
+        background: var(--brand-700);
         color: #ffffff;
-        border-color: #1d4ed8;
+        border-color: var(--brand-700);
+        box-shadow: 0 6px 14px rgba(37, 99, 235, 0.2);
+    }
+    .entry-tab-btn {
+        transition: all 160ms ease;
+    }
+    .entry-tab-btn:hover {
+        border-color: #93c5fd;
+        color: #1e3a8a;
+        transform: translateY(-1px);
+    }
+    .entry-surface {
+        border: 1px solid var(--slate-200);
+        background: #ffffff;
+        border-radius: 0.8rem;
+        box-shadow: 0 6px 16px rgba(15, 23, 42, 0.04);
+    }
+    .entry-title {
+        letter-spacing: 0.01em;
+        color: #0f172a;
+    }
+    #detectedLocationBox {
+        background: linear-gradient(180deg, #f3f7ff 0%, #edf4ff 100%);
+        border-color: #bfdbfe;
+    }
+    #recordsSection table {
+        min-width: 1220px;
+    }
+    #recordsSection thead th {
+        background: var(--slate-50);
+        color: #1e293b;
+        border-color: var(--slate-200);
+    }
+    #recordsSection tbody td {
+        border-color: var(--slate-200);
+        background: #ffffff;
+    }
+    #recordsSection tbody tr:nth-child(even) td {
+        background: var(--slate-25);
+    }
+    #manualReferenceBottomSection {
+        background: var(--slate-50);
+        border: 1px dashed var(--slate-300);
+        border-radius: 0.7rem;
+        padding: 0.9rem;
+    }
+    #uploadChooseFileBtn,
+    #manualChooseFileBtn,
+    #addManualRowBtn {
+        background: var(--slate-700);
+    }
+    #uploadChooseFileBtn:hover,
+    #manualChooseFileBtn:hover,
+    #addManualRowBtn:hover {
+        background: #1f2937;
+    }
+    #saveUploadBtn,
+    #saveManualBtn {
+        background: var(--brand-600);
+        box-shadow: 0 6px 12px rgba(37, 99, 235, 0.25);
+    }
+    #saveUploadBtn:hover,
+    #saveManualBtn:hover {
+        background: var(--brand-700);
+    }
+    #resetUploadBtn,
+    #resetManualBtn {
+        background: #64748b;
+    }
+    #resetUploadBtn:hover,
+    #resetManualBtn:hover {
+        background: #475569;
     }
     .record-cell-input {
         width: 100%;
         min-width: 88px;
-        border: 1px solid #d1d5db;
+        border: 1px solid #cbd5e1;
         border-radius: 0.25rem;
-        padding: 0.28rem 0.35rem;
+        padding: 0.34rem 0.4rem;
         font-size: 0.75rem;
         line-height: 1rem;
+        background: #fff;
+        transition: border-color 120ms ease, box-shadow 120ms ease;
     }
     .record-cell-input:focus {
         outline: none;
-        border-color: #2563eb;
+        border-color: var(--brand-600);
         box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
     }
     .table-chip {
@@ -82,7 +165,7 @@
         </nav>
     </div>
 
-    <div class="w-full mx-auto bg-white p-3 sm:p-4 md:p-6 border border-gray-300 mt-4 sm:mt-6 rounded-lg shadow">
+    <div class="w-full mx-auto bg-white p-3 sm:p-4 md:p-6 border border-gray-300 mt-4 sm:mt-6 rounded-lg shadow-sm">
         <h2 class="text-center font-bold text-xl underline mb-2">७/१२ उतारा नोंद</h2>
         <p class="text-center text-sm mb-6">जमीन नोंदवही माहिती भरा</p>
 
@@ -108,8 +191,8 @@
         </div>
 
         <section id="entryTabUpload" class="space-y-4">
-            <div class="border rounded-lg p-4 bg-gray-50">
-                <h3 class="font-bold text-lg mb-3">Upload File</h3>
+            <div class="entry-surface p-4">
+                <h3 class="entry-title font-bold text-lg mb-3">Upload File</h3>
                 <div class="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
                     <input type="file" id="uploadInputFile" accept=".html,.htm,.xlsx,.xls" class="hidden">
                     <button type="button" id="uploadChooseFileBtn" class="bg-gray-700 hover:bg-gray-800 text-white px-4 py-2 rounded-md">Select File</button>
@@ -136,8 +219,8 @@
         </section>
 
         <section id="entryTabManual" class="hidden space-y-4">
-            <div class="border rounded-lg p-4 bg-gray-50">
-                <h3 class="font-bold text-lg mb-3">Manual Entry</h3>
+            <div class="entry-surface p-4">
+                <h3 class="entry-title font-bold text-lg mb-3">Manual Entry</h3>
                 <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
                     <div>
                         <label class="text-sm font-semibold">District</label>
@@ -164,7 +247,7 @@
             </div>
         </section>
 
-        <section id="recordsSection" class="hidden border rounded-lg p-4 bg-gray-50 mt-5">
+        <section id="recordsSection" class="hidden entry-surface p-4 mt-5">
             <div class="flex items-center justify-between gap-2 flex-wrap">
                 <h3 class="font-bold text-lg">७/१२ माहिती</h3>
                 <span id="recordsMetaText" class="text-sm text-gray-600">0 नोंदी</span>
@@ -183,7 +266,7 @@
                             <th class="border p-2">आकारणी</th>
                             <th class="border p-2">आकार</th>
                             <th class="border p-2">एकूण क्षेत्र</th>
-                            <th class="border p-2">भोगवटादाराचे नाव</th>
+                            <th class="border p-2">भोगवटदाराचे नाव</th>
                             <th class="border p-2">कुळ, खंड व इतर अधिकार</th>
                             <th class="border p-2">कृती</th>
                         </tr>

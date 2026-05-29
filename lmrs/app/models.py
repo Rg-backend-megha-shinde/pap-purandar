@@ -278,7 +278,7 @@ class LandRecord712(models.Model):
     khata_number = models.CharField(max_length=50, null=True, blank=True)  # "खाता_नं"
     khata_area = models.CharField(max_length=50, null=True, blank=True)  # "खाता_क्षेत्र"
     aakar = models.CharField(max_length=50, null=True, blank=True)  # "आकार"
-    holder_name = models.TextField(null=True, blank=True)  # "भोगवटादाराचे_नांव"
+    holder_name = models.TextField(null=True, blank=True)  # "भोगवटदाराचे_नांव"
     kul_khand_other_rights = models.TextField(null=True, blank=True)  # "कुळ, खंड व इतर अधिकार"
     area_more_than_20guntha = models.CharField(max_length=10, null=True, blank=True)  # "क्षेत्र_20_गुंठे_पेक्षा_जास्त" (Yes/No)
     bagayat_more_than_10guntha = models.CharField(max_length=10, null=True, blank=True)  # "बागायत_10_गुंठे_पेक्षा_जास्त" (Yes/No)
