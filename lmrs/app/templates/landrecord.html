@@ -629,14 +629,14 @@ function renderRecords() {
             <td class="border p-1"><input class="record-cell-input" data-row="${index}" data-field="aakar" value="${escapeAttr(row.aakar || '')}"></td>
             <td class="border p-1"><input class="record-cell-input" data-row="${index}" data-field="total_area" value="${escapeAttr(row.total_area || '')}"></td>
             <td class="border p-1">
-                <div class="flex flex-col items-start gap-1">
+                <div class="flex items-center gap-1 whitespace-nowrap">
                     <span class="table-chip" title="${escapeAttr(row.holder_name || MARATHI_NA)}">${escapeHtml(rowOwnerSummary(row.holder_name))}</span>
-                    <button type="button" class="text-xs text-blue-700 underline" data-owner-manage="${index}">नावे व्यवस्थापित करा</button>
+                    <button type="button" class="inline-flex h-7 w-7 items-center justify-center rounded-md border border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100" data-owner-manage="${index}" title="Manage owners" aria-label="Manage owners">&#128101;</button>
                 </div>
             </td>
             <td class="border p-1"><textarea class="record-cell-input min-h-[52px]" data-row="${index}" data-field="kul_khand_other_rights">${escapeHtml(row.kul_khand_other_rights || '')}</textarea></td>
             <td class="border p-1">
-                <button type="button" class="text-xs text-red-600 underline" data-row-remove="${index}">काढा</button>
+                <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md border border-red-200 bg-red-50 text-red-700 hover:bg-red-100" data-row-remove="${index}" title="Delete" aria-label="Delete">&#128465;</button>
             </td>
         `;
         recordsTableBodyEl.appendChild(tr);
@@ -1129,3 +1129,6 @@ function bootstrap() {
 bootstrap();
 </script>
 {% endblock %}
+
+
+
