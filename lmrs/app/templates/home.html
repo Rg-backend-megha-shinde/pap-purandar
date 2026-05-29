@@ -1754,6 +1754,95 @@
                     });
             }
 
+            function toSafeNumber(value) {
+                const numeric = Number(value);
+                return Number.isFinite(numeric) ? numeric : 0;
+            }
+
+            function setAffectedCardsLoading() {
+                const loadingValue = '...';
+                const ids = [
+                    'affectedDistrictsCount',
+                    'affectedTalukasCount',
+                    'affectedVillagesCount',
+                    'affectedGutsCount'
+                ];
+                ids.forEach((id) => {
+                    const el = document.getElementById(id);
+                    if (el) el.textContent = loadingValue;
+                });
+
+                const areaEl = document.getElementById('areaAcquired');
+                if (areaEl) areaEl.textContent = `${loadingValue} Ha`;
+            }
+
+            function updateAffectedCards(data) {
+                const affectedDistricts = toSafeNumber(data?.affected_districts);
+                const affectedTalukas = toSafeNumber(data?.affected_talukas);
+                const affectedVillages = toSafeNumber(data?.affected_villages);
+                const affectedGuts = toSafeNumber(data?.affected_guts);
+                const affectedArea = toSafeNumber(data?.affected_area_ha);
+
+                const districtEl = document.getElementById('affectedDistrictsCount');
+                if (districtEl) districtEl.textContent = affectedDistricts.toLocaleString('en-IN');
+
+                const talukaEl = document.getElementById('affectedTalukasCount');
+                if (talukaEl) talukaEl.textContent = affectedTalukas.toLocaleString('en-IN');
+
+                const villageEl = document.getElementById('affectedVillagesCount');
+                if (villageEl) villageEl.textContent = affectedVillages.toLocaleString('en-IN');
+
+                const gutEl = document.getElementById('affectedGutsCount');
+                if (gutEl) gutEl.textContent = affectedGuts.toLocaleString('en-IN');
+
+                const areaEl = document.getElementById('areaAcquired');
+                if (areaEl) {
+                    areaEl.textContent = `${affectedArea.toLocaleString('en-IN', { maximumFractionDigits: 2 })} Ha`;
+                }
+            }
+
+            function fetchAffectedCounts(district = null, taluka = null, village = null, gut = null) {
+                const params = new URLSearchParams();
+
+                if (currentDistrictId) params.append('district_id', currentDistrictId);
+                if (currentTalukaId) params.append('taluka_id', currentTalukaId);
+                if (currentVillageId) params.append('village_id', currentVillageId);
+                if (district) params.append('district', district);
+                if (taluka) params.append('taluka', taluka);
+                if (village) params.append('village', village);
+                if (gut) params.append('gut_id', gut);
+
+                const projectIdFromUrl = new URLSearchParams(window.location.search).get('project_id');
+                if (projectIdFromUrl) params.append('project_id', projectIdFromUrl);
+                if (typeof PROJECT_SCHEMA !== 'undefined' && PROJECT_SCHEMA) {
+                    params.append('tenant_id', PROJECT_SCHEMA);
+                }
+
+                setAffectedCardsLoading();
+
+                fetch(`/api/dashboard/affected-counts/?${params.toString()}`)
+                    .then(async (response) => {
+                        const rawText = await response.text();
+                        let data = {};
+                        try {
+                            data = rawText ? JSON.parse(rawText) : {};
+                        } catch (parseError) {
+                            throw new Error(`Invalid JSON response (${response.status})`);
+                        }
+                        if (!response.ok) {
+                            throw new Error(data.error || `Failed with status ${response.status}`);
+                        }
+                        return data;
+                    })
+                    .then(data => {
+                        updateAffectedCards(data || {});
+                    })
+                    .catch(error => {
+                        console.error('Error loading affected counts:', error);
+                        updateAffectedCards({});
+                    });
+            }
+
             // Fetch Project Statistics - with optional filters (district, taluka, village, gut)
             function fetchProjectStats(district = null, taluka = null, village = null, gut = null) {
                 let url = '/api/project-stats/?';
@@ -1780,6 +1869,7 @@
                     })
                     .catch(error => console.error('Error loading project stats:', error));
 
+                fetchAffectedCounts(district, taluka, village, gut);
                 fetchDashboardProgress(district, taluka, village, gut);
 
                 // Fetch documents for current filter level

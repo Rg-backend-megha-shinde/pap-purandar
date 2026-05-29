@@ -26,6 +26,7 @@ from django.views.decorators.http import require_http_methods
 from django.utils.dateparse import parse_date
 from datetime import date as datetime_date
 from django.utils import timezone
+from django.db.utils import OperationalError
 
 def clean_optional_char(value):
     if value is None:
@@ -2012,9 +2013,343 @@ def get_dashboard_progress(request):
         "bhusampadana_prakriya": bhusampadana_prakriya,
     })
 
+def _safe_schema_name(raw_schema):
+    schema = clean_optional_char(raw_schema)
+    if schema and re.match(r"^[A-Za-z_][A-Za-z0-9_]*$", schema):
+        return schema
+    return "purandar_airport"
 
 
+def _as_int_or_none(value):
+    try:
+        return int(str(value).strip())
+    except (TypeError, ValueError, AttributeError):
+        return None
 
+
+def _aligned_geom_expr(alias):
+    return f"""
+        CASE
+            WHEN ST_SRID({alias}.geom) = ST_SRID(p.geom)
+                 OR ST_SRID({alias}.geom) = 0
+                 OR ST_SRID(p.geom) = 0
+                THEN {alias}.geom
+            ELSE ST_Transform({alias}.geom, ST_SRID(p.geom))
+        END
+    """
+
+
+@api_login_required
+def get_dashboard_affected_counts(request):
+    project_id = _as_int_or_none(request.GET.get("project_id"))
+    tenant_id = clean_optional_char(request.GET.get("tenant_id"))
+
+    district_id = _as_int_or_none(request.GET.get("district_id"))
+    taluka_id = _as_int_or_none(request.GET.get("taluka_id"))
+    village_id = _as_int_or_none(request.GET.get("village_id"))
+    gut_id = clean_optional_char(request.GET.get("gut_id")) or clean_optional_char(request.GET.get("gut"))
+
+    district_name = clean_optional_char(request.GET.get("district"))
+    taluka_name = clean_optional_char(request.GET.get("taluka"))
+    village_name = clean_optional_char(request.GET.get("village"))
+
+    zero_payload = {
+        "affected_districts": 0,
+        "affected_talukas": 0,
+        "affected_villages": 0,
+        "affected_guts": 0,
+        "affected_area_ha": 0,
+    }
+
+    try:
+        with connection.cursor() as cursor:
+            project_conditions = ["geom IS NOT NULL"]
+            project_params = []
+
+            if project_id is not None:
+                project_conditions.append("id = %s")
+                project_params.append(project_id)
+            if tenant_id:
+                project_conditions.append("UPPER(COALESCE(schema_name, '')) = UPPER(%s)")
+                project_params.append(tenant_id)
+
+            cursor.execute(
+                f"""
+                SELECT id, COALESCE(NULLIF(schema_name, ''), 'purandar_airport') AS schema_name
+                FROM public.project_master
+                WHERE {' AND '.join(project_conditions)}
+                ORDER BY id
+                LIMIT 1;
+                """,
+                project_params,
+            )
+            project_row = cursor.fetchone()
+            if not project_row:
+                return JsonResponse(zero_payload)
+
+            resolved_project_id = int(project_row[0])
+            project_schema = _safe_schema_name(project_row[1])
+
+            district_table = resolve_project_table_name(cursor, "prj_district", schemas=(project_schema, "purandar_airport"))
+            taluka_table = resolve_project_table_name(cursor, "prj_taluka", schemas=(project_schema, "purandar_airport"))
+            village_table = resolve_project_table_name(cursor, "prj_village", schemas=(project_schema, "purandar_airport"))
+            gut_table = resolve_project_table_name(cursor, "prj_gut_bd", schemas=(project_schema, "purandar_airport"))
+
+            if not (district_table and taluka_table and village_table):
+                return JsonResponse(zero_payload)
+
+            # Resolve IDs from names when needed.
+            if district_id is None and district_name:
+                cursor.execute(
+                    """
+                    SELECT id
+                    FROM public.district_master
+                    WHERE UPPER(TRIM(COALESCE(district_name, ''))) = UPPER(TRIM(%s))
+                       OR UPPER(TRIM(COALESCE(district_name_m, ''))) = UPPER(TRIM(%s))
+                    LIMIT 1;
+                    """,
+                    [district_name, district_name],
+                )
+                row = cursor.fetchone()
+                district_id = int(row[0]) if row else None
+
+            if taluka_id is None and taluka_name:
+                params = [taluka_name, taluka_name]
+                sql = """
+                    SELECT id
+                    FROM public.taluka_master
+                    WHERE (
+                        UPPER(TRIM(COALESCE(taluka_name, ''))) = UPPER(TRIM(%s))
+                        OR UPPER(TRIM(COALESCE(taluka_name_m, ''))) = UPPER(TRIM(%s))
+                    )
+                """
+                if district_id is not None:
+                    sql += " AND district_id = %s"
+                    params.append(district_id)
+                sql += " LIMIT 1;"
+                cursor.execute(sql, params)
+                row = cursor.fetchone()
+                taluka_id = int(row[0]) if row else None
+
+            if village_id is None and village_name:
+                params = [village_name, village_name]
+                sql = """
+                    SELECT id, taluka_id
+                    FROM public.village_master
+                    WHERE (
+                        UPPER(TRIM(COALESCE(village_name, ''))) = UPPER(TRIM(%s))
+                        OR UPPER(TRIM(COALESCE(village_name_m, ''))) = UPPER(TRIM(%s))
+                    )
+                """
+                if taluka_id is not None:
+                    sql += " AND taluka_id = %s"
+                    params.append(taluka_id)
+                sql += " LIMIT 1;"
+                cursor.execute(sql, params)
+                row = cursor.fetchone()
+                if row:
+                    village_id = int(row[0])
+                    taluka_id = taluka_id or _as_int_or_none(row[1])
+
+            if village_id is not None and taluka_id is None:
+                cursor.execute("SELECT taluka_id FROM public.village_master WHERE id = %s LIMIT 1;", [village_id])
+                row = cursor.fetchone()
+                taluka_id = _as_int_or_none(row[0]) if row else taluka_id
+
+            if taluka_id is not None and district_id is None:
+                cursor.execute("SELECT district_id FROM public.taluka_master WHERE id = %s LIMIT 1;", [taluka_id])
+                row = cursor.fetchone()
+                district_id = _as_int_or_none(row[0]) if row else district_id
+
+            invalid_location = (
+                (district_name and district_id is None) or
+                (taluka_name and taluka_id is None) or
+                (village_name and village_id is None)
+            )
+            if invalid_location:
+                return JsonResponse(zero_payload)
+
+            district_filter = ""
+            taluka_filter = ""
+            village_filter = ""
+            gut_filter = ""
+            district_params = [resolved_project_id]
+            taluka_params = [resolved_project_id]
+            village_params = [resolved_project_id]
+            gut_params = [resolved_project_id]
+
+            if district_id is not None:
+                district_filter += " AND dm.id = %s"
+                taluka_filter += " AND tm.district_id = %s"
+                village_filter += " AND tm.district_id = %s"
+                gut_filter += " AND tm.district_id = %s"
+                district_params.append(district_id)
+                taluka_params.append(district_id)
+                village_params.append(district_id)
+                gut_params.append(district_id)
+
+            if taluka_id is not None:
+                taluka_filter += " AND tm.id = %s"
+                village_filter += " AND vm.taluka_id = %s"
+                gut_filter += " AND vm.taluka_id = %s"
+                taluka_params.append(taluka_id)
+                village_params.append(taluka_id)
+                gut_params.append(taluka_id)
+
+            if village_id is not None:
+                village_filter += " AND vm.id = %s"
+                gut_filter += " AND vm.id = %s"
+                village_params.append(village_id)
+                gut_params.append(village_id)
+
+            if gut_id:
+                gut_filter += " AND UPPER(TRIM(g.gut_no::text)) = UPPER(TRIM(%s))"
+                gut_params.append(gut_id)
+
+            district_geom = _aligned_geom_expr("dm")
+            taluka_geom = _aligned_geom_expr("tm")
+            village_geom = _aligned_geom_expr("vm")
+
+            cursor.execute(
+                f"""
+                WITH p AS (
+                    SELECT ST_MakeValid(geom) AS geom
+                    FROM public.project_master
+                    WHERE id = %s
+                )
+                SELECT COUNT(DISTINCT dm.id)
+                FROM {district_table} pd
+                JOIN public.district_master dm ON dm.id = pd.district_id
+                CROSS JOIN p
+                WHERE dm.geom IS NOT NULL
+                  AND p.geom && {district_geom}
+                  AND ST_Intersects(p.geom, {district_geom})
+                  {district_filter};
+                """,
+                district_params,
+            )
+            affected_districts = int(cursor.fetchone()[0] or 0)
+
+            cursor.execute(
+                f"""
+                WITH p AS (
+                    SELECT ST_MakeValid(geom) AS geom
+                    FROM public.project_master
+                    WHERE id = %s
+                )
+                SELECT COUNT(DISTINCT tm.id)
+                FROM {taluka_table} pt
+                JOIN public.taluka_master tm ON tm.id = pt.taluka_id
+                CROSS JOIN p
+                WHERE tm.geom IS NOT NULL
+                  AND p.geom && {taluka_geom}
+                  AND ST_Intersects(p.geom, {taluka_geom})
+                  {taluka_filter};
+                """,
+                taluka_params,
+            )
+            affected_talukas = int(cursor.fetchone()[0] or 0)
+
+            cursor.execute(
+                f"""
+                WITH p AS (
+                    SELECT ST_MakeValid(geom) AS geom
+                    FROM public.project_master
+                    WHERE id = %s
+                )
+                SELECT COUNT(DISTINCT vm.id)
+                FROM {village_table} pv
+                JOIN public.village_master vm ON vm.id = pv.village_id
+                JOIN public.taluka_master tm ON tm.id = vm.taluka_id
+                CROSS JOIN p
+                WHERE vm.geom IS NOT NULL
+                  AND p.geom && {village_geom}
+                  AND ST_Intersects(p.geom, {village_geom})
+                  {village_filter};
+                """,
+                village_params,
+            )
+            affected_villages = int(cursor.fetchone()[0] or 0)
+
+            affected_guts = 0
+            affected_area_ha = 0.0
+
+            if gut_table:
+                gut_geom = _aligned_geom_expr("g")
+
+                cursor.execute(
+                    f"""
+                    WITH p AS (
+                        SELECT ST_MakeValid(geom) AS geom
+                        FROM public.project_master
+                        WHERE id = %s
+                    )
+                    SELECT COUNT(DISTINCT g.id)
+                    FROM {gut_table} g
+                    JOIN public.village_master vm ON vm.id = g.village_id
+                    JOIN public.taluka_master tm ON tm.id = vm.taluka_id
+                    CROSS JOIN p
+                    WHERE g.geom IS NOT NULL
+                      AND p.geom && {gut_geom}
+                      AND ST_Intersects(p.geom, {gut_geom})
+                      {gut_filter};
+                    """,
+                    gut_params,
+                )
+                affected_guts = int(cursor.fetchone()[0] or 0)
+
+                cursor.execute(
+                    f"""
+                    WITH p AS (
+                        SELECT ST_MakeValid(geom) AS geom
+                        FROM public.project_master
+                        WHERE id = %s
+                    ),
+                    intersections AS (
+                        SELECT ST_Intersection(p.geom, {gut_geom}) AS i_geom
+                        FROM {gut_table} g
+                        JOIN public.village_master vm ON vm.id = g.village_id
+                        JOIN public.taluka_master tm ON tm.id = vm.taluka_id
+                        CROSS JOIN p
+                        WHERE g.geom IS NOT NULL
+                          AND p.geom && {gut_geom}
+                          AND ST_Intersects(p.geom, {gut_geom})
+                          {gut_filter}
+                    )
+                    SELECT COALESCE(
+                        SUM(
+                            CASE
+                                WHEN ST_IsEmpty(i_geom) THEN 0
+                                WHEN ST_SRID(i_geom) = 4326 THEN ST_Area(i_geom::geography)
+                                ELSE ST_Area(i_geom)
+                            END
+                        ) / 10000.0,
+                        0
+                    )
+                    FROM intersections;
+                    """,
+                    gut_params,
+                )
+                affected_area_ha = float(cursor.fetchone()[0] or 0)
+
+        return JsonResponse(
+            {
+                "affected_districts": int(affected_districts or 0),
+                "affected_talukas": int(affected_talukas or 0),
+                "affected_villages": int(affected_villages or 0),
+                "affected_guts": int(affected_guts or 0),
+                "affected_area_ha": round(float(affected_area_ha or 0), 2),
+                "project_id": resolved_project_id,
+                "tenant_id": tenant_id or project_schema,
+            }
+        )
+    except OperationalError:
+        return JsonResponse(zero_payload)
+    except Exception as exc:
+        payload = dict(zero_payload)
+        if getattr(request, "user", None) and request.user.is_superuser:
+            payload["error"] = str(exc)
+        return JsonResponse(payload)
 
 
 @api_login_required
