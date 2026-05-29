@@ -192,13 +192,13 @@
                 </table>
             </div>
             <div id="manualReferenceBottomSection" class="hidden mt-4 border-t border-gray-200 pt-4">
-                <h4 class="font-semibold text-base mb-2">७/१२ संदर्भ फाइल (PDF)</h4>
+                <h4 class="font-semibold text-base mb-2">Upload File</h4>
                 <div class="flex flex-col sm:flex-row gap-2 sm:items-center">
-                    <input type="file" id="manualReferenceFile" accept=".pdf" class="hidden">
+                    <input type="file" id="manualReferenceFile" accept="*/*" class="hidden">
                     <button type="button" id="manualChooseFileBtn" class="bg-gray-700 hover:bg-gray-800 text-white px-4 py-2 rounded-md text-sm">Select File</button>
                     <span id="manualReferenceFileName" class="text-sm text-gray-600">No file selected</span>
                 </div>
-                <p class="text-xs text-gray-500 mt-1">Manual row जोडल्यानंतरच संदर्भ PDF अपलोड करा.</p>
+                <p class="text-xs text-gray-500 mt-1">Manual row नंतर reference file upload करा. Video files are not allowed.</p>
             </div>
         </section>
 
@@ -978,12 +978,33 @@ function initManualFlow() {
     const manualFileInput = document.getElementById('manualReferenceFile');
     const manualChooseBtn = document.getElementById('manualChooseFileBtn');
     const manualFileName = document.getElementById('manualReferenceFileName');
+    const blockedVideoExts = new Set(['.mp4', '.avi', '.mov', '.mkv', '.wmv', '.flv', '.webm', '.m4v', '.3gp', '.mpeg', '.mpg']);
 
     manualChooseBtn.addEventListener('click', () => manualFileInput.click());
     manualFileInput.addEventListener('change', () => {
         const file = manualFileInput.files && manualFileInput.files[0];
-        state712.manualFile = file || null;
-        manualFileName.textContent = file ? file.name : 'No file selected';
+        if (!file) {
+            state712.manualFile = null;
+            manualFileName.textContent = 'No file selected';
+            return;
+        }
+
+        const lowerName = (file.name || '').toLowerCase();
+        const dotIndex = lowerName.lastIndexOf('.');
+        const ext = dotIndex >= 0 ? lowerName.slice(dotIndex) : '';
+        const isVideoByType = String(file.type || '').toLowerCase().startsWith('video/');
+        const isVideoByExt = blockedVideoExts.has(ext);
+
+        if (isVideoByType || isVideoByExt) {
+            state712.manualFile = null;
+            manualFileInput.value = '';
+            manualFileName.textContent = 'No file selected';
+            showError('Video files are not allowed for reference upload.');
+            return;
+        }
+
+        state712.manualFile = file;
+        manualFileName.textContent = file.name;
     });
 
     document.getElementById('addManualRowBtn').addEventListener('click', addManualRecord);
