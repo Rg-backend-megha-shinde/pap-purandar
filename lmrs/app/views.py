@@ -1291,11 +1291,13 @@ def land_record_712(request):
                     return respond_error(f'खाता नंबर आधीपासून उपलब्ध आहे: {conflict_text}')
 
             for row in valid_rows:
+                row_khata_number = clean_optional(row.get('khata_number'))
                 lookup_kwargs = {
                     'district': row.get('district') or district,
                     'taluka': row.get('taluka') or taluka,
                     'village': row.get('village') or village,
                     'gut_number': row.get('gut_number') or gut_number,
+                    'khata_number': row_khata_number,
                     'holder_name': clean_optional(clean_holder_name_list(row.get('holder_name'))),
                     'total_area': normalize_712_area(row.get('total_area')),
                     'aakarni': clean_optional(row.get('aakarni')),
@@ -1308,7 +1310,7 @@ def land_record_712(request):
                     'taluka': lookup_kwargs['taluka'],
                     'village': lookup_kwargs['village'],
                     'gut_number': lookup_kwargs['gut_number'],
-                    'khata_number': clean_optional(row.get('khata_number')),
+                    'khata_number': row_khata_number,
                     'puid_ulip_no': clean_optional(row.get('puid_ulip_no')),
                     'jirayit': normalize_712_area(row.get('jirayit')),
                     'bagayat': normalize_712_area(row.get('bagayat')),
