@@ -11,6 +11,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponseForbidden
 from django.db import connection
 from django.core.files.base import ContentFile
+from django.core.files.storage import default_storage
 import csv
 import re
 import json
@@ -327,6 +328,48 @@ def normalize_gut_value(value):
     normalized = str(value or '').translate(str.maketrans(devanagari_digits, ascii_digits))
     numbers = re.findall(r'\d+', normalized)
     return '/'.join(numbers) if numbers else clean_optional_char(value)
+
+def fetch_valid_gut_map_for_location(district_name, taluka_name, village_name):
+    """
+    Return mapping:
+      normalize_gut_value(system_gut_name) -> system_gut_name
+    using the same gut DB source as dropdown location API.
+    """
+    if not district_name or not taluka_name or not village_name:
+        return {}
+    with connection.cursor() as cursor:
+        cursor.execute("""
+            SELECT DISTINCT e.gut_no::text
+            FROM purandar_airport.prj_district a
+            JOIN purandar_airport.prj_taluka c ON a.district_id = c.district_id
+            JOIN purandar_airport.prj_village d ON c.taluka_id = d.taluka_id
+            JOIN purandar_airport.prj_gut_bd e ON d.village_id = e.village_id
+            LEFT JOIN public.district_master dm ON a.district_id = dm.id
+            LEFT JOIN public.taluka_master tm ON c.taluka_id = tm.id
+            LEFT JOIN public.village_master vm ON d.village_id = vm.id
+            WHERE (
+                    UPPER(TRIM(a.name)) = UPPER(TRIM(%s))
+                    OR UPPER(TRIM(COALESCE(dm.district_name_m, ''))) = UPPER(TRIM(%s))
+                  )
+              AND (
+                    UPPER(TRIM(c.taluka)) = UPPER(TRIM(%s))
+                    OR UPPER(TRIM(COALESCE(tm.taluka_name_m, ''))) = UPPER(TRIM(%s))
+                  )
+              AND (
+                    UPPER(TRIM(d.village)) = UPPER(TRIM(%s))
+                    OR UPPER(TRIM(COALESCE(vm.village_name_m, ''))) = UPPER(TRIM(%s))
+                  )
+              AND e.gut_no IS NOT NULL
+            ORDER BY e.gut_no::text
+        """, [district_name, district_name, taluka_name, taluka_name, village_name, village_name])
+        gut_values = [str(row[0]).strip() for row in cursor.fetchall() if str(row[0] or '').strip()]
+
+    valid_gut_map = {}
+    for system_gut_name in gut_values:
+        gut_key = normalize_gut_value(system_gut_name)
+        if gut_key and gut_key not in valid_gut_map:
+            valid_gut_map[gut_key] = system_gut_name
+    return valid_gut_map
 
 
 def format_gut_number_for_storage(value):
@@ -1203,14 +1246,17 @@ def land_record_712(request):
             }, status=status)
         return render(request, 'landrecord.html', {'error_message': message})
 
-    def respond_success(created_count, duplicate_count, skipped_count, status=200):
-        total_skipped = duplicate_count + skipped_count
+    def respond_success(created_count, duplicate_count, skipped_unmatched_count, unmatched_guts=None, status=200):
+        unmatched_guts = unmatched_guts or []
+        total_skipped = duplicate_count + skipped_unmatched_count
         if wants_json_response:
             return JsonResponse({
                 'success': True,
                 'created_count': created_count,
                 'duplicate_count': duplicate_count,
-                'skipped_count': skipped_count,
+                'skipped_unmatched_count': skipped_unmatched_count,
+                'skipped_count': skipped_unmatched_count,
+                'unmatched_guts': unmatched_guts,
                 'message': f'Saved {created_count} rows. Skipped {total_skipped} duplicates/mismatches.',
                 'redirect_url': reverse('land_record_712_list'),
             }, status=status)
@@ -1248,32 +1294,6 @@ def land_record_712(request):
             return clean_optional(raw)
         return ', '.join(parts)
 
-    def normalize_gut_key(value):
-        text = str(value or '').strip()
-        if not text:
-            return ''
-        parts = re.findall(r'\d+', text)
-        if parts:
-            return '/'.join(parts)
-        return normalize_match_text(text)
-
-    def fetch_valid_guts_for_location(district_name, taluka_name, village_name):
-        if not district_name or not taluka_name or not village_name:
-            return set()
-        with connection.cursor() as cursor:
-            cursor.execute("""
-                SELECT DISTINCT e.gut_no::text
-                FROM purandar_airport.prj_district a
-                JOIN purandar_airport.prj_taluka c ON a.district_id = c.district_id
-                JOIN purandar_airport.prj_village d ON c.taluka_id = d.taluka_id
-                JOIN purandar_airport.prj_gut_bd e ON d.village_id = e.village_id
-                WHERE UPPER(TRIM(a.name)) = UPPER(TRIM(%s))
-                  AND UPPER(TRIM(c.taluka)) = UPPER(TRIM(%s))
-                  AND UPPER(TRIM(d.village)) = UPPER(TRIM(%s))
-                  AND e.gut_no IS NOT NULL
-            """, [district_name, taluka_name, village_name])
-            return {normalize_gut_key(row[0]) for row in cursor.fetchall() if normalize_gut_key(row[0])}
-
     def build_unique_key(row):
         return (
             normalize_match_text(row.get('district')),
@@ -1294,6 +1314,13 @@ def land_record_712(request):
             gut_number = format_gut_number_for_storage(request.POST.get('gut_number'))
             uploaded_file = request.FILES.get('document_712')
             original_document_name = uploaded_file.name if uploaded_file else None
+            stored_document_name = None
+            if uploaded_file:
+                uploaded_file.seek(0)
+                stored_document_name = default_storage.save(
+                    f"land_record_712/{uuid4().hex}_{uploaded_file.name}",
+                    uploaded_file
+                )
             preview_token = (request.POST.get('preview_token') or '').strip()
             rows_json_raw = request.POST.get('rows_json')
             rows_to_create = []
@@ -1314,7 +1341,11 @@ def land_record_712(request):
                 for row in preview_rows:
                     if not isinstance(row, dict):
                         continue
-                    row_gut = format_gut_number_for_storage(row.get('gut_number'))
+                    # Always include preview rows here; gut matching is validated again
+                    # below using normalize_gut_value + valid_gut_map.
+                    row_gut = format_gut_number_for_storage(
+                        row.get('gut_number') or row.get('original_excel_gut') or ''
+                    )
                     if not row_gut:
                         continue
                     rows_to_create.append({
@@ -1414,22 +1445,21 @@ def land_record_712(request):
             if not all([district, taluka, village]):
                 return respond_error('Please select district, taluka and village.')
 
-            valid_gut_keys = fetch_valid_guts_for_location(district, taluka, village)
+            valid_gut_map = fetch_valid_gut_map_for_location(district, taluka, village)
             skipped_rows = []
-            valid_rows = rows_to_create
-            if valid_gut_keys:
-                valid_rows = []
-                for row in rows_to_create:
-                    row_key = normalize_gut_key(row.get('gut_number'))
-                    if row_key and row_key in valid_gut_keys:
-                        valid_rows.append(row)
-                    else:
-                        skipped_rows.append({
-                            'reason': 'Gut mismatch for selected district/taluka/village',
-                            'gut_number': row.get('gut_number') or '',
-                            'holder_name': row.get('holder_name') or '',
-                            'total_area': row.get('total_area') or '',
-                        })
+            valid_rows = []
+            for row in rows_to_create:
+                excel_gut_key = normalize_gut_value(row.get('gut_number'))
+                if excel_gut_key and excel_gut_key in valid_gut_map:
+                    row['gut_number'] = valid_gut_map[excel_gut_key]
+                    valid_rows.append(row)
+                else:
+                    skipped_rows.append({
+                        'reason': 'Gut mismatch for selected district/taluka/village',
+                        'gut_number': row.get('gut_number') or '',
+                        'holder_name': row.get('holder_name') or '',
+                        'total_area': row.get('total_area') or '',
+                    })
 
             if not valid_rows:
                 return respond_error('No matching gut rows found for selected location.')
@@ -1454,6 +1484,7 @@ def land_record_712(request):
                     'holder_name': clean_optional(clean_holder_name_list(row.get('holder_name'))),
                     'kul_khand_other_rights': clean_optional(row.get('kul_khand_other_rights')),
                     'original_document_name': original_document_name,
+                    'document_712_name': stored_document_name,
                 }
                 normalized_row['unique_key'] = build_unique_key(normalized_row)
                 normalized_rows.append(normalized_row)
@@ -1534,7 +1565,7 @@ def land_record_712(request):
                 existing_keys.add(row_key)
                 objects_to_create.append(LandRecord712(
                     user=request.user,
-                    document_712=None,
+                    document_712=row.get('document_712_name') or None,
                     original_document_name=row.get('original_document_name'),
                     district=row.get('district'),
                     taluka=row.get('taluka'),
@@ -1562,6 +1593,11 @@ def land_record_712(request):
                 1 for item in skipped_rows
                 if item.get('reason', '').startswith('Gut mismatch')
             )
+            unmatched_guts = sorted({
+                str(item.get('gut_number') or '').strip()
+                for item in skipped_rows
+                if str(item.get('gut_number') or '').strip()
+            })
 
             if preview_token:
                 preview_store = _land_record_712_get_preview_store(request)
@@ -1573,7 +1609,8 @@ def land_record_712(request):
             return respond_success(
                 created_count=created_count,
                 duplicate_count=duplicate_count,
-                skipped_count=skipped_count,
+                skipped_unmatched_count=skipped_count,
+                unmatched_guts=unmatched_guts,
             )
         except Exception as e:
             return JsonResponse({'success': False, 'error': str(e)}, status=500)
@@ -1582,17 +1619,23 @@ def land_record_712(request):
 
 @login_required
 def land_record_712_list(request):
-    per_page_raw = (request.GET.get('per_page', '25') or '25').strip().lower()
+    # If stale URL carries old default per_page=25, normalize it to 10.
+    if request.GET.get('per_page') == '25' and request.GET.get('page') in {None, '', '1'}:
+        params = request.GET.copy()
+        params['per_page'] = '10'
+        return redirect(f"{request.path}?{params.urlencode()}")
+
+    per_page_raw = (request.GET.get('per_page', '10') or '10').strip().lower()
     search_query = (request.GET.get('search') or '').strip()
     show_all = per_page_raw == 'all'
-    per_page = 25
+    per_page = 10
     if not show_all:
         try:
             per_page = int(per_page_raw)
         except (TypeError, ValueError):
-            per_page = 25
+            per_page = 10
         if per_page not in {10, 25, 50, 100}:
-            per_page = 25
+            per_page = 10
 
     qs = (
         LandRecord712.objects
@@ -1846,15 +1889,6 @@ def parse_land_record_712_html(request):
                 return fix_encoding(str(value).strip())
         return ''
 
-    def normalize_gut_key(value):
-        text = str(value or '').strip()
-        if not text:
-            return ''
-        parts = re.findall(r'\d+', text)
-        if parts:
-            return '/'.join(parts)
-        return normalize_match_text(text)
-
     def detect_file_type(filename):
         name = (filename or '').lower()
         if name.endswith(('.html', '.htm')):
@@ -1942,14 +1976,16 @@ def parse_land_record_712_html(request):
             'gutnumber',
             'survey_no'
         )
-        formatted_gut = format_gut_number_for_storage(raw_gut)
-        if not normalize_gut_key(formatted_gut):
+        excel_gut_key = normalize_gut_value(raw_gut)
+        if not excel_gut_key:
             continue
         records.append({
             'district': row_district or district,
             'taluka': row_taluka or taluka,
             'village': row_village or village,
-            'gut_number': formatted_gut,
+            'gut_number': format_gut_number_for_storage(raw_gut),
+            'original_excel_gut': raw_gut,
+            'excel_gut_key': excel_gut_key,
             'khata_number': row_get(row, '\u0916\u093e\u0924\u093e_\u0928\u0902', '\u0916\u093e\u0924\u093e \u0928\u0902', '\u0916\u093e\u0924\u093e \u0928\u0902\u092c\u0930', 'khata_number'),
             'puid_ulip_no': row_get(row, 'PUID_ULIP_No', 'puid_ulip_no'),
             'jirayit': row_get(row, '\u091c\u093f\u0930\u093e\u092f\u0924', 'jirayit'),
@@ -1990,6 +2026,8 @@ def parse_land_record_712_html(request):
     detected_village = village or most_common(village_candidates) or first.get('village', '') or ''
     detected_gut = gut_number or most_common(gut_candidates) or format_gut_number_for_storage(first.get('gut_number', ''))
 
+    valid_gut_map = fetch_valid_gut_map_for_location(detected_district, detected_taluka, detected_village)
+    unmatched_guts = set()
     for row in records:
         if not row.get('district'):
             row['district'] = detected_district
@@ -1997,6 +2035,19 @@ def parse_land_record_712_html(request):
             row['taluka'] = detected_taluka
         if not row.get('village'):
             row['village'] = detected_village
+        excel_gut_key = normalize_gut_value(row.get('gut_number'))
+        matched_system_gut = valid_gut_map.get(excel_gut_key, '')
+        is_matched = bool(matched_system_gut)
+        row['matched_system_gut'] = matched_system_gut
+        row['matched_gut_name'] = matched_system_gut
+        row['match_status'] = 'Matched' if is_matched else 'Unmatched'
+        row['gut_match_status'] = row['match_status']
+        if is_matched:
+            row['gut_number'] = matched_system_gut
+            row['is_gut_matched'] = True
+        else:
+            row['is_gut_matched'] = False
+            unmatched_guts.add(row.get('original_excel_gut') or row.get('gut_number') or '')
 
     detected_location = {
         'district': detected_district,
@@ -2019,6 +2070,7 @@ def parse_land_record_712_html(request):
         'count': first_page['total_count'],
         'file_type': upload_mode,
         'location': detected_location,
+        'unmatched_guts': sorted([g for g in unmatched_guts if g]),
         'preview_token': preview_token,
         'preview': {
             'page': first_page['page'],

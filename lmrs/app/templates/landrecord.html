@@ -672,9 +672,12 @@ function renderRecords() {
     updateUploadPreviewPager();
 
     activeRecords.forEach((row, index) => {
+        const displayGutValue = isUploadPreviewMode
+            ? (row.original_excel_gut || row.raw_gut_number || row.gut_number || '')
+            : (row.gut_number || '');
         const tr = document.createElement('tr');
         tr.innerHTML = `
-            <td class="border p-1"><input ${readOnlyAttrs} class="record-cell-input" data-row="${index}" data-field="gut_number" value="${escapeAttr(row.gut_number || '')}"></td>
+            <td class="border p-1"><input ${readOnlyAttrs} class="record-cell-input" data-row="${index}" data-field="gut_number" value="${escapeAttr(displayGutValue)}"></td>
             <td class="border p-1"><input ${readOnlyAttrs} class="record-cell-input" data-row="${index}" data-field="puid_ulip_no" value="${escapeAttr(row.puid_ulip_no || '')}"></td>
             <td class="border p-1"><input ${readOnlyAttrs} class="record-cell-input" data-row="${index}" data-field="khata_number" value="${escapeAttr(row.khata_number || '')}"></td>
             <td class="border p-1"><input ${readOnlyAttrs} class="record-cell-input" data-row="${index}" data-field="khata_area" value="${escapeAttr(row.khata_area || '')}"></td>
@@ -922,6 +925,9 @@ async function saveCurrentRecords(mode) {
             return;
         }
         formData.append('preview_token', state712.uploadPreview.token);
+        if (state712.uploadFile) {
+            formData.append('document_712', state712.uploadFile);
+        }
     } else {
         const normalizedRows = records.map((row) => normalizeRowForSave(row, location)).filter((row) => row.gut_number);
         if (!normalizedRows.length) {
