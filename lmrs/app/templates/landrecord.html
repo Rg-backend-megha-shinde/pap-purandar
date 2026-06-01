@@ -504,6 +504,15 @@ function normalizeText(value) {
     return String(value || '').trim().toLowerCase();
 }
 
+function normalizeSearchText(value) {
+    const text = String(value || '').trim().toLowerCase();
+    const digits = {
+        '०': '0', '१': '1', '२': '2', '३': '3', '४': '4',
+        '५': '5', '६': '6', '७': '7', '८': '8', '९': '9',
+    };
+    return text.replace(/[०१२३४५६७८९]/g, (match) => digits[match] || match);
+}
+
 function normalizeLocationKey(value) {
     return String(value || '').trim().toLowerCase().replace(/\s+/g, ' ');
 }
@@ -750,7 +759,7 @@ function renderRecords() {
     updateManualReferenceVisibility();
     updateUploadPreviewPager();
 
-    const query = (recordsSearchInputEl && recordsSearchInputEl.value || '').trim().toLowerCase();
+    const query = normalizeSearchText(recordsSearchInputEl && recordsSearchInputEl.value || '');
     const visible = [];
     const visibleIdx = [];
 
@@ -766,12 +775,12 @@ function renderRecords() {
                 visibleIdx.push(i);
                 return;
             }
-            const hay = [
+            const hay = normalizeSearchText([
                 String(row.original_excel_gut || row.raw_gut_number || row.gut_number || ''),
                 String(row.khata_number || ''),
                 String(row.holder_name || ''),
                 String(row.puid_ulip_no || ''),
-            ].join(' ').toLowerCase();
+            ].join(' '));
             if (hay.includes(query)) {
                 visible.push(row);
                 visibleIdx.push(i);
@@ -960,6 +969,7 @@ async function parseUploadedFile(file) {
     try {
         const response = await fetch('/api/land-record-712/parse/', {
             method: 'POST',
+            credentials: 'same-origin',
             headers: {
                 'X-CSRFToken': getCsrfToken(),
                 'Accept': 'application/json',
@@ -1001,13 +1011,14 @@ async function fetchUploadPreviewPage(page) {
         page: String(page || 1),
         page_size: String(state712.uploadPreview.pageSize || 25),
     });
-    const searchQuery = (recordsSearchInputEl && recordsSearchInputEl.value || '').trim();
+    const searchQuery = normalizeSearchText(recordsSearchInputEl && recordsSearchInputEl.value || '');
     if (searchQuery) {
         query.append('q', searchQuery);
         query.append('query', searchQuery);
     }
     const response = await fetch(`/api/land-record-712/preview/?${query.toString()}`, {
         method: 'GET',
+        credentials: 'same-origin',
         headers: {
             'Accept': 'application/json',
             'X-Requested-With': 'XMLHttpRequest',
@@ -1100,6 +1111,7 @@ async function saveCurrentRecords(mode) {
 
         const response = await fetch('/tools/712/', {
             method: 'POST',
+            credentials: 'same-origin',
             headers: {
                 'X-CSRFToken': getCsrfToken(),
                 'X-Requested-With': 'XMLHttpRequest',
@@ -1418,7 +1430,7 @@ function bootstrap() {
     setupTableInteractions();
     if (unmatchedGoToListBtn) unmatchedGoToListBtn.addEventListener('click', () => { window.location.href = LAND_RECORD_LIST_URL; });
     if (recordsSearchInputEl) {
-        recordsSearchInputEl.addEventListener('input', debounce(async () => {
+        const runPreviewSearch = debounce(async () => {
             if (state712.activeTab === 'upload' && state712.uploadPreview.token) {
                 try {
                     await fetchUploadPreviewPage(1);
@@ -1427,7 +1439,14 @@ function bootstrap() {
                 }
             }
             renderRecords();
-        }, 200));
+        }, 200);
+        recordsSearchInputEl.addEventListener('input', runPreviewSearch);
+        recordsSearchInputEl.addEventListener('keydown', async (event) => {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                runPreviewSearch();
+            }
+        });
     }
     bindOwnerModalActions();
     initLocationGroups();

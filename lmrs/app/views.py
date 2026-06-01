@@ -1604,13 +1604,6 @@ def land_record_712(request):
                 if str(item.get('gut_number') or '').strip()
             })
 
-            if preview_token:
-                preview_store = _land_record_712_get_preview_store(request)
-                if preview_token in preview_store:
-                    preview_store.pop(preview_token, None)
-                    request.session[LAND_RECORD_712_PREVIEW_SESSION_KEY] = preview_store
-                    request.session.modified = True
-
             return respond_success(
                 created_count=created_count,
                 duplicate_count=duplicate_count,
@@ -2103,7 +2096,12 @@ def land_record_712_preview_page(request):
     except (TypeError, ValueError):
         page_size = 25
 
-    search_query = (request.GET.get('q') or request.GET.get('query') or '').strip().lower()
+    search_query = (request.GET.get('q') or request.GET.get('query') or '').strip()
+    def normalize_preview_search_text(value):
+        value = str(value or '')
+        value = value.translate(str.maketrans('०१२३४५६७८९', '0123456789'))
+        return value.strip().lower()
+    search_query = normalize_preview_search_text(search_query)
 
     preview_payload = _land_record_712_get_preview_payload(request, preview_token)
     if not preview_payload:
@@ -2119,7 +2117,8 @@ def land_record_712_preview_page(request):
                     'khata_number', 'holder_name', 'puid_ulip_no',
                     'khata_area', 'total_area', 'aakar', 'aakarni'
                 ]
-            ).lower()
+            )
+            haystack = normalize_preview_search_text(haystack)
             return search_query in haystack
 
         records = [record for record in records if record_matches(record)]
