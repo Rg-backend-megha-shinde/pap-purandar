@@ -2883,7 +2883,7 @@
             return `
                 <tr>
                     <td><input class="pc-input" name="owner_info_owner_name" type="text" value="${rowData.owner_name || ''}"${lockedAttr}></td>
-                    <td><input class="pc-input" name="owner_info_khata_number" type="text" value="${rowData.khata_number || ''}"${lockedAttr}></td>
+                    <td><input class="pc-input" name="owner_info_khata_number" type="text" value="${rowData.khata_number || ''}"></td>
                     <td><input class="pc-input" name="owner_info_aadhaar_number" type="text" inputmode="numeric" maxlength="12" pattern="[0-9]{12}" placeholder="12 अंक" title="आधार कार्ड क्रमांक 12 अंकी असावा." value="${rowData.aadhaar_number || ''}"${lockedAttr}></td>
                     <td><input class="pc-upload" name="owner_info_aadhaar_file" data-file-field="owner_info_aadhaar_file" type="file">${aadhaarFileInfo?.url ? `<a class="mt-2 inline-block text-xs font-semibold text-[#125fcb] underline" href="${escapeHtml(aadhaarFileInfo.url)}" target="_blank" rel="noopener">${escapeHtml(aadhaarFileInfo.name || 'अपलोड केलेली प्रत')}</a>` : ''}</td>
                     <td><input class="pc-input" name="owner_info_pan_number" type="text" maxlength="10" pattern="[A-Za-z0-9]{10}" placeholder="10 अक्षरे/अंक" title="पॅन कार्ड क्रमांक 10 अक्षरे / अंक असावा." value="${rowData.pan_number || ''}"${lockedAttr}></td>
