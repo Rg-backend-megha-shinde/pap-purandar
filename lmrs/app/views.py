@@ -2103,11 +2103,27 @@ def land_record_712_preview_page(request):
     except (TypeError, ValueError):
         page_size = 25
 
+    search_query = (request.GET.get('q') or request.GET.get('query') or '').strip().lower()
+
     preview_payload = _land_record_712_get_preview_payload(request, preview_token)
     if not preview_payload:
         return JsonResponse({'success': False, 'error': 'Upload preview expired. Please re-upload the file.'}, status=404)
 
     records = preview_payload.get('records') or []
+    if search_query:
+        def record_matches(record):
+            haystack = ' '.join(
+                str(record.get(key, '') or '')
+                for key in [
+                    'original_excel_gut', 'raw_gut_number', 'gut_number',
+                    'khata_number', 'holder_name', 'puid_ulip_no',
+                    'khata_area', 'total_area', 'aakar', 'aakarni'
+                ]
+            ).lower()
+            return search_query in haystack
+
+        records = [record for record in records if record_matches(record)]
+
     page_data = _land_record_712_get_preview_page(records=records, page=page, page_size=page_size)
     return JsonResponse({
         'success': True,

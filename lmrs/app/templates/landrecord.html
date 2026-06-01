@@ -181,6 +181,17 @@
             <button type="button" class="-my-1 rounded px-2 py-1 text-lg leading-none text-green-700 hover:bg-green-100" onclick="hideSuccess()">&times;</button>
         </div>
 
+        <!-- Floating toast container -->
+        <div id="toastContainer" class="fixed top-4 right-4 z-50 space-y-2"></div>
+
+        <!-- Overlay loader for long-running operations -->
+        <div id="overlayLoader" class="hidden fixed inset-0 bg-black/30 z-40 flex items-center justify-center">
+            <div class="bg-white p-4 rounded shadow flex items-center gap-3">
+                <svg class="animate-spin h-6 w-6 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path></svg>
+                <div class="text-sm font-medium">Processing file, please wait...</div>
+            </div>
+        </div>
+
         <form id="csrfBridgeForm" class="hidden">{% csrf_token %}</form>
 
         <div class="border rounded-lg p-3 bg-gray-50 mb-5">
@@ -455,6 +466,35 @@ function clearMessages() {
     hideSuccess();
 }
 
+// Floating toast notifications (non-blocking)
+function showToast(message, kind = 'success', timeout = 4000) {
+    const container = document.getElementById('toastContainer');
+    if (!container) return;
+    const el = document.createElement('div');
+    el.className = `max-w-sm w-full rounded shadow p-3 text-sm flex items-start gap-3 ${kind === 'success' ? 'bg-green-50 text-green-800 border border-green-200' : 'bg-red-50 text-red-800 border border-red-200'}`;
+    el.innerHTML = `
+        <div class="flex-0 mt-0.5">${kind === 'success' ? '&#10004;' : '&#9888;'}</div>
+        <div class="flex-1">${escapeHtml(message)}</div>
+        <button type="button" class="ml-2 text-lg leading-none" aria-label="close">&times;</button>
+    `;
+    const btn = el.querySelector('button');
+    btn.addEventListener('click', () => { container.removeChild(el); });
+    container.appendChild(el);
+    setTimeout(() => { if (container.contains(el)) container.removeChild(el); }, timeout);
+}
+
+// Overlay loader for long running operations
+function showOverlayLoader() {
+    const ov = document.getElementById('overlayLoader');
+    if (!ov) return;
+    ov.classList.remove('hidden');
+}
+function hideOverlayLoader() {
+    const ov = document.getElementById('overlayLoader');
+    if (!ov) return;
+    ov.classList.add('hidden');
+}
+
 function getCsrfToken() {
     const tokenEl = document.querySelector('#csrfBridgeForm input[name="csrfmiddlewaretoken"]');
     return tokenEl ? tokenEl.value : '';
@@ -710,19 +750,34 @@ function renderRecords() {
     updateManualReferenceVisibility();
     updateUploadPreviewPager();
 
-    // Apply search filtering (but keep data-row mapped to original record index)
     const query = (recordsSearchInputEl && recordsSearchInputEl.value || '').trim().toLowerCase();
     const visible = [];
     const visibleIdx = [];
-    activeRecords.forEach((row, i) => {
-        if (!query) { visible.push(row); visibleIdx.push(i); return; }
-        const hay = [
-            String(row.original_excel_gut || row.raw_gut_number || row.gut_number || ''),
-            String(row.khata_number || ''),
-            String(row.holder_name || ''),
-        ].join(' ').toLowerCase();
-        if (hay.includes(query)) { visible.push(row); visibleIdx.push(i); }
-    });
+
+    if (isUploadPreviewMode) {
+        activeRecords.forEach((row, i) => {
+            visible.push(row);
+            visibleIdx.push(i);
+        });
+    } else {
+        activeRecords.forEach((row, i) => {
+            if (!query) {
+                visible.push(row);
+                visibleIdx.push(i);
+                return;
+            }
+            const hay = [
+                String(row.original_excel_gut || row.raw_gut_number || row.gut_number || ''),
+                String(row.khata_number || ''),
+                String(row.holder_name || ''),
+                String(row.puid_ulip_no || ''),
+            ].join(' ').toLowerCase();
+            if (hay.includes(query)) {
+                visible.push(row);
+                visibleIdx.push(i);
+            }
+        });
+    }
 
     visible.forEach((row, vpos) => {
         const index = visibleIdx[vpos];
@@ -898,6 +953,7 @@ async function parseUploadedFile(file) {
 
     clearMessages();
     document.getElementById('uploadLoader').classList.remove('hidden');
+    showOverlayLoader();
     const formData = new FormData();
     formData.append('document_712', file);
 
@@ -924,7 +980,8 @@ async function parseUploadedFile(file) {
         applyDetectedLocationCard(data.location || {});
         await applyDetectedToCorrectionDropdowns();
         renderRecords();
-        showSuccess(`${data.count || 0} records extracted successfully.`);
+        // show a non-blocking toast instead of inline success box
+        showToast(`${data.count || 0} records extracted successfully.`, 'success');
     } catch (error) {
         state712.uploadFileType = '';
         state712.uploadPreview = { token: '', page: 1, pageSize: 10, totalPages: 1, totalCount: 0 };
@@ -933,6 +990,7 @@ async function parseUploadedFile(file) {
         showError(error.message || 'Failed to extract file data.');
     } finally {
         document.getElementById('uploadLoader').classList.add('hidden');
+        hideOverlayLoader();
     }
 }
 
@@ -943,6 +1001,11 @@ async function fetchUploadPreviewPage(page) {
         page: String(page || 1),
         page_size: String(state712.uploadPreview.pageSize || 25),
     });
+    const searchQuery = (recordsSearchInputEl && recordsSearchInputEl.value || '').trim();
+    if (searchQuery) {
+        query.append('q', searchQuery);
+        query.append('query', searchQuery);
+    }
     const response = await fetch(`/api/land-record-712/preview/?${query.toString()}`, {
         method: 'GET',
         headers: {
@@ -1053,8 +1116,8 @@ async function saveCurrentRecords(mode) {
         const data = await response.json();
         if (!response.ok || !data.success) throw new Error(data.error || 'Save failed.');
 
-        // Show success toast
-        showSuccess(data.message || 'Records saved.');
+        // Show non-blocking toast instead of inline success box
+        showToast(data.message || 'Records saved.', 'success');
         // If server returned unmatched rows or skipped_unmatched_count, show details instead of redirecting
         const unmatchedRows = data.unmatched_rows || [];
         const unmatchedCount = Number(data.skipped_unmatched_count || 0) || unmatchedRows.length;
@@ -1354,7 +1417,18 @@ function bootstrap() {
     initManualFlow();
     setupTableInteractions();
     if (unmatchedGoToListBtn) unmatchedGoToListBtn.addEventListener('click', () => { window.location.href = LAND_RECORD_LIST_URL; });
-    if (recordsSearchInputEl) recordsSearchInputEl.addEventListener('input', debounce(() => { renderRecords(); }, 200));
+    if (recordsSearchInputEl) {
+        recordsSearchInputEl.addEventListener('input', debounce(async () => {
+            if (state712.activeTab === 'upload' && state712.uploadPreview.token) {
+                try {
+                    await fetchUploadPreviewPage(1);
+                } catch (error) {
+                    showError(error.message || 'Failed to search uploaded records.');
+                }
+            }
+            renderRecords();
+        }, 200));
+    }
     bindOwnerModalActions();
     initLocationGroups();
     renderRecords();
