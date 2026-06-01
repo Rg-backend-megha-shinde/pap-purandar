@@ -1636,15 +1636,21 @@ def land_record_712_list(request):
         if per_page not in {10, 25, 50, 100}:
             per_page = 10
 
+    include_document_preview = not show_all
+
+    only_fields = [
+        'id', 'district', 'taluka', 'village', 'gut_number', 'khata_number',
+        'puid_ulip_no', 'jirayit', 'bagayat', 'potkharaba', 'total_area',
+        'aakarni', 'khata_area', 'aakar', 'holder_name', 'kul_khand_other_rights',
+        'updated_at', 'user__username'
+    ]
+    if include_document_preview:
+        only_fields.extend(['document_712', 'original_document_name'])
+
     qs = (
         LandRecord712.objects
         .select_related('user')
-        .only(
-            'id', 'district', 'taluka', 'village', 'gut_number', 'khata_number',
-            'puid_ulip_no', 'jirayit', 'bagayat', 'potkharaba', 'total_area',
-            'aakarni', 'khata_area', 'aakar', 'holder_name', 'kul_khand_other_rights',
-            'document_712', 'original_document_name', 'updated_at', 'user__username'
-        )
+        .only(*only_fields)
         .order_by('-id')
     )
 
@@ -1701,10 +1707,29 @@ def land_record_712_list(request):
         query_params['search'] = search_query
     query_string = urlencode(query_params)
 
+    district_mr_cache = {}
+    taluka_mr_cache = {}
+    village_mr_cache = {}
+
     for record in records:
-        record.district_mr = get_marathi_name('district', record.district)
-        record.taluka_mr = get_marathi_name('taluka', record.district, record.taluka)
-        record.village_mr = get_marathi_name('village', record.district, record.taluka, record.village)
+        district_key = (record.district or '').strip().lower()
+        taluka_key = ((record.district or '').strip().lower(), (record.taluka or '').strip().lower())
+        village_key = (
+            (record.district or '').strip().lower(),
+            (record.taluka or '').strip().lower(),
+            (record.village or '').strip().lower(),
+        )
+
+        if district_key not in district_mr_cache:
+            district_mr_cache[district_key] = get_marathi_name('district', record.district)
+        if taluka_key not in taluka_mr_cache:
+            taluka_mr_cache[taluka_key] = get_marathi_name('taluka', record.district, record.taluka)
+        if village_key not in village_mr_cache:
+            village_mr_cache[village_key] = get_marathi_name('village', record.district, record.taluka, record.village)
+
+        record.district_mr = district_mr_cache[district_key]
+        record.taluka_mr = taluka_mr_cache[taluka_key]
+        record.village_mr = village_mr_cache[village_key]
 
     return render(request, 'land_record_712_list.html', {
         'records': records,
@@ -1721,6 +1746,7 @@ def land_record_712_list(request):
         'page_links': page_links,
         'search_query': search_query,
         'query_string': query_string,
+        'include_document_preview': include_document_preview,
     })
 
 @login_required

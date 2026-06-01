@@ -188,21 +188,25 @@
                         {% endif %}
                     </td>
                     <td>
-                        {% if item.document_712 %}
-                            <button
-                                type="button"
-                                class="view-712-doc-btn text-blue-600 hover:text-blue-800 hover:underline text-xs font-medium flex items-center gap-1"
-                                data-file-url="{{ item.document_712.url }}"
-                                data-file-name="{{ item.original_document_name|default:item.document_712.name|escapejs }}"
-                                data-file-date="{{ item.updated_at|date:'d/m/Y H:i' }}">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
-                                </svg>
-                                View
-                            </button>
+                        {% if include_document_preview %}
+                            {% if item.document_712 %}
+                                <button
+                                    type="button"
+                                    class="view-712-doc-btn text-blue-600 hover:text-blue-800 hover:underline text-xs font-medium flex items-center gap-1"
+                                    data-file-url="{{ item.document_712.url }}"
+                                    data-file-name="{{ item.original_document_name|default:item.document_712.name|escapejs }}"
+                                    data-file-date="{{ item.updated_at|date:'d/m/Y H:i' }}">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                    </svg>
+                                    View
+                                </button>
+                            {% else %}
+                                उपलब्ध नाही
+                            {% endif %}
                         {% else %}
-                            उपलब्ध नाही
+                            <span class="text-xs text-gray-500">Open in edit</span>
                         {% endif %}
                     </td>
                     <td>
@@ -734,6 +738,7 @@ document.addEventListener('DOMContentLoaded', function () {
 </script>
 
 {% endblock %}
+
 
 
 
