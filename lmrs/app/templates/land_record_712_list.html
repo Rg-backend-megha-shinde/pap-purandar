@@ -39,14 +39,27 @@
             padding: 0.6rem 0.85rem;
             font-size: 0.85rem;
         }
-        #lr712Table_wrapper .dataTables_filter,
-        #lr712Table_wrapper .dataTables_length {
-            width: 100%;
-        }
-        #lr712Table_wrapper .dataTables_filter input,
-        #lr712Table_wrapper .dataTables_length select {
-            width: 100%;
-        }
+    }
+    #lr712Table {
+        border-collapse: collapse;
+    }
+    #lr712Table thead th {
+        font-weight: 700;
+        color: #000;
+        border-bottom: 1px solid #bdbdbd;
+        padding: 10px 10px;
+        white-space: nowrap;
+    }
+    #lr712Table tbody td {
+        border-bottom: 1px solid #c9c9c9;
+        padding: 9px 10px;
+        vertical-align: middle;
+    }
+    #lr712Table tbody tr:nth-child(even) {
+        background: #e5e7eb;
+    }
+    #lr712Table tbody tr:nth-child(odd) {
+        background: #f3f4f6;
     }
 </style>
 
@@ -70,12 +83,9 @@
         </h2>
         
         <div class="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
-            <button type="submit"
-                    form="bulkDelete712Form"
-                    id="bulkDeleteBtn"
-                    disabled
-                    class="bg-red-600 text-white px-4 py-2 rounded flex items-center justify-center gap-2 opacity-50 cursor-not-allowed">
-                निवडलेले हटवा <span id="selectedCount" class="hidden">(0)</span>
+            <button id="bulkDeleteBtn" type="submit" form="bulkDeleteForm" disabled
+               class="bg-red-400 text-white px-4 py-2 rounded flex items-center justify-center gap-2 opacity-60 cursor-not-allowed">
+                निवडलेले हटवा
             </button>
             <a href="{% url 'download_all_land_record_712_csv' %}"
                class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded flex items-center justify-center gap-2">
@@ -86,17 +96,30 @@
                 <span class="text-lg">+</span> नवीन ७/१२ नोंद
             </a>
         </div>
+    </div>    <div class="mb-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+        <div class="flex items-center gap-2 text-sm">
+            <label for="per_page">दाखवा</label>
+            <select id="per_page" name="per_page" class="rounded border border-gray-300 px-2 py-1">
+                <option value="10" {% if per_page_value == '10' %}selected{% endif %}>10</option>
+                <option value="25" {% if per_page_value == '25' %}selected{% endif %}>25</option>
+                <option value="50" {% if per_page_value == '50' %}selected{% endif %}>50</option>
+                <option value="100" {% if per_page_value == '100' %}selected{% endif %}>100</option>
+                <option value="all" {% if per_page_value == 'all' %}selected{% endif %}>All</option>
+            </select>
+            <span>नोंदी</span>
+        </div>
+        <div class="flex items-center gap-2 text-sm">
+            <label for="listSearchInput">शोधा:</label>
+            <input id="listSearchInput" type="search" value="{{ search_query }}" class="border border-gray-300 rounded px-3 py-1.5 text-sm" placeholder="Search ७/१२ उतारा नोंद re">
+        </div>
     </div>
-
-    <form id="bulkDelete712Form" method="POST" action="{% url 'delete_selected_land_record_712' %}">
+    <form id="bulkDeleteForm" method="post" action="{% url 'delete_selected_land_record_712' %}">
         {% csrf_token %}
     <div class="overflow-x-auto">
         <table id="lr712Table" class="display w-full text-sm text-left" style="width:100%;">
             <thead>
                 <tr>
-                    <th>
-                        <input type="checkbox" id="selectAll712Rows" class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" aria-label="Select all 7/12 records">
-                    </th>
+                    <th><input id="selectAllRows" type="checkbox" class="h-4 w-4"></th>
                     <th>ID</th>
                     <th>जिल्हा</th>
                     <th>तालुका</th>
@@ -121,9 +144,7 @@
             <tbody>
                 {% for item in records %}
                 <tr>
-                    <td>
-                        <input type="checkbox" name="selected_ids" value="{{ item.id }}" class="row-select-712 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" aria-label="Select 7/12 record {{ item.id }}">
-                    </td>
+                    <td><input type="checkbox" name="selected_ids" value="{{ item.id }}" class="rowSelect h-4 w-4"></td>
                     <td>{{ item.id }}</td>
                     <td>{{ item.district_mr|default:"उपलब्ध नाही" }}</td>
                     <td>{{ item.taluka_mr|default:"उपलब्ध नाही" }}</td>
@@ -167,21 +188,25 @@
                         {% endif %}
                     </td>
                     <td>
-                        {% if item.document_712 %}
-                            <button
-                                type="button"
-                                class="view-712-doc-btn text-blue-600 hover:text-blue-800 hover:underline text-xs font-medium flex items-center gap-1"
-                                data-file-url="{{ item.document_712.url }}"
-                                data-file-name="{{ item.original_document_name|default:item.document_712.name|escapejs }}"
-                                data-file-date="{{ item.updated_at|date:'d/m/Y H:i' }}">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
-                                </svg>
-                                View
-                            </button>
+                        {% if include_document_preview %}
+                            {% if item.document_712 %}
+                                <button
+                                    type="button"
+                                    class="view-712-doc-btn text-blue-600 hover:text-blue-800 hover:underline text-xs font-medium flex items-center gap-1"
+                                    data-file-url="{{ item.document_712.url }}"
+                                    data-file-name="{{ item.original_document_name|default:item.document_712.name|escapejs }}"
+                                    data-file-date="{{ item.updated_at|date:'d/m/Y H:i' }}">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                    </svg>
+                                    View
+                                </button>
+                            {% else %}
+                                उपलब्ध नाही
+                            {% endif %}
                         {% else %}
-                            उपलब्ध नाही
+                            <span class="text-xs text-gray-500">Open in edit</span>
                         {% endif %}
                     </td>
                     <td>
@@ -208,6 +233,34 @@
         </table>
     </div>
     </form>
+    <div class="mt-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-sm">
+        <div>{{ total_records }} पैकी {{ start_index }} ते {{ end_index }} नोंदी दर्शवत आहे</div>
+        <div class="flex items-center gap-2">
+            {% if page_obj and page_obj.has_previous %}
+                <a href="?page={{ page_obj.previous_page_number }}{% if query_string %}&{{ query_string }}{% endif %}" class="px-2 py-1 hover:underline">मागील</a>
+            {% else %}
+                <span class="px-2 py-1 text-gray-400">मागील</span>
+            {% endif %}
+
+            {% for page_no in page_links %}
+                {% if page_no %}
+                    {% if page_no == current_page %}
+                        <span class="px-2 py-1 font-semibold">{{ page_no }}</span>
+                    {% else %}
+                        <a href="?page={{ page_no }}{% if query_string %}&{{ query_string }}{% endif %}" class="px-2 py-1 hover:underline">{{ page_no }}</a>
+                    {% endif %}
+                {% else %}
+                    <span class="px-1 py-1 text-gray-500">...</span>
+                {% endif %}
+            {% endfor %}
+
+            {% if page_obj and page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}{% if query_string %}&{{ query_string }}{% endif %}" class="px-2 py-1 hover:underline">पुढील</a>
+            {% else %}
+                <span class="px-2 py-1 text-gray-400">पुढील</span>
+            {% endif %}
+        </div>
+    </div>
 </div>
 </div>
 </div>
@@ -266,131 +319,104 @@
 </div>
 
 <script>
-$(document).ready(function () {
-    // Destroy existing DataTable if it exists
-    if ($.fn.DataTable.isDataTable('#lr712Table')) {
-        $('#lr712Table').DataTable().destroy();
-    }
-
-    // Initialize DataTable with proper configuration
-    const table = $('#lr712Table').DataTable({
-        pageLength: 10,
-        lengthMenu: [[5, 10, 25, 50, -1], [5, 10, 25, 50, "All"]],
-        ordering: true,
-        searching: true,
-        autoWidth: false,
-        responsive: true,
-        scrollX: true, // Enable horizontal scrolling for wide table
-        order: [[1, 'desc']], // Sort by ID descending by default
-        columnDefs: [
-            { targets: 0, orderable: false, searchable: false, width: '40px' }, // Select column
-            { targets: 1, width: '50px' }, // ID column
-            { targets: 15, orderable: false, searchable: false }, // Owner info column
-            { targets: 16, orderable: false, searchable: false }, // Kul Khand column
-            { targets: 17, orderable: false, searchable: false }, // 7/12 file column
-            { targets: 19, orderable: false, searchable: false, width: '100px' } // Actions column
-        ],
-        language: {
-            emptyTable: "कोणतीही नोंद उपलब्ध नाही.",
-            zeroRecords: "जुळणारी नोंद सापडली नाही.",
-            search: "शोधा:",
-            searchPlaceholder: "Type to search...",
-            lengthMenu: "दाखवा _MENU_ नोंदी",
-            info: "_TOTAL_ पैकी _START_ ते _END_ नोंदी दाखवत आहे",
-            infoEmpty: "0 पैकी 0 ते 0 नोंदी दाखवत आहे",
-            infoFiltered: "(एकूण _MAX_ नोंदींमधून फिल्टर केले)",
-            paginate: {
-                first: "पहिला",
-                last: "शेवटचा",
-                previous: "मागील",
-                next: "पुढील"
-            },
-            loadingRecords: "लोड होत आहे...",
-            processing: "प्रक्रिया करत आहे..."
-        },
-        dom: '<"flex flex-col sm:flex-row justify-between items-center mb-4 gap-3"<"flex items-center gap-2"l><"flex-1"f>>rtip',
-        initComplete: function() {
-            // Style the search input
-            $('.dataTables_filter input').addClass('border border-gray-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-400 focus:border-blue-400');
-            $('.dataTables_filter input').attr('placeholder', 'Search ७/१२ उतारा नोंद records...');
-            
-            // Style the length select
-            $('.dataTables_length select').addClass('border border-gray-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-400');
-            
-            // Style pagination
-            $('.dataTables_paginate').addClass('mt-4');
-        }
-    });
-    
-    // Redraw table on window resize for responsiveness
-    $(window).on('resize', function() {
-        table.columns.adjust().draw();
-    });
-
-    const bulkDeleteForm = document.getElementById('bulkDelete712Form');
+document.addEventListener('DOMContentLoaded', function () {
+    const selectAllRows = document.getElementById('selectAllRows');
     const bulkDeleteBtn = document.getElementById('bulkDeleteBtn');
-    const selectedCountEl = document.getElementById('selectedCount');
-    const selectAllEl = document.getElementById('selectAll712Rows');
+    const bulkDeleteForm = document.getElementById('bulkDeleteForm');
 
     function getRowCheckboxes() {
-        return table.$('.row-select-712').toArray();
+        return Array.from(document.querySelectorAll('.rowSelect'));
     }
 
     function updateBulkDeleteState() {
-        const checkboxes = getRowCheckboxes();
-        const selectedCount = checkboxes.filter(cb => cb.checked).length;
-        const visibleCheckboxes = Array.from(table.rows({ page: 'current' }).nodes()).map(row => row.querySelector('.row-select-712')).filter(Boolean);
-        const visibleSelectedCount = visibleCheckboxes.filter(cb => cb.checked).length;
-
-        selectedCountEl.textContent = `(${selectedCount})`;
-        selectedCountEl.classList.toggle('hidden', selectedCount === 0);
-        bulkDeleteBtn.disabled = selectedCount === 0;
-        bulkDeleteBtn.classList.toggle('opacity-50', selectedCount === 0);
-        bulkDeleteBtn.classList.toggle('cursor-not-allowed', selectedCount === 0);
-        bulkDeleteBtn.classList.toggle('hover:bg-red-700', selectedCount > 0);
-
-        selectAllEl.checked = visibleCheckboxes.length > 0 && visibleSelectedCount === visibleCheckboxes.length;
-        selectAllEl.indeterminate = visibleSelectedCount > 0 && visibleSelectedCount < visibleCheckboxes.length;
+        const rowChecks = getRowCheckboxes();
+        const selectedCount = rowChecks.filter(cb => cb.checked).length;
+        if (!bulkDeleteBtn) return;
+        const enabled = selectedCount > 0;
+        bulkDeleteBtn.textContent = enabled
+            ? `निवडलेले हटवा (${selectedCount})`
+            : 'निवडलेले हटवा';
+        bulkDeleteBtn.disabled = !enabled;
+        bulkDeleteBtn.classList.toggle('opacity-60', !enabled);
+        bulkDeleteBtn.classList.toggle('cursor-not-allowed', !enabled);
+        bulkDeleteBtn.classList.toggle('bg-red-600', enabled);
+        bulkDeleteBtn.classList.toggle('hover:bg-red-700', enabled);
+        bulkDeleteBtn.classList.toggle('bg-red-400', !enabled);
     }
 
-    selectAllEl.addEventListener('change', function () {
-        Array.from(table.rows({ page: 'current' }).nodes()).forEach(row => {
-            const checkbox = row.querySelector('.row-select-712');
-            if (checkbox) checkbox.checked = selectAllEl.checked;
+    if (selectAllRows) {
+        selectAllRows.addEventListener('change', function () {
+            getRowCheckboxes().forEach(cb => { cb.checked = this.checked; });
+            updateBulkDeleteState();
         });
+    }
+
+    document.addEventListener('change', function (event) {
+        if (!event.target.classList.contains('rowSelect')) return;
+        const rowChecks = getRowCheckboxes();
+        const checkedCount = rowChecks.filter(cb => cb.checked).length;
+        if (selectAllRows) {
+            selectAllRows.checked = rowChecks.length > 0 && checkedCount === rowChecks.length;
+        }
         updateBulkDeleteState();
     });
 
-    $(document).on('change', '.row-select-712', updateBulkDeleteState);
-    table.on('draw', updateBulkDeleteState);
-
-    bulkDeleteForm.addEventListener('submit', function (e) {
-        const selectedIds = getRowCheckboxes().filter(cb => cb.checked).map(cb => cb.value);
-        const selectedCount = selectedIds.length;
-        if (!selectedCount) {
-            e.preventDefault();
-            return;
-        }
-        if (!confirm(`${selectedCount} निवडलेल्या 7/12 नोंदी हटवायच्या आहेत का?`)) {
-            e.preventDefault();
-            return;
-        }
-
-        bulkDeleteForm.querySelectorAll('.bulk-selected-id').forEach(input => input.remove());
-        getRowCheckboxes().forEach(cb => cb.removeAttribute('name'));
-        selectedIds.forEach(id => {
-            const input = document.createElement('input');
-            input.type = 'hidden';
-            input.name = 'selected_ids';
-            input.value = id;
-            input.className = 'bulk-selected-id';
-            bulkDeleteForm.appendChild(input);
+    if (bulkDeleteForm) {
+        bulkDeleteForm.addEventListener('submit', function (event) {
+            const selectedCount = getRowCheckboxes().filter(cb => cb.checked).length;
+            if (!selectedCount) {
+                event.preventDefault();
+                return;
+            }
+            const ok = confirm('तुम्हाला निवडलेल्या नोंदी हटवायच्या आहेत का?');
+            if (!ok) event.preventDefault();
         });
-    });
-
+    }
     updateBulkDeleteState();
 
-    const ownerModal = document.getElementById('ownerModal');
+    const perPageSelect = document.getElementById('per_page');
+    const listSearchInput = document.getElementById('listSearchInput');
+    if (perPageSelect) {
+        perPageSelect.addEventListener('change', function () {
+            const params = new URLSearchParams(window.location.search);
+            params.set('per_page', this.value);
+            params.set('page', '1');
+            const term = listSearchInput ? listSearchInput.value.trim() : '';
+            if (term) {
+                params.set('search', term);
+            } else {
+                params.delete('search');
+            }
+            window.location.search = params.toString();
+        });
+    }
+    if (listSearchInput) {
+        let searchDebounceTimer = null;
+        const applySearch = () => {
+            const params = new URLSearchParams(window.location.search);
+            params.set('per_page', perPageSelect ? perPageSelect.value : '25');
+            params.set('page', '1');
+            const term = listSearchInput.value.trim();
+            if (term) {
+                params.set('search', term);
+            } else {
+                params.delete('search');
+            }
+            window.location.search = params.toString();
+        };
+
+        listSearchInput.addEventListener('input', function () {
+            if (searchDebounceTimer) clearTimeout(searchDebounceTimer);
+            searchDebounceTimer = setTimeout(applySearch, 300);
+        });
+
+        listSearchInput.addEventListener('keydown', function (event) {
+            if (event.key !== 'Enter') return;
+            event.preventDefault();
+            if (searchDebounceTimer) clearTimeout(searchDebounceTimer);
+            applySearch();
+        });
+    }    const ownerModal = document.getElementById('ownerModal');
     const ownerNamesContent = document.getElementById('ownerNamesContent');
 
     function decodeUnicodeEscapes(text) {
@@ -483,7 +509,6 @@ $(document).ready(function () {
         'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         'application/octet-stream',
     ];
-    const EXCEL_PREVIEW_MAX_ROWS = 100;
     let xlsxLibraryPromise = null;
 
     function ensureXlsxLibrary() {
@@ -555,8 +580,7 @@ $(document).ready(function () {
 
     function renderExcelSheetHtml(sheet, sheetName, $tableWrap, $meta) {
         const totalRows = getSheetRowCount(sheet);
-        const shownRows = Math.min(totalRows, EXCEL_PREVIEW_MAX_ROWS);
-        $meta.text(`Sheet: ${sheetName} | Rows: ${totalRows} | Showing: ${shownRows}`);
+        $meta.text(`Sheet: ${sheetName} | Rows: ${totalRows}`);
 
         if (!totalRows) {
             $tableWrap.html('<div class="text-sm text-gray-600 p-4">No rows found in this sheet.</div>');
@@ -587,13 +611,6 @@ $(document).ready(function () {
         applyExcelColumnWidths(tableEl, sheet);
         applyExcelRowHeights(tableEl, sheet);
 
-        const rows = tableEl.querySelectorAll('tr');
-        if (rows.length > EXCEL_PREVIEW_MAX_ROWS) {
-            for (let i = EXCEL_PREVIEW_MAX_ROWS; i < rows.length; i += 1) {
-                rows[i].style.display = 'none';
-            }
-            $tableWrap.append(`<div class="text-xs text-gray-500 mt-2">Showing first ${EXCEL_PREVIEW_MAX_ROWS} rows only.</div>`);
-        }
     }
 
     async function previewExcelInModal(fileUrl, fileNameOnly, $content) {
@@ -723,6 +740,7 @@ $(document).ready(function () {
 </script>
 
 {% endblock %}
+
 
 
 

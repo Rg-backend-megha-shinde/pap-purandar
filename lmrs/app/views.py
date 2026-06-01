@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect
 from django.http import JsonResponse, HttpResponse
 from django.urls import reverse
 from django.db import connection, transaction
+from django.db.models import Q
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.sessions.models import Session
@@ -10,6 +11,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponseForbidden
 from django.db import connection
 from django.core.files.base import ContentFile
+from django.core.files.storage import default_storage
 import csv
 import re
 import json
@@ -18,7 +20,7 @@ import requests
 from collections import Counter
 from io import BytesIO
 import unicodedata
-from urllib.parse import urlparse, parse_qs
+from urllib.parse import urlparse, parse_qs, urlencode
 from decimal import Decimal, InvalidOperation
 from PIL import Image, ImageDraw, ImageFont, ImageOps
 from django.views.decorators.csrf import csrf_exempt
@@ -27,6 +29,8 @@ from django.utils.dateparse import parse_date
 from datetime import date as datetime_date
 from django.utils import timezone
 from django.db.utils import OperationalError
+from django.core.paginator import Paginator
+from uuid import uuid4
 
 def clean_optional_char(value):
     if value is None:
@@ -325,6 +329,48 @@ def normalize_gut_value(value):
     numbers = re.findall(r'\d+', normalized)
     return '/'.join(numbers) if numbers else clean_optional_char(value)
 
+def fetch_valid_gut_map_for_location(district_name, taluka_name, village_name):
+    """
+    Return mapping:
+      normalize_gut_value(system_gut_name) -> system_gut_name
+    using the same gut DB source as dropdown location API.
+    """
+    if not district_name or not taluka_name or not village_name:
+        return {}
+    with connection.cursor() as cursor:
+        cursor.execute("""
+            SELECT DISTINCT e.gut_no::text
+            FROM purandar_airport.prj_district a
+            JOIN purandar_airport.prj_taluka c ON a.district_id = c.district_id
+            JOIN purandar_airport.prj_village d ON c.taluka_id = d.taluka_id
+            JOIN purandar_airport.prj_gut_bd e ON d.village_id = e.village_id
+            LEFT JOIN public.district_master dm ON a.district_id = dm.id
+            LEFT JOIN public.taluka_master tm ON c.taluka_id = tm.id
+            LEFT JOIN public.village_master vm ON d.village_id = vm.id
+            WHERE (
+                    UPPER(TRIM(a.name)) = UPPER(TRIM(%s))
+                    OR UPPER(TRIM(COALESCE(dm.district_name_m, ''))) = UPPER(TRIM(%s))
+                  )
+              AND (
+                    UPPER(TRIM(c.taluka)) = UPPER(TRIM(%s))
+                    OR UPPER(TRIM(COALESCE(tm.taluka_name_m, ''))) = UPPER(TRIM(%s))
+                  )
+              AND (
+                    UPPER(TRIM(d.village)) = UPPER(TRIM(%s))
+                    OR UPPER(TRIM(COALESCE(vm.village_name_m, ''))) = UPPER(TRIM(%s))
+                  )
+              AND e.gut_no IS NOT NULL
+            ORDER BY e.gut_no::text
+        """, [district_name, district_name, taluka_name, taluka_name, village_name, village_name])
+        gut_values = [str(row[0]).strip() for row in cursor.fetchall() if str(row[0] or '').strip()]
+
+    valid_gut_map = {}
+    for system_gut_name in gut_values:
+        gut_key = normalize_gut_value(system_gut_name)
+        if gut_key and gut_key not in valid_gut_map:
+            valid_gut_map[gut_key] = system_gut_name
+    return valid_gut_map
+
 
 def format_gut_number_for_storage(value):
     """
@@ -431,6 +477,52 @@ def build_location_aliases(district, taluka, village):
         pass
 
     return aliases
+
+def resolve_location_to_english(district, taluka, village):
+    """
+    Resolve a location entered in English or Marathi to canonical English names.
+    Returns (district, taluka, village); falls back to original values if not found.
+    """
+    district = (district or '').strip()
+    taluka = (taluka or '').strip()
+    village = (village or '').strip()
+    if not (district and taluka and village):
+        return district, taluka, village
+
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("""
+                SELECT
+                    a.name AS district_en,
+                    c.taluka AS taluka_en,
+                    d.village AS village_en
+                FROM purandar_airport.prj_district a
+                JOIN purandar_airport.prj_taluka c
+                    ON a.district_id = c.district_id
+                JOIN purandar_airport.prj_village d
+                    ON c.taluka_id = d.taluka_id
+                LEFT JOIN public.district_master dm
+                    ON a.district_id = dm.id
+                LEFT JOIN public.taluka_master tm
+                    ON c.taluka_id = tm.id
+                LEFT JOIN public.village_master vm
+                    ON d.village_id = vm.id
+                WHERE
+                    (UPPER(TRIM(a.name)) = UPPER(TRIM(%s))
+                     OR UPPER(TRIM(COALESCE(dm.district_name_m, ''))) = UPPER(TRIM(%s)))
+                    AND (UPPER(TRIM(c.taluka)) = UPPER(TRIM(%s))
+                         OR UPPER(TRIM(COALESCE(tm.taluka_name_m, ''))) = UPPER(TRIM(%s)))
+                    AND (UPPER(TRIM(d.village)) = UPPER(TRIM(%s))
+                         OR UPPER(TRIM(COALESCE(vm.village_name_m, ''))) = UPPER(TRIM(%s)))
+                LIMIT 1
+            """, [district, district, taluka, taluka, village, village])
+            row = cursor.fetchone()
+            if row:
+                return (row[0] or district, row[1] or taluka, row[2] or village)
+    except Exception:
+        pass
+
+    return district, taluka, village
 
 def text_matches_aliases(value, aliases, normalizer=normalize_match_text):
     normalized_value = normalizer(value)
@@ -1098,22 +1190,127 @@ def delete_document_attachment(request, attachment_id):
     return JsonResponse({'success': False, 'error': 'Invalid request method'}, status=400)
 
 
+LAND_RECORD_712_PREVIEW_SESSION_KEY = 'land_record_712_preview_payloads'
+LAND_RECORD_712_PREVIEW_MAX_PAYLOADS = 3
+LAND_RECORD_712_PREVIEW_TTL_SECONDS = 60 * 60
+
+
+def _land_record_712_parse_preview_datetime(value):
+    if not value:
+        return None
+    try:
+        parsed = timezone.datetime.fromisoformat(str(value))
+        if timezone.is_naive(parsed):
+            return timezone.make_aware(parsed, timezone.get_current_timezone())
+        return parsed
+    except Exception:
+        return None
+
+
+def _land_record_712_prune_preview_store(store):
+    if not isinstance(store, dict):
+        return {}
+    now = timezone.now()
+    valid_items = []
+    for token, payload in store.items():
+        if not isinstance(payload, dict):
+            continue
+        created_at = _land_record_712_parse_preview_datetime(payload.get('created_at'))
+        if not created_at:
+            continue
+        if (now - created_at).total_seconds() > LAND_RECORD_712_PREVIEW_TTL_SECONDS:
+            continue
+        valid_items.append((token, payload, created_at))
+    valid_items.sort(key=lambda item: item[2], reverse=True)
+    trimmed = valid_items[:LAND_RECORD_712_PREVIEW_MAX_PAYLOADS]
+    return {token: payload for token, payload, _ in trimmed}
+
+
+def _land_record_712_get_preview_store(request):
+    raw_store = request.session.get(LAND_RECORD_712_PREVIEW_SESSION_KEY, {})
+    pruned_store = _land_record_712_prune_preview_store(raw_store)
+    if pruned_store != raw_store:
+        request.session[LAND_RECORD_712_PREVIEW_SESSION_KEY] = pruned_store
+        request.session.modified = True
+    return pruned_store
+
+
+def _land_record_712_store_preview_payload(request, records, location, file_type, original_document_name):
+    preview_store = _land_record_712_get_preview_store(request)
+    token = uuid4().hex
+    preview_store[token] = {
+        'records': records,
+        'location': location,
+        'file_type': file_type,
+        'original_document_name': original_document_name,
+        'created_at': timezone.now().isoformat(),
+    }
+    preview_store = _land_record_712_prune_preview_store(preview_store)
+    request.session[LAND_RECORD_712_PREVIEW_SESSION_KEY] = preview_store
+    request.session.modified = True
+    return token
+
+
+def _land_record_712_get_preview_payload(request, token):
+    if not token:
+        return None
+    preview_store = _land_record_712_get_preview_store(request)
+    return preview_store.get(token)
+
+
+def _land_record_712_get_preview_page(records, page, page_size):
+    total_count = len(records)
+    if page_size not in {10, 25}:
+        page_size = 25
+    total_pages = max((total_count + page_size - 1) // page_size, 1)
+    page = max(1, min(page, total_pages))
+    start = (page - 1) * page_size
+    end = start + page_size
+    return {
+        'records': records[start:end],
+        'page': page,
+        'page_size': page_size,
+        'total_count': total_count,
+        'total_pages': total_pages,
+    }
+
+
 @login_required
 def land_record_712(request):
     is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+    accepts_json = 'application/json' in request.headers.get('Accept', '').lower()
+    wants_json_response = request.method == 'POST' or is_ajax or accepts_json
 
     def respond_error(message, status=400):
-        if is_ajax:
-            return JsonResponse({'success': False, 'error': message}, status=status)
+        if wants_json_response:
+            return JsonResponse({
+                'success': False,
+                'error': message,
+                'created_count': 0,
+                'duplicate_count': 0,
+                'skipped_count': 0,
+            }, status=status)
         return render(request, 'landrecord.html', {'error_message': message})
 
-    def respond_success(message, status=200):
-        if is_ajax:
-            return JsonResponse({
+    def respond_success(created_count, duplicate_count, skipped_unmatched_count, unmatched_guts=None, unmatched_rows=None, status=200):
+        unmatched_guts = unmatched_guts or []
+        unmatched_rows = unmatched_rows or []
+        total_skipped = duplicate_count + skipped_unmatched_count
+        if wants_json_response:
+            payload = {
                 'success': True,
-                'message': message,
-                'redirect_url': reverse('land_record_712_list'),
-            }, status=status)
+                'created_count': created_count,
+                'duplicate_count': duplicate_count,
+                'skipped_unmatched_count': skipped_unmatched_count,
+                'skipped_count': skipped_unmatched_count,
+                'unmatched_guts': unmatched_guts,
+                'unmatched_rows': unmatched_rows,
+                'message': f'Saved {created_count} rows. Skipped {total_skipped} duplicates/mismatches.',
+            }
+            # Only provide redirect when there are no unmatched rows to display
+            if not unmatched_rows and skipped_unmatched_count == 0:
+                payload['redirect_url'] = reverse('land_record_712_list')
+            return JsonResponse(payload, status=status)
         return redirect('land_record_712_list')
 
     def clean_optional(value):
@@ -1148,95 +1345,166 @@ def land_record_712(request):
             return clean_optional(raw)
         return ', '.join(parts)
 
-    def normalize_gut_key(value):
-        text = str(value or '').strip()
-        if not text:
-            return ''
-        parts = re.findall(r'\d+', text)
-        if parts:
-            return '/'.join(parts)
-        return normalize_match_text(text)
-
-    def fetch_valid_guts_for_location(district_name, taluka_name, village_name):
-        if not district_name or not taluka_name or not village_name:
-            return set()
-        with connection.cursor() as cursor:
-            cursor.execute("""
-                SELECT DISTINCT e.gut_no::text
-                FROM purandar_airport.prj_district a
-                JOIN purandar_airport.prj_taluka c ON a.district_id = c.district_id
-                JOIN purandar_airport.prj_village d ON c.taluka_id = d.taluka_id
-                JOIN purandar_airport.prj_gut_bd e ON d.village_id = e.village_id
-                WHERE UPPER(TRIM(a.name)) = UPPER(TRIM(%s))
-                  AND UPPER(TRIM(c.taluka)) = UPPER(TRIM(%s))
-                  AND UPPER(TRIM(d.village)) = UPPER(TRIM(%s))
-                  AND e.gut_no IS NOT NULL
-            """, [district_name, taluka_name, village_name])
-            return {normalize_gut_key(row[0]) for row in cursor.fetchall() if normalize_gut_key(row[0])}
-
-    if request.method == 'POST':
-        district = request.POST.get('district')
-        taluka = request.POST.get('taluka')
-        village = request.POST.get('village')
-        gut_number = format_gut_number_for_storage(request.POST.get('gut_number'))
-        uploaded_file = request.FILES.get('document_712')
-
-        gut_numbers = request.POST.getlist('gut_number_row[]')
-        puid_ulip_nos = request.POST.getlist('puid_ulip_no[]')
-        khata_numbers = request.POST.getlist('khata_number[]')
-        khata_areas = request.POST.getlist('khata_area[]')
-        jirayits = request.POST.getlist('jirayit[]')
-        bagayats = request.POST.getlist('bagayat[]')
-        potkharabas = request.POST.getlist('potkharaba[]')
-        aakars = request.POST.getlist('aakar[]')
-        aakarnis = request.POST.getlist('aakarni[]')
-        total_areas = request.POST.getlist('total_area[]')
-        holder_names = request.POST.getlist('holder_name[]')
-        kul_khands = request.POST.getlist('kul_khand_other_rights[]')
-
-        row_count = max(
-            len(gut_numbers), len(puid_ulip_nos), len(khata_numbers), len(khata_areas),
-            len(jirayits), len(bagayats), len(potkharabas), len(aakars),
-            len(aakarnis), len(total_areas), len(holder_names)
+    def build_unique_key(row):
+        return (
+            normalize_match_text(row.get('district')),
+            normalize_match_text(row.get('taluka')),
+            normalize_match_text(row.get('village')),
+            normalize_match_text(row.get('gut_number')),
+            normalize_match_text(row.get('khata_number') or ''),
+            normalize_match_text(row.get('holder_name') or ''),
+            normalize_match_text(row.get('total_area') or ''),
+            normalize_match_text(row.get('aakarni') or ''),
         )
 
-        rows_to_create = []
-        for i in range(row_count):
-            row_gut = format_gut_number_for_storage(gut_numbers[i] if i < len(gut_numbers) else '')
-            if not row_gut:
-                continue
-            rows_to_create.append({
-                'district': district,
-                'taluka': taluka,
-                'village': village,
-                'gut_number': row_gut,
-                'puid_ulip_no': puid_ulip_nos[i] if i < len(puid_ulip_nos) else '',
-                'khata_number': khata_numbers[i] if i < len(khata_numbers) else '',
-                'khata_area': khata_areas[i] if i < len(khata_areas) else '',
-                'jirayit': jirayits[i] if i < len(jirayits) else '',
-                'bagayat': bagayats[i] if i < len(bagayats) else '',
-                'potkharaba': potkharabas[i] if i < len(potkharabas) else '',
-                'aakar': aakars[i] if i < len(aakars) else '',
-                'aakarni': aakarnis[i] if i < len(aakarnis) else '',
-                'total_area': total_areas[i] if i < len(total_areas) else '',
-                'holder_name': holder_names[i] if i < len(holder_names) else '',
-                'kul_khand_other_rights': kul_khands[i] if i < len(kul_khands) else '',
-            })
+    if request.method == 'POST':
+        try:
+            district = (request.POST.get('district') or '').strip()
+            taluka = (request.POST.get('taluka') or '').strip()
+            village = (request.POST.get('village') or '').strip()
+            gut_number = format_gut_number_for_storage(request.POST.get('gut_number'))
+            uploaded_file = request.FILES.get('document_712')
+            original_document_name = uploaded_file.name if uploaded_file else None
+            stored_document_name = None
+            if uploaded_file:
+                uploaded_file.seek(0)
+                stored_document_name = default_storage.save(
+                    f"land_record_712/{uuid4().hex}_{uploaded_file.name}",
+                    uploaded_file
+                )
+            preview_token = (request.POST.get('preview_token') or '').strip()
+            rows_json_raw = request.POST.get('rows_json')
+            rows_to_create = []
 
-        if not rows_to_create:
-            return respond_error('No rows found to save.')
+            if preview_token:
+                preview_payload = _land_record_712_get_preview_payload(request, preview_token)
+                if not preview_payload:
+                    return respond_error('Upload preview expired. Please re-upload the file and try again.')
 
-        if not all([district, taluka, village]):
-            return respond_error('Please select district, taluka and village.')
+                location = preview_payload.get('location') or {}
+                district = district or (location.get('district') or '').strip()
+                taluka = taluka or (location.get('taluka') or '').strip()
+                village = village or (location.get('village') or '').strip()
+                gut_number = gut_number or format_gut_number_for_storage(location.get('gut_number'))
+                original_document_name = original_document_name or (preview_payload.get('original_document_name') or None)
 
-        valid_gut_keys = fetch_valid_guts_for_location(district, taluka, village)
-        skipped_rows = []
-        valid_rows = rows_to_create
-        if valid_gut_keys:
+                preview_rows = preview_payload.get('records') or []
+                for row in preview_rows:
+                    if not isinstance(row, dict):
+                        continue
+                    # Always include preview rows here; gut matching is validated again
+                    # below using normalize_gut_value + valid_gut_map.
+                    row_gut = format_gut_number_for_storage(
+                        row.get('gut_number') or row.get('original_excel_gut') or ''
+                    )
+                    if not row_gut:
+                        continue
+                    rows_to_create.append({
+                        'district': district,
+                        'taluka': taluka,
+                        'village': village,
+                        'gut_number': row_gut,
+                        'puid_ulip_no': row.get('puid_ulip_no', ''),
+                        'khata_number': row.get('khata_number', ''),
+                        'khata_area': row.get('khata_area', ''),
+                        'jirayit': row.get('jirayit', ''),
+                        'bagayat': row.get('bagayat', ''),
+                        'potkharaba': row.get('potkharaba', ''),
+                        'aakar': row.get('aakar', ''),
+                        'aakarni': row.get('aakarni', ''),
+                        'total_area': row.get('total_area', ''),
+                        'holder_name': row.get('holder_name', ''),
+                        'kul_khand_other_rights': row.get('kul_khand_other_rights', ''),
+                    })
+            elif rows_json_raw:
+                try:
+                    rows_payload = json.loads(rows_json_raw)
+                except (TypeError, ValueError, json.JSONDecodeError):
+                    return respond_error('Invalid rows payload.')
+
+                if not isinstance(rows_payload, list):
+                    return respond_error('Invalid rows payload.')
+
+                for row in rows_payload:
+                    if not isinstance(row, dict):
+                        continue
+                    row_gut = format_gut_number_for_storage(row.get('gut_number'))
+                    if not row_gut:
+                        continue
+                    rows_to_create.append({
+                        'district': district,
+                        'taluka': taluka,
+                        'village': village,
+                        'gut_number': row_gut,
+                        'puid_ulip_no': row.get('puid_ulip_no', ''),
+                        'khata_number': row.get('khata_number', ''),
+                        'khata_area': row.get('khata_area', ''),
+                        'jirayit': row.get('jirayit', ''),
+                        'bagayat': row.get('bagayat', ''),
+                        'potkharaba': row.get('potkharaba', ''),
+                        'aakar': row.get('aakar', ''),
+                        'aakarni': row.get('aakarni', ''),
+                        'total_area': row.get('total_area', ''),
+                        'holder_name': row.get('holder_name', ''),
+                        'kul_khand_other_rights': row.get('kul_khand_other_rights', ''),
+                    })
+            else:
+                gut_numbers = request.POST.getlist('gut_number_row[]')
+                puid_ulip_nos = request.POST.getlist('puid_ulip_no[]')
+                khata_numbers = request.POST.getlist('khata_number[]')
+                khata_areas = request.POST.getlist('khata_area[]')
+                jirayits = request.POST.getlist('jirayit[]')
+                bagayats = request.POST.getlist('bagayat[]')
+                potkharabas = request.POST.getlist('potkharaba[]')
+                aakars = request.POST.getlist('aakar[]')
+                aakarnis = request.POST.getlist('aakarni[]')
+                total_areas = request.POST.getlist('total_area[]')
+                holder_names = request.POST.getlist('holder_name[]')
+                kul_khands = request.POST.getlist('kul_khand_other_rights[]')
+
+                row_count = max(
+                    len(gut_numbers), len(puid_ulip_nos), len(khata_numbers), len(khata_areas),
+                    len(jirayits), len(bagayats), len(potkharabas), len(aakars),
+                    len(aakarnis), len(total_areas), len(holder_names)
+                )
+
+                for i in range(row_count):
+                    row_gut = format_gut_number_for_storage(gut_numbers[i] if i < len(gut_numbers) else '')
+                    if not row_gut:
+                        continue
+                    rows_to_create.append({
+                        'district': district,
+                        'taluka': taluka,
+                        'village': village,
+                        'gut_number': row_gut,
+                        'puid_ulip_no': puid_ulip_nos[i] if i < len(puid_ulip_nos) else '',
+                        'khata_number': khata_numbers[i] if i < len(khata_numbers) else '',
+                        'khata_area': khata_areas[i] if i < len(khata_areas) else '',
+                        'jirayit': jirayits[i] if i < len(jirayits) else '',
+                        'bagayat': bagayats[i] if i < len(bagayats) else '',
+                        'potkharaba': potkharabas[i] if i < len(potkharabas) else '',
+                        'aakar': aakars[i] if i < len(aakars) else '',
+                        'aakarni': aakarnis[i] if i < len(aakarnis) else '',
+                        'total_area': total_areas[i] if i < len(total_areas) else '',
+                        'holder_name': holder_names[i] if i < len(holder_names) else '',
+                        'kul_khand_other_rights': kul_khands[i] if i < len(kul_khands) else '',
+                    })
+
+            if not rows_to_create:
+                return respond_error('No rows found to save.')
+
+            if not all([district, taluka, village]):
+                return respond_error('Please select district, taluka and village.')
+
+            district, taluka, village = resolve_location_to_english(district, taluka, village)
+
+            valid_gut_map = fetch_valid_gut_map_for_location(district, taluka, village)
+            skipped_rows = []
             valid_rows = []
             for row in rows_to_create:
-                row_key = normalize_gut_key(row.get('gut_number'))
-                if row_key and row_key in valid_gut_keys:
+                excel_gut_key = normalize_gut_value(row.get('gut_number'))
+                if excel_gut_key and excel_gut_key in valid_gut_map:
+                    row['gut_number'] = valid_gut_map[excel_gut_key]
                     valid_rows.append(row)
                 else:
                     skipped_rows.append({
@@ -1246,126 +1514,288 @@ def land_record_712(request):
                         'total_area': row.get('total_area') or '',
                     })
 
-        if not valid_rows:
-            return respond_error('No matching gut rows found for selected location.')
+            if not valid_rows:
+                return respond_error('No matching gut rows found for selected location.')
 
-        # Khata number must stay unique globally and inside current submission.
-        khata_pairs = []
-        for row in valid_rows:
-            khata_raw = row.get('khata_number')
-            khata_clean = clean_optional(khata_raw)
-            if not khata_clean:
-                continue
-            khata_pairs.append((khata_clean, normalize_match_text(khata_clean)))
-
-        incoming_khatas = []
-        if khata_pairs:
-            seen_local = {}
-            local_duplicates = []
-            for khata_value, khata_key in khata_pairs:
-                if khata_key in seen_local:
-                    local_duplicates.append(khata_value)
-                else:
-                    seen_local[khata_key] = khata_value
-            if local_duplicates:
-                duplicate_text = ', '.join(sorted(set(local_duplicates)))
-                return respond_error(f'खाता नंबर unique असणे आवश्यक आहे. Duplicate: {duplicate_text}')
-
-            incoming_khatas = sorted({khata for khata, _key in khata_pairs})
-
-        created_count = 0
-        duplicate_count = 0
-        with transaction.atomic():
-            if incoming_khatas:
-                existing_conflicts = []
-                with connection.cursor() as cursor:
-                    for khata in incoming_khatas:
-                        cursor.execute(
-                            "SELECT pg_advisory_xact_lock(hashtext(%s))",
-                            [f"land_record_712.khata_number:{khata}"]
-                        )
-                        if LandRecord712.objects.filter(khata_number__iexact=khata).exists():
-                            existing_conflicts.append(khata)
-                if existing_conflicts:
-                    conflict_text = ', '.join(sorted(set(existing_conflicts)))
-                    return respond_error(f'खाता नंबर आधीपासून उपलब्ध आहे: {conflict_text}')
-
+            normalized_rows = []
+            khata_pairs = []
             for row in valid_rows:
-                row_khata_number = clean_optional(row.get('khata_number'))
-                lookup_kwargs = {
-                    'district': row.get('district') or district,
-                    'taluka': row.get('taluka') or taluka,
-                    'village': row.get('village') or village,
-                    'gut_number': row.get('gut_number') or gut_number,
-                    'khata_number': row_khata_number,
-                    'holder_name': clean_optional(clean_holder_name_list(row.get('holder_name'))),
-                    'total_area': normalize_712_area(row.get('total_area')),
-                    'aakarni': clean_optional(row.get('aakarni')),
-                }
-                defaults_kwargs = {
-                    'user': request.user,
-                    'document_712': uploaded_file,
-                    'original_document_name': uploaded_file.name if uploaded_file else None,
-                    'district': lookup_kwargs['district'],
-                    'taluka': lookup_kwargs['taluka'],
-                    'village': lookup_kwargs['village'],
-                    'gut_number': lookup_kwargs['gut_number'],
-                    'khata_number': row_khata_number,
+                normalized_row = {
+                    'district': clean_optional(row.get('district')) or district,
+                    'taluka': clean_optional(row.get('taluka')) or taluka,
+                    'village': clean_optional(row.get('village')) or village,
+                    'gut_number': clean_optional(row.get('gut_number')) or gut_number,
                     'puid_ulip_no': clean_optional(row.get('puid_ulip_no')),
+                    'khata_number': clean_optional(row.get('khata_number')),
+                    'khata_area': normalize_712_area(row.get('khata_area')),
                     'jirayit': normalize_712_area(row.get('jirayit')),
                     'bagayat': normalize_712_area(row.get('bagayat')),
                     'potkharaba': normalize_712_area(row.get('potkharaba')),
-                    'total_area': lookup_kwargs['total_area'],
-                    'aakarni': lookup_kwargs['aakarni'],
-                    'khata_area': normalize_712_area(row.get('khata_area')),
                     'aakar': clean_optional(row.get('aakar')),
-                    'holder_name': lookup_kwargs['holder_name'],
+                    'aakarni': clean_optional(row.get('aakarni')),
+                    'total_area': normalize_712_area(row.get('total_area')),
+                    'holder_name': clean_optional(clean_holder_name_list(row.get('holder_name'))),
                     'kul_khand_other_rights': clean_optional(row.get('kul_khand_other_rights')),
+                    'original_document_name': original_document_name,
+                    'document_712_name': stored_document_name,
                 }
-                _obj, created = LandRecord712.objects.get_or_create(
-                    **lookup_kwargs,
-                    defaults=defaults_kwargs,
-                )
-                if created:
-                    created_count += 1
-                else:
-                    duplicate_count += 1
-                    skipped_rows.append({
-                        'reason': 'Duplicate row (already saved)',
-                        'gut_number': row.get('gut_number') or '',
-                        'holder_name': row.get('holder_name') or '',
-                        'total_area': row.get('total_area') or '',
-                    })
-        if skipped_rows:
-            mismatch_count = sum(1 for item in skipped_rows if item.get('reason', '').startswith('Gut mismatch'))
-            duplicate_count_from_rows = sum(1 for item in skipped_rows if item.get('reason', '').startswith('Duplicate'))
-            msg = (
-                f'Saved {created_count} rows. '
-                f'Skipped {mismatch_count} gut mismatches and {duplicate_count_from_rows} duplicates.'
-            )
-            if is_ajax:
-                return JsonResponse({
-                    'success': True,
-                    'message': msg,
-                    'created_count': created_count,
-                    'redirect_url': reverse('land_record_712_list'),
-                })
-            return render(request, 'landrecord.html', {'error_message': msg})
+                normalized_row['unique_key'] = build_unique_key(normalized_row)
+                normalized_rows.append(normalized_row)
 
-        return respond_success(f'Saved {created_count} rows successfully.')
+                if normalized_row['khata_number']:
+                    khata_pairs.append((normalized_row['khata_number'], normalize_match_text(normalized_row['khata_number'])))
+
+            incoming_khatas = []
+            if khata_pairs:
+                seen_local = {}
+                local_duplicates = []
+                for khata_value, khata_key in khata_pairs:
+                    if khata_key in seen_local:
+                        local_duplicates.append(khata_value)
+                    else:
+                        seen_local[khata_key] = khata_value
+                if local_duplicates:
+                    duplicate_text = ', '.join(sorted(set(local_duplicates)))
+                    return respond_error(f'Khata number must be unique. Duplicate: {duplicate_text}')
+
+                incoming_khatas = sorted({khata for khata, _key in khata_pairs})
+
+            if incoming_khatas:
+                incoming_khata_lookup = {normalize_match_text(khata): khata for khata in incoming_khatas}
+                existing_conflicts = {
+                    incoming_khata_lookup[normalize_match_text(existing_khata)]
+                    for existing_khata in LandRecord712.objects.filter(
+                        khata_number__in=incoming_khatas
+                    ).values_list('khata_number', flat=True)
+                    if normalize_match_text(existing_khata) in incoming_khata_lookup
+                }
+                if existing_conflicts:
+                    conflict_text = ', '.join(sorted(existing_conflicts))
+                    return respond_error(f'Khata number already exists: {conflict_text}')
+
+            incoming_guts = sorted({row['gut_number'] for row in normalized_rows if row.get('gut_number')})
+            existing_rows_qs = LandRecord712.objects.filter(
+                district__iexact=district,
+                taluka__iexact=taluka,
+                village__iexact=village,
+                gut_number__in=incoming_guts,
+            )
+            if incoming_khatas:
+                existing_rows_qs = existing_rows_qs.filter(
+                    Q(khata_number__in=incoming_khatas) |
+                    Q(khata_number__isnull=True) |
+                    Q(khata_number='')
+                )
+            else:
+                existing_rows_qs = existing_rows_qs.filter(
+                    Q(khata_number__isnull=True) |
+                    Q(khata_number='')
+                )
+
+            existing_keys = {
+                build_unique_key(existing_row)
+                for existing_row in existing_rows_qs.values(
+                    'district', 'taluka', 'village', 'gut_number',
+                    'khata_number', 'holder_name', 'total_area', 'aakarni'
+                )
+            }
+
+            duplicate_count = 0
+            seen_submission_keys = set()
+            objects_to_create = []
+
+            for row in normalized_rows:
+                row_key = row['unique_key']
+                if row_key in seen_submission_keys:
+                    duplicate_count += 1
+                    continue
+                seen_submission_keys.add(row_key)
+
+                if row_key in existing_keys:
+                    duplicate_count += 1
+                    continue
+
+                existing_keys.add(row_key)
+                objects_to_create.append(LandRecord712(
+                    user=request.user,
+                    document_712=row.get('document_712_name') or None,
+                    original_document_name=row.get('original_document_name'),
+                    district=row.get('district'),
+                    taluka=row.get('taluka'),
+                    village=row.get('village'),
+                    gut_number=row.get('gut_number'),
+                    puid_ulip_no=row.get('puid_ulip_no'),
+                    khata_number=row.get('khata_number'),
+                    khata_area=row.get('khata_area'),
+                    jirayit=row.get('jirayit'),
+                    bagayat=row.get('bagayat'),
+                    potkharaba=row.get('potkharaba'),
+                    total_area=row.get('total_area'),
+                    aakarni=row.get('aakarni'),
+                    aakar=row.get('aakar'),
+                    holder_name=row.get('holder_name'),
+                    kul_khand_other_rights=row.get('kul_khand_other_rights'),
+                ))
+
+            if objects_to_create:
+                with transaction.atomic():
+                    LandRecord712.objects.bulk_create(objects_to_create, batch_size=200)
+
+            created_count = len(objects_to_create)
+            skipped_count = sum(
+                1 for item in skipped_rows
+                if item.get('reason', '').startswith('Gut mismatch')
+            )
+            unmatched_guts = sorted({
+                str(item.get('gut_number') or '').strip()
+                for item in skipped_rows
+                if str(item.get('gut_number') or '').strip()
+            })
+
+            return respond_success(
+                created_count=created_count,
+                duplicate_count=duplicate_count,
+                skipped_unmatched_count=skipped_count,
+                unmatched_guts=unmatched_guts,
+                unmatched_rows=skipped_rows,
+            )
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)}, status=500)
 
     return render(request, 'landrecord.html')
+
 @login_required
 def land_record_712_list(request):
-    records = LandRecord712.objects.all().order_by('-id')
-    
-    # Add Marathi names to each record
+    # If stale URL carries old default per_page=25, normalize it to 10.
+    if request.GET.get('per_page') == '25' and request.GET.get('page') in {None, '', '1'}:
+        params = request.GET.copy()
+        params['per_page'] = '10'
+        return redirect(f"{request.path}?{params.urlencode()}")
+
+    per_page_raw = (request.GET.get('per_page', '10') or '10').strip().lower()
+    search_query = (request.GET.get('search') or '').strip()
+    show_all = per_page_raw == 'all'
+    per_page = 10
+    if not show_all:
+        try:
+            per_page = int(per_page_raw)
+        except (TypeError, ValueError):
+            per_page = 10
+        if per_page not in {10, 25, 50, 100}:
+            per_page = 10
+
+    include_document_preview = not show_all
+
+    only_fields = [
+        'id', 'district', 'taluka', 'village', 'gut_number', 'khata_number',
+        'puid_ulip_no', 'jirayit', 'bagayat', 'potkharaba', 'total_area',
+        'aakarni', 'khata_area', 'aakar', 'holder_name', 'kul_khand_other_rights',
+        'updated_at', 'user__username'
+    ]
+    if include_document_preview:
+        only_fields.extend(['document_712', 'original_document_name'])
+
+    qs = (
+        LandRecord712.objects
+        .select_related('user')
+        .only(*only_fields)
+        .order_by('-id')
+    )
+
+    if search_query:
+        filters = (
+            Q(district__icontains=search_query) |
+            Q(taluka__icontains=search_query) |
+            Q(village__icontains=search_query) |
+            Q(gut_number__icontains=search_query) |
+            Q(khata_number__icontains=search_query) |
+            Q(puid_ulip_no__icontains=search_query) |
+            Q(holder_name__icontains=search_query)
+        )
+        if search_query.isdigit():
+            filters = filters | Q(id=int(search_query))
+        qs = qs.filter(filters)
+
+    if show_all:
+        records = list(qs)
+        page_obj = None
+        current_page = 1
+        total_pages = 1
+        total_records = len(records)
+        start_index = 1 if total_records else 0
+        end_index = total_records
+        page_links = [1] if total_records else []
+    else:
+        paginator = Paginator(qs, per_page)
+        page_obj = paginator.get_page(request.GET.get('page', 1))
+        records = list(page_obj.object_list)
+        current_page = page_obj.number
+        total_pages = paginator.num_pages
+        total_records = paginator.count
+        start_index = page_obj.start_index() if total_records else 0
+        end_index = page_obj.end_index() if total_records else 0
+
+        window = 2
+        left = max(1, current_page - window)
+        right = min(total_pages, current_page + window)
+        page_links = []
+        if left > 1:
+            page_links.append(1)
+            if left > 2:
+                page_links.append(None)
+        for page_no in range(left, right + 1):
+            page_links.append(page_no)
+        if right < total_pages:
+            if right < total_pages - 1:
+                page_links.append(None)
+            page_links.append(total_pages)
+
+    query_params = {'per_page': per_page_raw if show_all else str(per_page)}
+    if search_query:
+        query_params['search'] = search_query
+    query_string = urlencode(query_params)
+
+    district_mr_cache = {}
+    taluka_mr_cache = {}
+    village_mr_cache = {}
+
     for record in records:
-        record.district_mr = get_marathi_name('district', record.district)
-        record.taluka_mr = get_marathi_name('taluka', record.district, record.taluka)
-        record.village_mr = get_marathi_name('village', record.district, record.taluka, record.village)
-    
-    return render(request, 'land_record_712_list.html', {'records': records})
+        district_key = (record.district or '').strip().lower()
+        taluka_key = ((record.district or '').strip().lower(), (record.taluka or '').strip().lower())
+        village_key = (
+            (record.district or '').strip().lower(),
+            (record.taluka or '').strip().lower(),
+            (record.village or '').strip().lower(),
+        )
+
+        if district_key not in district_mr_cache:
+            district_mr_cache[district_key] = get_marathi_name('district', record.district)
+        if taluka_key not in taluka_mr_cache:
+            taluka_mr_cache[taluka_key] = get_marathi_name('taluka', record.district, record.taluka)
+        if village_key not in village_mr_cache:
+            village_mr_cache[village_key] = get_marathi_name('village', record.district, record.taluka, record.village)
+
+        record.district_mr = district_mr_cache[district_key]
+        record.taluka_mr = taluka_mr_cache[taluka_key]
+        record.village_mr = village_mr_cache[village_key]
+
+    return render(request, 'land_record_712_list.html', {
+        'records': records,
+        'page_obj': page_obj,
+        'per_page': per_page,
+        'per_page_value': 'all' if show_all else str(per_page),
+        'show_all': show_all,
+        'current_page': current_page,
+        'total_pages': total_pages,
+        'current_count': len(records),
+        'total_records': total_records,
+        'start_index': start_index,
+        'end_index': end_index,
+        'page_links': page_links,
+        'search_query': search_query,
+        'query_string': query_string,
+        'include_document_preview': include_document_preview,
+    })
 
 @login_required
 def download_all_land_record_712_csv(request):
@@ -1532,15 +1962,6 @@ def parse_land_record_712_html(request):
                 return fix_encoding(str(value).strip())
         return ''
 
-    def normalize_gut_key(value):
-        text = str(value or '').strip()
-        if not text:
-            return ''
-        parts = re.findall(r'\d+', text)
-        if parts:
-            return '/'.join(parts)
-        return normalize_match_text(text)
-
     def detect_file_type(filename):
         name = (filename or '').lower()
         if name.endswith(('.html', '.htm')):
@@ -1628,14 +2049,16 @@ def parse_land_record_712_html(request):
             'gutnumber',
             'survey_no'
         )
-        formatted_gut = format_gut_number_for_storage(raw_gut)
-        if not normalize_gut_key(formatted_gut):
+        excel_gut_key = normalize_gut_value(raw_gut)
+        if not excel_gut_key:
             continue
         records.append({
             'district': row_district or district,
             'taluka': row_taluka or taluka,
             'village': row_village or village,
-            'gut_number': formatted_gut,
+            'gut_number': format_gut_number_for_storage(raw_gut),
+            'original_excel_gut': raw_gut,
+            'excel_gut_key': excel_gut_key,
             'khata_number': row_get(row, '\u0916\u093e\u0924\u093e_\u0928\u0902', '\u0916\u093e\u0924\u093e \u0928\u0902', '\u0916\u093e\u0924\u093e \u0928\u0902\u092c\u0930', 'khata_number'),
             'puid_ulip_no': row_get(row, 'PUID_ULIP_No', 'puid_ulip_no'),
             'jirayit': row_get(row, '\u091c\u093f\u0930\u093e\u092f\u0924', 'jirayit'),
@@ -1675,7 +2098,12 @@ def parse_land_record_712_html(request):
     detected_taluka = taluka or most_common(taluka_candidates) or first.get('taluka', '') or ''
     detected_village = village or most_common(village_candidates) or first.get('village', '') or ''
     detected_gut = gut_number or most_common(gut_candidates) or format_gut_number_for_storage(first.get('gut_number', ''))
+    detected_district, detected_taluka, detected_village = resolve_location_to_english(
+        detected_district, detected_taluka, detected_village
+    )
 
+    valid_gut_map = fetch_valid_gut_map_for_location(detected_district, detected_taluka, detected_village)
+    unmatched_guts = set()
     for row in records:
         if not row.get('district'):
             row['district'] = detected_district
@@ -1683,18 +2111,105 @@ def parse_land_record_712_html(request):
             row['taluka'] = detected_taluka
         if not row.get('village'):
             row['village'] = detected_village
+        excel_gut_key = normalize_gut_value(row.get('gut_number'))
+        matched_system_gut = valid_gut_map.get(excel_gut_key, '')
+        is_matched = bool(matched_system_gut)
+        row['matched_system_gut'] = matched_system_gut
+        row['matched_gut_name'] = matched_system_gut
+        row['match_status'] = 'Matched' if is_matched else 'Unmatched'
+        row['gut_match_status'] = row['match_status']
+        if is_matched:
+            row['gut_number'] = matched_system_gut
+            row['is_gut_matched'] = True
+        else:
+            row['is_gut_matched'] = False
+            unmatched_guts.add(row.get('original_excel_gut') or row.get('gut_number') or '')
+
+    detected_location = {
+        'district': detected_district,
+        'taluka': detected_taluka,
+        'village': detected_village,
+        'gut_number': detected_gut,
+    }
+    preview_token = _land_record_712_store_preview_payload(
+        request=request,
+        records=records,
+        location=detected_location,
+        file_type=upload_mode,
+        original_document_name=uploaded_file.name,
+    )
+    first_page = _land_record_712_get_preview_page(records, page=1, page_size=25)
 
     return JsonResponse({
         'success': True,
-        'records': records,
-        'count': len(records),
+        'records': first_page['records'],
+        'count': first_page['total_count'],
         'file_type': upload_mode,
-        'location': {
-            'district': detected_district,
-            'taluka': detected_taluka,
-            'village': detected_village,
-            'gut_number': detected_gut,
-        }
+        'location': detected_location,
+        'unmatched_guts': sorted([g for g in unmatched_guts if g]),
+        'preview_token': preview_token,
+        'preview': {
+            'page': first_page['page'],
+            'page_size': first_page['page_size'],
+            'total_pages': first_page['total_pages'],
+            'total_count': first_page['total_count'],
+        },
+    })
+
+
+@login_required
+@require_http_methods(["GET"])
+def land_record_712_preview_page(request):
+    preview_token = (request.GET.get('preview_token') or '').strip()
+    if not preview_token:
+        return JsonResponse({'success': False, 'error': 'Missing preview token.'}, status=400)
+
+    try:
+        page = int(request.GET.get('page', 1))
+    except (TypeError, ValueError):
+        page = 1
+    try:
+        page_size = int(request.GET.get('page_size', 25))
+    except (TypeError, ValueError):
+        page_size = 25
+
+    search_query = (request.GET.get('q') or request.GET.get('query') or '').strip()
+    def normalize_preview_search_text(value):
+        value = str(value or '')
+        value = value.translate(str.maketrans('०१२३४५६७८९', '0123456789'))
+        return value.strip().lower()
+    search_query = normalize_preview_search_text(search_query)
+
+    preview_payload = _land_record_712_get_preview_payload(request, preview_token)
+    if not preview_payload:
+        return JsonResponse({'success': False, 'error': 'Upload preview expired. Please re-upload the file.'}, status=404)
+
+    records = preview_payload.get('records') or []
+    if search_query:
+        def record_matches(record):
+            haystack = ' '.join(
+                str(record.get(key, '') or '')
+                for key in [
+                    'original_excel_gut', 'raw_gut_number', 'gut_number',
+                    'khata_number', 'holder_name', 'puid_ulip_no',
+                    'khata_area', 'total_area', 'aakar', 'aakarni'
+                ]
+            )
+            haystack = normalize_preview_search_text(haystack)
+            return search_query in haystack
+
+        records = [record for record in records if record_matches(record)]
+
+    page_data = _land_record_712_get_preview_page(records=records, page=page, page_size=page_size)
+    return JsonResponse({
+        'success': True,
+        'records': page_data['records'],
+        'preview': {
+            'page': page_data['page'],
+            'page_size': page_data['page_size'],
+            'total_pages': page_data['total_pages'],
+            'total_count': page_data['total_count'],
+        },
     })
 
 @login_required
@@ -6379,7 +6894,3 @@ def get_village_sec15_rates(request):
         'rates': rates_payload,
         'message': '' if rates_payload else 'No ready reckoner rates found for selected village'
     })
-
-
-
-

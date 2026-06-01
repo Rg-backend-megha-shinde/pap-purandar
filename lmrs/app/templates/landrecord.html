@@ -181,6 +181,17 @@
             <button type="button" class="-my-1 rounded px-2 py-1 text-lg leading-none text-green-700 hover:bg-green-100" onclick="hideSuccess()">&times;</button>
         </div>
 
+        <!-- Floating toast container -->
+        <div id="toastContainer" class="fixed top-4 right-4 z-50 space-y-2"></div>
+
+        <!-- Overlay loader for long-running operations -->
+        <div id="overlayLoader" class="hidden fixed inset-0 bg-black/30 z-40 flex items-center justify-center">
+            <div class="bg-white p-4 rounded shadow flex items-center gap-3">
+                <svg class="animate-spin h-6 w-6 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path></svg>
+                <div class="text-sm font-medium">Processing file, please wait...</div>
+            </div>
+        </div>
+
         <form id="csrfBridgeForm" class="hidden">{% csrf_token %}</form>
 
         <div class="border rounded-lg p-3 bg-gray-50 mb-5">
@@ -217,6 +228,31 @@
             </div>
         </section>
 
+        <section id="unmatchedSection" class="hidden entry-surface p-4 mt-5 border-l-4 border-yellow-400 bg-yellow-50">
+            <div class="flex items-center justify-between gap-2 flex-wrap">
+                <h3 class="font-bold text-lg">Unmatched / Skipped Records</h3>
+                <div class="flex items-center gap-2">
+                    <button type="button" id="unmatchedGoToListBtn" class="bg-gray-800 hover:bg-gray-900 text-white px-3 py-1 rounded text-sm">Go To List</button>
+                </div>
+            </div>
+            <p id="unmatchedSummary" class="text-sm text-gray-700 mt-2"></p>
+            <div class="overflow-x-auto mt-3">
+                <table id="unmatchedTable" class="w-full text-sm text-left">
+                    <thead>
+                        <tr>
+                            <th class="px-2 py-1">#</th>
+                            <th class="px-2 py-1">Gut</th>
+                            <th class="px-2 py-1">Khata</th>
+                            <th class="px-2 py-1">Holder Name</th>
+                            <th class="px-2 py-1">Total Area</th>
+                            <th class="px-2 py-1">Reason</th>
+                        </tr>
+                    </thead>
+                    <tbody id="unmatchedTableBody"></tbody>
+                </table>
+            </div>
+        </section>
+
         <section id="entryTabManual" class="hidden space-y-4">
             <div class="entry-surface p-4">
                 <h3 class="entry-title font-bold text-lg mb-3">Manual Entry</h3>
@@ -248,8 +284,27 @@
 
         <section id="recordsSection" class="hidden entry-surface p-4 mt-5">
             <div class="flex items-center justify-between gap-2 flex-wrap">
-                <h3 class="font-bold text-lg">७/१२ माहिती</h3>
-                <span id="recordsMetaText" class="text-sm text-gray-600">0 नोंदी</span>
+                <div class="flex items-center gap-3 w-full">
+                    <h3 class="font-bold text-lg">७/१२ माहिती</h3>
+                    <div class="ml-4 flex-1">
+                        <input id="recordsSearchInput" type="search" placeholder="Search by Gut, Khata, Holder..." class="w-full border rounded px-3 py-1 text-sm" />
+                    </div>
+                    <span id="recordsMetaText" class="text-sm text-gray-600">0 नोंदी</span>
+                </div>
+            </div>
+            <div id="uploadPreviewPager" class="mt-3 hidden items-center justify-between gap-2 flex-wrap rounded border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-700">
+                <div id="uploadPreviewPageInfo">Page 1 / 1</div>
+                <div class="flex items-center gap-2">
+                    <label class="flex items-center gap-1">
+                        <span>Rows</span>
+                        <select id="uploadPreviewPageSize" class="border rounded px-2 py-1 text-xs bg-white">
+                            <option value="10" selected>10</option>
+                            <option value="25">25</option>
+                        </select>
+                    </label>
+                    <button type="button" id="uploadPreviewPrevBtn" class="rounded border border-slate-300 bg-white px-2 py-1 hover:bg-slate-100">Previous</button>
+                    <button type="button" id="uploadPreviewNextBtn" class="rounded border border-slate-300 bg-white px-2 py-1 hover:bg-slate-100">Next</button>
+                </div>
             </div>
             <div class="overflow-x-auto mt-4">
                 <table class="w-full border text-xs text-center border-collapse">
@@ -324,6 +379,13 @@ const state712 = {
         upload: [],
         manual: [],
     },
+    uploadPreview: {
+        token: '',
+        page: 1,
+        pageSize: 10,
+        totalPages: 1,
+        totalCount: 0,
+    },
     ownerModal: { rowIndex: -1, owners: [], editIndex: -1 },
 };
 let successToastTimer = null;
@@ -344,10 +406,22 @@ const tabSections = {
 const manualGroup = makeLocationGroup('manualDistrict', 'manualTaluka', 'manualVillage', 'manualGut');
 const LAND_RECORD_LIST_URL = "{% url 'land_record_712_list' %}";
 
+// Unmatched records UI elements (populated after save if any rows were skipped)
+const unmatchedSectionEl = document.getElementById('unmatchedSection');
+const unmatchedTableBodyEl = document.getElementById('unmatchedTableBody');
+const unmatchedSummaryEl = document.getElementById('unmatchedSummary');
+const unmatchedGoToListBtn = document.getElementById('unmatchedGoToListBtn');
+const recordsSearchInputEl = document.getElementById('recordsSearchInput');
+
 const recordsSectionEl = document.getElementById('recordsSection');
 const recordsTableBodyEl = document.getElementById('recordsTableBody');
 const recordsMetaTextEl = document.getElementById('recordsMetaText');
 const manualReferenceBottomEl = document.getElementById('manualReferenceBottomSection');
+const uploadPreviewPagerEl = document.getElementById('uploadPreviewPager');
+const uploadPreviewPageInfoEl = document.getElementById('uploadPreviewPageInfo');
+const uploadPreviewPrevBtn = document.getElementById('uploadPreviewPrevBtn');
+const uploadPreviewNextBtn = document.getElementById('uploadPreviewNextBtn');
+const uploadPreviewPageSizeEl = document.getElementById('uploadPreviewPageSize');
 
 function hideError() {
     const box = document.getElementById('clientErrorBox');
@@ -392,6 +466,35 @@ function clearMessages() {
     hideSuccess();
 }
 
+// Floating toast notifications (non-blocking)
+function showToast(message, kind = 'success', timeout = 4000) {
+    const container = document.getElementById('toastContainer');
+    if (!container) return;
+    const el = document.createElement('div');
+    el.className = `max-w-sm w-full rounded shadow p-3 text-sm flex items-start gap-3 ${kind === 'success' ? 'bg-green-50 text-green-800 border border-green-200' : 'bg-red-50 text-red-800 border border-red-200'}`;
+    el.innerHTML = `
+        <div class="flex-0 mt-0.5">${kind === 'success' ? '&#10004;' : '&#9888;'}</div>
+        <div class="flex-1">${escapeHtml(message)}</div>
+        <button type="button" class="ml-2 text-lg leading-none" aria-label="close">&times;</button>
+    `;
+    const btn = el.querySelector('button');
+    btn.addEventListener('click', () => { container.removeChild(el); });
+    container.appendChild(el);
+    setTimeout(() => { if (container.contains(el)) container.removeChild(el); }, timeout);
+}
+
+// Overlay loader for long running operations
+function showOverlayLoader() {
+    const ov = document.getElementById('overlayLoader');
+    if (!ov) return;
+    ov.classList.remove('hidden');
+}
+function hideOverlayLoader() {
+    const ov = document.getElementById('overlayLoader');
+    if (!ov) return;
+    ov.classList.add('hidden');
+}
+
 function getCsrfToken() {
     const tokenEl = document.querySelector('#csrfBridgeForm input[name="csrfmiddlewaretoken"]');
     return tokenEl ? tokenEl.value : '';
@@ -399,6 +502,15 @@ function getCsrfToken() {
 
 function normalizeText(value) {
     return String(value || '').trim().toLowerCase();
+}
+
+function normalizeSearchText(value) {
+    const text = String(value || '').trim().toLowerCase();
+    const digits = {
+        '०': '0', '१': '1', '२': '2', '३': '3', '४': '4',
+        '५': '5', '६': '6', '७': '7', '८': '8', '९': '9',
+    };
+    return text.replace(/[०१२३४५६७८९]/g, (match) => digits[match] || match);
 }
 
 function normalizeLocationKey(value) {
@@ -573,6 +685,32 @@ function updateManualReferenceVisibility() {
     manualReferenceBottomEl.classList.toggle('hidden', !shouldShow);
 }
 
+function updateUploadPreviewPager() {
+    const isUpload = state712.activeTab === 'upload';
+    const hasToken = !!state712.uploadPreview.token;
+    const shouldShow = isUpload && hasToken && state712.uploadPreview.totalCount > 0;
+    uploadPreviewPagerEl.classList.toggle('hidden', !shouldShow);
+    uploadPreviewPagerEl.classList.toggle('flex', shouldShow);
+    if (!shouldShow) return;
+
+    const { page, totalPages, totalCount, pageSize } = state712.uploadPreview;
+    uploadPreviewPageInfoEl.textContent = `Page ${page} / ${totalPages} | Total ${totalCount} records`;
+    uploadPreviewPrevBtn.disabled = page <= 1;
+    uploadPreviewNextBtn.disabled = page >= totalPages;
+    uploadPreviewPrevBtn.classList.toggle('opacity-50', page <= 1);
+    uploadPreviewNextBtn.classList.toggle('opacity-50', page >= totalPages);
+    uploadPreviewPageSizeEl.value = String(pageSize);
+}
+
+function applyUploadPreviewPage(data) {
+    const preview = data.preview || {};
+    state712.uploadPreview.page = Number(preview.page || 1);
+    state712.uploadPreview.pageSize = Number(preview.page_size || state712.uploadPreview.pageSize || 10);
+    state712.uploadPreview.totalPages = Number(preview.total_pages || 1);
+    state712.uploadPreview.totalCount = Number(preview.total_count || (data.records || []).length || 0);
+    setRecordsForTab('upload', (data.records || []).map((row) => ({ ...defaultRecord(), ...row })));
+}
+
 function defaultRecord() {
     return {
         gut_number: '',
@@ -609,34 +747,73 @@ function rowOwnerSummary(text) {
 }
 
 function renderRecords() {
-    const activeRecords = getActiveRecords();
+    const allRecords = getActiveRecords();
+    const activeRecords = allRecords;
+    const isUploadPreviewMode = state712.activeTab === 'upload' && !!state712.uploadPreview.token;
+    // Allow editing of fetched/uploaded preview rows — make preview editable
+    const isReadOnly = false;
+    const readOnlyAttrs = isReadOnly ? 'readonly disabled' : '';
     recordsTableBodyEl.innerHTML = '';
-    recordsMetaTextEl.textContent = `${activeRecords.length} नोंदी`;
+    recordsMetaTextEl.textContent = `${isUploadPreviewMode ? state712.uploadPreview.totalCount : activeRecords.length} नोंदी`;
     ensureRecordsVisible();
     updateManualReferenceVisibility();
+    updateUploadPreviewPager();
 
-    activeRecords.forEach((row, index) => {
+    const query = normalizeSearchText(recordsSearchInputEl && recordsSearchInputEl.value || '');
+    const visible = [];
+    const visibleIdx = [];
+
+    if (isUploadPreviewMode) {
+        activeRecords.forEach((row, i) => {
+            visible.push(row);
+            visibleIdx.push(i);
+        });
+    } else {
+        activeRecords.forEach((row, i) => {
+            if (!query) {
+                visible.push(row);
+                visibleIdx.push(i);
+                return;
+            }
+            const hay = normalizeSearchText([
+                String(row.original_excel_gut || row.raw_gut_number || row.gut_number || ''),
+                String(row.khata_number || ''),
+                String(row.holder_name || ''),
+                String(row.puid_ulip_no || ''),
+            ].join(' '));
+            if (hay.includes(query)) {
+                visible.push(row);
+                visibleIdx.push(i);
+            }
+        });
+    }
+
+    visible.forEach((row, vpos) => {
+        const index = visibleIdx[vpos];
+        const displayGutValue = isUploadPreviewMode
+            ? (row.original_excel_gut || row.raw_gut_number || row.gut_number || '')
+            : (row.gut_number || '');
         const tr = document.createElement('tr');
         tr.innerHTML = `
-            <td class="border p-1"><input class="record-cell-input" data-row="${index}" data-field="gut_number" value="${escapeAttr(row.gut_number || '')}"></td>
-            <td class="border p-1"><input class="record-cell-input" data-row="${index}" data-field="puid_ulip_no" value="${escapeAttr(row.puid_ulip_no || '')}"></td>
-            <td class="border p-1"><input class="record-cell-input" data-row="${index}" data-field="khata_number" value="${escapeAttr(row.khata_number || '')}"></td>
-            <td class="border p-1"><input class="record-cell-input" data-row="${index}" data-field="khata_area" value="${escapeAttr(row.khata_area || '')}"></td>
-            <td class="border p-1"><input class="record-cell-input" data-row="${index}" data-field="jirayit" value="${escapeAttr(row.jirayit || '')}"></td>
-            <td class="border p-1"><input class="record-cell-input" data-row="${index}" data-field="bagayat" value="${escapeAttr(row.bagayat || '')}"></td>
-            <td class="border p-1"><input class="record-cell-input" data-row="${index}" data-field="potkharaba" value="${escapeAttr(row.potkharaba || '')}"></td>
-            <td class="border p-1"><input class="record-cell-input" data-row="${index}" data-field="aakarni" value="${escapeAttr(row.aakarni || '')}"></td>
-            <td class="border p-1"><input class="record-cell-input" data-row="${index}" data-field="aakar" value="${escapeAttr(row.aakar || '')}"></td>
-            <td class="border p-1"><input class="record-cell-input" data-row="${index}" data-field="total_area" value="${escapeAttr(row.total_area || '')}"></td>
+            <td class="border p-1"><input ${readOnlyAttrs} class="record-cell-input" data-row="${index}" data-field="gut_number" value="${escapeAttr(displayGutValue)}"></td>
+            <td class="border p-1"><input ${readOnlyAttrs} class="record-cell-input" data-row="${index}" data-field="puid_ulip_no" value="${escapeAttr(row.puid_ulip_no || '')}"></td>
+            <td class="border p-1"><input ${readOnlyAttrs} class="record-cell-input" data-row="${index}" data-field="khata_number" value="${escapeAttr(row.khata_number || '')}"></td>
+            <td class="border p-1"><input ${readOnlyAttrs} class="record-cell-input" data-row="${index}" data-field="khata_area" value="${escapeAttr(row.khata_area || '')}"></td>
+            <td class="border p-1"><input ${readOnlyAttrs} class="record-cell-input" data-row="${index}" data-field="jirayit" value="${escapeAttr(row.jirayit || '')}"></td>
+            <td class="border p-1"><input ${readOnlyAttrs} class="record-cell-input" data-row="${index}" data-field="bagayat" value="${escapeAttr(row.bagayat || '')}"></td>
+            <td class="border p-1"><input ${readOnlyAttrs} class="record-cell-input" data-row="${index}" data-field="potkharaba" value="${escapeAttr(row.potkharaba || '')}"></td>
+            <td class="border p-1"><input ${readOnlyAttrs} class="record-cell-input" data-row="${index}" data-field="aakarni" value="${escapeAttr(row.aakarni || '')}"></td>
+            <td class="border p-1"><input ${readOnlyAttrs} class="record-cell-input" data-row="${index}" data-field="aakar" value="${escapeAttr(row.aakar || '')}"></td>
+            <td class="border p-1"><input ${readOnlyAttrs} class="record-cell-input" data-row="${index}" data-field="total_area" value="${escapeAttr(row.total_area || '')}"></td>
             <td class="border p-1">
                 <div class="flex items-center gap-1 whitespace-nowrap">
                     <span class="table-chip" title="${escapeAttr(row.holder_name || MARATHI_NA)}">${escapeHtml(rowOwnerSummary(row.holder_name))}</span>
-                    <button type="button" class="inline-flex h-7 w-7 items-center justify-center rounded-md border border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100" data-owner-manage="${index}" title="Manage owners" aria-label="Manage owners">&#128101;</button>
+                    <button type="button" ${isReadOnly ? 'disabled' : ''} class="inline-flex h-7 w-7 items-center justify-center rounded-md border border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100 ${isReadOnly ? 'opacity-50 cursor-not-allowed' : ''}" data-owner-manage="${index}" title="Manage owners" aria-label="Manage owners">&#128101;</button>
                 </div>
             </td>
-            <td class="border p-1"><textarea class="record-cell-input min-h-[52px]" data-row="${index}" data-field="kul_khand_other_rights">${escapeHtml(row.kul_khand_other_rights || '')}</textarea></td>
+            <td class="border p-1"><textarea ${readOnlyAttrs} class="record-cell-input min-h-[52px]" data-row="${index}" data-field="kul_khand_other_rights">${escapeHtml(row.kul_khand_other_rights || '')}</textarea></td>
             <td class="border p-1">
-                <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md border border-red-200 bg-red-50 text-red-700 hover:bg-red-100" data-row-remove="${index}" title="Delete" aria-label="Delete">&#128465;</button>
+                <button type="button" ${isReadOnly ? 'disabled' : ''} class="inline-flex h-8 w-8 items-center justify-center rounded-md border border-red-200 bg-red-50 text-red-700 hover:bg-red-100 ${isReadOnly ? 'opacity-50 cursor-not-allowed' : ''}" data-row-remove="${index}" title="Delete" aria-label="Delete">&#128465;</button>
             </td>
         `;
         recordsTableBodyEl.appendChild(tr);
@@ -690,6 +867,40 @@ function setupTableInteractions() {
             openOwnerModal(rowIndex);
         }
     });
+}
+
+function debounce(fn, wait) {
+    let t = null;
+    return function (...args) {
+        clearTimeout(t);
+        t = setTimeout(() => fn.apply(this, args), wait);
+    };
+}
+
+function showUnmatchedDetails(rows, count) {
+    if (!unmatchedSectionEl) return;
+    unmatchedTableBodyEl.innerHTML = '';
+    unmatchedSummaryEl.textContent = `Total ${count} unmatched/skipped records.`;
+    rows = rows || [];
+    rows.forEach((r, idx) => {
+        const tr = document.createElement('tr');
+        const gut = escapeHtml(r.gut_number || r.original_excel_gut || '');
+        const khata = escapeHtml(r.khata_number || '');
+        const holder = escapeHtml(r.holder_name || '');
+        const area = escapeHtml(r.total_area || '');
+        const reason = escapeHtml(r.reason || '');
+        tr.innerHTML = `
+            <td class="px-2 py-1">${idx + 1}</td>
+            <td class="px-2 py-1">${gut}</td>
+            <td class="px-2 py-1">${khata}</td>
+            <td class="px-2 py-1">${holder}</td>
+            <td class="px-2 py-1">${area}</td>
+            <td class="px-2 py-1">${reason}</td>
+        `;
+        unmatchedTableBodyEl.appendChild(tr);
+    });
+    unmatchedSectionEl.classList.remove('hidden');
+    unmatchedSectionEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 function getUploadChosenLocation() {
@@ -751,34 +962,74 @@ async function parseUploadedFile(file) {
 
     clearMessages();
     document.getElementById('uploadLoader').classList.remove('hidden');
+    showOverlayLoader();
     const formData = new FormData();
     formData.append('document_712', file);
 
     try {
         const response = await fetch('/api/land-record-712/parse/', {
             method: 'POST',
+            credentials: 'same-origin',
             headers: {
                 'X-CSRFToken': getCsrfToken(),
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
             },
             body: formData,
         });
+        const contentType = (response.headers.get('content-type') || '').toLowerCase();
+        if (!contentType.includes('application/json')) {
+            throw new Error('Server returned non-JSON error. Please check logs.');
+        }
         const data = await response.json();
         if (!response.ok || !data.success) throw new Error(data.error || 'Failed to extract file data.');
 
         state712.uploadFileType = (data.file_type || '').toLowerCase();
-        setRecordsForTab('upload', (data.records || []).map((row) => ({ ...defaultRecord(), ...row })));
+        state712.uploadPreview.token = data.preview_token || '';
+        applyUploadPreviewPage(data);
         applyDetectedLocationCard(data.location || {});
         await applyDetectedToCorrectionDropdowns();
         renderRecords();
-        showSuccess(`${data.count || 0} records extracted successfully.`);
+        // show a non-blocking toast instead of inline success box
+        showToast(`${data.count || 0} records extracted successfully.`, 'success');
     } catch (error) {
         state712.uploadFileType = '';
+        state712.uploadPreview = { token: '', page: 1, pageSize: 10, totalPages: 1, totalCount: 0 };
         setRecordsForTab('upload', []);
         renderRecords();
         showError(error.message || 'Failed to extract file data.');
     } finally {
         document.getElementById('uploadLoader').classList.add('hidden');
+        hideOverlayLoader();
     }
+}
+
+async function fetchUploadPreviewPage(page) {
+    if (!state712.uploadPreview.token) return;
+    const query = new URLSearchParams({
+        preview_token: state712.uploadPreview.token,
+        page: String(page || 1),
+        page_size: String(state712.uploadPreview.pageSize || 25),
+    });
+    const searchQuery = normalizeSearchText(recordsSearchInputEl && recordsSearchInputEl.value || '');
+    if (searchQuery) {
+        query.append('q', searchQuery);
+        query.append('query', searchQuery);
+    }
+    const response = await fetch(`/api/land-record-712/preview/?${query.toString()}`, {
+        method: 'GET',
+        credentials: 'same-origin',
+        headers: {
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+        },
+    });
+    const data = await response.json();
+    if (!response.ok || !data.success) {
+        throw new Error(data.error || 'Failed to load preview page.');
+    }
+    applyUploadPreviewPage(data);
+    renderRecords();
 }
 
 function normalizeRowForSave(row, fallbackLocation = {}) {
@@ -799,9 +1050,18 @@ function normalizeRowForSave(row, fallbackLocation = {}) {
 }
 
 async function saveCurrentRecords(mode) {
+    const saveBtn = mode === 'upload'
+        ? document.getElementById('saveUploadBtn')
+        : document.getElementById('saveManualBtn');
+    const originalBtnText = saveBtn ? saveBtn.textContent : '';
+
     const records = getRecordsForTab(mode);
     clearMessages();
-    if (!records.length) {
+    if (mode === 'upload' && state712.uploadPreview.totalCount <= 0) {
+        showError('No records available to save.');
+        return;
+    }
+    if (mode === 'manual' && !records.length) {
         showError('No records available to save.');
         return;
     }
@@ -816,57 +1076,78 @@ async function saveCurrentRecords(mode) {
         return;
     }
 
-    const normalizedRows = records.map((row) => normalizeRowForSave(row, location)).filter((row) => row.gut_number);
-    if (!normalizedRows.length) {
-        showError('At least one row must have a gut number.');
-        return;
-    }
-
     const formData = new FormData();
     formData.append('district', location.district);
     formData.append('taluka', location.taluka);
     formData.append('village', location.village);
-    formData.append('gut_number', location.gut_number || normalizedRows[0].gut_number || '');
-    if (mode === 'upload' && state712.uploadFile) {
-        formData.append('document_712', state712.uploadFile);
+    formData.append('gut_number', location.gut_number || '');
+    if (mode === 'upload') {
+        if (!state712.uploadPreview.token) {
+            showError('Upload preview expired. Please re-upload the file.');
+            return;
+        }
+        formData.append('preview_token', state712.uploadPreview.token);
+        if (state712.uploadFile) {
+            formData.append('document_712', state712.uploadFile);
+        }
+    } else {
+        const normalizedRows = records.map((row) => normalizeRowForSave(row, location)).filter((row) => row.gut_number);
+        if (!normalizedRows.length) {
+            showError('At least one row must have a gut number.');
+            return;
+        }
+        if (state712.manualFile) {
+            formData.append('document_712', state712.manualFile);
+        }
+        formData.append('rows_json', JSON.stringify(normalizedRows));
     }
-    if (mode === 'manual' && state712.manualFile) {
-        formData.append('document_712', state712.manualFile);
-    }
-
-    normalizedRows.forEach((row) => {
-        formData.append('gut_number_row[]', row.gut_number);
-        formData.append('puid_ulip_no[]', row.puid_ulip_no);
-        formData.append('khata_number[]', row.khata_number);
-        formData.append('khata_area[]', row.khata_area);
-        formData.append('jirayit[]', row.jirayit);
-        formData.append('bagayat[]', row.bagayat);
-        formData.append('potkharaba[]', row.potkharaba);
-        formData.append('aakar[]', row.aakar);
-        formData.append('aakarni[]', row.aakarni);
-        formData.append('total_area[]', row.total_area);
-        formData.append('holder_name[]', row.holder_name);
-        formData.append('kul_khand_other_rights[]', row.kul_khand_other_rights);
-    });
 
     try {
+        if (saveBtn) {
+            saveBtn.disabled = true;
+            saveBtn.textContent = 'Saving...';
+            saveBtn.classList.add('opacity-60', 'cursor-not-allowed');
+        }
+
         const response = await fetch('/tools/712/', {
             method: 'POST',
+            credentials: 'same-origin',
             headers: {
                 'X-CSRFToken': getCsrfToken(),
                 'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json',
             },
             body: formData,
         });
+
+        const contentType = (response.headers.get('content-type') || '').toLowerCase();
+        if (!contentType.includes('application/json')) {
+            throw new Error('Server returned non-JSON error. Please check logs.');
+        }
+
         const data = await response.json();
         if (!response.ok || !data.success) throw new Error(data.error || 'Save failed.');
-        showSuccess(data.message || 'Records saved successfully.');
-        const redirectUrl = data.redirect_url || LAND_RECORD_LIST_URL;
-        setTimeout(() => {
-            window.location.href = redirectUrl;
-        }, 250);
+
+        // Show non-blocking toast instead of inline success box
+        showToast(data.message || 'Records saved.', 'success');
+        // If server returned unmatched rows or skipped_unmatched_count, show details instead of redirecting
+        const unmatchedRows = data.unmatched_rows || [];
+        const unmatchedCount = Number(data.skipped_unmatched_count || 0) || unmatchedRows.length;
+        if (unmatchedCount > 0 || (Array.isArray(unmatchedRows) && unmatchedRows.length > 0)) {
+            // Display unmatched section with details
+            showUnmatchedDetails(unmatchedRows, unmatchedCount);
+        } else {
+            const redirectUrl = data.redirect_url || LAND_RECORD_LIST_URL;
+            setTimeout(() => { window.location.href = redirectUrl; }, 250);
+        }
     } catch (error) {
         showError(error.message || 'Save failed.');
+    } finally {
+        if (saveBtn) {
+            saveBtn.disabled = false;
+            saveBtn.textContent = originalBtnText;
+            saveBtn.classList.remove('opacity-60', 'cursor-not-allowed');
+        }
     }
 }
 
@@ -889,6 +1170,7 @@ function addManualRecord() {
 function resetUploadTab() {
     state712.uploadFile = null;
     state712.uploadFileType = '';
+    state712.uploadPreview = { token: '', page: 1, pageSize: 10, totalPages: 1, totalCount: 0 };
     setRecordsForTab('upload', []);
     const fileInput = document.getElementById('uploadInputFile');
     const fileName = document.getElementById('uploadFileName');
@@ -1054,6 +1336,31 @@ function initUploadFlow() {
 
     document.getElementById('saveUploadBtn').addEventListener('click', () => saveCurrentRecords('upload'));
     document.getElementById('resetUploadBtn').addEventListener('click', resetUploadTab);
+
+    uploadPreviewPrevBtn.addEventListener('click', async () => {
+        if (state712.uploadPreview.page <= 1) return;
+        try {
+            await fetchUploadPreviewPage(state712.uploadPreview.page - 1);
+        } catch (error) {
+            showError(error.message || 'Failed to load preview page.');
+        }
+    });
+    uploadPreviewNextBtn.addEventListener('click', async () => {
+        if (state712.uploadPreview.page >= state712.uploadPreview.totalPages) return;
+        try {
+            await fetchUploadPreviewPage(state712.uploadPreview.page + 1);
+        } catch (error) {
+            showError(error.message || 'Failed to load preview page.');
+        }
+    });
+    uploadPreviewPageSizeEl.addEventListener('change', async () => {
+        state712.uploadPreview.pageSize = Number(uploadPreviewPageSizeEl.value || 10);
+        try {
+            await fetchUploadPreviewPage(1);
+        } catch (error) {
+            showError(error.message || 'Failed to load preview page.');
+        }
+    });
 }
 
 function initManualFlow() {
@@ -1121,6 +1428,26 @@ function bootstrap() {
     initUploadFlow();
     initManualFlow();
     setupTableInteractions();
+    if (unmatchedGoToListBtn) unmatchedGoToListBtn.addEventListener('click', () => { window.location.href = LAND_RECORD_LIST_URL; });
+    if (recordsSearchInputEl) {
+        const runPreviewSearch = debounce(async () => {
+            if (state712.activeTab === 'upload' && state712.uploadPreview.token) {
+                try {
+                    await fetchUploadPreviewPage(1);
+                } catch (error) {
+                    showError(error.message || 'Failed to search uploaded records.');
+                }
+            }
+            renderRecords();
+        }, 200);
+        recordsSearchInputEl.addEventListener('input', runPreviewSearch);
+        recordsSearchInputEl.addEventListener('keydown', async (event) => {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                runPreviewSearch();
+            }
+        });
+    }
     bindOwnerModalActions();
     initLocationGroups();
     renderRecords();
