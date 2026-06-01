@@ -478,6 +478,52 @@ def build_location_aliases(district, taluka, village):
 
     return aliases
 
+def resolve_location_to_english(district, taluka, village):
+    """
+    Resolve a location entered in English or Marathi to canonical English names.
+    Returns (district, taluka, village); falls back to original values if not found.
+    """
+    district = (district or '').strip()
+    taluka = (taluka or '').strip()
+    village = (village or '').strip()
+    if not (district and taluka and village):
+        return district, taluka, village
+
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("""
+                SELECT
+                    a.name AS district_en,
+                    c.taluka AS taluka_en,
+                    d.village AS village_en
+                FROM purandar_airport.prj_district a
+                JOIN purandar_airport.prj_taluka c
+                    ON a.district_id = c.district_id
+                JOIN purandar_airport.prj_village d
+                    ON c.taluka_id = d.taluka_id
+                LEFT JOIN public.district_master dm
+                    ON a.district_id = dm.id
+                LEFT JOIN public.taluka_master tm
+                    ON c.taluka_id = tm.id
+                LEFT JOIN public.village_master vm
+                    ON d.village_id = vm.id
+                WHERE
+                    (UPPER(TRIM(a.name)) = UPPER(TRIM(%s))
+                     OR UPPER(TRIM(COALESCE(dm.district_name_m, ''))) = UPPER(TRIM(%s)))
+                    AND (UPPER(TRIM(c.taluka)) = UPPER(TRIM(%s))
+                         OR UPPER(TRIM(COALESCE(tm.taluka_name_m, ''))) = UPPER(TRIM(%s)))
+                    AND (UPPER(TRIM(d.village)) = UPPER(TRIM(%s))
+                         OR UPPER(TRIM(COALESCE(vm.village_name_m, ''))) = UPPER(TRIM(%s)))
+                LIMIT 1
+            """, [district, district, taluka, taluka, village, village])
+            row = cursor.fetchone()
+            if row:
+                return (row[0] or district, row[1] or taluka, row[2] or village)
+    except Exception:
+        pass
+
+    return district, taluka, village
+
 def text_matches_aliases(value, aliases, normalizer=normalize_match_text):
     normalized_value = normalizer(value)
     if not normalized_value:
@@ -1450,6 +1496,8 @@ def land_record_712(request):
             if not all([district, taluka, village]):
                 return respond_error('Please select district, taluka and village.')
 
+            district, taluka, village = resolve_location_to_english(district, taluka, village)
+
             valid_gut_map = fetch_valid_gut_map_for_location(district, taluka, village)
             skipped_rows = []
             valid_rows = []
@@ -2050,6 +2098,9 @@ def parse_land_record_712_html(request):
     detected_taluka = taluka or most_common(taluka_candidates) or first.get('taluka', '') or ''
     detected_village = village or most_common(village_candidates) or first.get('village', '') or ''
     detected_gut = gut_number or most_common(gut_candidates) or format_gut_number_for_storage(first.get('gut_number', ''))
+    detected_district, detected_taluka, detected_village = resolve_location_to_english(
+        detected_district, detected_taluka, detected_village
+    )
 
     valid_gut_map = fetch_valid_gut_map_for_location(detected_district, detected_taluka, detected_village)
     unmatched_guts = set()
