@@ -1246,20 +1246,25 @@ def land_record_712(request):
             }, status=status)
         return render(request, 'landrecord.html', {'error_message': message})
 
-    def respond_success(created_count, duplicate_count, skipped_unmatched_count, unmatched_guts=None, status=200):
+    def respond_success(created_count, duplicate_count, skipped_unmatched_count, unmatched_guts=None, unmatched_rows=None, status=200):
         unmatched_guts = unmatched_guts or []
+        unmatched_rows = unmatched_rows or []
         total_skipped = duplicate_count + skipped_unmatched_count
         if wants_json_response:
-            return JsonResponse({
+            payload = {
                 'success': True,
                 'created_count': created_count,
                 'duplicate_count': duplicate_count,
                 'skipped_unmatched_count': skipped_unmatched_count,
                 'skipped_count': skipped_unmatched_count,
                 'unmatched_guts': unmatched_guts,
+                'unmatched_rows': unmatched_rows,
                 'message': f'Saved {created_count} rows. Skipped {total_skipped} duplicates/mismatches.',
-                'redirect_url': reverse('land_record_712_list'),
-            }, status=status)
+            }
+            # Only provide redirect when there are no unmatched rows to display
+            if not unmatched_rows and skipped_unmatched_count == 0:
+                payload['redirect_url'] = reverse('land_record_712_list')
+            return JsonResponse(payload, status=status)
         return redirect('land_record_712_list')
 
     def clean_optional(value):
@@ -1611,6 +1616,7 @@ def land_record_712(request):
                 duplicate_count=duplicate_count,
                 skipped_unmatched_count=skipped_count,
                 unmatched_guts=unmatched_guts,
+                unmatched_rows=skipped_rows,
             )
         except Exception as e:
             return JsonResponse({'success': False, 'error': str(e)}, status=500)
