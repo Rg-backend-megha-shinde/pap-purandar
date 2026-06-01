@@ -82,7 +82,12 @@
             ७/१२ उतारा नोंदी
         </h2>
         
-        <div class="flex flex-col sm:flex-row gap-2 w-full md:w-auto">            <a href="{% url 'download_all_land_record_712_csv' %}"
+        <div class="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
+            <button id="bulkDeleteBtn" type="submit" form="bulkDeleteForm" disabled
+               class="bg-red-400 text-white px-4 py-2 rounded flex items-center justify-center gap-2 opacity-60 cursor-not-allowed">
+                मिसलेले हटवा
+            </button>
+            <a href="{% url 'download_all_land_record_712_csv' %}"
                class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded flex items-center justify-center gap-2">
                 <span class="text-lg">⬇</span> CSV डाउनलोड
             </a>
@@ -108,10 +113,14 @@
             <input id="listSearchInput" type="search" value="{{ search_query }}" class="border border-gray-300 rounded px-3 py-1.5 text-sm" placeholder="Search ७/१२ उतारा नोंद re">
         </div>
     </div>
+    <form id="bulkDeleteForm" method="post" action="{% url 'delete_selected_land_record_712' %}">
+        {% csrf_token %}
     <div class="overflow-x-auto">
         <table id="lr712Table" class="display w-full text-sm text-left" style="width:100%;">
             <thead>
-                <tr>                    <th>ID</th>
+                <tr>
+                    <th><input id="selectAllRows" type="checkbox" class="h-4 w-4"></th>
+                    <th>ID</th>
                     <th>जिल्हा</th>
                     <th>तालुका</th>
                     <th>गाव</th>
@@ -127,12 +136,16 @@
                     <th>आकार</th>
                     <th>भोगवटादारांचे नांव</th>
                     <th>कुळ, खंड व इतर अधिकार</th>
+                    <th>दस्तऐवज</th>
+                    <th>Updated</th>
                     <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
                 {% for item in records %}
-                <tr>                    <td>{{ item.id }}</td>
+                <tr>
+                    <td><input type="checkbox" name="selected_ids" value="{{ item.id }}" class="rowSelect h-4 w-4"></td>
+                    <td>{{ item.id }}</td>
                     <td>{{ item.district_mr|default:"उपलब्ध नाही" }}</td>
                     <td>{{ item.taluka_mr|default:"उपलब्ध नाही" }}</td>
                     <td>{{ item.village_mr|default:"उपलब्ध नाही" }}</td>
@@ -174,6 +187,30 @@
                             उपलब्ध नाही
                         {% endif %}
                     </td>
+                    <td>
+                        {% if item.document_712 %}
+                            <button
+                                type="button"
+                                class="view-712-doc-btn text-blue-600 hover:text-blue-800 hover:underline text-xs font-medium flex items-center gap-1"
+                                data-file-url="{{ item.document_712.url }}"
+                                data-file-name="{{ item.original_document_name|default:item.document_712.name|escapejs }}"
+                                data-file-date="{{ item.updated_at|date:'d/m/Y H:i' }}">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                </svg>
+                                View
+                            </button>
+                        {% else %}
+                            उपलब्ध नाही
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="text-xs text-gray-600">
+                            <div>{{ item.updated_at|date:"d M Y, h:i a" }}</div>
+                            <div class="text-gray-500">Updated by {{ item.user.username }}</div>
+                        </div>
+                    </td>
                     <td style="white-space: nowrap;">
                         <a href="{% url 'edit_land_record_712' item.id %}" title="Edit" style="display:inline-flex; align-items:center; justify-content:center;
               width:32px; height:32px; background:#2563eb; color:white;
@@ -190,7 +227,9 @@
                 {% endfor %}
             </tbody>
         </table>
-    </div>    <div class="mt-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-sm">
+    </div>
+    </form>
+    <div class="mt-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-sm">
         <div>{{ total_records }} पैकी {{ start_index }} ते {{ end_index }} नोंदी दर्शवत आहे</div>
         <div class="flex items-center gap-2">
             {% if page_obj and page_obj.has_previous %}
@@ -277,6 +316,57 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
+    const selectAllRows = document.getElementById('selectAllRows');
+    const bulkDeleteBtn = document.getElementById('bulkDeleteBtn');
+    const bulkDeleteForm = document.getElementById('bulkDeleteForm');
+
+    function getRowCheckboxes() {
+        return Array.from(document.querySelectorAll('.rowSelect'));
+    }
+
+    function updateBulkDeleteState() {
+        const rowChecks = getRowCheckboxes();
+        const selectedCount = rowChecks.filter(cb => cb.checked).length;
+        if (!bulkDeleteBtn) return;
+        const enabled = selectedCount > 0;
+        bulkDeleteBtn.disabled = !enabled;
+        bulkDeleteBtn.classList.toggle('opacity-60', !enabled);
+        bulkDeleteBtn.classList.toggle('cursor-not-allowed', !enabled);
+        bulkDeleteBtn.classList.toggle('bg-red-600', enabled);
+        bulkDeleteBtn.classList.toggle('hover:bg-red-700', enabled);
+        bulkDeleteBtn.classList.toggle('bg-red-400', !enabled);
+    }
+
+    if (selectAllRows) {
+        selectAllRows.addEventListener('change', function () {
+            getRowCheckboxes().forEach(cb => { cb.checked = this.checked; });
+            updateBulkDeleteState();
+        });
+    }
+
+    document.addEventListener('change', function (event) {
+        if (!event.target.classList.contains('rowSelect')) return;
+        const rowChecks = getRowCheckboxes();
+        const checkedCount = rowChecks.filter(cb => cb.checked).length;
+        if (selectAllRows) {
+            selectAllRows.checked = rowChecks.length > 0 && checkedCount === rowChecks.length;
+        }
+        updateBulkDeleteState();
+    });
+
+    if (bulkDeleteForm) {
+        bulkDeleteForm.addEventListener('submit', function (event) {
+            const selectedCount = getRowCheckboxes().filter(cb => cb.checked).length;
+            if (!selectedCount) {
+                event.preventDefault();
+                return;
+            }
+            const ok = confirm('तुम्हाला निवडलेल्या नोंदी हटवायच्या आहेत का?');
+            if (!ok) event.preventDefault();
+        });
+    }
+    updateBulkDeleteState();
+
     const perPageSelect = document.getElementById('per_page');
     const listSearchInput = document.getElementById('listSearchInput');
     if (perPageSelect) {
