@@ -391,19 +391,30 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
     if (listSearchInput) {
-        listSearchInput.addEventListener('keydown', function (event) {
-            if (event.key !== 'Enter') return;
-            event.preventDefault();
+        let searchDebounceTimer = null;
+        const applySearch = () => {
             const params = new URLSearchParams(window.location.search);
             params.set('per_page', perPageSelect ? perPageSelect.value : '25');
             params.set('page', '1');
-            const term = this.value.trim();
+            const term = listSearchInput.value.trim();
             if (term) {
                 params.set('search', term);
             } else {
                 params.delete('search');
             }
             window.location.search = params.toString();
+        };
+
+        listSearchInput.addEventListener('input', function () {
+            if (searchDebounceTimer) clearTimeout(searchDebounceTimer);
+            searchDebounceTimer = setTimeout(applySearch, 300);
+        });
+
+        listSearchInput.addEventListener('keydown', function (event) {
+            if (event.key !== 'Enter') return;
+            event.preventDefault();
+            if (searchDebounceTimer) clearTimeout(searchDebounceTimer);
+            applySearch();
         });
     }    const ownerModal = document.getElementById('ownerModal');
     const ownerNamesContent = document.getElementById('ownerNamesContent');
@@ -498,7 +509,6 @@ document.addEventListener('DOMContentLoaded', function () {
         'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         'application/octet-stream',
     ];
-    const EXCEL_PREVIEW_MAX_ROWS = 100;
     let xlsxLibraryPromise = null;
 
     function ensureXlsxLibrary() {
@@ -570,8 +580,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function renderExcelSheetHtml(sheet, sheetName, $tableWrap, $meta) {
         const totalRows = getSheetRowCount(sheet);
-        const shownRows = Math.min(totalRows, EXCEL_PREVIEW_MAX_ROWS);
-        $meta.text(`Sheet: ${sheetName} | Rows: ${totalRows} | Showing: ${shownRows}`);
+        $meta.text(`Sheet: ${sheetName} | Rows: ${totalRows}`);
 
         if (!totalRows) {
             $tableWrap.html('<div class="text-sm text-gray-600 p-4">No rows found in this sheet.</div>');
@@ -602,13 +611,6 @@ document.addEventListener('DOMContentLoaded', function () {
         applyExcelColumnWidths(tableEl, sheet);
         applyExcelRowHeights(tableEl, sheet);
 
-        const rows = tableEl.querySelectorAll('tr');
-        if (rows.length > EXCEL_PREVIEW_MAX_ROWS) {
-            for (let i = EXCEL_PREVIEW_MAX_ROWS; i < rows.length; i += 1) {
-                rows[i].style.display = 'none';
-            }
-            $tableWrap.append(`<div class="text-xs text-gray-500 mt-2">Showing first ${EXCEL_PREVIEW_MAX_ROWS} rows only.</div>`);
-        }
     }
 
     async function previewExcelInModal(fileUrl, fileNameOnly, $content) {
