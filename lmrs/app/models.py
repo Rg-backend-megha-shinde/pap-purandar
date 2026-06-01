@@ -286,6 +286,17 @@ class LandRecord712(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    class Meta:
+        indexes = [
+            models.Index(fields=['district'], name='app_landrec_distri_4bc4cd_idx'),
+            models.Index(fields=['taluka'], name='app_landrec_taluka_5f3105_idx'),
+            models.Index(fields=['village'], name='app_landrec_village_9ddc14_idx'),
+            models.Index(fields=['gut_number'], name='app_landrec_gut_num_d2f6f3_idx'),
+            models.Index(fields=['khata_number'], name='app_landrec_khata_n_845f95_idx'),
+            models.Index(fields=['district', 'taluka', 'village'], name='app_landrec_distri_d8346b_idx'),
+            models.Index(fields=['district', 'taluka', 'village', 'gut_number', 'khata_number'], name='app_landrec_distri_95b175_idx'),
+        ]
+
     def __str__(self):
         return f"{self.village} - Gut {self.gut_number}"
 

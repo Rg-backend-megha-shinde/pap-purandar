@@ -251,6 +251,20 @@
                 <h3 class="font-bold text-lg">७/१२ माहिती</h3>
                 <span id="recordsMetaText" class="text-sm text-gray-600">0 नोंदी</span>
             </div>
+            <div id="uploadPreviewPager" class="mt-3 hidden items-center justify-between gap-2 flex-wrap rounded border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-700">
+                <div id="uploadPreviewPageInfo">Page 1 / 1</div>
+                <div class="flex items-center gap-2">
+                    <label class="flex items-center gap-1">
+                        <span>Rows</span>
+                        <select id="uploadPreviewPageSize" class="border rounded px-2 py-1 text-xs bg-white">
+                            <option value="10">10</option>
+                            <option value="25" selected>25</option>
+                        </select>
+                    </label>
+                    <button type="button" id="uploadPreviewPrevBtn" class="rounded border border-slate-300 bg-white px-2 py-1 hover:bg-slate-100">Previous</button>
+                    <button type="button" id="uploadPreviewNextBtn" class="rounded border border-slate-300 bg-white px-2 py-1 hover:bg-slate-100">Next</button>
+                </div>
+            </div>
             <div class="overflow-x-auto mt-4">
                 <table class="w-full border text-xs text-center border-collapse">
                     <thead class="bg-gray-100 font-semibold">
@@ -324,6 +338,13 @@ const state712 = {
         upload: [],
         manual: [],
     },
+    uploadPreview: {
+        token: '',
+        page: 1,
+        pageSize: 25,
+        totalPages: 1,
+        totalCount: 0,
+    },
     ownerModal: { rowIndex: -1, owners: [], editIndex: -1 },
 };
 let successToastTimer = null;
@@ -348,6 +369,11 @@ const recordsSectionEl = document.getElementById('recordsSection');
 const recordsTableBodyEl = document.getElementById('recordsTableBody');
 const recordsMetaTextEl = document.getElementById('recordsMetaText');
 const manualReferenceBottomEl = document.getElementById('manualReferenceBottomSection');
+const uploadPreviewPagerEl = document.getElementById('uploadPreviewPager');
+const uploadPreviewPageInfoEl = document.getElementById('uploadPreviewPageInfo');
+const uploadPreviewPrevBtn = document.getElementById('uploadPreviewPrevBtn');
+const uploadPreviewNextBtn = document.getElementById('uploadPreviewNextBtn');
+const uploadPreviewPageSizeEl = document.getElementById('uploadPreviewPageSize');
 
 function hideError() {
     const box = document.getElementById('clientErrorBox');
@@ -573,6 +599,32 @@ function updateManualReferenceVisibility() {
     manualReferenceBottomEl.classList.toggle('hidden', !shouldShow);
 }
 
+function updateUploadPreviewPager() {
+    const isUpload = state712.activeTab === 'upload';
+    const hasToken = !!state712.uploadPreview.token;
+    const shouldShow = isUpload && hasToken && state712.uploadPreview.totalCount > 0;
+    uploadPreviewPagerEl.classList.toggle('hidden', !shouldShow);
+    uploadPreviewPagerEl.classList.toggle('flex', shouldShow);
+    if (!shouldShow) return;
+
+    const { page, totalPages, totalCount, pageSize } = state712.uploadPreview;
+    uploadPreviewPageInfoEl.textContent = `Page ${page} / ${totalPages} | Total ${totalCount} records`;
+    uploadPreviewPrevBtn.disabled = page <= 1;
+    uploadPreviewNextBtn.disabled = page >= totalPages;
+    uploadPreviewPrevBtn.classList.toggle('opacity-50', page <= 1);
+    uploadPreviewNextBtn.classList.toggle('opacity-50', page >= totalPages);
+    uploadPreviewPageSizeEl.value = String(pageSize);
+}
+
+function applyUploadPreviewPage(data) {
+    const preview = data.preview || {};
+    state712.uploadPreview.page = Number(preview.page || 1);
+    state712.uploadPreview.pageSize = Number(preview.page_size || state712.uploadPreview.pageSize || 25);
+    state712.uploadPreview.totalPages = Number(preview.total_pages || 1);
+    state712.uploadPreview.totalCount = Number(preview.total_count || (data.records || []).length || 0);
+    setRecordsForTab('upload', (data.records || []).map((row) => ({ ...defaultRecord(), ...row })));
+}
+
 function defaultRecord() {
     return {
         gut_number: '',
@@ -610,33 +662,37 @@ function rowOwnerSummary(text) {
 
 function renderRecords() {
     const activeRecords = getActiveRecords();
+    const isUploadPreviewMode = state712.activeTab === 'upload' && !!state712.uploadPreview.token;
+    const isReadOnly = isUploadPreviewMode;
+    const readOnlyAttrs = isReadOnly ? 'readonly disabled' : '';
     recordsTableBodyEl.innerHTML = '';
-    recordsMetaTextEl.textContent = `${activeRecords.length} नोंदी`;
+    recordsMetaTextEl.textContent = `${isUploadPreviewMode ? state712.uploadPreview.totalCount : activeRecords.length} नोंदी`;
     ensureRecordsVisible();
     updateManualReferenceVisibility();
+    updateUploadPreviewPager();
 
     activeRecords.forEach((row, index) => {
         const tr = document.createElement('tr');
         tr.innerHTML = `
-            <td class="border p-1"><input class="record-cell-input" data-row="${index}" data-field="gut_number" value="${escapeAttr(row.gut_number || '')}"></td>
-            <td class="border p-1"><input class="record-cell-input" data-row="${index}" data-field="puid_ulip_no" value="${escapeAttr(row.puid_ulip_no || '')}"></td>
-            <td class="border p-1"><input class="record-cell-input" data-row="${index}" data-field="khata_number" value="${escapeAttr(row.khata_number || '')}"></td>
-            <td class="border p-1"><input class="record-cell-input" data-row="${index}" data-field="khata_area" value="${escapeAttr(row.khata_area || '')}"></td>
-            <td class="border p-1"><input class="record-cell-input" data-row="${index}" data-field="jirayit" value="${escapeAttr(row.jirayit || '')}"></td>
-            <td class="border p-1"><input class="record-cell-input" data-row="${index}" data-field="bagayat" value="${escapeAttr(row.bagayat || '')}"></td>
-            <td class="border p-1"><input class="record-cell-input" data-row="${index}" data-field="potkharaba" value="${escapeAttr(row.potkharaba || '')}"></td>
-            <td class="border p-1"><input class="record-cell-input" data-row="${index}" data-field="aakarni" value="${escapeAttr(row.aakarni || '')}"></td>
-            <td class="border p-1"><input class="record-cell-input" data-row="${index}" data-field="aakar" value="${escapeAttr(row.aakar || '')}"></td>
-            <td class="border p-1"><input class="record-cell-input" data-row="${index}" data-field="total_area" value="${escapeAttr(row.total_area || '')}"></td>
+            <td class="border p-1"><input ${readOnlyAttrs} class="record-cell-input" data-row="${index}" data-field="gut_number" value="${escapeAttr(row.gut_number || '')}"></td>
+            <td class="border p-1"><input ${readOnlyAttrs} class="record-cell-input" data-row="${index}" data-field="puid_ulip_no" value="${escapeAttr(row.puid_ulip_no || '')}"></td>
+            <td class="border p-1"><input ${readOnlyAttrs} class="record-cell-input" data-row="${index}" data-field="khata_number" value="${escapeAttr(row.khata_number || '')}"></td>
+            <td class="border p-1"><input ${readOnlyAttrs} class="record-cell-input" data-row="${index}" data-field="khata_area" value="${escapeAttr(row.khata_area || '')}"></td>
+            <td class="border p-1"><input ${readOnlyAttrs} class="record-cell-input" data-row="${index}" data-field="jirayit" value="${escapeAttr(row.jirayit || '')}"></td>
+            <td class="border p-1"><input ${readOnlyAttrs} class="record-cell-input" data-row="${index}" data-field="bagayat" value="${escapeAttr(row.bagayat || '')}"></td>
+            <td class="border p-1"><input ${readOnlyAttrs} class="record-cell-input" data-row="${index}" data-field="potkharaba" value="${escapeAttr(row.potkharaba || '')}"></td>
+            <td class="border p-1"><input ${readOnlyAttrs} class="record-cell-input" data-row="${index}" data-field="aakarni" value="${escapeAttr(row.aakarni || '')}"></td>
+            <td class="border p-1"><input ${readOnlyAttrs} class="record-cell-input" data-row="${index}" data-field="aakar" value="${escapeAttr(row.aakar || '')}"></td>
+            <td class="border p-1"><input ${readOnlyAttrs} class="record-cell-input" data-row="${index}" data-field="total_area" value="${escapeAttr(row.total_area || '')}"></td>
             <td class="border p-1">
                 <div class="flex items-center gap-1 whitespace-nowrap">
                     <span class="table-chip" title="${escapeAttr(row.holder_name || MARATHI_NA)}">${escapeHtml(rowOwnerSummary(row.holder_name))}</span>
-                    <button type="button" class="inline-flex h-7 w-7 items-center justify-center rounded-md border border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100" data-owner-manage="${index}" title="Manage owners" aria-label="Manage owners">&#128101;</button>
+                    <button type="button" ${isReadOnly ? 'disabled' : ''} class="inline-flex h-7 w-7 items-center justify-center rounded-md border border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100 ${isReadOnly ? 'opacity-50 cursor-not-allowed' : ''}" data-owner-manage="${index}" title="Manage owners" aria-label="Manage owners">&#128101;</button>
                 </div>
             </td>
-            <td class="border p-1"><textarea class="record-cell-input min-h-[52px]" data-row="${index}" data-field="kul_khand_other_rights">${escapeHtml(row.kul_khand_other_rights || '')}</textarea></td>
+            <td class="border p-1"><textarea ${readOnlyAttrs} class="record-cell-input min-h-[52px]" data-row="${index}" data-field="kul_khand_other_rights">${escapeHtml(row.kul_khand_other_rights || '')}</textarea></td>
             <td class="border p-1">
-                <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md border border-red-200 bg-red-50 text-red-700 hover:bg-red-100" data-row-remove="${index}" title="Delete" aria-label="Delete">&#128465;</button>
+                <button type="button" ${isReadOnly ? 'disabled' : ''} class="inline-flex h-8 w-8 items-center justify-center rounded-md border border-red-200 bg-red-50 text-red-700 hover:bg-red-100 ${isReadOnly ? 'opacity-50 cursor-not-allowed' : ''}" data-row-remove="${index}" title="Delete" aria-label="Delete">&#128465;</button>
             </td>
         `;
         recordsTableBodyEl.appendChild(tr);
@@ -759,26 +815,56 @@ async function parseUploadedFile(file) {
             method: 'POST',
             headers: {
                 'X-CSRFToken': getCsrfToken(),
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
             },
             body: formData,
         });
+        const contentType = (response.headers.get('content-type') || '').toLowerCase();
+        if (!contentType.includes('application/json')) {
+            throw new Error('Server returned non-JSON error. Please check logs.');
+        }
         const data = await response.json();
         if (!response.ok || !data.success) throw new Error(data.error || 'Failed to extract file data.');
 
         state712.uploadFileType = (data.file_type || '').toLowerCase();
-        setRecordsForTab('upload', (data.records || []).map((row) => ({ ...defaultRecord(), ...row })));
+        state712.uploadPreview.token = data.preview_token || '';
+        applyUploadPreviewPage(data);
         applyDetectedLocationCard(data.location || {});
         await applyDetectedToCorrectionDropdowns();
         renderRecords();
         showSuccess(`${data.count || 0} records extracted successfully.`);
     } catch (error) {
         state712.uploadFileType = '';
+        state712.uploadPreview = { token: '', page: 1, pageSize: 25, totalPages: 1, totalCount: 0 };
         setRecordsForTab('upload', []);
         renderRecords();
         showError(error.message || 'Failed to extract file data.');
     } finally {
         document.getElementById('uploadLoader').classList.add('hidden');
     }
+}
+
+async function fetchUploadPreviewPage(page) {
+    if (!state712.uploadPreview.token) return;
+    const query = new URLSearchParams({
+        preview_token: state712.uploadPreview.token,
+        page: String(page || 1),
+        page_size: String(state712.uploadPreview.pageSize || 25),
+    });
+    const response = await fetch(`/api/land-record-712/preview/?${query.toString()}`, {
+        method: 'GET',
+        headers: {
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+        },
+    });
+    const data = await response.json();
+    if (!response.ok || !data.success) {
+        throw new Error(data.error || 'Failed to load preview page.');
+    }
+    applyUploadPreviewPage(data);
+    renderRecords();
 }
 
 function normalizeRowForSave(row, fallbackLocation = {}) {
@@ -799,9 +885,18 @@ function normalizeRowForSave(row, fallbackLocation = {}) {
 }
 
 async function saveCurrentRecords(mode) {
+    const saveBtn = mode === 'upload'
+        ? document.getElementById('saveUploadBtn')
+        : document.getElementById('saveManualBtn');
+    const originalBtnText = saveBtn ? saveBtn.textContent : '';
+
     const records = getRecordsForTab(mode);
     clearMessages();
-    if (!records.length) {
+    if (mode === 'upload' && state712.uploadPreview.totalCount <= 0) {
+        showError('No records available to save.');
+        return;
+    }
+    if (mode === 'manual' && !records.length) {
         showError('No records available to save.');
         return;
     }
@@ -816,50 +911,54 @@ async function saveCurrentRecords(mode) {
         return;
     }
 
-    const normalizedRows = records.map((row) => normalizeRowForSave(row, location)).filter((row) => row.gut_number);
-    if (!normalizedRows.length) {
-        showError('At least one row must have a gut number.');
-        return;
-    }
-
     const formData = new FormData();
     formData.append('district', location.district);
     formData.append('taluka', location.taluka);
     formData.append('village', location.village);
-    formData.append('gut_number', location.gut_number || normalizedRows[0].gut_number || '');
-    if (mode === 'upload' && state712.uploadFile) {
-        formData.append('document_712', state712.uploadFile);
+    formData.append('gut_number', location.gut_number || '');
+    if (mode === 'upload') {
+        if (!state712.uploadPreview.token) {
+            showError('Upload preview expired. Please re-upload the file.');
+            return;
+        }
+        formData.append('preview_token', state712.uploadPreview.token);
+    } else {
+        const normalizedRows = records.map((row) => normalizeRowForSave(row, location)).filter((row) => row.gut_number);
+        if (!normalizedRows.length) {
+            showError('At least one row must have a gut number.');
+            return;
+        }
+        if (state712.manualFile) {
+            formData.append('document_712', state712.manualFile);
+        }
+        formData.append('rows_json', JSON.stringify(normalizedRows));
     }
-    if (mode === 'manual' && state712.manualFile) {
-        formData.append('document_712', state712.manualFile);
-    }
-
-    normalizedRows.forEach((row) => {
-        formData.append('gut_number_row[]', row.gut_number);
-        formData.append('puid_ulip_no[]', row.puid_ulip_no);
-        formData.append('khata_number[]', row.khata_number);
-        formData.append('khata_area[]', row.khata_area);
-        formData.append('jirayit[]', row.jirayit);
-        formData.append('bagayat[]', row.bagayat);
-        formData.append('potkharaba[]', row.potkharaba);
-        formData.append('aakar[]', row.aakar);
-        formData.append('aakarni[]', row.aakarni);
-        formData.append('total_area[]', row.total_area);
-        formData.append('holder_name[]', row.holder_name);
-        formData.append('kul_khand_other_rights[]', row.kul_khand_other_rights);
-    });
 
     try {
+        if (saveBtn) {
+            saveBtn.disabled = true;
+            saveBtn.textContent = 'Saving...';
+            saveBtn.classList.add('opacity-60', 'cursor-not-allowed');
+        }
+
         const response = await fetch('/tools/712/', {
             method: 'POST',
             headers: {
                 'X-CSRFToken': getCsrfToken(),
                 'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json',
             },
             body: formData,
         });
+
+        const contentType = (response.headers.get('content-type') || '').toLowerCase();
+        if (!contentType.includes('application/json')) {
+            throw new Error('Server returned non-JSON error. Please check logs.');
+        }
+
         const data = await response.json();
         if (!response.ok || !data.success) throw new Error(data.error || 'Save failed.');
+
         showSuccess(data.message || 'Records saved successfully.');
         const redirectUrl = data.redirect_url || LAND_RECORD_LIST_URL;
         setTimeout(() => {
@@ -867,6 +966,12 @@ async function saveCurrentRecords(mode) {
         }, 250);
     } catch (error) {
         showError(error.message || 'Save failed.');
+    } finally {
+        if (saveBtn) {
+            saveBtn.disabled = false;
+            saveBtn.textContent = originalBtnText;
+            saveBtn.classList.remove('opacity-60', 'cursor-not-allowed');
+        }
     }
 }
 
@@ -889,6 +994,7 @@ function addManualRecord() {
 function resetUploadTab() {
     state712.uploadFile = null;
     state712.uploadFileType = '';
+    state712.uploadPreview = { token: '', page: 1, pageSize: 25, totalPages: 1, totalCount: 0 };
     setRecordsForTab('upload', []);
     const fileInput = document.getElementById('uploadInputFile');
     const fileName = document.getElementById('uploadFileName');
@@ -1054,6 +1160,31 @@ function initUploadFlow() {
 
     document.getElementById('saveUploadBtn').addEventListener('click', () => saveCurrentRecords('upload'));
     document.getElementById('resetUploadBtn').addEventListener('click', resetUploadTab);
+
+    uploadPreviewPrevBtn.addEventListener('click', async () => {
+        if (state712.uploadPreview.page <= 1) return;
+        try {
+            await fetchUploadPreviewPage(state712.uploadPreview.page - 1);
+        } catch (error) {
+            showError(error.message || 'Failed to load preview page.');
+        }
+    });
+    uploadPreviewNextBtn.addEventListener('click', async () => {
+        if (state712.uploadPreview.page >= state712.uploadPreview.totalPages) return;
+        try {
+            await fetchUploadPreviewPage(state712.uploadPreview.page + 1);
+        } catch (error) {
+            showError(error.message || 'Failed to load preview page.');
+        }
+    });
+    uploadPreviewPageSizeEl.addEventListener('change', async () => {
+        state712.uploadPreview.pageSize = Number(uploadPreviewPageSizeEl.value || 25);
+        try {
+            await fetchUploadPreviewPage(1);
+        } catch (error) {
+            showError(error.message || 'Failed to load preview page.');
+        }
+    });
 }
 
 function initManualFlow() {
