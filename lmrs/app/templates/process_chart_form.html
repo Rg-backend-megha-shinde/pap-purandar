@@ -2148,6 +2148,8 @@
                 .flatMap((block) => Array.isArray(block?.rows) ? block.rows : []);
 
             if (sectionKey === 'survey_notification') {
+                const sectionOneRows = rowsForSectionKey('section_1');
+                if (sectionOneRows.length) return sectionOneRows;
                 const surveyNotificationBlock = notifiedAreaBlocks.find((block) => Number(block?.block_index) === 0);
                 return Array.isArray(surveyNotificationBlock?.rows) ? surveyNotificationBlock.rows : [];
             }
@@ -5595,13 +5597,15 @@
             if (!areaWrap || !areaField || !reasonWrap || !reasonField) return;
 
             const { selectedGut, matchedNotifiedArea, hasRows } = getNotifiedAreaMatchResult(prefill, 'survey_notification');
-            const prefillArea = matchedNotifiedArea || ((selectedGut && hasRows) ? 'गट आढळला नाही' : '');
+            const gutNotFoundText = 'गट आढळला नाही';
+            const prefillArea = matchedNotifiedArea || ((selectedGut && hasRows) ? gutNotFoundText : '');
 
             if (selectedValue === 'yes') {
                 setQuestionBlockVisible(areaWrap, true);
                 setQuestionBlockVisible(reasonWrap, false);
                 areaField.value = prefillArea;
                 areaField.readOnly = true;
+                lockFieldsWithValues([areaField], 'village-info');
                 reasonField.value = '';
                 return;
             }
@@ -5616,6 +5620,13 @@
 
             setQuestionBlockVisible(areaWrap, true);
             setQuestionBlockVisible(reasonWrap, false);
+            if (prefillArea) {
+                areaField.value = prefillArea;
+                areaField.readOnly = prefillArea === gutNotFoundText || Boolean(matchedNotifiedArea);
+                lockFieldsWithValues([areaField], 'village-info');
+                return;
+            }
+            areaField.value = '';
             areaField.readOnly = false;
         }
 
