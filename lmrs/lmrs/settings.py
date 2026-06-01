@@ -140,6 +140,10 @@ STATICFILES_DIRS = [
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.getenv("MEDIA_ROOT") or os.path.join(BASE_DIR, "media")
 
+# Large 7/12 uploads can include many multipart fields from legacy clients.
+# New clients send compact rows_json, but keep a higher cap as a safety net.
+DATA_UPLOAD_MAX_NUMBER_FIELDS = int(os.getenv("DATA_UPLOAD_MAX_NUMBER_FIELDS", "20000"))
+
 LOGIN_URL = '/login/'
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/login/'
