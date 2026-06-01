@@ -4612,6 +4612,29 @@ def _serialize_village_data_for_process_chart(village_data):
             },
         }]
 
+    sec25_file_map = {}
+    for key, files in files_map.items():
+        match = re.match(r'^sec25_row_(\d+)$', key or '')
+        if match:
+            sec25_file_map[int(match.group(1))] = files
+
+    sec25_rows = []
+    for index, row in enumerate(village_data.sec25_map_rows or []):
+        row_payload = row.copy() if isinstance(row, dict) else {}
+        sec25_rows.append({
+            'patra_kramank': row_payload.get('patra_kramank') or '',
+            'date': row_payload.get('date') or '',
+            'notified_rows': row_payload.get('notified_rows') if isinstance(row_payload.get('notified_rows'), list) else [],
+            'files': sec25_file_map.get(index, row_payload.get('files') or []),
+        })
+    if not sec25_rows:
+        sec25_rows = [{
+            'patra_kramank': village_data.sec25_kramank or '',
+            'date': village_data.sec25_date.isoformat() if village_data.sec25_date else '',
+            'notified_rows': [],
+            'files': files_map.get('sec25_files', []),
+        }]
+
     approved_map = {
         item.rr_rate_id: float(item.approved_rate) if item.approved_rate is not None else None
         for item in village_data.sec15_rates.select_related('rr_rate').all()
@@ -4666,6 +4689,7 @@ def _serialize_village_data_for_process_chart(village_data):
         'sec4_rows': sec4_rows,
         'sec8_rows': sec8_rows,
         'sec21_rows': sec21_rows,
+        'sec25_map_rows': sec25_rows,
         'sec15_rows': sec15_rows,
     }
 
@@ -6075,6 +6099,20 @@ def get_village_info_data(request):
     ).order_by('-updated_at').first()
 
     if not village_data:
+        district_key = normalize_match_text(district)
+        taluka_key = normalize_match_text(taluka)
+        village_key = normalize_match_text(village)
+        village_candidates = VillageData.objects.filter(village__iexact=village).order_by('-updated_at', '-id')
+        for candidate in village_candidates:
+            if (
+                normalize_match_text(candidate.district) == district_key
+                and normalize_match_text(candidate.taluka) == taluka_key
+                and normalize_match_text(candidate.village) == village_key
+            ):
+                village_data = candidate
+                break
+
+    if not village_data:
         return JsonResponse({'found': False, 'data': None})
 
     data = {}
@@ -6341,8 +6379,6 @@ def get_village_sec15_rates(request):
         'rates': rates_payload,
         'message': '' if rates_payload else 'No ready reckoner rates found for selected village'
     })
-
-
 
 
 
