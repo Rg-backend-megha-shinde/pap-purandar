@@ -977,7 +977,10 @@
                             <div class="pc-section">
                                 <div class="mb-4 flex items-center justify-between gap-3">
                                     <h3 class="text-lg font-bold text-[#244271]">स्वतंत्र क्षेत्र नसल्यास अन्य खातेदारांचे नाव समाविष्ट करण्यासाठी</h3>
-                                    <button type="button" id="pcAddMultiKhataOwnerRowBtn" class="rounded-lg bg-[#125fcb] px-4 py-2 text-sm font-semibold text-white">ओळ जोडा</button>
+                                    <div class="flex flex-wrap items-center justify-end gap-2">
+                                        <button type="button" id="pcFetchJointSurveyMultiNamesBtn" class="rounded-lg bg-[#0f766e] px-4 py-2 text-sm font-semibold text-white">7/12 मधून सर्व नावे भरा</button>
+                                        <button type="button" id="pcAddMultiKhataOwnerRowBtn" class="rounded-lg bg-[#125fcb] px-4 py-2 text-sm font-semibold text-white">ओळ जोडा</button>
+                                    </div>
                                 </div>
                                 <div class="overflow-x-auto">
                                     <table class="pc-table">
@@ -4527,10 +4530,12 @@
         }
 
         function setJointSurveyModalSectionMode(mode = 'default') {
+            const singleSection = document.getElementById('pcJointSurveySingleNamesSection');
             const multiSection = document.getElementById('pcJointSurveyMultiNamesSection');
             const isAssetOwnerMode = mode === 'asset';
             const isPlainNamesMode = isAssetOwnerMode || mode === 'step10';
-            multiSection?.classList.toggle('hidden', isPlainNamesMode);
+            singleSection?.classList.toggle('hidden', mode === 'joint_multi');
+            multiSection?.classList.toggle('hidden', isPlainNamesMode || mode === 'joint_single');
         }
 
         function openJointSurveyNamesModal(prefill = currentProcessChartPrefill, options = {}) {
@@ -4813,6 +4818,14 @@
             closeJointSurveyNamesModal();
         }
 
+        function getJointSurveyKeysForOwnerNames(ownerNames = [], groups = []) {
+            const names = new Set(ownerNames.map((name) => normalizeOwnerLookupName(name)).filter(Boolean));
+            if (!names.size) return [];
+            return groups.flatMap(({ rows }) => rows || [])
+                .filter((row) => names.has(normalizeOwnerLookupName(row?.owner_name || '')))
+                .map((row) => buildJointSurveyRowKey(row));
+        }
+
         function applySelectedJointSurveyNames(prefill = currentProcessChartPrefill) {
             if (currentJointSurveyApplyMode === 'asset') {
                 populateAssetOwnerFieldFromSelection(prefill, currentAssetOwnerTargetId);
@@ -4836,19 +4849,21 @@
             const currentMultiSharedArea = getMultiKhataCommonAreaValue();
             const selectedSingles = [];
             const selectedMultis = [];
-            const selectedKeys = [];
+            const selectedSingleKeys = [];
+            const selectedMultiKeys = [];
 
             checkboxes.forEach((checkbox) => {
                 const rowKey = checkbox.getAttribute('data-row-key') || '';
-                if (rowKey) selectedKeys.push(rowKey);
                 const groupType = checkbox.getAttribute('data-group-type');
                 const groupIndex = Number.parseInt(checkbox.getAttribute('data-group-index') || '-1', 10);
                 const rowIndex = Number.parseInt(checkbox.getAttribute('data-row-index') || '-1', 10);
                 if (groupType === 'single') {
+                    if (rowKey) selectedSingleKeys.push(rowKey);
                     const row = singleGroups[groupIndex]?.rows?.[rowIndex];
                     if (row) selectedSingles.push(row);
                     return;
                 }
+                if (rowKey) selectedMultiKeys.push(rowKey);
                 const row = multiGroups[groupIndex]?.rows?.[rowIndex];
                 if (row) {
                     if (!selectedMultis[groupIndex]) selectedMultis[groupIndex] = [];
@@ -4856,14 +4871,33 @@
                 }
             });
 
-            setSelectedJointSurveyKeys(selectedKeys);
+            const currentSingleNames = collectSingleKhataOwnerRows().map((row) => row.owner_name);
+            const currentMultiNames = collectMultiKhataOwnerRows().map((row) => row.owner_name);
+            let nextSelectedKeys = [...selectedSingleKeys, ...selectedMultiKeys];
+            if (currentJointSurveyApplyMode === 'joint_single') {
+                nextSelectedKeys = [
+                    ...selectedSingleKeys,
+                    ...getJointSurveyKeysForOwnerNames(currentMultiNames, multiGroups),
+                ];
+            } else if (currentJointSurveyApplyMode === 'joint_multi') {
+                nextSelectedKeys = [
+                    ...getJointSurveyKeysForOwnerNames(currentSingleNames, singleGroups),
+                    ...selectedMultiKeys,
+                ];
+            }
+            setSelectedJointSurveyKeys(nextSelectedKeys);
 
-            singleBody.innerHTML = selectedSingles.length
-                ? selectedSingles.map((row) => buildSingleKhataOwnerRow(row)).join('')
-                : '';
+            if (currentJointSurveyApplyMode !== 'joint_multi') {
+                singleBody.innerHTML = selectedSingles.length
+                    ? selectedSingles.map((row) => buildSingleKhataOwnerRow(row)).join('')
+                    : '';
+                syncSingleKhataOwnerRowButtons();
+            }
 
-            const multiRows = selectedMultis.flatMap((rows) => Array.isArray(rows) ? rows : []);
-            renderMultiKhataOwnerRows(multiRows, currentMultiSharedArea);
+            if (currentJointSurveyApplyMode !== 'joint_single') {
+                const multiRows = selectedMultis.flatMap((rows) => Array.isArray(rows) ? rows : []);
+                renderMultiKhataOwnerRows(multiRows, currentMultiSharedArea);
+            }
             renderAcquisitionDetailTable(prefill);
             closeJointSurveyNamesModal();
         }
@@ -7972,7 +8006,10 @@
             });
         });
         document.getElementById('pcFetchJointSurveyNamesBtn')?.addEventListener('click', () => {
-            openJointSurveyNamesModal(currentProcessChartPrefill);
+            openJointSurveyNamesModal(currentProcessChartPrefill, { mode: 'joint_single' });
+        });
+        document.getElementById('pcFetchJointSurveyMultiNamesBtn')?.addEventListener('click', () => {
+            openJointSurveyNamesModal(currentProcessChartPrefill, { mode: 'joint_multi' });
         });
         closeJointSurveyNamesModalBtn?.addEventListener('click', closeJointSurveyNamesModal);
         closeJointSurveyNamesModalFooterBtn?.addEventListener('click', closeJointSurveyNamesModal);
