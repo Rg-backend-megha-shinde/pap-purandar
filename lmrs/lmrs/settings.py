@@ -177,3 +177,6 @@ CSRF_TRUSTED_ORIGINS = [
     "https://purandar-airport.rottengrapes.tech",
 ]
 
+
+
+DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
