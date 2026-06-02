@@ -2177,7 +2177,8 @@ def land_record_712_preview_page(request):
     search_query = (request.GET.get('q') or request.GET.get('query') or '').strip()
     def normalize_preview_search_text(value):
         value = str(value or '')
-        value = value.translate(str.maketrans('à¥¦à¥§à¥¨à¥©à¥ªà¥«à¥¬à¥­à¥®à¥¯', '0123456789'))
+        devanagari_digits = ''.join(chr(code) for code in range(0x0966, 0x0970))
+        value = value.translate(str.maketrans(devanagari_digits, '0123456789'))
         return value.strip().lower()
     search_query = normalize_preview_search_text(search_query)
 
