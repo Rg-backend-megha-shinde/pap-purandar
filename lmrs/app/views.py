@@ -26,6 +26,7 @@ from PIL import Image, ImageDraw, ImageFont, ImageOps
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from django.utils.dateparse import parse_date
+from django.utils.http import url_has_allowed_host_and_scheme
 from datetime import date as datetime_date
 from django.utils import timezone
 from django.db.utils import OperationalError
@@ -3340,6 +3341,8 @@ def get_layer_bounds(request, layer_name):
         }, status=500)
     
 def login_view(request):
+    redirect_to = request.POST.get("next") or request.GET.get("next") or ""
+
     if request.method == "POST":
         username = request.POST.get("username")
         password = request.POST.get("password")
@@ -3356,11 +3359,17 @@ def login_view(request):
                 user=user,
                 defaults={"session_key": request.session.session_key},
             )
-            return redirect('home')
+            if redirect_to and url_has_allowed_host_and_scheme(
+                url=redirect_to,
+                allowed_hosts={request.get_host()},
+                require_https=request.is_secure(),
+            ):
+                return redirect(redirect_to)
+            return redirect("home")
         else:
-            return render(request, 'login.html', {"error": "Invalid credentials"})
+            return render(request, "login.html", {"error": "Invalid credentials", "next": redirect_to})
 
-    return render(request, 'login.html')
+    return render(request, "login.html", {"next": redirect_to})
 
 
 def logout_view(request):
