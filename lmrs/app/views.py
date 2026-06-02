@@ -5136,6 +5136,35 @@ def _serialize_village_data_for_process_chart(village_data):
             },
         }]
 
+    related_section_rows = {}
+    for sec_code, cfg in _RELATED_SECTION_ROW_CONFIG.items():
+        json_field = cfg.get('json')
+        if not json_field:
+            continue
+        row_file_map = {}
+        for key, files in files_map.items():
+            match = re.match(rf'^{re.escape(sec_code)}_row_(\d+)$', key or '')
+            if match:
+                row_file_map[int(match.group(1))] = files
+        rows = []
+        for index, row in enumerate(getattr(village_data, json_field, None) or []):
+            row_payload = row.copy() if isinstance(row, dict) else {}
+            rows.append({
+                'detail': row_payload.get('detail') or '',
+                'date': row_payload.get('date') or '',
+                'total_village_evaluation': row_payload.get('total_village_evaluation') or '',
+                'files': row_file_map.get(index, row_payload.get('files') or []),
+            })
+        if not rows:
+            date_value = getattr(village_data, cfg.get('date'), None) if cfg.get('date') else None
+            rows = [{
+                'detail': getattr(village_data, cfg.get('detail'), '') if cfg.get('detail') else '',
+                'date': date_value.isoformat() if hasattr(date_value, 'isoformat') and date_value else (date_value or ''),
+                'total_village_evaluation': getattr(village_data, cfg.get('total'), '') if cfg.get('total') else '',
+                'files': files_map.get(f'{sec_code}_files', []),
+            }]
+        related_section_rows[json_field] = rows
+
     sec25_file_map = {}
     for key, files in files_map.items():
         match = re.match(r'^sec25_row_(\d+)$', key or '')
@@ -5215,6 +5244,7 @@ def _serialize_village_data_for_process_chart(village_data):
         'sec21_rows': sec21_rows,
         'sec25_map_rows': sec25_rows,
         'sec15_rows': sec15_rows,
+        **related_section_rows,
     }
 
 

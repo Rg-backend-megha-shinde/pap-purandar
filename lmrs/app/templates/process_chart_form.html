@@ -1013,11 +1013,7 @@
                                         <button type="button" class="pc-add-asset-row-btn rounded-lg bg-[#125fcb] px-3 py-2 text-sm font-semibold text-white" data-target="pcWaterSupplyRows" onclick="window.pcHandleAssetRowsAction && window.pcHandleAssetRowsAction('add', 'pcWaterSupplyRows')">ओळ जोडा</button>
                                     </div>
                                 </div>
-                                <div class="grid gap-4 md:grid-cols-3 md:items-end">
-                                    <div>
-                                        <label class="pc-label">इतर</label>
-                                        <div class="space-y-2 owner-name-dropdown" data-owner-input-name="water_supply_owner_name"></div>
-                                    </div>
+                                <div class="grid gap-4 md:grid-cols-2 md:items-end">
                                     <div>
                                         <label class="pc-label">मूल्यांकन सादर केलेल्या पत्राचा तपशील</label>
                                         <input class="pc-input" name="water_supply_valuation_letter_detail" type="text" placeholder="मूल्यांकन सादर केलेल्या पत्राचा तपशील">
@@ -1048,11 +1044,7 @@
                                         <button type="button" class="pc-add-asset-row-btn rounded-lg bg-[#125fcb] px-3 py-2 text-sm font-semibold text-white" data-target="pcAgricultureRows" onclick="window.pcHandleAssetRowsAction && window.pcHandleAssetRowsAction('add', 'pcAgricultureRows')">ओळ जोडा</button>
                                     </div>
                                 </div>
-                                <div class="grid gap-4 md:grid-cols-3 md:items-end">
-                                    <div>
-                                        <label class="pc-label">इतर</label>
-                                        <div class="space-y-2 owner-name-dropdown" data-owner-input-name="agriculture_owner_name"></div>
-                                    </div>
+                                <div class="grid gap-4 md:grid-cols-2 md:items-end">
                                     <div>
                                         <label class="pc-label">मूल्यांकन सादर केलेल्या पत्राचा तपशील</label>
                                         <input class="pc-input" name="agriculture_valuation_letter_detail" type="text" placeholder="मूल्यांकन सादर केलेल्या पत्राचा तपशील">
@@ -1083,11 +1075,7 @@
                                         <button type="button" class="pc-add-asset-row-btn rounded-lg bg-[#125fcb] px-3 py-2 text-sm font-semibold text-white" data-target="pcConstructionRows" onclick="window.pcHandleAssetRowsAction && window.pcHandleAssetRowsAction('add', 'pcConstructionRows')">ओळ जोडा</button>
                                     </div>
                                 </div>
-                                <div class="grid gap-4 md:grid-cols-3 md:items-end">
-                                    <div>
-                                        <label class="pc-label">इतर</label>
-                                        <div class="space-y-2 owner-name-dropdown" data-owner-input-name="construction_owner_name"></div>
-                                    </div>
+                                <div class="grid gap-4 md:grid-cols-2 md:items-end">
                                     <div>
                                         <label class="pc-label">मूल्यांकन सादर केलेल्या पत्राचा तपशील</label>
                                         <input class="pc-input" name="construction_valuation_letter_detail" type="text" placeholder="मूल्यांकन सादर केलेल्या पत्राचा तपशील">
@@ -1118,11 +1106,7 @@
                                         <button type="button" class="pc-add-asset-row-btn rounded-lg bg-[#125fcb] px-3 py-2 text-sm font-semibold text-white" data-target="pcForestRows" onclick="window.pcHandleAssetRowsAction && window.pcHandleAssetRowsAction('add', 'pcForestRows')">ओळ जोडा</button>
                                     </div>
                                 </div>
-                                <div class="grid gap-4 md:grid-cols-3 md:items-end">
-                                    <div>
-                                        <label class="pc-label">इतर</label>
-                                        <div class="space-y-2 owner-name-dropdown" data-owner-input-name="forest_owner_name"></div>
-                                    </div>
+                                <div class="grid gap-4 md:grid-cols-2 md:items-end">
                                     <div>
                                         <label class="pc-label">मूल्यांकन सादर केलेल्या पत्राचा तपशील</label>
                                         <input class="pc-input" name="forest_valuation_letter_detail" type="text" placeholder="मूल्यांकन सादर केलेल्या पत्राचा तपशील">
@@ -1153,11 +1137,7 @@
                                         <button type="button" class="pc-add-asset-row-btn rounded-lg bg-[#125fcb] px-3 py-2 text-sm font-semibold text-white" data-target="pcOtherDepartmentRows" onclick="window.pcHandleAssetRowsAction && window.pcHandleAssetRowsAction('add', 'pcOtherDepartmentRows')">ओळ जोडा</button>
                                     </div>
                                 </div>
-                                <div class="grid gap-4 md:grid-cols-3 md:items-end">
-                                    <div>
-                                        <label class="pc-label">इतर</label>
-                                        <div class="space-y-2 owner-name-dropdown" data-owner-input-name="other_department_owner_name"></div>
-                                    </div>
+                                <div class="grid gap-4 md:grid-cols-2 md:items-end">
                                     <div>
                                         <label class="pc-label">मूल्यांकन सादर केलेल्या पत्राचा तपशील</label>
                                         <input class="pc-input" name="other_department_valuation_letter_detail" type="text" placeholder="मूल्यांकन सादर केलेल्या पत्राचा तपशील">
@@ -1830,7 +1810,7 @@
         const step10FetchOwnersBtn = document.getElementById('pcStep10FetchOwnersBtn');
         const step10AddOwnerCardBtn = document.getElementById('pcStep10AddOwnerCardBtn');
         const step10OwnerCardsContainer = document.getElementById('pcStep10OwnerCards');
-        const ownerDropdowns = Array.from(document.querySelectorAll('.owner-name-dropdown'));
+        const getOwnerDropdowns = () => Array.from(document.querySelectorAll('.owner-name-dropdown'));
         const recordUpdatedRadios = Array.from(document.querySelectorAll('input[name="record_updated"]'));
         const recordUpdatedYesFields = document.getElementById('recordUpdatedYesFields');
         const recordUpdatedNoFields = document.getElementById('recordUpdatedNoFields');
@@ -2172,6 +2152,8 @@
             }
 
             if (sectionKey === 'proposal') {
+                const sectionThreeRows = rowsForSectionKey('section_3');
+                if (sectionThreeRows.length) return sectionThreeRows;
                 const proposalBlock = notifiedAreaBlocks.find((block) => Number(block?.block_index) === 1);
                 return Array.isArray(proposalBlock?.rows) ? proposalBlock.rows : [];
             }
@@ -2292,7 +2274,7 @@
 
         function fillOwnerDropdowns(names = []) {
             currentOwnerNames = Array.isArray(names) ? [...names] : [];
-            ownerDropdowns.forEach((container) => {
+            getOwnerDropdowns().forEach((container) => {
                 if (!(container instanceof HTMLDivElement)) return;
                 ensureAssetOwnerNameInputs(container);
             });
@@ -2884,12 +2866,12 @@
                 <tr>
                     <td><input class="pc-input" name="owner_info_owner_name" type="text" value="${rowData.owner_name || ''}"${lockedAttr}></td>
                     <td><input class="pc-input" name="owner_info_khata_number" type="text" value="${rowData.khata_number || ''}"></td>
-                    <td><input class="pc-input" name="owner_info_aadhaar_number" type="text" inputmode="numeric" maxlength="12" pattern="[0-9]{12}" placeholder="12 अंक" title="आधार कार्ड क्रमांक 12 अंकी असावा." value="${rowData.aadhaar_number || ''}"${lockedAttr}></td>
+                    <td><input class="pc-input" name="owner_info_aadhaar_number" type="text" inputmode="numeric" maxlength="12" pattern="[0-9]{12}" placeholder="12 अंक" title="आधार कार्ड क्रमांक 12 अंकी असावा." value="${rowData.aadhaar_number || ''}"></td>
                     <td><input class="pc-upload" name="owner_info_aadhaar_file" data-file-field="owner_info_aadhaar_file" type="file">${aadhaarFileInfo?.url ? `<a class="mt-2 inline-block text-xs font-semibold text-[#125fcb] underline" href="${escapeHtml(aadhaarFileInfo.url)}" target="_blank" rel="noopener">${escapeHtml(aadhaarFileInfo.name || 'अपलोड केलेली प्रत')}</a>` : ''}</td>
-                    <td><input class="pc-input" name="owner_info_pan_number" type="text" maxlength="10" pattern="[A-Za-z0-9]{10}" placeholder="10 अक्षरे/अंक" title="पॅन कार्ड क्रमांक 10 अक्षरे / अंक असावा." value="${rowData.pan_number || ''}"${lockedAttr}></td>
+                    <td><input class="pc-input" name="owner_info_pan_number" type="text" maxlength="10" pattern="[A-Za-z0-9]{10}" placeholder="10 अक्षरे/अंक" title="पॅन कार्ड क्रमांक 10 अक्षरे / अंक असावा." value="${rowData.pan_number || ''}"></td>
                     <td><input class="pc-upload" name="owner_info_pan_file" data-file-field="owner_info_pan_file" type="file">${panFileInfo?.url ? `<a class="mt-2 inline-block text-xs font-semibold text-[#125fcb] underline" href="${escapeHtml(panFileInfo.url)}" target="_blank" rel="noopener">${escapeHtml(panFileInfo.name || 'अपलोड केलेली प्रत')}</a>` : ''}</td>
-                    <td><input class="pc-input" name="owner_info_mobile_number" type="tel" inputmode="numeric" maxlength="10" pattern="[0-9]{10}" placeholder="10 अंक" title="मोबाईल नंबर 10 अंकी असावा." value="${rowData.mobile_number || ''}"${lockedAttr}></td>
-                    <td><textarea class="pc-input" name="owner_info_address" rows="2"${lockedAttr}>${rowData.address || ''}</textarea></td>
+                    <td><input class="pc-input" name="owner_info_mobile_number" type="tel" inputmode="numeric" maxlength="10" pattern="[0-9]{10}" placeholder="10 अंक" title="मोबाईल नंबर 10 अंकी असावा." value="${rowData.mobile_number || ''}"></td>
+                    <td><textarea class="pc-input" name="owner_info_address" rows="2">${rowData.address || ''}</textarea></td>
                     <td><input class="pc-input" name="owner_info_cultivable_area" type="text" placeholder="हे.आर" value="${rowData.cultivable_area || ''}"${lockedAttr}></td>
                     <td><input class="pc-input" name="owner_info_potkharaba" type="text" placeholder="हे.आर" value="${rowData.potkharaba || ''}"${lockedAttr}></td>
                     <td><input class="pc-input" name="owner_info_total_area" type="text" placeholder="हे.आर" value="${rowData.total_area || ''}"${lockedAttr}></td>
@@ -3321,6 +3303,7 @@
 
         function buildRepeatableAssetComponentRow(prefix, values = {}, ownerValue = '', isFirst = false) {
             const relatedOwnerName = escapeHtml(ownerValue || values[`${prefix}_related_owner_name`] || '');
+            const assetOwnerName = values[`${prefix}_owner_name`] || '';
             const componentDetail = escapeHtml(values[`${prefix}_component_detail`] || '');
             const componentValuation = escapeHtml(values[`${prefix}_component_valuation`] || '');
             const hiddenOwnerValue = escapeHtml(ownerValue || values[`${prefix}_related_owner_name`] || '');
@@ -3328,19 +3311,25 @@
             return `
                 <div class="pc-repeatable-asset-component-row grid gap-4 md:grid-cols-12 md:items-end">
                     ${isFirst ? `
-                        <div class="md:col-span-4">
+                        <div class="md:col-span-3">
                             <label class="pc-label">भूधारकाचे नाव</label>
                             <input class="pc-input pc-repeatable-asset-owner-input" name="${prefix}_related_owner_name" type="text" value="${relatedOwnerName}" placeholder="भूधारकाचे नाव">
                         </div>
+                        <div class="md:col-span-3">
+                            <label class="pc-label">इतर</label>
+                            <div class="owner-name-dropdown" data-owner-input-name="${prefix}_owner_name">
+                                ${buildAssetOwnerNameInput(`${prefix}_owner_name`, assetOwnerName)}
+                            </div>
+                        </div>
                     ` : `
                         <input type="hidden" name="${prefix}_related_owner_name" value="${hiddenOwnerValue}">
-                        <div class="hidden md:block md:col-span-4"></div>
+                        <div class="hidden md:block md:col-span-6"></div>
                     `}
-                    <div class="md:col-span-4">
+                    <div class="md:col-span-3">
                         <label class="pc-label">निगडीत घटक तपशील</label>
                         <input class="pc-input" name="${prefix}_component_detail" type="text" value="${componentDetail}" placeholder="निगडीत घटक तपशील">
                     </div>
-                    <div class="md:col-span-3">
+                    <div class="md:col-span-2">
                         <label class="pc-label">निगडीत घटकांचे मूल्यांकन</label>
                         <input class="pc-input pc-asset-valuation-input" name="${prefix}_component_valuation" type="number" step="0.01" min="0" inputmode="decimal" value="${componentValuation}" placeholder="निगडीत घटकांचे मूल्यांकन" oninput="window.pcUpdateTotalAssetValuation && window.pcUpdateTotalAssetValuation()" onchange="window.pcUpdateTotalAssetValuation && window.pcUpdateTotalAssetValuation()">
                     </div>
@@ -3360,7 +3349,12 @@
 
             return `
                 <div class="pc-repeatable-asset-components space-y-4">
-                    ${componentRows.map((row, index) => buildRepeatableAssetComponentRow(prefix, row, relatedOwnerName, index === 0)).join('')}
+                    ${componentRows.map((row, index) => buildRepeatableAssetComponentRow(
+                        prefix,
+                        index === 0 ? { ...row, [`${prefix}_owner_name`]: values[`${prefix}_owner_name`] || '' } : row,
+                        relatedOwnerName,
+                        index === 0
+                    )).join('')}
                 </div>
             `;
         }
@@ -3384,6 +3378,7 @@
             (rows.length ? rows : [{}]).forEach((row) => {
                 const prefix = container.dataset.namePrefix || '';
                 const ownerName = row?.[`${prefix}_related_owner_name`] || '';
+                const assetOwnerName = row?.[`${prefix}_owner_name`] || '';
                 const previous = groupedRows[groupedRows.length - 1];
                 const componentRow = {
                     [`${prefix}_component_detail`]: row?.[`${prefix}_component_detail`] || '',
@@ -3395,6 +3390,7 @@
                 }
                 groupedRows.push({
                     [`${prefix}_related_owner_name`]: ownerName,
+                    [`${prefix}_owner_name`]: assetOwnerName,
                     component_rows: [componentRow],
                 });
             });
@@ -3425,7 +3421,7 @@
         }
 
         function getRepeatableAssetRowCount(sectionData = {}, prefix) {
-            const suffixes = ['related_owner_name', 'component_detail', 'component_valuation'];
+            const suffixes = ['related_owner_name', 'owner_name', 'component_detail', 'component_valuation'];
             return suffixes.reduce((maxCount, suffix) => {
                 const value = sectionData[`${prefix}_${suffix}`];
                 return Array.isArray(value) ? Math.max(maxCount, value.length) : maxCount;
@@ -3476,9 +3472,11 @@
                 snapshot.sections[prefix] = [];
                 container.querySelectorAll('.pc-repeatable-asset-row').forEach((row) => {
                     const ownerName = row.querySelector(`.pc-repeatable-asset-owner-input[name="${prefix}_related_owner_name"]`)?.value || '';
+                    const assetOwnerName = row.querySelector(`.owner-name-dropdown[data-owner-input-name="${prefix}_owner_name"] input`)?.value || '';
                     row.querySelectorAll('.pc-repeatable-asset-component-row').forEach((componentRow) => {
                         snapshot.sections[prefix].push({
                             [`${prefix}_related_owner_name`]: ownerName,
+                            [`${prefix}_owner_name`]: assetOwnerName,
                             [`${prefix}_component_detail`]: componentRow.querySelector(`[name="${prefix}_component_detail"]`)?.value || '',
                             [`${prefix}_component_valuation`]: componentRow.querySelector(`[name="${prefix}_component_valuation"]`)?.value || '',
                         });
@@ -3517,9 +3515,11 @@
             Object.entries(sections).forEach(([prefix, rows]) => {
                 if (!prefix || !Array.isArray(rows)) return;
                 const ownerKey = `${prefix}_related_owner_name`;
+                const assetOwnerKey = `${prefix}_owner_name`;
                 const detailKey = `${prefix}_component_detail`;
                 const valuationKey = `${prefix}_component_valuation`;
                 data[ownerKey] = rows.map((row) => row?.[ownerKey] || '');
+                data[assetOwnerKey] = rows.map((row) => row?.[assetOwnerKey] || '');
                 data[detailKey] = rows.map((row) => row?.[detailKey] || '');
                 data[valuationKey] = rows.map((row) => row?.[valuationKey] || '');
             });
@@ -3560,16 +3560,20 @@
                 const ownerValues = Array.isArray(data[`${prefix}_related_owner_name`])
                     ? data[`${prefix}_related_owner_name`]
                     : (data[`${prefix}_related_owner_name`] ? [data[`${prefix}_related_owner_name`]] : []);
+                const assetOwnerValues = Array.isArray(data[`${prefix}_owner_name`])
+                    ? data[`${prefix}_owner_name`]
+                    : (data[`${prefix}_owner_name`] ? [data[`${prefix}_owner_name`]] : []);
                 const detailValues = Array.isArray(data[`${prefix}_component_detail`])
                     ? data[`${prefix}_component_detail`]
                     : (data[`${prefix}_component_detail`] ? [data[`${prefix}_component_detail`]] : []);
                 const valuationValues = Array.isArray(data[`${prefix}_component_valuation`])
                     ? data[`${prefix}_component_valuation`]
                     : (data[`${prefix}_component_valuation`] ? [data[`${prefix}_component_valuation`]] : []);
-                const rowCount = Math.max(ownerValues.length, detailValues.length, valuationValues.length);
+                const rowCount = Math.max(ownerValues.length, assetOwnerValues.length, detailValues.length, valuationValues.length);
                 if (!rowCount) return;
                 snapshot.sections[prefix] = Array.from({ length: rowCount }, (_item, index) => ({
                     [`${prefix}_related_owner_name`]: ownerValues[index] || '',
+                    [`${prefix}_owner_name`]: assetOwnerValues[index] || '',
                     [`${prefix}_component_detail`]: detailValues[index] || '',
                     [`${prefix}_component_valuation`]: valuationValues[index] || '',
                 }));
@@ -3612,17 +3616,21 @@
                 const ownerValues = Array.isArray(data[`${prefix}_related_owner_name`])
                     ? data[`${prefix}_related_owner_name`]
                     : (data[`${prefix}_related_owner_name`] ? [data[`${prefix}_related_owner_name`]] : []);
+                const assetOwnerValues = Array.isArray(data[`${prefix}_owner_name`])
+                    ? data[`${prefix}_owner_name`]
+                    : (data[`${prefix}_owner_name`] ? [data[`${prefix}_owner_name`]] : []);
                 const detailValues = Array.isArray(data[`${prefix}_component_detail`])
                     ? data[`${prefix}_component_detail`]
                     : (data[`${prefix}_component_detail`] ? [data[`${prefix}_component_detail`]] : []);
                 const valuationValues = Array.isArray(data[`${prefix}_component_valuation`])
                     ? data[`${prefix}_component_valuation`]
                     : (data[`${prefix}_component_valuation`] ? [data[`${prefix}_component_valuation`]] : []);
-                const rowCount = Math.max(ownerValues.length, detailValues.length, valuationValues.length);
+                const rowCount = Math.max(ownerValues.length, assetOwnerValues.length, detailValues.length, valuationValues.length);
                 const container = tab7Panel.querySelector(`[data-repeatable-asset-rows][data-name-prefix="${CSS.escape(prefix)}"]`);
                 if (!container || !rowCount) return;
                 renderRepeatableAssetRows(container, Array.from({ length: rowCount }, (_item, index) => ({
                     [`${prefix}_related_owner_name`]: ownerValues[index] || '',
+                    [`${prefix}_owner_name`]: assetOwnerValues[index] || '',
                     [`${prefix}_component_detail`]: detailValues[index] || '',
                     [`${prefix}_component_valuation`]: valuationValues[index] || '',
                 })));
@@ -3656,17 +3664,20 @@
 
             ['water_supply', 'agriculture', 'construction', 'forest', 'other_department'].forEach((prefix) => {
                 const ownerValue = data[`${prefix}_related_owner_name`];
+                const assetOwnerValue = data[`${prefix}_owner_name`];
                 const detailValue = data[`${prefix}_component_detail`];
                 const valuationValue = data[`${prefix}_component_valuation`];
                 const ownerValues = Array.isArray(ownerValue) ? ownerValue : (ownerValue ? [ownerValue] : []);
+                const assetOwnerValues = Array.isArray(assetOwnerValue) ? assetOwnerValue : (assetOwnerValue ? [assetOwnerValue] : []);
                 const detailValues = Array.isArray(detailValue) ? detailValue : (detailValue ? [detailValue] : []);
                 const valuationValues = Array.isArray(valuationValue) ? valuationValue : (valuationValue ? [valuationValue] : []);
-                const rowCount = Math.max(ownerValues.length, detailValues.length, valuationValues.length);
+                const rowCount = Math.max(ownerValues.length, assetOwnerValues.length, detailValues.length, valuationValues.length);
                 const container = tab7Panel.querySelector(`[data-repeatable-asset-rows][data-name-prefix="${prefix}"]`);
                 if (!container || !rowCount) return;
 
                 renderRepeatableAssetRows(container, Array.from({ length: rowCount }, (_item, index) => ({
                     [`${prefix}_related_owner_name`]: ownerValues[index] || '',
+                    [`${prefix}_owner_name`]: assetOwnerValues[index] || '',
                     [`${prefix}_component_detail`]: detailValues[index] || '',
                     [`${prefix}_component_valuation`]: valuationValues[index] || '',
                 })));
@@ -3680,10 +3691,12 @@
                 'forest_owner_name',
                 'other_department_owner_name',
             ].forEach((key) => {
-                const container = tab7Panel.querySelector(`.owner-name-dropdown[data-owner-input-name="${key}"]`);
-                if (!container || !Object.prototype.hasOwnProperty.call(data, key)) return;
+                const containers = Array.from(tab7Panel.querySelectorAll(`.owner-name-dropdown[data-owner-input-name="${key}"]`) || []);
+                if (!containers.length || !Object.prototype.hasOwnProperty.call(data, key)) return;
                 const values = Array.isArray(data[key]) ? data[key] : (data[key] ? [data[key]] : ['']);
-                ensureAssetOwnerNameInputs(container, values);
+                containers.forEach((container, index) => {
+                    ensureAssetOwnerNameInputs(container, [values[index] || '']);
+                });
                 restored = true;
             });
 
@@ -3819,6 +3832,7 @@
 
         function ensureAssetOwnerInputsForData(sectionData = {}) {
             if (!processChartForm) return;
+            const ownerInputIndexes = {};
             processChartForm.querySelectorAll('.owner-name-dropdown').forEach((container) => {
                 if (!(container instanceof HTMLDivElement)) return;
                 const inputName = container.dataset.ownerInputName || '';
@@ -3828,7 +3842,9 @@
                 }
                 const rawValue = sectionData[inputName];
                 const values = Array.isArray(rawValue) ? rawValue : [rawValue];
-                ensureAssetOwnerNameInputs(container, values);
+                const valueIndex = ownerInputIndexes[inputName] || 0;
+                ownerInputIndexes[inputName] = valueIndex + 1;
+                ensureAssetOwnerNameInputs(container, [values[valueIndex] || '']);
             });
         }
 
@@ -3930,7 +3946,9 @@
                 const field = document.querySelector(`[name="${CSS.escape(key)}"], #${CSS.escape(key)}`);
                 if (field instanceof HTMLInputElement) {
                     if (field.dataset?.pcPrefillSource) return;
-                    field.value = normalizeDateInputValue(sectionData[key]);
+                    const nextValue = normalizeDateInputValue(sectionData[key]);
+                    if (!nextValue && String(field.value || '').trim()) return;
+                    field.value = nextValue;
                 }
             });
             if (Object.prototype.hasOwnProperty.call(sectionData, 'demarcation_not_received_reason')) {
@@ -3955,7 +3973,11 @@
             const noticeMatch = getNotifiedAreaMatchResult(currentProcessChartPrefill, 'notice');
             const hasNoticeMatch = Boolean(noticeMatch.selectedGut && noticeMatch.matchedNotifiedArea);
             const hasNoticeMiss = Boolean(noticeMatch.selectedGut && noticeMatch.hasRows && !noticeMatch.matchedNotifiedArea);
+            const proposalMatch = getNotifiedAreaMatchResult(currentProcessChartPrefill, 'proposal');
+            const hasProposalMatch = Boolean(proposalMatch.selectedGut && proposalMatch.matchedNotifiedArea);
+            const hasProposalMiss = Boolean(proposalMatch.selectedGut && proposalMatch.hasRows && !proposalMatch.matchedNotifiedArea);
             const savedNoticeValue = String(sectionData.notice_publication_included || '');
+            const savedProposalValue = String(sectionData.proposal_included || '');
 
             [
                 'notice_publication_included',
@@ -3988,7 +4010,9 @@
                 if (!Object.prototype.hasOwnProperty.call(sectionData, key)) return;
                 const field = document.querySelector(`[name="${CSS.escape(key)}"], #${CSS.escape(key)}`);
                 if (field instanceof HTMLInputElement) {
-                    field.value = field.type === 'date' ? normalizeDateInputValue(sectionData[key]) : sectionData[key];
+                    const nextValue = field.type === 'date' ? normalizeDateInputValue(sectionData[key]) : sectionData[key];
+                    if (!String(nextValue || '').trim() && String(field.value || '').trim()) return;
+                    field.value = nextValue;
                 }
             });
 
@@ -4013,6 +4037,8 @@
             ].forEach((key) => {
                 if ((hasNoticeMatch || hasNoticeMiss) && key === 'notice_publication_area') return;
                 if ((hasNoticeMatch || hasNoticeMiss) && key === 'notice_publication_reason' && savedNoticeValue !== 'no') return;
+                if ((hasProposalMatch || hasProposalMiss) && key === 'proposal_area') return;
+                if ((hasProposalMatch || hasProposalMiss) && key === 'proposal_reason' && savedProposalValue !== 'no') return;
                 if (!Object.prototype.hasOwnProperty.call(sectionData, key)) return;
                 const field = document.querySelector(`[name="${CSS.escape(key)}"], #${CSS.escape(key)}`);
                 if (field instanceof HTMLInputElement) {
@@ -4132,6 +4158,10 @@
                     if (!forceRestoreTab7FlatData(activeStepData)) {
                         fetchAndForceRestoreTab7();
                     }
+                    if (currentProcessChartPrefill?.village_data) {
+                        applyAssetValuationLetterPrefill(currentProcessChartPrefill.village_data);
+                    }
+                    ensureAssetValuationLetterPrefillLoaded();
                 }, delay);
             });
         }
@@ -4607,7 +4637,12 @@
                 : new Set(getSelectedJointSurveyKeys());
 
             jointSurveySingleNamesList.innerHTML = singleGroups.length
-                ? singleGroups.map(({ khataKey, rows }, groupIndex) => {
+                ? `
+                    <label class="mb-3 flex items-center gap-2 rounded border border-[#dbe8f8] bg-white px-3 py-2 text-sm font-semibold text-[#244271]">
+                        <input type="checkbox" class="pc-joint-survey-select-all-single">
+                        <span>सर्व निवडा</span>
+                    </label>
+                    ${singleGroups.map(({ khataKey, rows }, groupIndex) => {
                     const row = rows[0] || {};
                     const rowKey = buildJointSurveyRowKey(row);
                     return `
@@ -4616,8 +4651,13 @@
                             <span class="text-sm text-[#244271]"><strong>खाता:</strong> ${escapeHtml(khataKey)} | <strong>नाव:</strong> ${escapeHtml(row.owner_name || '')}</span>
                         </label>
                     `;
-                }).join('')
+                }).join('')}`
                 : '<div class="rounded border border-dashed border-[#d6e3f5] px-3 py-3 text-sm text-[#6b7d99]">एकच नाव असलेली नावे उपलब्ध नाहीत.</div>';
+            const singleSelectAll = jointSurveySingleNamesList.querySelector('.pc-joint-survey-select-all-single');
+            const singleCheckboxes = Array.from(jointSurveySingleNamesList.querySelectorAll('.pc-joint-survey-name-checkbox[data-group-type="single"]'));
+            if (singleSelectAll instanceof HTMLInputElement) {
+                singleSelectAll.checked = singleCheckboxes.length > 0 && singleCheckboxes.every((checkbox) => checkbox.checked);
+            }
 
             jointSurveyMultiNamesList.innerHTML = multiGroups.length
                 ? multiGroups.map(({ khataKey, rows }, groupIndex) => {
@@ -4826,7 +4866,7 @@
                 .map((row) => buildJointSurveyRowKey(row));
         }
 
-        function applySelectedJointSurveyNames(prefill = currentProcessChartPrefill) {
+        function applySelectedJointSurveyNames(prefill = currentProcessChartPrefill, options = {}) {
             if (currentJointSurveyApplyMode === 'asset') {
                 populateAssetOwnerFieldFromSelection(prefill, currentAssetOwnerTargetId);
                 return;
@@ -4899,7 +4939,9 @@
                 renderMultiKhataOwnerRows(multiRows, currentMultiSharedArea);
             }
             renderAcquisitionDetailTable(prefill);
-            closeJointSurveyNamesModal();
+            if (options.closeModal !== false) {
+                closeJointSurveyNamesModal();
+            }
         }
 
         function renderSelectedJointSurveyOwnerTables(prefill = currentProcessChartPrefill) {
@@ -4974,6 +5016,16 @@
             } else {
                 block.setAttribute('hidden', 'hidden');
             }
+        }
+
+        function defaultAreaQuestionToYes(radioName, matchedArea) {
+            if (!matchedArea) return '';
+            const checkedRadio = processChartForm?.querySelector(`input[name="${radioName}"]:checked`);
+            if (checkedRadio) return checkedRadio.value || '';
+            processChartForm?.querySelectorAll(`input[name="${radioName}"]`).forEach((radio) => {
+                radio.checked = radio.value === 'yes';
+            });
+            return 'yes';
         }
 
         function forceToggleProposalQuestionBlock() {
@@ -5083,16 +5135,7 @@
 
             const { selectedGut, matchedNotifiedArea, hasRows } = getNotifiedAreaMatchResult(prefill, 'notice');
             const prefillArea = matchedNotifiedArea || ((selectedGut && hasRows) ? 'गट आढळला नाही' : '');
-            if (!selectedValue && selectedGut && hasRows) {
-                const defaultValue = matchedNotifiedArea ? 'yes' : '';
-                processChartForm?.querySelectorAll('input[name="notice_publication_included"]').forEach((radio) => {
-                    radio.checked = radio.value === defaultValue;
-                });
-                if (defaultValue) {
-                    lockPrefilledControls(Array.from(processChartForm?.querySelectorAll('input[name="notice_publication_included"]') || []), 'village-info');
-                }
-                selectedValue = defaultValue;
-            }
+            selectedValue = selectedValue || defaultAreaQuestionToYes('notice_publication_included', matchedNotifiedArea);
 
             if (selectedValue === 'yes') {
                 setQuestionBlockVisible(areaWrap, true);
@@ -5122,7 +5165,7 @@
         }
 
         function toggleProposalFields(prefill = currentProcessChartPrefill) {
-            const selectedValue = processChartForm?.querySelector('input[name="proposal_included"]:checked')?.value || '';
+            let selectedValue = processChartForm?.querySelector('input[name="proposal_included"]:checked')?.value || '';
             const areaWrap = document.getElementById('pcProposalAreaWrap');
             const areaField = document.getElementById('pcProposalArea');
             const reasonWrap = document.getElementById('pcProposalReasonWrap');
@@ -5130,7 +5173,9 @@
             if (!areaWrap || !areaField || !reasonWrap || !reasonField) return;
 
             const { selectedGut, matchedNotifiedArea, hasRows } = getNotifiedAreaMatchResult(prefill, 'proposal');
-            const prefillArea = matchedNotifiedArea || ((selectedGut && hasRows) ? 'गट आढळला नाही' : '');
+            const gutNotFoundText = 'गट आढळला नाही';
+            const prefillArea = matchedNotifiedArea || ((selectedGut && hasRows) ? gutNotFoundText : '');
+            selectedValue = selectedValue || defaultAreaQuestionToYes('proposal_included', matchedNotifiedArea);
 
             if (selectedValue === 'yes') {
                 setQuestionBlockVisible(areaWrap, true);
@@ -5152,11 +5197,14 @@
 
             setQuestionBlockVisible(areaWrap, true);
             setQuestionBlockVisible(reasonWrap, false);
-            if (prefillArea && !areaField.value) {
+            if (prefillArea) {
                 areaField.value = prefillArea;
+                areaField.readOnly = prefillArea === gutNotFoundText || Boolean(matchedNotifiedArea);
+                lockFieldsWithValues([areaField], 'village-info');
+                return;
             }
             areaField.readOnly = false;
-            lockFieldsWithValues([areaField], 'village-info');
+            areaField.value = '';
         }
 
         function applyJointMeasurementPrefill(villageDataPayload) {
@@ -5193,6 +5241,149 @@
             lockPrefilledControls(Array.from(jointDoneRadios), 'village-info');
             lockFieldsWithValues([registerField, dateField], 'village-info');
         }
+
+        function getFirstVillageRelatedSectionValue(villageDataPayload, rowsKey, scalarDetailKey, scalarDateKey) {
+            const villageData = villageDataPayload?.data || {};
+            const rows = [
+                ...(Array.isArray(villageDataPayload?.[rowsKey]) ? villageDataPayload[rowsKey] : []),
+                ...(Array.isArray(villageData?.[rowsKey]) ? villageData[rowsKey] : []),
+            ];
+            const detail = rows.map((row) => String(
+                row?.detail
+                || row?.details
+                || row?.letter_detail
+                || row?.letter_details
+                || row?.valuation_letter_detail
+                || row?.valuation_letter_details
+                || ''
+            ).trim()).find(Boolean)
+                || String(villageData[scalarDetailKey] || '').trim();
+            const date = rows.map((row) => String(row?.date || '').trim()).find(Boolean)
+                || String(villageData[scalarDateKey] || '').trim();
+            return { detail, date };
+        }
+
+        function getAssetValuationLetterMappings() {
+            return [
+                {
+                    rowsKey: 'sec17_rows',
+                    detailKey: 'sec17_letter_details',
+                    dateKey: 'sec17_date',
+                    targetDetail: 'water_supply_valuation_letter_detail',
+                    targetDate: 'water_supply_valuation_date',
+                },
+                {
+                    rowsKey: 'sec18_rows',
+                    detailKey: 'sec18_letter_details',
+                    dateKey: 'sec18_date',
+                    targetDetail: 'agriculture_valuation_letter_detail',
+                    targetDate: 'agriculture_valuation_date',
+                },
+                {
+                    rowsKey: 'sec19_rows',
+                    detailKey: 'sec19_letter_details',
+                    dateKey: 'sec19_date',
+                    targetDetail: 'construction_valuation_letter_detail',
+                    targetDate: 'construction_valuation_date',
+                },
+                {
+                    rowsKey: 'sec16_rows',
+                    detailKey: 'sec16_letter_details',
+                    dateKey: 'sec16_date',
+                    targetDetail: 'forest_valuation_letter_detail',
+                    targetDate: 'forest_valuation_date',
+                },
+                {
+                    rowsKey: 'sec20_rows',
+                    detailKey: 'sec20_letter_details',
+                    dateKey: 'sec20_date',
+                    targetDetail: 'other_department_valuation_letter_detail',
+                    targetDate: 'other_department_valuation_date',
+                },
+            ];
+        }
+
+        function assetValuationLetterDetailsFilled() {
+            return getAssetValuationLetterMappings().every((mapping) => {
+                const field = processChartForm?.querySelector(`[name="${mapping.targetDetail}"]`);
+                return field instanceof HTMLInputElement && String(field.value || '').trim();
+            });
+        }
+
+        function applyAssetValuationLetterPrefill(villageDataPayload) {
+            if (!villageDataPayload) return false;
+            let applied = false;
+            const mappings = getAssetValuationLetterMappings();
+
+            mappings.forEach((mapping) => {
+                const { detail, date } = getFirstVillageRelatedSectionValue(
+                    villageDataPayload,
+                    mapping.rowsKey,
+                    mapping.detailKey,
+                    mapping.dateKey
+                );
+                const detailField = processChartForm?.querySelector(`[name="${mapping.targetDetail}"]`);
+                const dateField = processChartForm?.querySelector(`[name="${mapping.targetDate}"]`);
+                if (detailField instanceof HTMLInputElement) {
+                    if (detail) {
+                        detailField.value = detail;
+                        lockPrefilledControl(detailField, 'village-info');
+                        applied = true;
+                    }
+                }
+                if (dateField instanceof HTMLInputElement) {
+                    if (date) {
+                        dateField.value = normalizeDateInputValue(date);
+                        lockPrefilledControl(dateField, 'village-info');
+                        applied = true;
+                    }
+                }
+            });
+            syncTab7SnapshotField();
+            return applied;
+        }
+
+        function hasAssetValuationLetterPrefillPayload(villageDataPayload) {
+            return ['sec16_rows', 'sec17_rows', 'sec18_rows', 'sec19_rows', 'sec20_rows'].some((rowsKey) => {
+                const rows = [
+                    ...(Array.isArray(villageDataPayload?.[rowsKey]) ? villageDataPayload[rowsKey] : []),
+                    ...(Array.isArray(villageDataPayload?.data?.[rowsKey]) ? villageDataPayload.data[rowsKey] : []),
+                ];
+                return rows.some((row) => String(row?.detail || row?.letter_details || row?.date || '').trim());
+            });
+        }
+
+        async function ensureAssetValuationLetterPrefillLoaded() {
+            applyAssetValuationLetterPrefill(currentProcessChartPrefill?.village_data);
+            if (assetValuationLetterDetailsFilled()) return;
+            const district = districtSelect?.value || currentProcessChartLocation.district || currentProcessChartPrefill?.land_record?.district || '';
+            const taluka = talukaSelect?.value || currentProcessChartLocation.taluka || currentProcessChartPrefill?.land_record?.taluka || '';
+            const village = villageSelect?.value || currentProcessChartLocation.village || currentProcessChartPrefill?.land_record?.village || '';
+            if (!district || !taluka || !village) return;
+            try {
+                const directVillageInfoPayload = await fetchVillageInfoPayload(district, taluka, village);
+                if (!directVillageInfoPayload || !hasAssetValuationLetterPrefillPayload(directVillageInfoPayload)) return;
+                currentProcessChartPrefill = {
+                    ...currentProcessChartPrefill,
+                    village_data: directVillageInfoPayload,
+                };
+                applyAssetValuationLetterPrefill(directVillageInfoPayload);
+            } catch (error) {
+                console.error('Village Info tab 6 valuation prefill failed:', error);
+            }
+        }
+        window.pcDebugAssetValuationPrefill = () => {
+            const payload = currentProcessChartPrefill?.village_data || {};
+            return {
+                villageData: payload,
+                mappings: getAssetValuationLetterMappings().map((mapping) => ({
+                    rowsKey: mapping.rowsKey,
+                    source: getFirstVillageRelatedSectionValue(payload, mapping.rowsKey, mapping.detailKey, mapping.dateKey),
+                    detailFieldValue: processChartForm?.querySelector(`[name="${mapping.targetDetail}"]`)?.value || '',
+                    dateFieldValue: processChartForm?.querySelector(`[name="${mapping.targetDate}"]`)?.value || '',
+                })),
+            };
+        };
 
         function applyClauseOnePrefill(villageDataPayload) {
             const matchedSec8Row = getMatchingSec8Row(villageDataPayload);
@@ -5623,7 +5814,7 @@
         }
 
         function toggleSurveyNotificationFields(prefill = currentProcessChartPrefill) {
-            const selectedValue = processChartForm?.querySelector('input[name="survey_in_notification"]:checked')?.value || '';
+            let selectedValue = processChartForm?.querySelector('input[name="survey_in_notification"]:checked')?.value || '';
             const areaWrap = document.getElementById('pcSurveyNotificationAreaWrap');
             const areaField = document.getElementById('pcSurveyNotificationArea');
             const reasonWrap = document.getElementById('pcSurveyNotificationReasonWrap');
@@ -5633,6 +5824,7 @@
             const { selectedGut, matchedNotifiedArea, hasRows } = getNotifiedAreaMatchResult(prefill, 'survey_notification');
             const gutNotFoundText = 'गट आढळला नाही';
             const prefillArea = matchedNotifiedArea || ((selectedGut && hasRows) ? gutNotFoundText : '');
+            selectedValue = selectedValue || defaultAreaQuestionToYes('survey_in_notification', matchedNotifiedArea);
 
             if (selectedValue === 'yes') {
                 setQuestionBlockVisible(areaWrap, true);
@@ -5665,7 +5857,7 @@
         }
 
         function toggleGroupClauseFields(prefill = currentProcessChartPrefill) {
-            const selectedValue = processChartForm?.querySelector('input[name="group_in_clause_one_included"]:checked')?.value || '';
+            let selectedValue = processChartForm?.querySelector('input[name="group_in_clause_one_included"]:checked')?.value || '';
             const areaWrap = document.getElementById('pcGroupClauseAreaWrap');
             const areaField = document.getElementById('pcGroupClauseArea');
             const reasonWrap = document.getElementById('pcGroupClauseReasonWrap');
@@ -5674,6 +5866,7 @@
 
             const { selectedGut, matchedNotifiedArea, hasRows } = getNotifiedAreaMatchResult(prefill, 'clause_one');
             const rawArea = matchedNotifiedArea || ((selectedGut && hasRows) ? 'गट आढळला नाही' : '');
+            selectedValue = selectedValue || defaultAreaQuestionToYes('group_in_clause_one_included', matchedNotifiedArea);
 
             if (selectedValue === 'yes') {
                 setQuestionBlockVisible(areaWrap, true);
@@ -6236,10 +6429,17 @@
             applyClauseOnePrefill(villageDataPayload);
             applyZoneInfoPrefill(villageDataPayload);
             applyValuationInfoPrefill(villageDataPayload);
+            applyAssetValuationLetterPrefill(villageDataPayload);
+            ensureAssetValuationLetterPrefillLoaded();
             applyCommitteeInfoPrefill(villageDataPayload);
             renderCommitteeRateRows(villageDataPayload);
             renderAcquisitionDetailTable(currentProcessChartPrefill);
             applyCompensationPrefill(currentProcessChartPrefill);
+        }
+
+        function extractDemarcationDateFromText(text = '') {
+            const match = String(text || '').match(/(\d{1,2})[._-](\d{1,2})[._-](\d{2,4})/);
+            return match ? normalizeDateInputValue(`${match[1]}-${match[2]}-${match[3]}`) : '';
         }
 
         function getVillageSec25DemarcationData(villageDataPayload) {
@@ -6253,8 +6453,7 @@
             const dateFromFile = files.reduce((found, file) => {
                 if (found) return found;
                 const text = `${file?.name || ''} ${file?.url || ''}`;
-                const match = text.match(/(\d{1,2})[._-](\d{1,2})[._-](\d{2,4})/);
-                return match ? `${match[1]}-${match[2]}-${match[3]}` : '';
+                return extractDemarcationDateFromText(text);
             }, '');
             return {
                 mode: String(villageData.sec25_map_received || '').toLowerCase(),
@@ -6288,7 +6487,50 @@
                     ${escapeHtml(file.name || 'अपलोड केलेली प्रत')}
                 </a>
             `).join('');
+            syncDemarcationDateFromFiles(files);
+            window.setTimeout(() => syncDemarcationDateFromFiles(files), 0);
+            window.setTimeout(() => syncDemarcationDateFromFiles(files), 200);
         }
+
+        function syncDemarcationDateFromFiles(files = parseDemarcationVillageFiles()) {
+            const dateField = document.querySelector('[name="demarcation_date"]');
+            if (!(dateField instanceof HTMLInputElement) || dateField.value) return;
+            const dateFromFile = files.reduce((found, file) => (
+                found || extractDemarcationDateFromText(`${file?.name || ''} ${file?.url || ''}`)
+            ), '');
+            if (!dateFromFile) return;
+            dateField.value = dateFromFile;
+            lockPrefilledControl(dateField, 'village-info');
+        }
+
+        function syncDemarcationDateField() {
+            const dateField = document.querySelector('[name="demarcation_date"]');
+            if (!(dateField instanceof HTMLInputElement)) return;
+            const data = getVillageSec25DemarcationData(currentProcessChartPrefill?.village_data || {});
+            const fallbackFromFiles = parseDemarcationVillageFiles().reduce((found, file) => (
+                found || extractDemarcationDateFromText(`${file?.name || ''} ${file?.url || ''}`)
+            ), '');
+            const nextDate = normalizeDateInputValue(data.date || fallbackFromFiles || '');
+            if (!nextDate) return;
+            dateField.value = nextDate;
+            dateField.defaultValue = nextDate;
+            dateField.setAttribute('value', nextDate);
+            lockPrefilledControl(dateField, 'village-info');
+        }
+        window.pcForceDemarcationDate = syncDemarcationDateField;
+        window.pcDebugDemarcationDate = () => {
+            const files = parseDemarcationVillageFiles();
+            syncDemarcationDateField();
+            const dateField = document.querySelector('[name="demarcation_date"]');
+            return {
+                files,
+                extractedDates: files.map((file) => extractDemarcationDateFromText(`${file?.name || ''} ${file?.url || ''}`)),
+                fieldFound: dateField instanceof HTMLInputElement,
+                fieldType: dateField instanceof HTMLInputElement ? dateField.type : '',
+                fieldValue: dateField instanceof HTMLInputElement ? dateField.value : '',
+                villageData: getVillageSec25DemarcationData(currentProcessChartPrefill?.village_data || {}),
+            };
+        };
 
         function toggleDemarcationFields() {
             const selectedValue = processChartForm?.querySelector('input[name="demarcation_done"]:checked')?.value || '';
@@ -6298,6 +6540,10 @@
             noFields?.classList.toggle('hidden', selectedValue !== 'no');
             if (selectedValue === 'yes') {
                 renderDemarcationVillageFiles(parseDemarcationVillageFiles());
+                syncDemarcationDateFromFiles();
+                syncDemarcationDateField();
+                window.setTimeout(syncDemarcationDateField, 0);
+                window.setTimeout(syncDemarcationDateField, 250);
             }
         }
 
@@ -6324,11 +6570,16 @@
             return {
                 data,
                 files: payload.files_map || {},
+                sec16_rows: Array.isArray(data.sec16_rows) ? data.sec16_rows : [],
+                sec17_rows: Array.isArray(data.sec17_rows) ? data.sec17_rows : [],
+                sec18_rows: Array.isArray(data.sec18_rows) ? data.sec18_rows : [],
+                sec19_rows: Array.isArray(data.sec19_rows) ? data.sec19_rows : [],
+                sec20_rows: Array.isArray(data.sec20_rows) ? data.sec20_rows : [],
                 sec25_map_rows: Array.isArray(data.sec25_map_rows) ? data.sec25_map_rows : [],
             };
         }
 
-        async function fetchVillageInfoPoint25Payload(district, taluka, village) {
+        async function fetchVillageInfoPayload(district, taluka, village) {
             if (!district || !taluka || !village) return null;
             const response = await fetch(`/api/village-info/data/?district=${encodeURIComponent(district)}&taluka=${encodeURIComponent(taluka)}&village=${encodeURIComponent(village)}`);
             const data = await response.json();
@@ -6354,7 +6605,7 @@
             const locationGut = gutNumber || currentProcessChartLocation.gut_number || '';
             if (!locationDistrict || !locationTaluka || !locationVillage) return;
             try {
-                const directVillageInfoPayload = await fetchVillageInfoPoint25Payload(locationDistrict, locationTaluka, locationVillage);
+                const directVillageInfoPayload = await fetchVillageInfoPayload(locationDistrict, locationTaluka, locationVillage);
                 if (directVillageInfoPayload && !needsFreshDemarcationPoint25Data(directVillageInfoPayload)) {
                     currentProcessChartPrefill = {
                         ...currentProcessChartPrefill,
@@ -6396,7 +6647,13 @@
             const dateField = processChartForm?.querySelector('[name="demarcation_date"]');
             if (dateField instanceof HTMLInputElement) {
                 dateField.value = data.date ? normalizeDateInputValue(data.date) : '';
+                if (dateField.value) {
+                    lockPrefilledControl(dateField, 'village-info');
+                }
             }
+            syncDemarcationDateField();
+            window.setTimeout(syncDemarcationDateField, 0);
+            window.setTimeout(syncDemarcationDateField, 250);
 
             const reasonField = processChartForm?.querySelector('[name="demarcation_not_received_reason"]');
             if (reasonField instanceof HTMLInputElement) {
@@ -7385,6 +7642,9 @@
             restoreSavedTab3Fields(stepData);
             restoreSavedTab4Dates(stepData);
             restoreSavedTab5Fields(stepData);
+            if (currentProcessChartPrefill?.village_data) {
+                applyAssetValuationLetterPrefill(currentProcessChartPrefill.village_data);
+            }
             // Tab 6: ensure shigrasiddhi type dropdown is restored (field has a name now).
             const step6Panel = getProcessChartPanel(6) || document.querySelector('[data-pc-panel="6"]');
             if (step6Panel) {
@@ -7478,6 +7738,7 @@
                     restoreSavedTab3Fields(latestProcessChartStepData);
                     restoreSavedTab4Dates(latestProcessChartStepData);
                     restoreSavedTab5Fields(latestProcessChartStepData);
+                    applyAssetValuationLetterPrefill(prefill.village_data);
                     restoreSavedTab11Fields(latestProcessChartStepData);
                     restoreSavedTab12Fields(latestProcessChartStepData);
                     scheduleLandAreaSummaryNormalize();
@@ -8249,6 +8510,17 @@
                 populateStep10OwnerSelection(currentProcessChartPrefill, { closeModal: false });
                 return;
             }
+            if (target.classList.contains('pc-joint-survey-select-all-single')) {
+                jointSurveyNamesModal.querySelectorAll('.pc-joint-survey-name-checkbox[data-group-type="single"]').forEach((checkbox) => {
+                    if (checkbox instanceof HTMLInputElement) {
+                        checkbox.checked = target.checked;
+                    }
+                });
+                if (currentJointSurveyApplyMode === 'joint_single') {
+                    applySelectedJointSurveyNames(currentProcessChartPrefill, { closeModal: false });
+                }
+                return;
+            }
             if (target.classList.contains('pc-joint-survey-select-all')) {
                 const groupIndex = target.getAttribute('data-group-index');
                 if (groupIndex === null) return;
@@ -8258,6 +8530,22 @@
                         checkbox.checked = target.checked;
                     }
                 });
+                if (currentJointSurveyApplyMode === 'joint_multi') {
+                    applySelectedJointSurveyNames(currentProcessChartPrefill, { closeModal: false });
+                }
+                return;
+            }
+
+            if (target.classList.contains('pc-joint-survey-name-checkbox') && target.getAttribute('data-group-type') === 'single') {
+                const singleCheckboxes = Array.from(jointSurveyNamesModal.querySelectorAll('.pc-joint-survey-name-checkbox[data-group-type="single"]'))
+                    .filter((checkbox) => checkbox instanceof HTMLInputElement);
+                const selectAllCheckbox = jointSurveyNamesModal.querySelector('.pc-joint-survey-select-all-single');
+                if (selectAllCheckbox instanceof HTMLInputElement) {
+                    selectAllCheckbox.checked = singleCheckboxes.length > 0 && singleCheckboxes.every((checkbox) => checkbox.checked);
+                }
+                if (currentJointSurveyApplyMode === 'joint_single') {
+                    applySelectedJointSurveyNames(currentProcessChartPrefill, { closeModal: false });
+                }
                 return;
             }
 
@@ -8269,6 +8557,9 @@
                 const selectAllCheckbox = jointSurveyNamesModal.querySelector(`.pc-joint-survey-select-all[data-group-index="${groupIndex}"]`);
                 if (selectAllCheckbox instanceof HTMLInputElement) {
                     selectAllCheckbox.checked = groupCheckboxes.length > 0 && groupCheckboxes.every((checkbox) => checkbox.checked);
+                }
+                if (currentJointSurveyApplyMode === 'joint_multi') {
+                    applySelectedJointSurveyNames(currentProcessChartPrefill, { closeModal: false });
                 }
             }
         });
