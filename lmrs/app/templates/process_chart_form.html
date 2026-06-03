@@ -1889,7 +1889,7 @@
         window.pcHandleAssetRowsAction = (action, targetId) => {
             const container = targetId ? document.getElementById(targetId) : null;
             if (action === 'add') {
-                appendRepeatableAssetRow(container);
+                appendRepeatableAssetComponentOrRow(container);
                 updateTotalAssetValuation();
                 saveTab7LocalDraft();
                 scheduleTab7AutoSave();
@@ -3459,16 +3459,18 @@
             syncSingleKhataOwnerRowButtons();
         }
 
-        function buildRepeatableAssetComponentRow(prefix, values = {}, ownerValue = '', isFirst = false) {
+        function buildRepeatableAssetComponentRow(prefix, values = {}, ownerValue = '', showLabels = true, showOwnerControls = false) {
             const relatedOwnerName = escapeHtml(ownerValue || values[`${prefix}_related_owner_name`] || '');
             const assetOwnerName = values[`${prefix}_owner_name`] || '';
             const componentDetail = escapeHtml(values[`${prefix}_component_detail`] || '');
             const componentValuation = escapeHtml(values[`${prefix}_component_valuation`] || '');
             const hiddenOwnerValue = escapeHtml(ownerValue || values[`${prefix}_related_owner_name`] || '');
+            const detailLabel = showLabels ? '<label class="pc-label">निगडीत घटक तपशील</label>' : '';
+            const valuationLabel = showLabels ? '<label class="pc-label">निगडीत घटकांचे मूल्यांकन</label>' : '';
 
             return `
                 <div class="pc-repeatable-asset-component-row grid gap-4 md:grid-cols-12 md:items-end">
-                    ${isFirst ? `
+                    ${showOwnerControls ? `
                         <div class="md:col-span-3">
                             <label class="pc-label">भूधारकाचे नाव</label>
                             <input class="pc-input pc-repeatable-asset-owner-input" name="${prefix}_related_owner_name" type="text" value="${relatedOwnerName}" placeholder="भूधारकाचे नाव">
@@ -3484,11 +3486,11 @@
                         <div class="hidden md:block md:col-span-6"></div>
                     `}
                     <div class="md:col-span-3">
-                        <label class="pc-label">निगडीत घटक तपशील</label>
+                        ${detailLabel}
                         <input class="pc-input" name="${prefix}_component_detail" type="text" value="${componentDetail}" placeholder="निगडीत घटक तपशील">
                     </div>
                     <div class="md:col-span-2">
-                        <label class="pc-label">निगडीत घटकांचे मूल्यांकन</label>
+                        ${valuationLabel}
                         <input class="pc-input pc-asset-valuation-input" name="${prefix}_component_valuation" type="number" step="0.01" min="0" inputmode="decimal" value="${componentValuation}" placeholder="निगडीत घटकांचे मूल्यांकन" oninput="window.pcUpdateTotalAssetValuation && window.pcUpdateTotalAssetValuation()" onchange="window.pcUpdateTotalAssetValuation && window.pcUpdateTotalAssetValuation()">
                     </div>
                     <div class="flex justify-end gap-2 md:col-span-1">
@@ -3499,7 +3501,37 @@
             `;
         }
 
+        function buildRepeatableAssetOwnerOnlyRow(prefix, values = {}, showLabels = false) {
+            const relatedOwnerName = escapeHtml(values[`${prefix}_related_owner_name`] || '');
+            const assetOwnerName = values[`${prefix}_owner_name`] || '';
+            const ownerLabel = showLabels ? '<label class="pc-label">भूधारकाचे नाव</label>' : '';
+            const otherLabel = showLabels ? '<label class="pc-label">इतर</label>' : '';
+
+            return `
+                <div class="grid gap-4 md:grid-cols-12 md:items-end">
+                    <div class="md:col-span-3">
+                        ${ownerLabel}
+                        <input class="pc-input pc-repeatable-asset-owner-input" name="${prefix}_related_owner_name" type="text" value="${relatedOwnerName}" placeholder="भूधारकाचे नाव">
+                    </div>
+                    <div class="md:col-span-3">
+                        ${otherLabel}
+                        <div class="owner-name-dropdown" data-owner-input-name="${prefix}_owner_name">
+                            ${buildAssetOwnerNameInput(`${prefix}_owner_name`, assetOwnerName)}
+                        </div>
+                    </div>
+                    <div class="flex justify-end gap-2 md:col-span-6">
+                        <button type="button" class="pc-inline-add-asset-row rounded-md border border-[#d4deec] px-2 py-1 text-xs font-semibold text-[#125fcb]">+</button>
+                        <button type="button" class="pc-inline-remove-asset-row rounded-md border border-[#d4deec] px-2 py-1 text-xs text-[#5d7293]">✕</button>
+                    </div>
+                </div>
+                <div class="pc-repeatable-asset-components mt-4 space-y-4"></div>
+            `;
+        }
+
         function buildRepeatableAssetRow(prefix, values = {}) {
+            if (values._owner_only) {
+                return buildRepeatableAssetOwnerOnlyRow(prefix, values, false);
+            }
             const relatedOwnerName = values[`${prefix}_related_owner_name`] || '';
             const componentRows = Array.isArray(values.component_rows) && values.component_rows.length
                 ? values.component_rows
@@ -3511,6 +3543,7 @@
                         prefix,
                         index === 0 ? { ...row, [`${prefix}_owner_name`]: values[`${prefix}_owner_name`] || '' } : row,
                         relatedOwnerName,
+                        index === 0,
                         index === 0
                     )).join('')}
                 </div>
@@ -3529,6 +3562,19 @@
             syncRepeatableAssetRowButtons(container);
         }
 
+        function appendRepeatableAssetComponentOrRow(container) {
+            if (!container) return;
+            const prefix = container.dataset.namePrefix || '';
+            if (!prefix) return;
+            const wrapper = container.querySelector('.pc-repeatable-asset-row:last-child');
+            const componentsHost = wrapper?.querySelector('.pc-repeatable-asset-components');
+            if (!wrapper || !componentsHost) {
+                appendRepeatableAssetRow(container, { _force_empty_component: true });
+                return;
+            }
+            appendRepeatableAssetRow(container, { _owner_only: true });
+        }
+
         function renderRepeatableAssetRows(container, rows = []) {
             if (!container) return;
             container.innerHTML = '';
@@ -3537,24 +3583,95 @@
                 const prefix = container.dataset.namePrefix || '';
                 const ownerName = row?.[`${prefix}_related_owner_name`] || '';
                 const assetOwnerName = row?.[`${prefix}_owner_name`] || '';
+                const componentDetail = row?.[`${prefix}_component_detail`] || '';
+                const componentValuation = row?.[`${prefix}_component_valuation`] || '';
+                const componentKey = `${componentDetail}||${componentValuation}`;
                 const previous = groupedRows[groupedRows.length - 1];
-                const componentRow = {
-                    [`${prefix}_component_detail`]: row?.[`${prefix}_component_detail`] || '',
-                    [`${prefix}_component_valuation`]: row?.[`${prefix}_component_valuation`] || '',
-                };
-                if (previous && ownerName && previous[`${prefix}_related_owner_name`] === ownerName) {
-                    previous.component_rows.push(componentRow);
+                if (previous && previous._component_key === componentKey) {
+                    groupedRows.push({
+                        _owner_only: true,
+                        _component_key: componentKey,
+                        [`${prefix}_related_owner_name`]: ownerName,
+                        [`${prefix}_owner_name`]: assetOwnerName,
+                    });
                     return;
                 }
                 groupedRows.push({
+                    _component_key: componentKey,
                     [`${prefix}_related_owner_name`]: ownerName,
                     [`${prefix}_owner_name`]: assetOwnerName,
-                    component_rows: [componentRow],
+                    component_rows: [{
+                        [`${prefix}_component_detail`]: componentDetail,
+                        [`${prefix}_component_valuation`]: componentValuation,
+                    }],
                 });
             });
             const nextRows = groupedRows.length ? groupedRows : [{}];
-            nextRows.forEach((row) => appendRepeatableAssetRow(container, row));
+            nextRows.forEach((row) => {
+                delete row._component_key;
+                appendRepeatableAssetRow(container, row);
+            });
             updateTotalAssetValuation();
+        }
+
+        function collectRepeatableAssetRows(container) {
+            if (!container) return [];
+            const prefix = container.dataset.namePrefix || '';
+            if (!prefix) return [];
+            const rows = [];
+            let inheritedComponentDetail = '';
+            let inheritedComponentValuation = '';
+            container.querySelectorAll('.pc-repeatable-asset-row').forEach((row) => {
+                const ownerName = row.querySelector(`.pc-repeatable-asset-owner-input[name="${prefix}_related_owner_name"]`)?.value || '';
+                const assetOwnerName = row.querySelector(`.owner-name-dropdown[data-owner-input-name="${prefix}_owner_name"] input`)?.value || '';
+                const componentRows = Array.from(row.querySelectorAll('.pc-repeatable-asset-component-row'));
+                if (!componentRows.length) {
+                    rows.push({
+                        [`${prefix}_related_owner_name`]: ownerName,
+                        [`${prefix}_owner_name`]: assetOwnerName,
+                        [`${prefix}_component_detail`]: inheritedComponentDetail,
+                        [`${prefix}_component_valuation`]: inheritedComponentValuation,
+                    });
+                    return;
+                }
+                componentRows.forEach((componentRow) => {
+                    const componentDetail = componentRow.querySelector(`[name="${prefix}_component_detail"]`)?.value || '';
+                    const componentValuation = componentRow.querySelector(`[name="${prefix}_component_valuation"]`)?.value || '';
+                    inheritedComponentDetail = componentDetail;
+                    inheritedComponentValuation = componentValuation;
+                    rows.push({
+                        [`${prefix}_related_owner_name`]: ownerName,
+                        [`${prefix}_owner_name`]: assetOwnerName,
+                        [`${prefix}_component_detail`]: componentDetail,
+                        [`${prefix}_component_valuation`]: componentValuation,
+                    });
+                });
+            });
+            return rows.filter((row) => Object.values(row).some((value) => String(value || '').trim()));
+        }
+
+        function collectCurrentAssetComponentTemplates(container, prefix) {
+            if (!container || !prefix) return [{ detail: '', valuation: '' }];
+            const wrappers = Array.from(container.querySelectorAll('.pc-repeatable-asset-row')).reverse();
+            for (const wrapper of wrappers) {
+                const componentRows = Array.from(wrapper.querySelectorAll('.pc-repeatable-asset-component-row'));
+                const templates = componentRows.map((componentRow) => ({
+                    detail: componentRow.querySelector(`[name="${prefix}_component_detail"]`)?.value || '',
+                    valuation: componentRow.querySelector(`[name="${prefix}_component_valuation"]`)?.value || '',
+                }));
+                if (templates.some((row) => String(row.detail || '').trim() || String(row.valuation || '').trim())) {
+                    return templates.length ? templates : [{ detail: '', valuation: '' }];
+                }
+            }
+            return [{ detail: '', valuation: '' }];
+        }
+
+        function buildRepeatableAssetRowKey(prefix, row = {}) {
+            return [
+                normalizeOwnerName(row[`${prefix}_related_owner_name`] || ''),
+                String(row[`${prefix}_component_detail`] || '').trim().toLowerCase(),
+                String(row[`${prefix}_component_valuation`] || '').trim(),
+            ].join('||');
         }
 
         function ensureRepeatableAssetRows(container, count = 1) {
@@ -3586,10 +3703,38 @@
             }, 1);
         }
 
+        function buildRepeatableAssetRowsFromSectionData(sectionData = {}, prefix = '') {
+            if (!sectionData || !prefix) return [];
+            const ownerValues = Array.isArray(sectionData[`${prefix}_related_owner_name`])
+                ? sectionData[`${prefix}_related_owner_name`]
+                : (sectionData[`${prefix}_related_owner_name`] ? [sectionData[`${prefix}_related_owner_name`]] : []);
+            const assetOwnerValues = Array.isArray(sectionData[`${prefix}_owner_name`])
+                ? sectionData[`${prefix}_owner_name`]
+                : (sectionData[`${prefix}_owner_name`] ? [sectionData[`${prefix}_owner_name`]] : []);
+            const detailValues = Array.isArray(sectionData[`${prefix}_component_detail`])
+                ? sectionData[`${prefix}_component_detail`]
+                : (sectionData[`${prefix}_component_detail`] ? [sectionData[`${prefix}_component_detail`]] : []);
+            const valuationValues = Array.isArray(sectionData[`${prefix}_component_valuation`])
+                ? sectionData[`${prefix}_component_valuation`]
+                : (sectionData[`${prefix}_component_valuation`] ? [sectionData[`${prefix}_component_valuation`]] : []);
+            const rowCount = Math.max(ownerValues.length, assetOwnerValues.length, detailValues.length, valuationValues.length);
+            return Array.from({ length: rowCount }, (_item, index) => ({
+                [`${prefix}_related_owner_name`]: ownerValues[index] || '',
+                [`${prefix}_owner_name`]: assetOwnerValues[index] || '',
+                [`${prefix}_component_detail`]: detailValues[index] || '',
+                [`${prefix}_component_valuation`]: valuationValues[index] || '',
+            }));
+        }
+
         function ensureRepeatableAssetRowsForData(sectionData = {}) {
             document.querySelectorAll('[data-repeatable-asset-rows]').forEach((container) => {
                 const prefix = container.dataset.namePrefix || '';
-                setRepeatableAssetRowCount(container, getRepeatableAssetRowCount(sectionData, prefix));
+                const rows = buildRepeatableAssetRowsFromSectionData(sectionData, prefix);
+                if (rows.length) {
+                    renderRepeatableAssetRows(container, rows);
+                } else {
+                    setRepeatableAssetRowCount(container, getRepeatableAssetRowCount(sectionData, prefix));
+                }
             });
         }
 
@@ -3627,19 +3772,7 @@
             tab7Panel.querySelectorAll('[data-repeatable-asset-rows]').forEach((container) => {
                 const prefix = container.dataset.namePrefix || '';
                 if (!prefix) return;
-                snapshot.sections[prefix] = [];
-                container.querySelectorAll('.pc-repeatable-asset-row').forEach((row) => {
-                    const ownerName = row.querySelector(`.pc-repeatable-asset-owner-input[name="${prefix}_related_owner_name"]`)?.value || '';
-                    const assetOwnerName = row.querySelector(`.owner-name-dropdown[data-owner-input-name="${prefix}_owner_name"] input`)?.value || '';
-                    row.querySelectorAll('.pc-repeatable-asset-component-row').forEach((componentRow) => {
-                        snapshot.sections[prefix].push({
-                            [`${prefix}_related_owner_name`]: ownerName,
-                            [`${prefix}_owner_name`]: assetOwnerName,
-                            [`${prefix}_component_detail`]: componentRow.querySelector(`[name="${prefix}_component_detail"]`)?.value || '',
-                            [`${prefix}_component_valuation`]: componentRow.querySelector(`[name="${prefix}_component_valuation"]`)?.value || '',
-                        });
-                    });
-                });
+                snapshot.sections[prefix] = collectRepeatableAssetRows(container);
             });
             return snapshot;
         }
@@ -4145,8 +4278,11 @@
             const sectionData = getSavedStepSectionData(stepData, 4, 'step_4');
             if (!sectionData || typeof sectionData !== 'object') return;
             [
+                'section323_notice_number',
                 'section323_notice_date',
+                'section323_notice_not_given_reason',
                 'objection_report_date',
+                'objection_report_not_submitted_reason',
                 'demarcation_date',
                 'pcSec6Date',
             ].forEach((key) => {
@@ -4747,8 +4883,11 @@
         function syncRepeatableAssetRowButtons(container) {
             if (!container) return;
             const rows = Array.from(container.children);
-            rows.forEach((row) => {
+            rows.forEach((row, rowIndex) => {
                 const componentRows = Array.from(row.querySelectorAll('.pc-repeatable-asset-component-row'));
+                row.querySelectorAll('.pc-label').forEach((label) => {
+                    label.classList.toggle('hidden', rowIndex > 0);
+                });
                 componentRows.forEach((componentRow, index) => {
                     const addBtn = componentRow.querySelector('.pc-inline-add-asset-row');
                     const removeBtn = componentRow.querySelector('.pc-inline-remove-asset-row');
@@ -5084,19 +5223,40 @@
             const sourceRows = collectTab4AssetOwnerRows();
             const checkboxes = Array.from(document.querySelectorAll('.pc-joint-survey-name-checkbox:checked'));
             const selectedRows = [];
+            const existingRows = collectRepeatableAssetRows(container);
+            const componentTemplates = collectCurrentAssetComponentTemplates(container, prefix);
+            const existingRowKeys = new Set(
+                existingRows
+                    .map((row) => buildRepeatableAssetRowKey(prefix, row))
+                    .filter(Boolean)
+            );
 
             checkboxes.forEach((checkbox) => {
                 const rowIndex = Number.parseInt(checkbox.getAttribute('data-row-index') || '-1', 10);
                 const row = sourceRows[rowIndex];
                 const ownerName = String(row?.owner_name || '').trim();
-                if (ownerName) {
-                    selectedRows.push({
+                if (!ownerName) return;
+                componentTemplates.forEach((component) => {
+                    const selectedRow = {
                         [`${prefix}_related_owner_name`]: ownerName,
-                    });
-                }
+                        [`${prefix}_component_detail`]: component.detail || '',
+                        [`${prefix}_component_valuation`]: component.valuation || '',
+                    };
+                    const rowKey = buildRepeatableAssetRowKey(prefix, selectedRow);
+                    if (!existingRowKeys.has(rowKey)) {
+                        existingRowKeys.add(rowKey);
+                        selectedRows.push(selectedRow);
+                    }
+                });
             });
 
-            renderRepeatableAssetRows(container, selectedRows);
+            const renderRows = selectedRows.length
+                ? existingRows.filter((row) =>
+                    normalizeOwnerName(row[`${prefix}_related_owner_name`] || '')
+                    || String(row[`${prefix}_owner_name`] || '').trim()
+                )
+                : existingRows;
+            renderRepeatableAssetRows(container, [...renderRows, ...selectedRows]);
             saveTab7LocalDraft();
             scheduleTab7AutoSave();
             closeJointSurveyNamesModal();
@@ -7961,6 +8121,18 @@
             });
 
             if (Number(panel.dataset.pcPanel || 0) === 4) {
+                [
+                    'section323_notice_number',
+                    'section323_notice_date',
+                    'section323_notice_not_given_reason',
+                    'objection_report_date',
+                    'objection_report_not_submitted_reason',
+                ].forEach((key) => {
+                    const field = panel.querySelector(`[name="${CSS.escape(key)}"]`);
+                    if (field instanceof HTMLInputElement || field instanceof HTMLTextAreaElement || field instanceof HTMLSelectElement) {
+                        data[key] = serializeFieldValue(field);
+                    }
+                });
                 const jointSurveyReasonField = panel.querySelector('input[name="joint_survey_not_done_reason"]');
                 if (jointSurveyReasonField instanceof HTMLInputElement) {
                     data.joint_survey_not_done_reason = jointSurveyReasonField.value || '';
@@ -8996,11 +9168,14 @@
                 const addBtn = event.target.closest('.pc-inline-add-asset-row');
                 if (addBtn) {
                     const wrapper = addBtn.closest('.pc-repeatable-asset-row');
-                    const prefix = container.dataset.namePrefix || '';
-                    const componentsHost = wrapper?.querySelector('.pc-repeatable-asset-components');
-                    if (wrapper && prefix && componentsHost) {
-                        const ownerValue = wrapper.querySelector('.pc-repeatable-asset-owner-input')?.value || '';
-                        componentsHost.insertAdjacentHTML('beforeend', buildRepeatableAssetComponentRow(prefix, {}, ownerValue, false));
+                    if (wrapper) {
+                        const prefix = container.dataset.namePrefix || '';
+                        const componentsHost = wrapper.querySelector('.pc-repeatable-asset-components');
+                        if (prefix && componentsHost) {
+                            const ownerValue = wrapper.querySelector('.pc-repeatable-asset-owner-input')?.value || '';
+                            componentsHost.insertAdjacentHTML('beforeend', buildRepeatableAssetComponentRow(prefix, {}, ownerValue, false));
+                            syncRepeatableAssetOwnerHiddenInputs(wrapper);
+                        }
                         syncRepeatableAssetRowButtons(container);
                     }
                     updateTotalAssetValuation();
