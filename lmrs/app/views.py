@@ -1267,8 +1267,16 @@ def _land_record_712_get_preview_page(records, page, page_size):
     page = max(1, min(page, total_pages))
     start = (page - 1) * page_size
     end = start + page_size
+    page_records = []
+    for offset, row in enumerate(records[start:end]):
+        if isinstance(row, dict):
+            row_payload = dict(row)
+            row_payload['_preview_row_index'] = start + offset
+            page_records.append(row_payload)
+        else:
+            page_records.append(row)
     return {
-        'records': records[start:end],
+        'records': page_records,
         'page': page,
         'page_size': page_size,
         'total_count': total_count,
@@ -1390,6 +1398,35 @@ def land_record_712(request):
                 original_document_name = original_document_name or (preview_payload.get('original_document_name') or None)
 
                 preview_rows = preview_payload.get('records') or []
+                if rows_json_raw:
+                    try:
+                        edited_rows_payload = json.loads(rows_json_raw)
+                    except (TypeError, ValueError, json.JSONDecodeError):
+                        return respond_error('Invalid rows payload.')
+
+                    if not isinstance(edited_rows_payload, list):
+                        return respond_error('Invalid rows payload.')
+
+                    editable_fields = {
+                        'gut_number', 'puid_ulip_no', 'khata_number', 'khata_area',
+                        'jirayit', 'bagayat', 'potkharaba', 'aakar', 'aakarni',
+                        'total_area', 'holder_name', 'kul_khand_other_rights',
+                    }
+                    for edited_row in edited_rows_payload:
+                        if not isinstance(edited_row, dict):
+                            continue
+                        try:
+                            preview_index = int(edited_row.get('_preview_row_index'))
+                        except (TypeError, ValueError):
+                            continue
+                        if preview_index < 0 or preview_index >= len(preview_rows):
+                            continue
+                        if not isinstance(preview_rows[preview_index], dict):
+                            continue
+                        for field in editable_fields:
+                            if field in edited_row:
+                                preview_rows[preview_index][field] = edited_row.get(field, '')
+
                 for row in preview_rows:
                     if not isinstance(row, dict):
                         continue
