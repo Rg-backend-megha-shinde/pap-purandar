@@ -62,9 +62,6 @@
     .pc-list-shell .dataTables_wrapper .dataTables_length,
     .pc-list-shell .dataTables_wrapper .dataTables_filter {
         margin-bottom: 1rem;
-        position: relative;
-        z-index: 20;
-        pointer-events: auto;
     }
     .pc-list-shell .dataTables_wrapper .dataTables_length label,
     .pc-list-shell .dataTables_wrapper .dataTables_filter label {
@@ -82,9 +79,6 @@
         background: #fff;
         color: #2a3f62;
         padding: 0.45rem 0.75rem;
-        pointer-events: auto !important;
-        user-select: text;
-        cursor: text;
     }
     .pc-list-shell .dataTables_wrapper .dataTables_info,
     .pc-list-shell .dataTables_wrapper .dataTables_paginate {
@@ -95,27 +89,17 @@
     .pc-list-shell .dataTables_wrapper .paginate_button {
         border-radius: 0.8rem !important;
     }
-    .pc-list-shell table.dataTable thead th,
-    .pc-list-shell table.dataTable thead td {
-        text-align: center !important;
-        vertical-align: middle;
-    }
     .pc-action-btn {
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        width: 34px;
-        height: 34px;
-        padding: 0;
-        border-radius: 0.55rem;
+        min-width: 48px;
+        padding: 0.4rem 0.9rem;
+        border-radius: 0.7rem;
         border: 1px solid;
         font-size: 0.9rem;
         font-weight: 600;
         text-decoration: none;
-    }
-    .pc-action-btn svg {
-        width: 17px;
-        height: 17px;
     }
     .pc-action-edit {
         border-color: #bfdbfe;
@@ -161,6 +145,7 @@
                         <thead class="bg-[#eef5ff]">
                             <tr>
                                 <th class="border border-[#d7e5f6] px-3 py-2 text-center font-semibold">ID</th>
+                                <th class="border border-[#d7e5f6] px-3 py-2 text-center font-semibold">विभाग</th>
                                 <th class="border border-[#d7e5f6] px-3 py-2 text-center font-semibold">जिल्हा</th>
                                 <th class="border border-[#d7e5f6] px-3 py-2 text-center font-semibold">तालुका</th>
                                 <th class="border border-[#d7e5f6] px-3 py-2 text-center font-semibold">गाव</th>
@@ -189,13 +174,13 @@
                                             type="button"
                                             class="pc-owner-info-btn inline-flex items-center px-2 py-1 text-xs font-semibold bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
                                             data-owner-name="{{ item.owner_names_mr|escapejs }}">
-                                            {{ item.owner_names_summary_mr|default:"Info" }}
+                                            Info
                                         </button>
                                     {% else %}
                                         -
                                     {% endif %}
                                 </td>
-                                <td class="border border-[#d7e5f6] px-3 py-2 text-center" data-search="{{ item.status }} {% if item.status == 'draft' %}Draft मसुदा{% else %}Completed पूर्ण{% endif %}">
+                                <td class="border border-[#d7e5f6] px-3 py-2 text-center">
                                     <span class="pc-status-badge {% if item.status == 'submitted' %}pc-status-submitted{% elif item.status == 'approved' %}pc-status-approved{% else %}pc-status-draft{% endif %}">
                                         {% if item.status == 'draft' %}
                                             Draft
@@ -204,8 +189,8 @@
                                         {% endif %}
                                     </span>
                                 </td>
-                                <td class="border border-[#d7e5f6] px-3 py-2 text-center" data-search="{{ item.current_step }}">{{ item.current_step }}</td>
-                                <td class="border border-[#d7e5f6] px-3 py-2 text-center" data-search="{{ item.updated_at|date:'d M Y, h:i a' }} {{ item.updated_at|date:'d/m/Y H:i' }} {{ item.user.username }}">
+                                <td class="border border-[#d7e5f6] px-3 py-2 text-center">{{ item.current_step }}</td>
+                                <td class="border border-[#d7e5f6] px-3 py-2 text-center">
                                     {{ item.updated_at|date:"d M Y, h:i a" }}
                                     <div class="text-xs text-[#8091aa]">Updated by {{ item.user.username }}</div>
                                 </td>
@@ -251,12 +236,11 @@
 
 <script>
 $(document).ready(function () {
-    const processChartTable = $('#processChartListTable').DataTable({
+    $('#processChartListTable').DataTable({
         pageLength: 10,
-        lengthMenu: [[5, 10, 25, 30, 50, -1], [5, 10, 25, 30, 50, "सर्व"]],
         scrollX: true,
         columnDefs: [
-            { targets: -1, orderable: false, searchable: true }
+            { targets: -1, orderable: false, searchable: false }
         ],
         language: {
             lengthMenu: "_MENU_ नोंदी दाखवा",
@@ -269,15 +253,6 @@ $(document).ready(function () {
                 next: "पुढील"
             }
         }
-    });
-
-    const processChartSearchInput = $('#processChartListTable_filter input');
-    processChartSearchInput
-        .prop('disabled', false)
-        .prop('readonly', false)
-        .attr('autocomplete', 'off');
-    processChartSearchInput.off('.DT').on('input', function () {
-        processChartTable.search(this.value).draw();
     });
 
     const ownerInfoModal = document.getElementById('pcOwnerInfoModal');
