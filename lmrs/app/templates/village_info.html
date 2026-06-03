@@ -128,6 +128,72 @@
             box-shadow: 0 0 0 3px rgba(18, 95, 203, 0.12);
         }
 
+        .vi-excel-upload-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            min-height: 2.35rem;
+            border: 1px solid #b9d3f4;
+            border-radius: 0.75rem;
+            background: linear-gradient(180deg, #ffffff 0%, #f3f8ff 100%);
+            color: #125fcb;
+            padding: 0.45rem 0.8rem;
+            font-size: 0.75rem;
+            font-weight: 800;
+            box-shadow: 0 4px 12px rgba(18, 95, 203, 0.08);
+            cursor: pointer;
+            transition: transform 120ms ease, border-color 120ms ease, box-shadow 120ms ease, background 120ms ease;
+        }
+
+        .vi-excel-upload-btn:hover {
+            border-color: #125fcb;
+            background: #eef5ff;
+            box-shadow: 0 7px 18px rgba(18, 95, 203, 0.14);
+            transform: translateY(-1px);
+        }
+
+        .vi-excel-upload-btn:focus-within {
+            outline: 3px solid rgba(18, 95, 203, 0.18);
+            outline-offset: 2px;
+        }
+
+        .vi-excel-upload-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 1.4rem;
+            height: 1.4rem;
+            border-radius: 999px;
+            background: #dbeafe;
+            color: #125fcb;
+            font-size: 0.95rem;
+            font-weight: 900;
+            line-height: 1;
+        }
+
+        .vi-notified-excel-input {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            opacity: 0;
+            overflow: hidden;
+            pointer-events: none;
+        }
+
+        .vi-excel-file-name {
+            max-width: 10rem;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            border: 1px solid #d7e5f6;
+            border-radius: 999px;
+            background: #f8fbff;
+            color: #5c78a5;
+            padding: 0.38rem 0.65rem;
+            font-size: 0.72rem;
+            font-weight: 700;
+        }
+
         .vi-files-toggle {
             cursor: pointer;
             list-style: none;
@@ -535,8 +601,16 @@
                                 <div class="vi-notified-area-block mb-4 rounded-xl border border-[#dfe8f5] bg-white p-3" data-section-key="section_1">
                                     <div class="mb-2 flex items-center justify-between gap-3">
                                         <p class="text-sm font-semibold text-[#244271]">अधिसूचित केलेले क्षेत्र</p>
-                                        <button type="button"
-                                            class="add-notified-area-row-btn inline-flex items-center justify-center rounded-lg border border-[#c6d9f2] bg-white px-3 py-1 text-xs font-semibold text-[#125fcb] hover:bg-[#eef5ff]">+ ओळ जोडा</button>
+                                        <div class="flex flex-wrap items-center justify-end gap-2">
+                                            <label class="vi-excel-upload-btn">
+                                                <span class="vi-excel-upload-icon">⇧</span>
+                                                <span>Excel अपलोड</span>
+                                                <input type="file" accept=".xlsx,.xls" class="vi-notified-excel-input hidden">
+                                            </label>
+                                            <span class="vi-excel-file-name hidden" data-excel-file-name></span>
+                                            <button type="button"
+                                                class="add-notified-area-row-btn inline-flex items-center justify-center rounded-lg border border-[#c6d9f2] bg-white px-3 py-1 text-xs font-semibold text-[#125fcb] hover:bg-[#eef5ff]">+ ओळ जोडा</button>
+                                        </div>
                                     </div>
                                     <div class="vi-notified-area-rows overflow-x-auto"></div>
                                 </div>
@@ -704,8 +778,16 @@
                                     <div class="vi-notified-area-block mb-4 rounded-xl border border-[#dfe8f5] bg-white p-3" data-section-key="section_3">
                                         <div class="mb-2 flex items-center justify-between gap-3">
                                             <p class="text-sm font-semibold text-[#244271]">प्रस्तावित केलेले क्षेत्र</p>
-                                            <button type="button"
-                                                class="add-notified-area-row-btn inline-flex items-center justify-center rounded-lg border border-[#c6d9f2] bg-white px-3 py-1 text-xs font-semibold text-[#125fcb] hover:bg-[#eef5ff]">+ ओळ जोडा</button>
+                                            <div class="flex flex-wrap items-center justify-end gap-2">
+                                                <label class="vi-excel-upload-btn">
+                                                    <span class="vi-excel-upload-icon">⇧</span>
+                                                    <span>Excel अपलोड</span>
+                                                    <input type="file" accept=".xlsx,.xls" class="vi-notified-excel-input hidden">
+                                                </label>
+                                                <span class="vi-excel-file-name hidden" data-excel-file-name></span>
+                                                <button type="button"
+                                                    class="add-notified-area-row-btn inline-flex items-center justify-center rounded-lg border border-[#c6d9f2] bg-white px-3 py-1 text-xs font-semibold text-[#125fcb] hover:bg-[#eef5ff]">+ ओळ जोडा</button>
+                                            </div>
                                         </div>
                                         <div class="vi-notified-area-rows overflow-x-auto"></div>
                                     </div>
@@ -1418,6 +1500,7 @@
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script>
         const tabs = Array.from(document.querySelectorAll('.tab-trigger'));
         const panels = Array.from(document.querySelectorAll('.tab-panel'));
@@ -2226,6 +2309,7 @@
 
         let notifiedAreaGutOptions = [];
         let notifiedGutTypeahead = { text: '', time: 0 };
+        const NOTIFIED_AREA_ROWS_PER_PAGE = 10;
 
         async function loadNotifiedAreaGutOptions() {
             const district = (districtSel.value || '').trim();
@@ -2318,20 +2402,32 @@
             return true;
         }
 
-        function buildNotifiedAreaTableHtml(rows) {
+        function buildNotifiedAreaTableHtml(rows, currentPage = 1) {
             const totalNotifiedArea = rows.reduce((sum, row) => {
                 const raw = String(row?.notified_area || '').trim();
                 const parsed = Number.parseFloat(raw.replace(/[^0-9.\-]/g, ''));
                 return sum + (Number.isFinite(parsed) ? parsed : 0);
             }, 0);
+            const totalRows = rows.length;
+            const totalPages = Math.max(1, Math.ceil(totalRows / NOTIFIED_AREA_ROWS_PER_PAGE));
+            const activePage = Math.min(Math.max(Number(currentPage) || 1, 1), totalPages);
+            const startIndex = (activePage - 1) * NOTIFIED_AREA_ROWS_PER_PAGE;
+            const endIndex = Math.min(startIndex + NOTIFIED_AREA_ROWS_PER_PAGE, totalRows);
+            const selectedCount = rows.filter((row) => row?._selected).length;
+            const allSelected = totalRows > 0 && selectedCount === totalRows;
 
             const bodyRows = rows.map((row, index) => {
                 const gutMode = row.gut_mode === 'other' ? 'other' : 'listed';
                 const gutValue = row.gut_number || '';
                 const otherGut = row.other_gut || '';
                 const areaValue = row.notified_area || '';
+                const isVisible = index >= startIndex && index < endIndex;
                 return `
-                    <tr class="border-t border-[#d8e4f3]">
+                    <tr class="border-t border-[#d8e4f3] ${isVisible ? '' : 'hidden'}" data-notified-row-index="${index}">
+                        <td class="w-12 px-2 py-2 text-center">
+                            <input type="checkbox" data-notified-select-row="${index}"
+                                class="h-4 w-4 rounded border-[#b8c9df] text-[#125fcb]" ${row._selected ? 'checked' : ''}>
+                        </td>
                         <td class="px-2 py-2 text-center text-sm text-[#44597a]">${index + 1}</td>
                         <td class="px-2 py-2">
                             <select data-notified-field="gut_select" data-row-index="${index}"
@@ -2352,16 +2448,39 @@
                             <button type="button" data-notified-add-row="${index}"
                                 class="mr-1 rounded-md border border-[#d4deec] px-2 py-1 text-xs font-semibold text-[#125fcb] ${index === rows.length - 1 ? '' : 'hidden'}">+</button>
                             <button type="button" data-notified-remove-row="${index}"
-                                class="rounded-md border border-[#d4deec] px-2 py-1 text-xs text-[#5d7293] ${index === 0 ? 'hidden' : ''}">✕</button>
+                                class="rounded-md border border-[#d4deec] px-2 py-1 text-xs text-[#5d7293] ${rows.length <= 1 ? 'hidden' : ''}">✕</button>
                         </td>
                     </tr>
                 `;
             }).join('');
 
+            const paginationHtml = totalRows > NOTIFIED_AREA_ROWS_PER_PAGE ? `
+                <tr class="border-t border-[#a7bfdc] bg-white">
+                    <td colspan="5" class="px-2 py-3">
+                        <div class="flex flex-col gap-2 text-sm text-[#44597a] md:flex-row md:items-center md:justify-between">
+                            <div>
+                                ${startIndex + 1}-${endIndex} / ${totalRows} ओळी दाखवत आहे
+                            </div>
+                            <div class="flex flex-wrap items-center gap-2">
+                                <button type="button" data-notified-page="${activePage - 1}"
+                                    class="rounded-lg border border-[#c6d9f2] bg-white px-3 py-1 text-xs font-semibold text-[#125fcb] hover:bg-[#eef5ff] ${activePage <= 1 ? 'pointer-events-none opacity-40' : ''}">मागील</button>
+                                <span class="rounded-lg bg-[#eef5ff] px-3 py-1 text-xs font-semibold text-[#244271]">पान ${activePage} / ${totalPages}</span>
+                                <button type="button" data-notified-page="${activePage + 1}"
+                                    class="rounded-lg border border-[#c6d9f2] bg-white px-3 py-1 text-xs font-semibold text-[#125fcb] hover:bg-[#eef5ff] ${activePage >= totalPages ? 'pointer-events-none opacity-40' : ''}">पुढील</button>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+            ` : '';
+
             return `
                 <table class="min-w-full border border-[#a7bfdc] text-left">
                     <thead class="bg-[#edf5ff]">
                         <tr>
+                            <th class="w-12 border-r border-[#a7bfdc] px-2 py-2 text-center">
+                                <input type="checkbox" data-notified-select-all
+                                    class="h-4 w-4 rounded border-[#b8c9df] text-[#125fcb]" ${allSelected ? 'checked' : ''}>
+                            </th>
                             <th class="w-16 border-r border-[#a7bfdc] px-2 py-2 text-sm font-semibold text-[#244271]">अ. क्र</th>
                             <th class="border-r border-[#a7bfdc] px-2 py-2 text-sm font-semibold text-[#244271]">गट क्रमांक</th>
                             <th class="border-r border-[#a7bfdc] px-2 py-2 text-sm font-semibold text-[#244271]">प्रस्तावित क्षेत्र</th>
@@ -2372,6 +2491,7 @@
                     <tfoot>
                         <tr class="border-t border-[#a7bfdc] bg-[#f8fbff]">
                             <td class="px-2 py-2"></td>
+                            <td class="px-2 py-2"></td>
                             <td class="px-2 py-2 text-right text-sm font-semibold text-[#244271]">एकूण क्षेत्र</td>
                             <td class="px-2 py-2">
                                 <input type="text" value="${totalNotifiedArea.toFixed(2)}" readonly
@@ -2379,6 +2499,20 @@
                             </td>
                             <td class="px-2 py-2"></td>
                         </tr>
+                        <tr class="border-t border-[#a7bfdc] bg-white">
+                            <td colspan="5" class="px-2 py-3">
+                                <div class="flex flex-col gap-2 text-sm text-[#44597a] md:flex-row md:items-center md:justify-between">
+                                    <span>${selectedCount ? `${selectedCount} ओळी निवडल्या` : 'ओळी निवडून हटवा किंवा सर्व हटवा'}</span>
+                                    <div class="flex flex-wrap items-center gap-2">
+                                        <button type="button" data-notified-delete-selected
+                                            class="rounded-lg border border-[#f3c7cf] bg-[#fff5f7] px-3 py-1 text-xs font-semibold text-[#c12e49] hover:bg-[#ffecef] ${selectedCount ? '' : 'pointer-events-none opacity-40'}">निवडलेले हटवा</button>
+                                        <button type="button" data-notified-delete-all
+                                            class="rounded-lg border border-[#f3c7cf] bg-white px-3 py-1 text-xs font-semibold text-[#c12e49] hover:bg-[#fff5f7]">सर्व हटवा</button>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        ${paginationHtml}
                     </tfoot>
                 </table>
             `;
@@ -2390,6 +2524,7 @@
                 gut_number: row?.gut_number || '',
                 other_gut: row?.other_gut || '',
                 notified_area: row?.notified_area || '',
+                _selected: Boolean(row?._selected),
             }));
         }
 
@@ -2398,7 +2533,10 @@
             const host = blockEl.querySelector('.vi-notified-area-rows');
             if (!host) return;
             const normalizedRows = normalizeNotifiedRows(rows);
-            host.innerHTML = buildNotifiedAreaTableHtml(normalizedRows);
+            const totalPages = Math.max(1, Math.ceil(normalizedRows.length / NOTIFIED_AREA_ROWS_PER_PAGE));
+            const currentPage = Math.min(Math.max(Number(blockEl.dataset.notifiedPage) || 1, 1), totalPages);
+            blockEl.dataset.notifiedPage = String(currentPage);
+            host.innerHTML = buildNotifiedAreaTableHtml(normalizedRows, currentPage);
             initSearchableGutSelects(host);
         }
 
@@ -2423,12 +2561,14 @@
                 const gutSelect = tr.querySelector('select[data-notified-field="gut_select"]');
                 const otherGutInput = tr.querySelector('input[data-notified-field="other_gut"]');
                 const areaInput = tr.querySelector('input[data-notified-field="notified_area"]');
+                const selectInput = tr.querySelector('input[data-notified-select-row]');
                 const selected = (gutSelect?.value || '').trim();
                 const row = {
                     gut_mode: selected === '__other__' ? 'other' : 'listed',
                     gut_number: selected && selected !== '__other__' ? selected : '',
                     other_gut: (otherGutInput?.value || '').trim(),
                     notified_area: (areaInput?.value || '').trim(),
+                    _selected: Boolean(selectInput?.checked),
                 };
                 if (preserveEmpty || idx === 0 || row.gut_number || row.other_gut || row.notified_area) {
                     rows.push(row);
@@ -2443,7 +2583,12 @@
                 payload.push({
                     block_index: index,
                     section_key: (block.dataset.sectionKey || '').trim(),
-                    rows: collectNotifiedAreaRowsFromBlock(block),
+                    rows: collectNotifiedAreaRowsFromBlock(block).map(({ gut_mode, gut_number, other_gut, notified_area }) => ({
+                        gut_mode,
+                        gut_number,
+                        other_gut,
+                        notified_area,
+                    })),
                 });
             });
             return payload;
@@ -2451,6 +2596,181 @@
 
         function normalizeGutValue(value) {
             return String(value || '').trim().toLowerCase().replace(/\s+/g, '');
+        }
+
+        function normalizeExcelDigits(value) {
+            const digitMap = {
+                '०': '0', '१': '1', '२': '2', '३': '3', '४': '4',
+                '५': '5', '६': '6', '७': '7', '८': '8', '९': '9'
+            };
+            return String(value ?? '').replace(/[०-९]/g, (digit) => digitMap[digit] || digit);
+        }
+
+        function extractNumericGut(value) {
+            const normalized = normalizeExcelDigits(value);
+            const match = normalized.match(/\d+/);
+            return match ? match[0] : '';
+        }
+
+        function normalizeExcelHeader(value) {
+            return normalizeExcelDigits(value).toLowerCase().replace(/\s+/g, '').replace(/[._\-:()/\\]/g, '');
+        }
+
+        function isGutExcelHeader(value) {
+            const header = normalizeExcelHeader(value);
+            return header.includes('gut') || (header.includes('गट') && (header.includes('क्रमांक') || header.includes('नं')));
+        }
+
+        function isAreaExcelHeader(value) {
+            const header = normalizeExcelHeader(value);
+            return header.includes('area') || header.includes('क्षेत्र');
+        }
+
+        function excelCellToString(value) {
+            if (value === null || value === undefined) return '';
+            if (typeof value === 'number') return Number.isFinite(value) ? String(value) : '';
+            return String(value).trim();
+        }
+
+        function findNotifiedExcelColumns(sheetRows) {
+            const maxScanRows = Math.min(sheetRows.length, 25);
+            for (let rowIndex = 0; rowIndex < maxScanRows; rowIndex += 1) {
+                const row = Array.isArray(sheetRows[rowIndex]) ? sheetRows[rowIndex] : [];
+                let gutIndex = -1;
+                let areaIndex = -1;
+                row.forEach((cell, index) => {
+                    if (gutIndex === -1 && isGutExcelHeader(cell)) gutIndex = index;
+                    if (areaIndex === -1 && isAreaExcelHeader(cell)) areaIndex = index;
+                });
+                if (gutIndex !== -1 && areaIndex !== -1) {
+                    return { headerRowIndex: rowIndex, gutIndex, areaIndex };
+                }
+            }
+            return null;
+        }
+
+        function getGutDropdownMatchMap() {
+            const matchMap = new Map();
+            notifiedAreaGutOptions.forEach((gut) => {
+                const numericGut = extractNumericGut(gut);
+                if (numericGut && !matchMap.has(numericGut)) matchMap.set(numericGut, gut);
+            });
+            return matchMap;
+        }
+
+        function showTemporaryVillageInfoMessage(message, isError = true, duration = 3000) {
+            if (!toastHost) {
+                showStatus(message, isError);
+                return;
+            }
+            const toast = document.createElement('div');
+            toast.className = `vi-toast ${isError ? 'is-error' : 'is-success'}`;
+            toast.style.cssText = 'display:flex;align-items:flex-start;justify-content:space-between;gap:0.75rem;padding:0.85rem 1rem;';
+            const msg = document.createElement('span');
+            msg.textContent = message;
+            msg.style.cssText = 'flex:1;word-break:break-word;line-height:1.4;';
+            toast.appendChild(msg);
+            toastHost.appendChild(toast);
+            requestAnimationFrame(() => toast.classList.add('is-show'));
+            setTimeout(() => {
+                toast.classList.remove('is-show');
+                setTimeout(() => toast.remove(), 180);
+            }, duration);
+        }
+
+        function mergeNotifiedExcelRows(block, excelRows) {
+            const currentRows = collectNotifiedAreaRowsFromBlock(block, { preserveEmpty: true })
+                .filter((row) => row.gut_number || row.other_gut || row.notified_area);
+            const mergedRows = currentRows.map((row) => ({ ...row }));
+            const existingByNumericGut = new Map();
+            mergedRows.forEach((row, index) => {
+                const numericGut = extractNumericGut(row.gut_mode === 'other' ? row.other_gut : row.gut_number);
+                if (numericGut) existingByNumericGut.set(numericGut, index);
+            });
+
+            excelRows.forEach((row) => {
+                const numericGut = row.numericGut;
+                const existingIndex = existingByNumericGut.get(numericGut);
+                const nextRow = {
+                    gut_mode: 'listed',
+                    gut_number: row.dropdownGut,
+                    other_gut: '',
+                    notified_area: row.area
+                };
+                if (Number.isInteger(existingIndex)) {
+                    mergedRows[existingIndex] = nextRow;
+                } else {
+                    existingByNumericGut.set(numericGut, mergedRows.length);
+                    mergedRows.push(nextRow);
+                }
+            });
+
+            block.dataset.notifiedPage = '1';
+            renderNotifiedAreaBlock(block, mergedRows.length ? mergedRows : [{}]);
+        }
+
+        async function readNotifiedExcelRows(file) {
+            if (!file) throw new Error('कृपया Excel फाइल निवडा.');
+            if (!window.XLSX) throw new Error('Excel प्रोसेसिंग लायब्ररी लोड झालेली नाही. कृपया पेज रीलोड करा.');
+            const buffer = await file.arrayBuffer();
+            let workbook;
+            try {
+                workbook = window.XLSX.read(buffer, { type: 'array', cellDates: false });
+            } catch (_) {
+                throw new Error('Excel फाइल वाचता आली नाही. कृपया वैध .xlsx किंवा .xls फाइल अपलोड करा.');
+            }
+            const firstSheetName = workbook.SheetNames?.[0];
+            if (!firstSheetName) throw new Error('Excel फाइल रिकामी आहे.');
+            const sheetRows = window.XLSX.utils.sheet_to_json(workbook.Sheets[firstSheetName], { header: 1, raw: true, defval: '' });
+            if (!sheetRows.some((row) => Array.isArray(row) && row.some((cell) => String(cell ?? '').trim() !== ''))) {
+                throw new Error('Excel फाइल रिकामी आहे.');
+            }
+            const columns = findNotifiedExcelColumns(sheetRows);
+            if (!columns) throw new Error('Excel मध्ये गट क्रमांक / Gut No आणि क्षेत्र / Area कॉलम आवश्यक आहेत.');
+
+            const gutMatchMap = getGutDropdownMatchMap();
+            const matchedRows = [];
+            const unmatchedGuts = new Set();
+            for (let rowIndex = columns.headerRowIndex + 1; rowIndex < sheetRows.length; rowIndex += 1) {
+                const row = Array.isArray(sheetRows[rowIndex]) ? sheetRows[rowIndex] : [];
+                const numericGut = extractNumericGut(row[columns.gutIndex]);
+                const area = excelCellToString(row[columns.areaIndex]);
+                if (!numericGut && !area) continue;
+                if (!numericGut || !area) continue;
+                const dropdownGut = gutMatchMap.get(numericGut);
+                if (!dropdownGut) {
+                    unmatchedGuts.add(numericGut);
+                    continue;
+                }
+                matchedRows.push({ numericGut, dropdownGut, area });
+            }
+            if (!matchedRows.length && !unmatchedGuts.size) throw new Error('Excel मध्ये प्रक्रिया करण्यासाठी गट क्रमांक आणि क्षेत्र असलेली कोणतीही ओळ नाही.');
+            return { matchedRows, unmatchedGuts: Array.from(unmatchedGuts) };
+        }
+
+        async function processNotifiedAreaExcelInput(inputEl) {
+            const block = inputEl?.closest('.vi-notified-area-block');
+            if (!block) return;
+            const file = inputEl.files?.[0];
+            const fileNameEl = block.querySelector('[data-excel-file-name]');
+            if (fileNameEl && file?.name) {
+                fileNameEl.textContent = file.name;
+                fileNameEl.title = file.name;
+                fileNameEl.classList.remove('hidden');
+            }
+            try {
+                const { matchedRows, unmatchedGuts } = await readNotifiedExcelRows(file);
+                if (matchedRows.length) mergeNotifiedExcelRows(block, matchedRows);
+                if (unmatchedGuts.length) {
+                    showTemporaryVillageInfoMessage(`हे गट क्रमांक dropdown मध्ये उपलब्ध नाहीत: ${unmatchedGuts.join(', ')}`, true, 3000);
+                } else if (matchedRows.length) {
+                    showTemporaryVillageInfoMessage('Excel डेटा यशस्वीरित्या प्रक्रिया झाला.', false, 3000);
+                }
+            } catch (err) {
+                showTemporaryVillageInfoMessage(err.message || 'Excel फाइल प्रक्रिया करताना त्रुटी आली.', true, 3000);
+            } finally {
+                inputEl.value = '';
+            }
         }
 
         function isDuplicateGutInRows(rows, currentIndex) {
@@ -2476,6 +2796,7 @@
                     const block = addBtn.closest('.vi-notified-area-block');
                     const rows = collectNotifiedAreaRowsFromBlock(block, { preserveEmpty: true });
                     rows.push({ gut_mode: 'listed', gut_number: '', other_gut: '', notified_area: '' });
+                    block.dataset.notifiedPage = String(Math.ceil(rows.length / NOTIFIED_AREA_ROWS_PER_PAGE));
                     renderNotifiedAreaBlock(block, rows);
                     return;
                 }
@@ -2484,7 +2805,37 @@
                     const block = inlineAddBtn.closest('.vi-notified-area-block');
                     const rows = collectNotifiedAreaRowsFromBlock(block, { preserveEmpty: true });
                     rows.push({ gut_mode: 'listed', gut_number: '', other_gut: '', notified_area: '' });
+                    block.dataset.notifiedPage = String(Math.ceil(rows.length / NOTIFIED_AREA_ROWS_PER_PAGE));
                     renderNotifiedAreaBlock(block, rows);
+                    return;
+                }
+                const pageBtn = event.target.closest('button[data-notified-page]');
+                if (pageBtn) {
+                    const block = pageBtn.closest('.vi-notified-area-block');
+                    if (!block) return;
+                    const rows = collectNotifiedAreaRowsFromBlock(block, { preserveEmpty: true });
+                    const totalPages = Math.max(1, Math.ceil(rows.length / NOTIFIED_AREA_ROWS_PER_PAGE));
+                    const nextPage = Math.min(Math.max(Number(pageBtn.dataset.notifiedPage) || 1, 1), totalPages);
+                    block.dataset.notifiedPage = String(nextPage);
+                    renderNotifiedAreaBlock(block, rows);
+                    return;
+                }
+                const deleteSelectedBtn = event.target.closest('button[data-notified-delete-selected]');
+                if (deleteSelectedBtn) {
+                    const block = deleteSelectedBtn.closest('.vi-notified-area-block');
+                    const rows = collectNotifiedAreaRowsFromBlock(block, { preserveEmpty: true });
+                    const nextRows = rows.filter((row) => !row._selected).map((row) => ({ ...row, _selected: false }));
+                    const totalPages = Math.max(1, Math.ceil(nextRows.length / NOTIFIED_AREA_ROWS_PER_PAGE));
+                    block.dataset.notifiedPage = String(Math.min(Number(block.dataset.notifiedPage) || 1, totalPages));
+                    renderNotifiedAreaBlock(block, nextRows.length ? nextRows : [{}]);
+                    return;
+                }
+                const deleteAllBtn = event.target.closest('button[data-notified-delete-all]');
+                if (deleteAllBtn) {
+                    const block = deleteAllBtn.closest('.vi-notified-area-block');
+                    if (!block) return;
+                    block.dataset.notifiedPage = '1';
+                    renderNotifiedAreaBlock(block, [{}]);
                     return;
                 }
                 const removeBtn = event.target.closest('button[data-notified-remove-row]');
@@ -2494,10 +2845,38 @@
                 const block = removeBtn.closest('.vi-notified-area-block');
                 const rows = collectNotifiedAreaRowsFromBlock(block, { preserveEmpty: true });
                 rows.splice(idx, 1);
+                const totalPages = Math.max(1, Math.ceil(rows.length / NOTIFIED_AREA_ROWS_PER_PAGE));
+                block.dataset.notifiedPage = String(Math.min(Number(block.dataset.notifiedPage) || 1, totalPages));
                 renderNotifiedAreaBlock(block, rows.length ? rows : [{}]);
             });
 
             document.addEventListener('change', (event) => {
+                const excelInput = event.target.closest('.vi-notified-excel-input');
+                if (excelInput) {
+                    processNotifiedAreaExcelInput(excelInput);
+                    return;
+                }
+
+                const selectAll = event.target.closest('input[data-notified-select-all]');
+                if (selectAll) {
+                    const block = selectAll.closest('.vi-notified-area-block');
+                    const rows = collectNotifiedAreaRowsFromBlock(block, { preserveEmpty: true })
+                        .map((row) => ({ ...row, _selected: selectAll.checked }));
+                    renderNotifiedAreaBlock(block, rows);
+                    return;
+                }
+
+                const selectRow = event.target.closest('input[data-notified-select-row]');
+                if (selectRow) {
+                    const idx = Number(selectRow.dataset.notifiedSelectRow);
+                    const block = selectRow.closest('.vi-notified-area-block');
+                    const rows = collectNotifiedAreaRowsFromBlock(block, { preserveEmpty: true });
+                    if (!Number.isInteger(idx) || !rows[idx]) return;
+                    rows[idx]._selected = selectRow.checked;
+                    renderNotifiedAreaBlock(block, rows);
+                    return;
+                }
+
                 const select = event.target.closest('select[data-notified-field="gut_select"]');
                 if (select) {
                     const idx = Number(select.dataset.rowIndex);
@@ -2813,8 +3192,16 @@
                 <div class="vi-notified-area-block mb-4 rounded-xl border border-[#dfe8f5] bg-white p-3" data-section-key="section_4">
                     <div class="mb-2 flex items-center justify-between gap-3">
                         <p class="text-sm font-semibold text-[#244271]">अधिसूचित केलेले क्षेत्र</p>
-                        <button type="button"
-                            class="add-notified-area-row-btn inline-flex items-center justify-center rounded-lg border border-[#c6d9f2] bg-white px-3 py-1 text-xs font-semibold text-[#125fcb] hover:bg-[#eef5ff]">+ ओळ जोडा</button>
+                        <div class="flex flex-wrap items-center justify-end gap-2">
+                            <label class="vi-excel-upload-btn">
+                                <span class="vi-excel-upload-icon">⇧</span>
+                                <span>Excel अपलोड</span>
+                                <input type="file" accept=".xlsx,.xls" class="vi-notified-excel-input hidden">
+                            </label>
+                            <span class="vi-excel-file-name hidden" data-excel-file-name></span>
+                            <button type="button"
+                                class="add-notified-area-row-btn inline-flex items-center justify-center rounded-lg border border-[#c6d9f2] bg-white px-3 py-1 text-xs font-semibold text-[#125fcb] hover:bg-[#eef5ff]">+ ओळ जोडा</button>
+                        </div>
                     </div>
                     <div class="vi-notified-area-rows overflow-x-auto"></div>
                 </div>
@@ -2945,8 +3332,16 @@
                 <div class="vi-notified-area-block mb-4 rounded-xl border border-[#dfe8f5] bg-white p-3" data-section-key="section_6">
                     <div class="mb-2 flex items-center justify-between gap-3">
                         <p class="text-sm font-semibold text-[#244271]">अधिसूचित केलेले क्षेत्र</p>
-                        <button type="button"
-                            class="add-notified-area-row-btn inline-flex items-center justify-center rounded-lg border border-[#c6d9f2] bg-white px-3 py-1 text-xs font-semibold text-[#125fcb] hover:bg-[#eef5ff]">+ ओळ जोडा</button>
+                        <div class="flex flex-wrap items-center justify-end gap-2">
+                            <label class="vi-excel-upload-btn">
+                                <span class="vi-excel-upload-icon">⇧</span>
+                                <span>Excel अपलोड</span>
+                                <input type="file" accept=".xlsx,.xls" class="vi-notified-excel-input hidden">
+                            </label>
+                            <span class="vi-excel-file-name hidden" data-excel-file-name></span>
+                            <button type="button"
+                                class="add-notified-area-row-btn inline-flex items-center justify-center rounded-lg border border-[#c6d9f2] bg-white px-3 py-1 text-xs font-semibold text-[#125fcb] hover:bg-[#eef5ff]">+ ओळ जोडा</button>
+                        </div>
                     </div>
                     <div class="vi-notified-area-rows overflow-x-auto"></div>
                 </div>
