@@ -858,8 +858,22 @@
                         </div>
                         <div class="space-y-6 px-6 py-7 md:px-8">
                             <div class="pc-section">
-                                <h3 class="mb-5 text-lg font-bold text-[#244271]">कलम ३२(३) अन्वये सुनावणीसाठी नोटीस दिली आहे काय? असल्यास</h3>
-                                <div class="space-y-5 rounded-xl border border-[#d7e5f6] bg-[#f8fbff] p-5">
+                                <h3 class="mb-5 text-lg font-bold text-[#244271]">कलम ३२(३) अन्वये सुनावणीसाठी नोटीस दिली आहे काय?</h3>
+                                <div class="mb-4 flex gap-6">
+                                    <label class="inline-flex items-center gap-2 text-sm font-semibold text-[#44597a]">
+                                        <input type="radio" name="section323_notice_given" value="yes" autocomplete="off" onchange="window.pcToggleSection323NoticeFields && window.pcToggleSection323NoticeFields()">
+                                        होय
+                                    </label>
+                                    <label class="inline-flex items-center gap-2 text-sm font-semibold text-[#44597a]">
+                                        <input type="radio" name="section323_notice_given" value="no" autocomplete="off" onchange="window.pcToggleSection323NoticeFields && window.pcToggleSection323NoticeFields()">
+                                        नाही
+                                    </label>
+                                </div>
+                                <div id="pcSection323NoticeYesFields" class="space-y-5 rounded-xl border border-[#d7e5f6] bg-[#f8fbff] p-5">
+                                    <div>
+                                        <label class="pc-label">नोटीस क्रमांक:</label>
+                                        <input class="pc-input mt-3" name="section323_notice_number" type="text" placeholder="नोटीस क्रमांक">
+                                    </div>
                                     <div>
                                         <label class="pc-label">नोटीस दिल्याचा दिनांक:</label>
                                         <input class="pc-input pc-date-input mt-3 pc-323-notice-date" name="section323_notice_date" type="date" placeholder="dd-mm-yyyy">
@@ -873,13 +887,26 @@
                                         <button type="button" class="pc-generate-notice-btn pc-323-notice-generate-btn">Generate Notice</button>
                                     </div>
                                 </div>
+                                <div id="pcSection323NoticeNoFields" class="mt-4 hidden rounded-xl border border-[#d7e5f6] bg-[#f8fbff] p-5">
+                                    <label class="pc-label">नाही असल्यास, कारण नमूद करा :</label>
+                                    <input class="pc-input mt-3" name="section323_notice_not_given_reason" type="text" placeholder="कारण नमूद करा">
+                                </div>
                             </div>
                             <div class="pc-section">
                                 <div class="space-y-6 rounded-xl border border-[#d7e5f6] bg-[#f8fbff] p-5">
                                     <div>
                                         <h3 class="text-lg font-bold text-[#244271]">३२(२) अन्वये नोटीस चे अनुषंगाने प्राप्त हरकतींचा अहवाल शासनास सादर झाला आहे काय?</h3>
-                                        <p class="mt-4 text-lg font-bold text-[#244271]">असल्यास,</p>
-                                        <div class="mt-5 space-y-5">
+                                        <div class="mt-4 flex gap-6">
+                                            <label class="inline-flex items-center gap-2 text-sm font-semibold text-[#44597a]">
+                                                <input type="radio" name="objection_report_submitted" value="yes" autocomplete="off" onchange="window.pcToggleObjectionReportFields && window.pcToggleObjectionReportFields()">
+                                                होय
+                                            </label>
+                                            <label class="inline-flex items-center gap-2 text-sm font-semibold text-[#44597a]">
+                                                <input type="radio" name="objection_report_submitted" value="no" autocomplete="off" onchange="window.pcToggleObjectionReportFields && window.pcToggleObjectionReportFields()">
+                                                नाही
+                                            </label>
+                                        </div>
+                                        <div id="pcObjectionReportYesFields" class="mt-5 space-y-5">
                                             <div>
                                                 <label class="pc-label">सादर दिनांक :</label>
                                                 <input class="pc-input pc-date-input mt-3" name="objection_report_date" type="date" placeholder="dd-mm-yyyy">
@@ -889,6 +916,10 @@
                                                 <input class="pc-upload mt-3" name="objection_report_file" type="file">
                                                 <a class="mt-2 hidden text-xs font-semibold text-[#125fcb] underline" data-pc-doc-link-for="objection_report_file" target="_blank" rel="noopener"></a>
                                             </div>
+                                        </div>
+                                        <div id="pcObjectionReportNoFields" class="mt-5 hidden">
+                                            <label class="pc-label">नाही असल्यास, कारण नमूद करा :</label>
+                                            <input class="pc-input mt-3" name="objection_report_not_submitted_reason" type="text" placeholder="कारण नमूद करा">
                                         </div>
                                     </div>
                                     <div class="pt-2">
@@ -917,7 +948,7 @@
                                         </div>
                                         <div id="pcDemarcationNoFields" class="mt-5 hidden">
                                             <label class="pc-label">नाही असल्यास, प्राप्त नसल्याचे कारण :</label>
-                                            <input class="pc-input mt-3" name="demarcation_not_received_reason" type="text" readonly>
+                                            <input class="pc-input mt-3" name="demarcation_not_received_reason" type="text">
                                         </div>
                                     </div>
                                 </div>
@@ -952,10 +983,14 @@
                                 </div>
                                 <div class="mt-4">
                                     <span class="pc-label">संयुक्त मोजणी सर्वेक्षण करण्यात आले आहे का?</span>
-                                    <div class="flex gap-4"><label><input type="radio" name="joint_done" value="yes"> हो</label><label><input type="radio" name="joint_done" value="no"> नाही</label></div>
+                                    <div class="flex gap-4">
+                                        <label><input type="radio" name="joint_done" value="yes" onchange="window.pcToggleJointSurveyDoneFields && window.pcToggleJointSurveyDoneFields()"> हो</label>
+                                        <label><input type="radio" name="joint_done" value="no" onchange="window.pcToggleJointSurveyDoneFields && window.pcToggleJointSurveyDoneFields()"> नाही</label>
+                                    </div>
                                 </div>
                             </div>
 
+                            <div id="pcJointSurveyYesFields" class="space-y-6">
                             <div class="pc-section">
                                 <h3 class="mb-4 text-lg font-bold text-[#244271]">संयुक्त मोजणी संदर्भानुसार आवश्यक जमिन तपशील</h3>
                                 <input type="hidden" id="pcJointSurveySelectedNamesJson" name="joint_survey_selected_names_json" value="[]">
@@ -1001,6 +1036,12 @@
                                         <tbody id="pcMultiKhataOwnersBody"></tbody>
                                     </table>
                                 </div>
+                            </div>
+                            </div>
+
+                            <div id="pcJointSurveyNoFields" class="pc-section hidden">
+                                <label class="pc-label">नाही असल्यास, कारण नमूद करा :</label>
+                                <input class="pc-input mt-3" name="joint_survey_not_done_reason" type="text" placeholder="कारण नमूद करा">
                             </div>
                         </div>
                     </div>
@@ -1383,7 +1424,7 @@
                                 <h3 class="mb-4 text-lg font-bold text-[#244271]">संपादनाचा तपशील</h3>
                                 <div class="overflow-x-auto">
                                     <table class="pc-table">
-                                        <thead><tr><th>भूधारकाचे नाव</th><th>जिरायत क्षेत्र</th><th>हंगामातले क्षेत्र</th><th>बागायत क्षेत्र</th><th>अकृषक/फळझाडे क्षेत्र</th><th>संभाव्य बिनशेती क्षेत्र (महामार्ग सन्मुख, गावठाण, इत्यादी)</th><th>एकूण क्षेत्र</th><th>संपादन क्षेत्र</th></tr></thead>
+                                        <thead><tr><th>भूधारकाचे नाव</th><th>जिरायत क्षेत्र (अ)</th><th>हंगामातले क्षेत्र (ब)</th><th>बागायत क्षेत्र (क)</th><th>अकृषक/फळझाडे क्षेत्र (ड)</th><th>संभाव्य बिनशेती क्षेत्र (ई) (महामार्ग सन्मुख, गावठाण, इत्यादी)</th><th>एकूण क्षेत्र (अ+ब+क+ड+ई)</th><th>संपादन क्षेत्र (संयुक्त मोजणी प्रमाणे)</th></tr></thead>
                                         <tbody id="pcAcquisitionDetailBody"><tr><td><input class="pc-input" readonly></td><td><input class="pc-input"></td><td><input class="pc-input"></td><td><input class="pc-input"></td><td><input class="pc-input"></td><td><input class="pc-input"></td><td><input class="pc-input" readonly></td><td><input class="pc-input" readonly></td></tr></tbody>
                                     </table>
                                 </div>
@@ -1848,7 +1889,7 @@
         window.pcHandleAssetRowsAction = (action, targetId) => {
             const container = targetId ? document.getElementById(targetId) : null;
             if (action === 'add') {
-                appendRepeatableAssetRow(container);
+                appendRepeatableAssetComponentOrRow(container);
                 updateTotalAssetValuation();
                 saveTab7LocalDraft();
                 scheduleTab7AutoSave();
@@ -3418,16 +3459,18 @@
             syncSingleKhataOwnerRowButtons();
         }
 
-        function buildRepeatableAssetComponentRow(prefix, values = {}, ownerValue = '', isFirst = false) {
+        function buildRepeatableAssetComponentRow(prefix, values = {}, ownerValue = '', showLabels = true, showOwnerControls = false) {
             const relatedOwnerName = escapeHtml(ownerValue || values[`${prefix}_related_owner_name`] || '');
             const assetOwnerName = values[`${prefix}_owner_name`] || '';
             const componentDetail = escapeHtml(values[`${prefix}_component_detail`] || '');
             const componentValuation = escapeHtml(values[`${prefix}_component_valuation`] || '');
             const hiddenOwnerValue = escapeHtml(ownerValue || values[`${prefix}_related_owner_name`] || '');
+            const detailLabel = showLabels ? '<label class="pc-label">निगडीत घटक तपशील</label>' : '';
+            const valuationLabel = showLabels ? '<label class="pc-label">निगडीत घटकांचे मूल्यांकन</label>' : '';
 
             return `
                 <div class="pc-repeatable-asset-component-row grid gap-4 md:grid-cols-12 md:items-end">
-                    ${isFirst ? `
+                    ${showOwnerControls ? `
                         <div class="md:col-span-3">
                             <label class="pc-label">भूधारकाचे नाव</label>
                             <input class="pc-input pc-repeatable-asset-owner-input" name="${prefix}_related_owner_name" type="text" value="${relatedOwnerName}" placeholder="भूधारकाचे नाव">
@@ -3443,11 +3486,11 @@
                         <div class="hidden md:block md:col-span-6"></div>
                     `}
                     <div class="md:col-span-3">
-                        <label class="pc-label">निगडीत घटक तपशील</label>
+                        ${detailLabel}
                         <input class="pc-input" name="${prefix}_component_detail" type="text" value="${componentDetail}" placeholder="निगडीत घटक तपशील">
                     </div>
                     <div class="md:col-span-2">
-                        <label class="pc-label">निगडीत घटकांचे मूल्यांकन</label>
+                        ${valuationLabel}
                         <input class="pc-input pc-asset-valuation-input" name="${prefix}_component_valuation" type="number" step="0.01" min="0" inputmode="decimal" value="${componentValuation}" placeholder="निगडीत घटकांचे मूल्यांकन" oninput="window.pcUpdateTotalAssetValuation && window.pcUpdateTotalAssetValuation()" onchange="window.pcUpdateTotalAssetValuation && window.pcUpdateTotalAssetValuation()">
                     </div>
                     <div class="flex justify-end gap-2 md:col-span-1">
@@ -3458,7 +3501,37 @@
             `;
         }
 
+        function buildRepeatableAssetOwnerOnlyRow(prefix, values = {}, showLabels = false) {
+            const relatedOwnerName = escapeHtml(values[`${prefix}_related_owner_name`] || '');
+            const assetOwnerName = values[`${prefix}_owner_name`] || '';
+            const ownerLabel = showLabels ? '<label class="pc-label">भूधारकाचे नाव</label>' : '';
+            const otherLabel = showLabels ? '<label class="pc-label">इतर</label>' : '';
+
+            return `
+                <div class="grid gap-4 md:grid-cols-12 md:items-end">
+                    <div class="md:col-span-3">
+                        ${ownerLabel}
+                        <input class="pc-input pc-repeatable-asset-owner-input" name="${prefix}_related_owner_name" type="text" value="${relatedOwnerName}" placeholder="भूधारकाचे नाव">
+                    </div>
+                    <div class="md:col-span-3">
+                        ${otherLabel}
+                        <div class="owner-name-dropdown" data-owner-input-name="${prefix}_owner_name">
+                            ${buildAssetOwnerNameInput(`${prefix}_owner_name`, assetOwnerName)}
+                        </div>
+                    </div>
+                    <div class="flex justify-end gap-2 md:col-span-6">
+                        <button type="button" class="pc-inline-add-asset-row rounded-md border border-[#d4deec] px-2 py-1 text-xs font-semibold text-[#125fcb]">+</button>
+                        <button type="button" class="pc-inline-remove-asset-row rounded-md border border-[#d4deec] px-2 py-1 text-xs text-[#5d7293]">✕</button>
+                    </div>
+                </div>
+                <div class="pc-repeatable-asset-components mt-4 space-y-4"></div>
+            `;
+        }
+
         function buildRepeatableAssetRow(prefix, values = {}) {
+            if (values._owner_only) {
+                return buildRepeatableAssetOwnerOnlyRow(prefix, values, false);
+            }
             const relatedOwnerName = values[`${prefix}_related_owner_name`] || '';
             const componentRows = Array.isArray(values.component_rows) && values.component_rows.length
                 ? values.component_rows
@@ -3470,6 +3543,7 @@
                         prefix,
                         index === 0 ? { ...row, [`${prefix}_owner_name`]: values[`${prefix}_owner_name`] || '' } : row,
                         relatedOwnerName,
+                        index === 0,
                         index === 0
                     )).join('')}
                 </div>
@@ -3488,6 +3562,19 @@
             syncRepeatableAssetRowButtons(container);
         }
 
+        function appendRepeatableAssetComponentOrRow(container) {
+            if (!container) return;
+            const prefix = container.dataset.namePrefix || '';
+            if (!prefix) return;
+            const wrapper = container.querySelector('.pc-repeatable-asset-row:last-child');
+            const componentsHost = wrapper?.querySelector('.pc-repeatable-asset-components');
+            if (!wrapper || !componentsHost) {
+                appendRepeatableAssetRow(container, { _force_empty_component: true });
+                return;
+            }
+            appendRepeatableAssetRow(container, { _owner_only: true });
+        }
+
         function renderRepeatableAssetRows(container, rows = []) {
             if (!container) return;
             container.innerHTML = '';
@@ -3496,24 +3583,95 @@
                 const prefix = container.dataset.namePrefix || '';
                 const ownerName = row?.[`${prefix}_related_owner_name`] || '';
                 const assetOwnerName = row?.[`${prefix}_owner_name`] || '';
+                const componentDetail = row?.[`${prefix}_component_detail`] || '';
+                const componentValuation = row?.[`${prefix}_component_valuation`] || '';
+                const componentKey = `${componentDetail}||${componentValuation}`;
                 const previous = groupedRows[groupedRows.length - 1];
-                const componentRow = {
-                    [`${prefix}_component_detail`]: row?.[`${prefix}_component_detail`] || '',
-                    [`${prefix}_component_valuation`]: row?.[`${prefix}_component_valuation`] || '',
-                };
-                if (previous && ownerName && previous[`${prefix}_related_owner_name`] === ownerName) {
-                    previous.component_rows.push(componentRow);
+                if (previous && previous._component_key === componentKey) {
+                    groupedRows.push({
+                        _owner_only: true,
+                        _component_key: componentKey,
+                        [`${prefix}_related_owner_name`]: ownerName,
+                        [`${prefix}_owner_name`]: assetOwnerName,
+                    });
                     return;
                 }
                 groupedRows.push({
+                    _component_key: componentKey,
                     [`${prefix}_related_owner_name`]: ownerName,
                     [`${prefix}_owner_name`]: assetOwnerName,
-                    component_rows: [componentRow],
+                    component_rows: [{
+                        [`${prefix}_component_detail`]: componentDetail,
+                        [`${prefix}_component_valuation`]: componentValuation,
+                    }],
                 });
             });
             const nextRows = groupedRows.length ? groupedRows : [{}];
-            nextRows.forEach((row) => appendRepeatableAssetRow(container, row));
+            nextRows.forEach((row) => {
+                delete row._component_key;
+                appendRepeatableAssetRow(container, row);
+            });
             updateTotalAssetValuation();
+        }
+
+        function collectRepeatableAssetRows(container) {
+            if (!container) return [];
+            const prefix = container.dataset.namePrefix || '';
+            if (!prefix) return [];
+            const rows = [];
+            let inheritedComponentDetail = '';
+            let inheritedComponentValuation = '';
+            container.querySelectorAll('.pc-repeatable-asset-row').forEach((row) => {
+                const ownerName = row.querySelector(`.pc-repeatable-asset-owner-input[name="${prefix}_related_owner_name"]`)?.value || '';
+                const assetOwnerName = row.querySelector(`.owner-name-dropdown[data-owner-input-name="${prefix}_owner_name"] input`)?.value || '';
+                const componentRows = Array.from(row.querySelectorAll('.pc-repeatable-asset-component-row'));
+                if (!componentRows.length) {
+                    rows.push({
+                        [`${prefix}_related_owner_name`]: ownerName,
+                        [`${prefix}_owner_name`]: assetOwnerName,
+                        [`${prefix}_component_detail`]: inheritedComponentDetail,
+                        [`${prefix}_component_valuation`]: inheritedComponentValuation,
+                    });
+                    return;
+                }
+                componentRows.forEach((componentRow) => {
+                    const componentDetail = componentRow.querySelector(`[name="${prefix}_component_detail"]`)?.value || '';
+                    const componentValuation = componentRow.querySelector(`[name="${prefix}_component_valuation"]`)?.value || '';
+                    inheritedComponentDetail = componentDetail;
+                    inheritedComponentValuation = componentValuation;
+                    rows.push({
+                        [`${prefix}_related_owner_name`]: ownerName,
+                        [`${prefix}_owner_name`]: assetOwnerName,
+                        [`${prefix}_component_detail`]: componentDetail,
+                        [`${prefix}_component_valuation`]: componentValuation,
+                    });
+                });
+            });
+            return rows.filter((row) => Object.values(row).some((value) => String(value || '').trim()));
+        }
+
+        function collectCurrentAssetComponentTemplates(container, prefix) {
+            if (!container || !prefix) return [{ detail: '', valuation: '' }];
+            const wrappers = Array.from(container.querySelectorAll('.pc-repeatable-asset-row')).reverse();
+            for (const wrapper of wrappers) {
+                const componentRows = Array.from(wrapper.querySelectorAll('.pc-repeatable-asset-component-row'));
+                const templates = componentRows.map((componentRow) => ({
+                    detail: componentRow.querySelector(`[name="${prefix}_component_detail"]`)?.value || '',
+                    valuation: componentRow.querySelector(`[name="${prefix}_component_valuation"]`)?.value || '',
+                }));
+                if (templates.some((row) => String(row.detail || '').trim() || String(row.valuation || '').trim())) {
+                    return templates.length ? templates : [{ detail: '', valuation: '' }];
+                }
+            }
+            return [{ detail: '', valuation: '' }];
+        }
+
+        function buildRepeatableAssetRowKey(prefix, row = {}) {
+            return [
+                normalizeOwnerName(row[`${prefix}_related_owner_name`] || ''),
+                String(row[`${prefix}_component_detail`] || '').trim().toLowerCase(),
+                String(row[`${prefix}_component_valuation`] || '').trim(),
+            ].join('||');
         }
 
         function ensureRepeatableAssetRows(container, count = 1) {
@@ -3545,10 +3703,38 @@
             }, 1);
         }
 
+        function buildRepeatableAssetRowsFromSectionData(sectionData = {}, prefix = '') {
+            if (!sectionData || !prefix) return [];
+            const ownerValues = Array.isArray(sectionData[`${prefix}_related_owner_name`])
+                ? sectionData[`${prefix}_related_owner_name`]
+                : (sectionData[`${prefix}_related_owner_name`] ? [sectionData[`${prefix}_related_owner_name`]] : []);
+            const assetOwnerValues = Array.isArray(sectionData[`${prefix}_owner_name`])
+                ? sectionData[`${prefix}_owner_name`]
+                : (sectionData[`${prefix}_owner_name`] ? [sectionData[`${prefix}_owner_name`]] : []);
+            const detailValues = Array.isArray(sectionData[`${prefix}_component_detail`])
+                ? sectionData[`${prefix}_component_detail`]
+                : (sectionData[`${prefix}_component_detail`] ? [sectionData[`${prefix}_component_detail`]] : []);
+            const valuationValues = Array.isArray(sectionData[`${prefix}_component_valuation`])
+                ? sectionData[`${prefix}_component_valuation`]
+                : (sectionData[`${prefix}_component_valuation`] ? [sectionData[`${prefix}_component_valuation`]] : []);
+            const rowCount = Math.max(ownerValues.length, assetOwnerValues.length, detailValues.length, valuationValues.length);
+            return Array.from({ length: rowCount }, (_item, index) => ({
+                [`${prefix}_related_owner_name`]: ownerValues[index] || '',
+                [`${prefix}_owner_name`]: assetOwnerValues[index] || '',
+                [`${prefix}_component_detail`]: detailValues[index] || '',
+                [`${prefix}_component_valuation`]: valuationValues[index] || '',
+            }));
+        }
+
         function ensureRepeatableAssetRowsForData(sectionData = {}) {
             document.querySelectorAll('[data-repeatable-asset-rows]').forEach((container) => {
                 const prefix = container.dataset.namePrefix || '';
-                setRepeatableAssetRowCount(container, getRepeatableAssetRowCount(sectionData, prefix));
+                const rows = buildRepeatableAssetRowsFromSectionData(sectionData, prefix);
+                if (rows.length) {
+                    renderRepeatableAssetRows(container, rows);
+                } else {
+                    setRepeatableAssetRowCount(container, getRepeatableAssetRowCount(sectionData, prefix));
+                }
             });
         }
 
@@ -3586,19 +3772,7 @@
             tab7Panel.querySelectorAll('[data-repeatable-asset-rows]').forEach((container) => {
                 const prefix = container.dataset.namePrefix || '';
                 if (!prefix) return;
-                snapshot.sections[prefix] = [];
-                container.querySelectorAll('.pc-repeatable-asset-row').forEach((row) => {
-                    const ownerName = row.querySelector(`.pc-repeatable-asset-owner-input[name="${prefix}_related_owner_name"]`)?.value || '';
-                    const assetOwnerName = row.querySelector(`.owner-name-dropdown[data-owner-input-name="${prefix}_owner_name"] input`)?.value || '';
-                    row.querySelectorAll('.pc-repeatable-asset-component-row').forEach((componentRow) => {
-                        snapshot.sections[prefix].push({
-                            [`${prefix}_related_owner_name`]: ownerName,
-                            [`${prefix}_owner_name`]: assetOwnerName,
-                            [`${prefix}_component_detail`]: componentRow.querySelector(`[name="${prefix}_component_detail"]`)?.value || '',
-                            [`${prefix}_component_valuation`]: componentRow.querySelector(`[name="${prefix}_component_valuation"]`)?.value || '',
-                        });
-                    });
-                });
+                snapshot.sections[prefix] = collectRepeatableAssetRows(container);
             });
             return snapshot;
         }
@@ -4012,14 +4186,63 @@
             });
         }
 
+        function getCheckedRadioValue(name) {
+            const checked = document.querySelector(`input[type="radio"][name="${CSS.escape(name)}"]:checked`);
+            return checked?.value || '';
+        }
+
+        function toggleSection323NoticeFields() {
+            const isNo = Boolean(document.querySelector('input[name="section323_notice_given"][value="no"]:checked'));
+            const yesFields = document.getElementById('pcSection323NoticeYesFields');
+            const noFields = document.getElementById('pcSection323NoticeNoFields');
+            yesFields?.classList.toggle('hidden', isNo);
+            noFields?.classList.toggle('hidden', !isNo);
+            if (yesFields) yesFields.style.display = isNo ? 'none' : '';
+            if (noFields) noFields.style.display = isNo ? '' : 'none';
+            yesFields?.querySelectorAll('input, select, textarea, button').forEach((field) => {
+                if (field instanceof HTMLInputElement || field instanceof HTMLSelectElement || field instanceof HTMLTextAreaElement || field instanceof HTMLButtonElement) {
+                    field.disabled = isNo;
+                }
+            });
+            noFields?.querySelectorAll('input, select, textarea').forEach((field) => {
+                if (field instanceof HTMLInputElement || field instanceof HTMLSelectElement || field instanceof HTMLTextAreaElement) {
+                    field.disabled = !isNo;
+                }
+            });
+        }
+        window.pcToggleSection323NoticeFields = toggleSection323NoticeFields;
+
+        function toggleObjectionReportFields() {
+            const isNo = Boolean(document.querySelector('input[name="objection_report_submitted"][value="no"]:checked'));
+            const yesFields = document.getElementById('pcObjectionReportYesFields');
+            const noFields = document.getElementById('pcObjectionReportNoFields');
+            yesFields?.classList.toggle('hidden', isNo);
+            noFields?.classList.toggle('hidden', !isNo);
+            if (yesFields) yesFields.style.display = isNo ? 'none' : '';
+            if (noFields) noFields.style.display = isNo ? '' : 'none';
+            yesFields?.querySelectorAll('input, select, textarea, button').forEach((field) => {
+                if (field instanceof HTMLInputElement || field instanceof HTMLSelectElement || field instanceof HTMLTextAreaElement || field instanceof HTMLButtonElement) {
+                    field.disabled = isNo;
+                }
+            });
+            noFields?.querySelectorAll('input, select, textarea').forEach((field) => {
+                if (field instanceof HTMLInputElement || field instanceof HTMLSelectElement || field instanceof HTMLTextAreaElement) {
+                    field.disabled = !isNo;
+                }
+            });
+        }
+        window.pcToggleObjectionReportFields = toggleObjectionReportFields;
+
         function restoreSavedProcessChartRadios(stepData = {}) {
             restoreSavedRadioValues(stepData, 2, ['survey_in_notification']);
             restoreSavedRadioValues(stepData, 3, [
                 'notice_publication_included',
                 'proposal_included',
             ]);
-	            restoreSavedRadioValues(stepData, 4, ['joint_done', 'demarcation_done', 'joint_survey_owner_table_mode']);
-	            toggleJointSurveyOwnerTables();
+	            restoreSavedRadioValues(stepData, 4, ['section323_notice_given', 'objection_report_submitted', 'joint_done', 'demarcation_done', 'joint_survey_owner_table_mode']);
+	            toggleSection323NoticeFields();
+	            toggleObjectionReportFields();
+	            toggleJointSurveyDoneFields();
             restoreSavedRadioValues(stepData, 5, ['group_in_clause_one_included']);
             restoreSavedRadioValues(stepData, 9, ['consent_submitted']);
             restoreSavedRadioValues(stepData, 12, [
@@ -4055,8 +4278,11 @@
             const sectionData = getSavedStepSectionData(stepData, 4, 'step_4');
             if (!sectionData || typeof sectionData !== 'object') return;
             [
+                'section323_notice_number',
                 'section323_notice_date',
+                'section323_notice_not_given_reason',
                 'objection_report_date',
+                'objection_report_not_submitted_reason',
                 'demarcation_date',
                 'pcSec6Date',
             ].forEach((key) => {
@@ -4352,12 +4578,14 @@
         function collectMultiKhataOwnerRows() {
             const tbody = document.getElementById('pcMultiKhataOwnersBody');
             if (!tbody) return [];
+            const sharedArea = getMultiKhataCommonAreaValue();
             return Array.from(tbody.querySelectorAll('tr')).map((row) => {
                 const inputs = row.querySelectorAll('input');
                 return {
                     owner_name: String(inputs[0]?.value || '').trim(),
                     mobile_number: String(inputs[1]?.value || '').trim(),
                     address: String(inputs[2]?.value || '').trim(),
+                    acquisition_area: sharedArea,
                 };
             });
         }
@@ -4391,10 +4619,32 @@
 	            toggleJointSurveyOwnerTables(nextMode);
 	        }
 
+	        function getJointSurveyDoneValue() {
+	            const checked = document.querySelector('input[name="joint_done"]:checked');
+	            return checked?.value || '';
+	        }
+
 	        function toggleJointSurveyOwnerTables(mode = getJointSurveyOwnerTableMode()) {
 	            const nextMode = mode === 'multi' ? 'multi' : 'single';
 	            const singleSection = document.getElementById('pcSingleKhataSection');
 	            const multiSection = document.getElementById('pcMultiKhataSection');
+	            const jointSurveyYesFields = document.getElementById('pcJointSurveyYesFields');
+	            const isJointSurveyYes = getJointSurveyDoneValue() !== 'no';
+	            if (!isJointSurveyYes) {
+	                singleSection?.classList.add('hidden');
+	                multiSection?.classList.add('hidden');
+	                jointSurveyYesFields?.querySelectorAll('input, select, textarea, button').forEach((field) => {
+	                    if (field instanceof HTMLInputElement || field instanceof HTMLSelectElement || field instanceof HTMLTextAreaElement || field instanceof HTMLButtonElement) {
+	                        field.disabled = true;
+	                    }
+	                });
+	                return;
+	            }
+	            jointSurveyYesFields?.querySelectorAll('input, select, textarea, button').forEach((field) => {
+	                if (field instanceof HTMLInputElement || field instanceof HTMLSelectElement || field instanceof HTMLTextAreaElement || field instanceof HTMLButtonElement) {
+	                    field.disabled = false;
+	                }
+	            });
 	            singleSection?.classList.toggle('hidden', nextMode !== 'single');
 	            multiSection?.classList.toggle('hidden', nextMode !== 'multi');
 	            singleSection?.querySelectorAll('input, select, textarea, button').forEach((field) => {
@@ -4416,9 +4666,28 @@
 	            }
 	        }
 
+	        function toggleJointSurveyDoneFields() {
+	            const isJointSurveyNo = getJointSurveyDoneValue() === 'no';
+	            const yesFields = document.getElementById('pcJointSurveyYesFields');
+	            const noFields = document.getElementById('pcJointSurveyNoFields');
+	            const reasonField = noFields?.querySelector('input[name="joint_survey_not_done_reason"]');
+	            yesFields?.classList.toggle('hidden', isJointSurveyNo);
+	            noFields?.classList.toggle('hidden', !isJointSurveyNo);
+	            if (yesFields) yesFields.style.display = isJointSurveyNo ? 'none' : '';
+	            if (noFields) noFields.style.display = isJointSurveyNo ? '' : 'none';
+	            if (reasonField instanceof HTMLInputElement) {
+	                reasonField.disabled = !isJointSurveyNo;
+	            }
+	            toggleJointSurveyOwnerTables();
+	        }
+	        window.pcToggleJointSurveyDoneFields = toggleJointSurveyDoneFields;
+
 	        function collectTab4Snapshot() {
 	            const tableMode = getJointSurveyOwnerTableMode();
+	            const reasonField = document.querySelector('input[name="joint_survey_not_done_reason"]');
 	            return {
+	                joint_done: getJointSurveyDoneValue(),
+	                not_done_reason: String(reasonField?.value || '').trim(),
 	                owner_table_mode: tableMode,
 	                single_rows: tableMode === 'single' ? collectSingleKhataOwnerRows() : [],
 	                multi_rows: tableMode === 'multi' ? collectMultiKhataOwnerRows() : [],
@@ -4441,9 +4710,19 @@
             const singleRows = Array.isArray(snapshot.single_rows) ? snapshot.single_rows : [];
             const multiRows = Array.isArray(snapshot.multi_rows) ? snapshot.multi_rows : [];
             const tableMode = snapshot.owner_table_mode === 'multi' || (!singleRows.length && multiRows.length) ? 'multi' : 'single';
+            const reasonField = document.querySelector('input[name="joint_survey_not_done_reason"]');
+            if (reasonField instanceof HTMLInputElement && snapshot.not_done_reason) {
+                reasonField.value = snapshot.not_done_reason;
+            }
+            if (snapshot.joint_done === 'no') {
+                document.querySelectorAll('input[name="joint_done"]').forEach((radio) => {
+                    if (radio instanceof HTMLInputElement) radio.checked = radio.value === 'no';
+                });
+                toggleJointSurveyDoneFields();
+            }
             const hasData = [...singleRows, ...multiRows].some((row) =>
                 Object.values(row || {}).some((value) => String(value || '').trim())
-            ) || String(snapshot.multi_common_area || '').trim();
+            ) || String(snapshot.multi_common_area || '').trim() || String(snapshot.not_done_reason || '').trim();
             if (!hasData) return false;
 
             singleBody.innerHTML = singleRows.length
@@ -4480,14 +4759,14 @@
             const multiArea = getMultiKhataCommonAreaValue();
             collectMultiKhataOwnerRows().forEach((row, index) => {
                 const ownerName = String(row.owner_name || '').trim();
-                if (!ownerName || !multiArea) return;
+                if (!ownerName) return;
                 rows.push({
                     source: 'multi',
                     rowIndex: index,
                     owner_name: ownerName,
                     mobile_number: row.mobile_number || '',
                     address: row.address || '',
-                    acquisition_area: multiArea,
+                    acquisition_area: row.acquisition_area || multiArea,
                 });
             });
 
@@ -4555,17 +4834,25 @@
             renderMultiKhataOwnerRows(rows);
         }
 
+        function normalizeRepeatedSharedAreaValue(value = '') {
+            const rawValue = String(value || '').trim();
+            if (!rawValue.includes(',')) return rawValue;
+            const parts = rawValue.split(',').map((part) => part.trim()).filter(Boolean);
+            if (!parts.length) return '';
+            return parts.every((part) => part === parts[0]) ? parts[0] : rawValue;
+        }
+
         function getMultiKhataCommonAreaValue() {
             const tbody = document.getElementById('pcMultiKhataOwnersBody');
             const firstAreaField = tbody?.querySelector('.pc-multi-khata-common-area');
-            return String(firstAreaField?.value || '').trim();
+            return normalizeRepeatedSharedAreaValue(firstAreaField?.value || '');
         }
 
         function syncMultiKhataCommonAreaInputs(sourceValue = null) {
             const tbody = document.getElementById('pcMultiKhataOwnersBody');
             if (!tbody) return;
             const areaInputs = Array.from(tbody.querySelectorAll('.pc-multi-khata-common-area'));
-            const sharedValue = sourceValue === null ? getMultiKhataCommonAreaValue() : String(sourceValue || '');
+            const sharedValue = normalizeRepeatedSharedAreaValue(sourceValue === null ? getMultiKhataCommonAreaValue() : sourceValue);
             areaInputs.forEach((input) => {
                 input.value = sharedValue;
             });
@@ -4596,8 +4883,11 @@
         function syncRepeatableAssetRowButtons(container) {
             if (!container) return;
             const rows = Array.from(container.children);
-            rows.forEach((row) => {
+            rows.forEach((row, rowIndex) => {
                 const componentRows = Array.from(row.querySelectorAll('.pc-repeatable-asset-component-row'));
+                row.querySelectorAll('.pc-label').forEach((label) => {
+                    label.classList.toggle('hidden', rowIndex > 0);
+                });
                 componentRows.forEach((componentRow, index) => {
                     const addBtn = componentRow.querySelector('.pc-inline-add-asset-row');
                     const removeBtn = componentRow.querySelector('.pc-inline-remove-asset-row');
@@ -4933,19 +5223,40 @@
             const sourceRows = collectTab4AssetOwnerRows();
             const checkboxes = Array.from(document.querySelectorAll('.pc-joint-survey-name-checkbox:checked'));
             const selectedRows = [];
+            const existingRows = collectRepeatableAssetRows(container);
+            const componentTemplates = collectCurrentAssetComponentTemplates(container, prefix);
+            const existingRowKeys = new Set(
+                existingRows
+                    .map((row) => buildRepeatableAssetRowKey(prefix, row))
+                    .filter(Boolean)
+            );
 
             checkboxes.forEach((checkbox) => {
                 const rowIndex = Number.parseInt(checkbox.getAttribute('data-row-index') || '-1', 10);
                 const row = sourceRows[rowIndex];
                 const ownerName = String(row?.owner_name || '').trim();
-                if (ownerName) {
-                    selectedRows.push({
+                if (!ownerName) return;
+                componentTemplates.forEach((component) => {
+                    const selectedRow = {
                         [`${prefix}_related_owner_name`]: ownerName,
-                    });
-                }
+                        [`${prefix}_component_detail`]: component.detail || '',
+                        [`${prefix}_component_valuation`]: component.valuation || '',
+                    };
+                    const rowKey = buildRepeatableAssetRowKey(prefix, selectedRow);
+                    if (!existingRowKeys.has(rowKey)) {
+                        existingRowKeys.add(rowKey);
+                        selectedRows.push(selectedRow);
+                    }
+                });
             });
 
-            renderRepeatableAssetRows(container, selectedRows);
+            const renderRows = selectedRows.length
+                ? existingRows.filter((row) =>
+                    normalizeOwnerName(row[`${prefix}_related_owner_name`] || '')
+                    || String(row[`${prefix}_owner_name`] || '').trim()
+                )
+                : existingRows;
+            renderRepeatableAssetRows(container, [...renderRows, ...selectedRows]);
             saveTab7LocalDraft();
             scheduleTab7AutoSave();
             closeJointSurveyNamesModal();
@@ -5494,6 +5805,7 @@
             });
             lockPrefilledControls(Array.from(jointDoneRadios), 'village-info');
             lockFieldsWithValues([registerField, dateField], 'village-info');
+            toggleJointSurveyDoneFields();
         }
 
         function getFirstVillageRelatedSectionValue(villageDataPayload, rowsKey, scalarDetailKey, scalarDateKey) {
@@ -5819,7 +6131,10 @@
             updateCompensationFields(currentProcessChartPrefill);
         }
 
-        function buildAcquisitionDetailRow(rowData = {}) {
+        function buildAcquisitionDetailRow(rowData = {}, options = {}) {
+            const acquisitionAreaCell = options.omitAcquisitionAreaCell
+                ? ''
+                : `<td${options.acquisitionAreaRowspan ? ` rowspan="${options.acquisitionAreaRowspan}"` : ''}><input class="pc-input pc-acquisition-area" name="acquisition_detail_acquisition_area" type="text" value="${escapeHtml(rowData.acquisition_area || '')}" readonly></td>`;
             return `
                 <tr>
                     <td><input class="pc-input pc-acquisition-owner-name" name="acquisition_detail_owner_name" type="text" value="${escapeHtml(rowData.owner_name || '')}" readonly></td>
@@ -5829,7 +6144,7 @@
                     <td><input class="pc-input pc-acquisition-area-part" name="acquisition_detail_akrushak_area" type="text" value="${escapeHtml(rowData.akrushak_area || '')}" oninput="window.pcUpdateAcquisitionDetailRowTotals && window.pcUpdateAcquisitionDetailRowTotals()" onchange="window.pcUpdateAcquisitionDetailRowTotals && window.pcUpdateAcquisitionDetailRowTotals()"></td>
                     <td><input class="pc-input pc-acquisition-area-part" name="acquisition_detail_potential_non_agri_area" type="text" value="${escapeHtml(rowData.potential_non_agri_area || '')}" oninput="window.pcUpdateAcquisitionDetailRowTotals && window.pcUpdateAcquisitionDetailRowTotals()" onchange="window.pcUpdateAcquisitionDetailRowTotals && window.pcUpdateAcquisitionDetailRowTotals()"></td>
                     <td><input class="pc-input pc-acquisition-total-area" name="acquisition_detail_total_area" type="text" value="${escapeHtml(rowData.total_area || '')}" readonly></td>
-                    <td><input class="pc-input pc-acquisition-area" name="acquisition_detail_acquisition_area" type="text" value="${escapeHtml(rowData.acquisition_area || '')}" readonly></td>
+                    ${acquisitionAreaCell}
                 </tr>
             `;
         }
@@ -5890,7 +6205,9 @@
                 const acquisitionAreaField = row.querySelector('.pc-acquisition-area');
                 if (!ownerField || !acquisitionAreaField) return;
                 const ownerName = normalizeOwnerName(ownerField.value || '');
-                acquisitionAreaField.value = tab4AreaMap.get(ownerName) || '';
+                if (tab4AreaMap.has(ownerName)) {
+                    acquisitionAreaField.value = tab4AreaMap.get(ownerName) || '';
+                }
             });
         }
 
@@ -5921,18 +6238,30 @@
             if (!tbody) return;
 
             const currentRowsByOwner = collectCurrentAcquisitionDetailRows();
-            const rows = collectTab4AcquisitionOwnerRows().map((row) => {
+            const tab4Rows = collectTab4AcquisitionOwnerRows();
+            const sourceRows = tab4Rows.length ? tab4Rows : collectTab4OwnerRows();
+            const rows = sourceRows.map((row) => {
                 const ownerName = row.owner_name || '';
                 const existing = currentRowsByOwner.get(normalizeOwnerName(ownerName)) || {};
                 return {
                     ...existing,
+                    source: row.source || '',
                     owner_name: ownerName,
                     acquisition_area: row.acquisition_area || '',
                 };
             });
+            const isSharedMultiAcquisitionArea = rows.length > 1
+                && rows.every((row) => row.source === 'multi')
+                && rows.every((row) => String(row.acquisition_area || '') === String(rows[0]?.acquisition_area || ''));
+            if (isSharedMultiAcquisitionArea) {
+                rows[0].acquisition_area = normalizeRepeatedSharedAreaValue(rows[0]?.acquisition_area || '');
+            }
 
             tbody.innerHTML = rows.length
-                ? rows.map((row) => buildAcquisitionDetailRow(row)).join('')
+                ? rows.map((row, index) => buildAcquisitionDetailRow(row, {
+                    acquisitionAreaRowspan: isSharedMultiAcquisitionArea && index === 0 ? rows.length : 0,
+                    omitAcquisitionAreaCell: isSharedMultiAcquisitionArea && index > 0,
+                })).join('')
                 : buildAcquisitionDetailRow();
             updateAcquisitionDetailRowTotals();
             updateAcquisitionAreasFromTab4();
@@ -6087,7 +6416,7 @@
             const occupancyClassValue = String(document.getElementById('pcOccupancyClass')?.value || '').trim();
             const isOccupancyClassTwo = occupancyClassValue === 'वर्ग 2' || occupancyClassValue === 'वर्ग-2';
             const compensation9 = isOccupancyClassTwo ? compensation8 * 0.10 : 0;
-            const compensation10 = compensation3 * 0.10;
+            const compensation10 = compensation8 * 0.10;
             const compensation11 = compensation8 - compensation9 - compensation10;
 
             compensation1Field.value = compensation1 ? formatCalculationNumber(compensation1) : '';
@@ -7012,7 +7341,7 @@
                     name: file.name || 'अपलोड केलेली प्रत',
                 })));
             }
-            lockFieldsWithValues([dateField, reasonField], 'village-info');
+            lockFieldsWithValues([dateField], 'village-info');
             renderDemarcationVillageFiles(parseDemarcationVillageFiles());
             toggleDemarcationFields();
         }
@@ -7792,6 +8121,22 @@
             });
 
             if (Number(panel.dataset.pcPanel || 0) === 4) {
+                [
+                    'section323_notice_number',
+                    'section323_notice_date',
+                    'section323_notice_not_given_reason',
+                    'objection_report_date',
+                    'objection_report_not_submitted_reason',
+                ].forEach((key) => {
+                    const field = panel.querySelector(`[name="${CSS.escape(key)}"]`);
+                    if (field instanceof HTMLInputElement || field instanceof HTMLTextAreaElement || field instanceof HTMLSelectElement) {
+                        data[key] = serializeFieldValue(field);
+                    }
+                });
+                const jointSurveyReasonField = panel.querySelector('input[name="joint_survey_not_done_reason"]');
+                if (jointSurveyReasonField instanceof HTMLInputElement) {
+                    data.joint_survey_not_done_reason = jointSurveyReasonField.value || '';
+                }
                 data.tab4_snapshot = collectTab4Snapshot();
             }
             if (Number(panel.dataset.pcPanel || 0) === 7) {
@@ -7957,7 +8302,13 @@
             const multiBody = document.getElementById('pcMultiKhataOwnersBody');
             if (!singleBody || !multiBody) return;
             if (!hasTab4OwnerTablePayload(sectionData)) return;
-            if (restoreTab4Snapshot(sectionData.tab4_snapshot)) return;
+            if (restoreTab4Snapshot(sectionData.tab4_snapshot)) {
+                if (sectionData.joint_survey_not_done_reason) {
+                    const reasonField = document.querySelector('input[name="joint_survey_not_done_reason"]');
+                    if (reasonField instanceof HTMLInputElement) reasonField.value = sectionData.joint_survey_not_done_reason;
+                }
+                return;
+            }
 
             const singleCount = getStep4RowCount(sectionData, [
                 'single_khata_owner_name',
@@ -8514,6 +8865,18 @@
         processChartForm?.querySelectorAll('input[name="proposal_included"]').forEach((radio) => {
             radio.addEventListener('change', () => toggleProposalFields());
         });
+        processChartForm?.querySelectorAll('input[name="section323_notice_given"]').forEach((radio) => {
+            radio.addEventListener('change', () => toggleSection323NoticeFields());
+            radio.addEventListener('click', () => toggleSection323NoticeFields());
+        });
+        processChartForm?.querySelectorAll('input[name="objection_report_submitted"]').forEach((radio) => {
+            radio.addEventListener('change', () => toggleObjectionReportFields());
+            radio.addEventListener('click', () => toggleObjectionReportFields());
+        });
+        processChartForm?.querySelectorAll('input[name="joint_done"]').forEach((radio) => {
+            radio.addEventListener('change', () => toggleJointSurveyDoneFields());
+            radio.addEventListener('click', () => toggleJointSurveyDoneFields());
+        });
         processChartForm?.querySelectorAll('input[name="demarcation_done"]').forEach((radio) => {
             radio.addEventListener('change', async () => {
                 await ensureDemarcationPrefillLoaded();
@@ -8805,11 +9168,14 @@
                 const addBtn = event.target.closest('.pc-inline-add-asset-row');
                 if (addBtn) {
                     const wrapper = addBtn.closest('.pc-repeatable-asset-row');
-                    const prefix = container.dataset.namePrefix || '';
-                    const componentsHost = wrapper?.querySelector('.pc-repeatable-asset-components');
-                    if (wrapper && prefix && componentsHost) {
-                        const ownerValue = wrapper.querySelector('.pc-repeatable-asset-owner-input')?.value || '';
-                        componentsHost.insertAdjacentHTML('beforeend', buildRepeatableAssetComponentRow(prefix, {}, ownerValue, false));
+                    if (wrapper) {
+                        const prefix = container.dataset.namePrefix || '';
+                        const componentsHost = wrapper.querySelector('.pc-repeatable-asset-components');
+                        if (prefix && componentsHost) {
+                            const ownerValue = wrapper.querySelector('.pc-repeatable-asset-owner-input')?.value || '';
+                            componentsHost.insertAdjacentHTML('beforeend', buildRepeatableAssetComponentRow(prefix, {}, ownerValue, false));
+                            syncRepeatableAssetOwnerHiddenInputs(wrapper);
+                        }
                         syncRepeatableAssetRowButtons(container);
                     }
                     updateTotalAssetValuation();
@@ -8995,7 +9361,9 @@
 	        renderSec3Rows([{}]);
 	        renderSec21Rows([{}]);
 	        ensureTab4OwnerTablesHaveRows();
-	        toggleJointSurveyOwnerTables();
+	        toggleSection323NoticeFields();
+	        toggleObjectionReportFields();
+	        toggleJointSurveyDoneFields();
 	        enhanceProcessChartDateInputs();
         enhanceProcessChartAreaInputs();
         updateTotalAssetValuation();
