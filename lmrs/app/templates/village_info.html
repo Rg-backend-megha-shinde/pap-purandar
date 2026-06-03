@@ -2675,10 +2675,18 @@
             return header.includes('area') || header.includes('क्षेत्र');
         }
 
-        function excelCellToString(value) {
+        function excelCellToString(value, cell) {
+            if (cell && cell.w !== null && cell.w !== undefined) {
+                return String(cell.w).trim();
+            }
             if (value === null || value === undefined) return '';
             if (typeof value === 'number') return Number.isFinite(value) ? String(value) : '';
             return String(value).trim();
+        }
+
+        function getExcelCell(sheet, rowIndex, columnIndex) {
+            if (!sheet || !window.XLSX || !window.XLSX.utils) return null;
+            return sheet[window.XLSX.utils.encode_cell({ r: rowIndex, c: columnIndex })] || null;
         }
 
         function findNotifiedExcelColumns(sheetRows) {
@@ -2770,7 +2778,8 @@
             }
             const firstSheetName = workbook.SheetNames?.[0];
             if (!firstSheetName) throw new Error('Excel फाइल रिकामी आहे.');
-            const sheetRows = window.XLSX.utils.sheet_to_json(workbook.Sheets[firstSheetName], { header: 1, raw: true, defval: '' });
+            const worksheet = workbook.Sheets[firstSheetName];
+            const sheetRows = window.XLSX.utils.sheet_to_json(worksheet, { header: 1, raw: true, defval: '' });
             if (!sheetRows.some((row) => Array.isArray(row) && row.some((cell) => String(cell ?? '').trim() !== ''))) {
                 throw new Error('Excel फाइल रिकामी आहे.');
             }
@@ -2783,7 +2792,10 @@
             for (let rowIndex = columns.headerRowIndex + 1; rowIndex < sheetRows.length; rowIndex += 1) {
                 const row = Array.isArray(sheetRows[rowIndex]) ? sheetRows[rowIndex] : [];
                 const numericGut = extractNumericGut(row[columns.gutIndex]);
-                const area = excelCellToString(row[columns.areaIndex]);
+                const area = excelCellToString(
+                    row[columns.areaIndex],
+                    getExcelCell(worksheet, rowIndex, columns.areaIndex)
+                );
                 if (!numericGut && !area) continue;
                 if (!numericGut || !area) continue;
                 const dropdownGut = gutMatchMap.get(numericGut);
