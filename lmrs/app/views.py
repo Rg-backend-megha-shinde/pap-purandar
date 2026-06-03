@@ -1564,7 +1564,7 @@ def land_record_712(request):
                     'gut_number': clean_optional(row.get('gut_number')) or gut_number,
                     'puid_ulip_no': clean_optional(row.get('puid_ulip_no')),
                     'khata_number': clean_optional(row.get('khata_number')),
-                    'khata_area': normalize_712_area(row.get('khata_area')),
+                    'khata_area': clean_optional(row.get('khata_area')),
                     'jirayit': normalize_712_area(row.get('jirayit')),
                     'bagayat': normalize_712_area(row.get('bagayat')),
                     'potkharaba': normalize_712_area(row.get('potkharaba')),
@@ -1925,7 +1925,7 @@ def edit_land_record_712(request, id):
         obj.potkharaba = normalize_712_area(request.POST.get('potkharaba'))
         obj.total_area = normalize_712_area(request.POST.get('total_area'))
         obj.aakarni = clean_optional(request.POST.get('aakarni'))
-        obj.khata_area = normalize_712_area(request.POST.get('khata_area'))
+        obj.khata_area = clean_optional(request.POST.get('khata_area'))
         obj.aakar = clean_optional(request.POST.get('aakar'))
         obj.holder_name = clean_optional(request.POST.get('holder_name'))
         obj.kul_khand_other_rights = clean_optional(request.POST.get('kul_khand_other_rights'))
