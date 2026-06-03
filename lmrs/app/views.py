@@ -4727,6 +4727,27 @@ def _process_chart_case_owner_names(case):
     names = []
     seen = set()
 
+    step_four_rows = [item for item in case.step_data.all() if item.step_no == 4]
+    for step_four in step_four_rows:
+        step_four_data = step_four.data if step_four and isinstance(step_four.data, dict) else {}
+        owner_table_mode = step_four_data.get('joint_survey_owner_table_mode')
+        owner_fields = []
+        if owner_table_mode == 'multi':
+            owner_fields = ['multi_khata_owner_name']
+        elif owner_table_mode == 'single':
+            owner_fields = ['single_khata_owner_name']
+        else:
+            owner_fields = ['single_khata_owner_name', 'multi_khata_owner_name']
+        for field in owner_fields:
+            saved_joint_names = step_four_data.get(field)
+            if not isinstance(saved_joint_names, list):
+                saved_joint_names = [saved_joint_names] if saved_joint_names else []
+            for owner_name in saved_joint_names:
+                _append_unique_process_chart_owner_name(names, seen, owner_name)
+
+    if names:
+        return ', '.join(names)
+
     step_one = next((item for item in case.step_data.all() if item.step_no == 1), None)
     step_one_data = step_one.data if step_one and isinstance(step_one.data, dict) else {}
     saved_owner_names = step_one_data.get('owner_info_owner_name')
@@ -4747,6 +4768,15 @@ def _process_chart_case_owner_names(case):
     return ', '.join(names)
 
 
+def _process_chart_owner_names_summary(owner_names):
+    names = split_holder_names(owner_names)
+    if not names:
+        return ''
+    if len(names) == 1:
+        return names[0]
+    return f'{names[0]} आणि इतर'
+
+
 @login_required
 def process_chart_list(request):
     cases = ProcessChartCase.objects.select_related('user').prefetch_related('step_data').all().order_by('-updated_at', '-id')
@@ -4758,6 +4788,7 @@ def process_chart_list(request):
         case.taluka_mr = taluka_mr or case.taluka
         case.village_mr = village_mr or case.village
         case.owner_names_mr = _process_chart_case_owner_names(case)
+        case.owner_names_summary_mr = _process_chart_owner_names_summary(case.owner_names_mr)
     return render(request, 'process_chart_list.html', {
         'active_tab': 'process-chart',
         'cases': cases,
