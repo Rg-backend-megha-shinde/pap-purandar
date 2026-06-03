@@ -1556,7 +1556,6 @@ def land_record_712(request):
                 return respond_error('No matching gut rows found for selected location.')
 
             normalized_rows = []
-            khata_pairs = []
             for row in valid_rows:
                 normalized_row = {
                     'district': clean_optional(row.get('district')) or district,
@@ -1580,36 +1579,11 @@ def land_record_712(request):
                 normalized_row['unique_key'] = build_unique_key(normalized_row)
                 normalized_rows.append(normalized_row)
 
-                if normalized_row['khata_number']:
-                    khata_pairs.append((normalized_row['khata_number'], normalize_match_text(normalized_row['khata_number'])))
-
-            incoming_khatas = []
-            if khata_pairs:
-                seen_local = {}
-                local_duplicates = []
-                for khata_value, khata_key in khata_pairs:
-                    if khata_key in seen_local:
-                        local_duplicates.append(khata_value)
-                    else:
-                        seen_local[khata_key] = khata_value
-                if local_duplicates:
-                    duplicate_text = ', '.join(sorted(set(local_duplicates)))
-                    return respond_error(f'Khata number must be unique. Duplicate: {duplicate_text}')
-
-                incoming_khatas = sorted({khata for khata, _key in khata_pairs})
-
-            if incoming_khatas:
-                incoming_khata_lookup = {normalize_match_text(khata): khata for khata in incoming_khatas}
-                existing_conflicts = {
-                    incoming_khata_lookup[normalize_match_text(existing_khata)]
-                    for existing_khata in LandRecord712.objects.filter(
-                        khata_number__in=incoming_khatas
-                    ).values_list('khata_number', flat=True)
-                    if normalize_match_text(existing_khata) in incoming_khata_lookup
-                }
-                if existing_conflicts:
-                    conflict_text = ', '.join(sorted(existing_conflicts))
-                    return respond_error(f'Khata number already exists: {conflict_text}')
+            incoming_khatas = sorted({
+                row['khata_number']
+                for row in normalized_rows
+                if row.get('khata_number')
+            })
 
             incoming_guts = sorted({row['gut_number'] for row in normalized_rows if row.get('gut_number')})
             existing_rows_qs = LandRecord712.objects.filter(
@@ -1956,23 +1930,7 @@ def edit_land_record_712(request, id):
         obj.holder_name = clean_optional(request.POST.get('holder_name'))
         obj.kul_khand_other_rights = clean_optional(request.POST.get('kul_khand_other_rights'))
         obj.user = request.user
-        with transaction.atomic():
-            if obj.khata_number:
-                with connection.cursor() as cursor:
-                    cursor.execute(
-                        "SELECT pg_advisory_xact_lock(hashtext(%s))",
-                        [f"land_record_712.khata_number:{obj.khata_number}"]
-                    )
-                if LandRecord712.objects.filter(khata_number=obj.khata_number).exclude(id=obj.id).exists():
-                    return render(
-                        request,
-                        'edit_land_record_712.html',
-                        {
-                            'obj': obj,
-                            'error_message': f'Khata number already exists: {obj.khata_number}'
-                        }
-                    )
-            obj.save()
+        obj.save()
         return redirect('land_record_712_list')
     return render(request, 'edit_land_record_712.html', {'obj': obj})
 
