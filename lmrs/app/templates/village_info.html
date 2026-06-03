@@ -2413,6 +2413,8 @@
             const activePage = Math.min(Math.max(Number(currentPage) || 1, 1), totalPages);
             const startIndex = (activePage - 1) * NOTIFIED_AREA_ROWS_PER_PAGE;
             const endIndex = Math.min(startIndex + NOTIFIED_AREA_ROWS_PER_PAGE, totalRows);
+            const selectedCount = rows.filter((row) => row?._selected).length;
+            const allSelected = totalRows > 0 && selectedCount === totalRows;
 
             const bodyRows = rows.map((row, index) => {
                 const gutMode = row.gut_mode === 'other' ? 'other' : 'listed';
@@ -2422,6 +2424,10 @@
                 const isVisible = index >= startIndex && index < endIndex;
                 return `
                     <tr class="border-t border-[#d8e4f3] ${isVisible ? '' : 'hidden'}" data-notified-row-index="${index}">
+                        <td class="w-12 px-2 py-2 text-center">
+                            <input type="checkbox" data-notified-select-row="${index}"
+                                class="h-4 w-4 rounded border-[#b8c9df] text-[#125fcb]" ${row._selected ? 'checked' : ''}>
+                        </td>
                         <td class="px-2 py-2 text-center text-sm text-[#44597a]">${index + 1}</td>
                         <td class="px-2 py-2">
                             <select data-notified-field="gut_select" data-row-index="${index}"
@@ -2442,7 +2448,7 @@
                             <button type="button" data-notified-add-row="${index}"
                                 class="mr-1 rounded-md border border-[#d4deec] px-2 py-1 text-xs font-semibold text-[#125fcb] ${index === rows.length - 1 ? '' : 'hidden'}">+</button>
                             <button type="button" data-notified-remove-row="${index}"
-                                class="rounded-md border border-[#d4deec] px-2 py-1 text-xs text-[#5d7293] ${index === 0 ? 'hidden' : ''}">✕</button>
+                                class="rounded-md border border-[#d4deec] px-2 py-1 text-xs text-[#5d7293] ${rows.length <= 1 ? 'hidden' : ''}">✕</button>
                         </td>
                     </tr>
                 `;
@@ -2450,7 +2456,7 @@
 
             const paginationHtml = totalRows > NOTIFIED_AREA_ROWS_PER_PAGE ? `
                 <tr class="border-t border-[#a7bfdc] bg-white">
-                    <td colspan="4" class="px-2 py-3">
+                    <td colspan="5" class="px-2 py-3">
                         <div class="flex flex-col gap-2 text-sm text-[#44597a] md:flex-row md:items-center md:justify-between">
                             <div>
                                 ${startIndex + 1}-${endIndex} / ${totalRows} ओळी दाखवत आहे
@@ -2471,6 +2477,10 @@
                 <table class="min-w-full border border-[#a7bfdc] text-left">
                     <thead class="bg-[#edf5ff]">
                         <tr>
+                            <th class="w-12 border-r border-[#a7bfdc] px-2 py-2 text-center">
+                                <input type="checkbox" data-notified-select-all
+                                    class="h-4 w-4 rounded border-[#b8c9df] text-[#125fcb]" ${allSelected ? 'checked' : ''}>
+                            </th>
                             <th class="w-16 border-r border-[#a7bfdc] px-2 py-2 text-sm font-semibold text-[#244271]">अ. क्र</th>
                             <th class="border-r border-[#a7bfdc] px-2 py-2 text-sm font-semibold text-[#244271]">गट क्रमांक</th>
                             <th class="border-r border-[#a7bfdc] px-2 py-2 text-sm font-semibold text-[#244271]">प्रस्तावित क्षेत्र</th>
@@ -2481,12 +2491,26 @@
                     <tfoot>
                         <tr class="border-t border-[#a7bfdc] bg-[#f8fbff]">
                             <td class="px-2 py-2"></td>
+                            <td class="px-2 py-2"></td>
                             <td class="px-2 py-2 text-right text-sm font-semibold text-[#244271]">एकूण क्षेत्र</td>
                             <td class="px-2 py-2">
                                 <input type="text" value="${totalNotifiedArea.toFixed(2)}" readonly
                                     class="w-full rounded-lg border border-[#d3deeb] bg-[#eef5ff] px-2 py-2 text-sm font-semibold text-[#244271]">
                             </td>
                             <td class="px-2 py-2"></td>
+                        </tr>
+                        <tr class="border-t border-[#a7bfdc] bg-white">
+                            <td colspan="5" class="px-2 py-3">
+                                <div class="flex flex-col gap-2 text-sm text-[#44597a] md:flex-row md:items-center md:justify-between">
+                                    <span>${selectedCount ? `${selectedCount} ओळी निवडल्या` : 'ओळी निवडून हटवा किंवा सर्व हटवा'}</span>
+                                    <div class="flex flex-wrap items-center gap-2">
+                                        <button type="button" data-notified-delete-selected
+                                            class="rounded-lg border border-[#f3c7cf] bg-[#fff5f7] px-3 py-1 text-xs font-semibold text-[#c12e49] hover:bg-[#ffecef] ${selectedCount ? '' : 'pointer-events-none opacity-40'}">निवडलेले हटवा</button>
+                                        <button type="button" data-notified-delete-all
+                                            class="rounded-lg border border-[#f3c7cf] bg-white px-3 py-1 text-xs font-semibold text-[#c12e49] hover:bg-[#fff5f7]">सर्व हटवा</button>
+                                    </div>
+                                </div>
+                            </td>
                         </tr>
                         ${paginationHtml}
                     </tfoot>
@@ -2500,6 +2524,7 @@
                 gut_number: row?.gut_number || '',
                 other_gut: row?.other_gut || '',
                 notified_area: row?.notified_area || '',
+                _selected: Boolean(row?._selected),
             }));
         }
 
@@ -2536,12 +2561,14 @@
                 const gutSelect = tr.querySelector('select[data-notified-field="gut_select"]');
                 const otherGutInput = tr.querySelector('input[data-notified-field="other_gut"]');
                 const areaInput = tr.querySelector('input[data-notified-field="notified_area"]');
+                const selectInput = tr.querySelector('input[data-notified-select-row]');
                 const selected = (gutSelect?.value || '').trim();
                 const row = {
                     gut_mode: selected === '__other__' ? 'other' : 'listed',
                     gut_number: selected && selected !== '__other__' ? selected : '',
                     other_gut: (otherGutInput?.value || '').trim(),
                     notified_area: (areaInput?.value || '').trim(),
+                    _selected: Boolean(selectInput?.checked),
                 };
                 if (preserveEmpty || idx === 0 || row.gut_number || row.other_gut || row.notified_area) {
                     rows.push(row);
@@ -2556,7 +2583,12 @@
                 payload.push({
                     block_index: index,
                     section_key: (block.dataset.sectionKey || '').trim(),
-                    rows: collectNotifiedAreaRowsFromBlock(block),
+                    rows: collectNotifiedAreaRowsFromBlock(block).map(({ gut_mode, gut_number, other_gut, notified_area }) => ({
+                        gut_mode,
+                        gut_number,
+                        other_gut,
+                        notified_area,
+                    })),
                 });
             });
             return payload;
@@ -2788,6 +2820,24 @@
                     renderNotifiedAreaBlock(block, rows);
                     return;
                 }
+                const deleteSelectedBtn = event.target.closest('button[data-notified-delete-selected]');
+                if (deleteSelectedBtn) {
+                    const block = deleteSelectedBtn.closest('.vi-notified-area-block');
+                    const rows = collectNotifiedAreaRowsFromBlock(block, { preserveEmpty: true });
+                    const nextRows = rows.filter((row) => !row._selected).map((row) => ({ ...row, _selected: false }));
+                    const totalPages = Math.max(1, Math.ceil(nextRows.length / NOTIFIED_AREA_ROWS_PER_PAGE));
+                    block.dataset.notifiedPage = String(Math.min(Number(block.dataset.notifiedPage) || 1, totalPages));
+                    renderNotifiedAreaBlock(block, nextRows.length ? nextRows : [{}]);
+                    return;
+                }
+                const deleteAllBtn = event.target.closest('button[data-notified-delete-all]');
+                if (deleteAllBtn) {
+                    const block = deleteAllBtn.closest('.vi-notified-area-block');
+                    if (!block) return;
+                    block.dataset.notifiedPage = '1';
+                    renderNotifiedAreaBlock(block, [{}]);
+                    return;
+                }
                 const removeBtn = event.target.closest('button[data-notified-remove-row]');
                 if (!removeBtn) return;
                 const idx = Number(removeBtn.dataset.notifiedRemoveRow);
@@ -2804,6 +2854,26 @@
                 const excelInput = event.target.closest('.vi-notified-excel-input');
                 if (excelInput) {
                     processNotifiedAreaExcelInput(excelInput);
+                    return;
+                }
+
+                const selectAll = event.target.closest('input[data-notified-select-all]');
+                if (selectAll) {
+                    const block = selectAll.closest('.vi-notified-area-block');
+                    const rows = collectNotifiedAreaRowsFromBlock(block, { preserveEmpty: true })
+                        .map((row) => ({ ...row, _selected: selectAll.checked }));
+                    renderNotifiedAreaBlock(block, rows);
+                    return;
+                }
+
+                const selectRow = event.target.closest('input[data-notified-select-row]');
+                if (selectRow) {
+                    const idx = Number(selectRow.dataset.notifiedSelectRow);
+                    const block = selectRow.closest('.vi-notified-area-block');
+                    const rows = collectNotifiedAreaRowsFromBlock(block, { preserveEmpty: true });
+                    if (!Number.isInteger(idx) || !rows[idx]) return;
+                    rows[idx]._selected = selectRow.checked;
+                    renderNotifiedAreaBlock(block, rows);
                     return;
                 }
 
