@@ -379,6 +379,7 @@ const state712 = {
         upload: [],
         manual: [],
     },
+    uploadEditsByIndex: {},
     uploadPreview: {
         token: '',
         page: 1,
@@ -708,7 +709,11 @@ function applyUploadPreviewPage(data) {
     state712.uploadPreview.pageSize = Number(preview.page_size || state712.uploadPreview.pageSize || 10);
     state712.uploadPreview.totalPages = Number(preview.total_pages || 1);
     state712.uploadPreview.totalCount = Number(preview.total_count || (data.records || []).length || 0);
-    setRecordsForTab('upload', (data.records || []).map((row) => ({ ...defaultRecord(), ...row })));
+    setRecordsForTab('upload', (data.records || []).map((row) => {
+        const previewIndex = Number(row._preview_row_index);
+        const savedEdit = Number.isInteger(previewIndex) ? state712.uploadEditsByIndex[previewIndex] : null;
+        return { ...defaultRecord(), ...row, ...(savedEdit || {}) };
+    }));
 }
 
 function defaultRecord() {
@@ -849,6 +854,12 @@ function setupTableInteractions() {
         const field = target.getAttribute('data-field');
         if (!activeRecords[rowIndex]) return;
         activeRecords[rowIndex][field] = sanitizeCellValue(target.value);
+        if (state712.activeTab === 'upload' && state712.uploadPreview.token) {
+            const previewIndex = Number(activeRecords[rowIndex]._preview_row_index);
+            if (Number.isInteger(previewIndex)) {
+                state712.uploadEditsByIndex[previewIndex] = { ...activeRecords[rowIndex] };
+            }
+        }
     });
 
     recordsTableBodyEl.addEventListener('click', (event) => {
@@ -984,6 +995,7 @@ async function parseUploadedFile(file) {
         const data = await response.json();
         if (!response.ok || !data.success) throw new Error(data.error || 'Failed to extract file data.');
 
+        state712.uploadEditsByIndex = {};
         state712.uploadFileType = (data.file_type || '').toLowerCase();
         state712.uploadPreview.token = data.preview_token || '';
         applyUploadPreviewPage(data);
@@ -1034,6 +1046,7 @@ async function fetchUploadPreviewPage(page) {
 
 function normalizeRowForSave(row, fallbackLocation = {}) {
     return {
+        _preview_row_index: Number.isInteger(Number(row._preview_row_index)) ? Number(row._preview_row_index) : null,
         gut_number: sanitizeCellValue(row.gut_number || fallbackLocation.gut_number || ''),
         puid_ulip_no: sanitizeCellValue(row.puid_ulip_no || ''),
         khata_number: sanitizeCellValue(row.khata_number || ''),
@@ -1089,6 +1102,12 @@ async function saveCurrentRecords(mode) {
         formData.append('preview_token', state712.uploadPreview.token);
         if (state712.uploadFile) {
             formData.append('document_712', state712.uploadFile);
+        }
+        const editedUploadRows = Object.values(state712.uploadEditsByIndex)
+            .map((row) => normalizeRowForSave(row, location))
+            .filter((row) => row._preview_row_index !== null);
+        if (editedUploadRows.length) {
+            formData.append('rows_json', JSON.stringify(editedUploadRows));
         }
     } else {
         const normalizedRows = records.map((row) => normalizeRowForSave(row, location)).filter((row) => row.gut_number);
@@ -1170,6 +1189,7 @@ function addManualRecord() {
 function resetUploadTab() {
     state712.uploadFile = null;
     state712.uploadFileType = '';
+    state712.uploadEditsByIndex = {};
     state712.uploadPreview = { token: '', page: 1, pageSize: 10, totalPages: 1, totalCount: 0 };
     setRecordsForTab('upload', []);
     const fileInput = document.getElementById('uploadInputFile');
@@ -1302,6 +1322,12 @@ function bindOwnerModalActions() {
             return;
         }
         activeRecords[rowIndex].holder_name = ownersToText(state712.ownerModal.owners);
+        if (state712.activeTab === 'upload' && state712.uploadPreview.token) {
+            const previewIndex = Number(activeRecords[rowIndex]._preview_row_index);
+            if (Number.isInteger(previewIndex)) {
+                state712.uploadEditsByIndex[previewIndex] = { ...activeRecords[rowIndex] };
+            }
+        }
         setActiveRecords(activeRecords);
         closeOwnerModal();
         renderRecords();
@@ -1330,6 +1356,7 @@ function initUploadFlow() {
         const file = fileInput.files && fileInput.files[0];
         if (!file) return;
         state712.uploadFile = file;
+        state712.uploadEditsByIndex = {};
         nameLabel.textContent = file.name;
         await parseUploadedFile(file);
     });
