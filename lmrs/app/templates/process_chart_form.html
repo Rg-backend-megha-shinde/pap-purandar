@@ -2367,6 +2367,7 @@
 
         function fillOwnerDropdowns(names = []) {
             currentOwnerNames = Array.isArray(names) ? [...names] : [];
+            ensureAssetOwnerSuggestionsDatalist();
             getOwnerDropdowns().forEach((container) => {
                 if (!(container instanceof HTMLDivElement)) return;
                 ensureAssetOwnerNameInputs(container);
@@ -2839,20 +2840,59 @@
         }
 
         function buildAssetOwnerNameInput(inputName = '', value = '') {
+            ensureAssetOwnerSuggestionsDatalist();
             return `
                 <input
                     class="pc-input"
                     type="text"
                     name="${escapeHtml(inputName)}"
+                    list="pcAssetOwnerSuggestions"
                     value="${escapeHtml(value)}"
                     placeholder="इतर नाव"
                 >
             `;
         }
 
+        function getAssetOwnerSuggestionNames() {
+            const names = Array.isArray(currentOwnerNames) ? [...currentOwnerNames] : [];
+            collectTab4AssetOwnerRows().forEach((row) => {
+                const ownerName = String(row?.owner_name || '').trim();
+                if (ownerName) names.push(ownerName);
+            });
+            collectRepeatableAssetRowsFromAllSections().forEach((row) => {
+                const prefix = row.prefix || '';
+                [row[`${prefix}_related_owner_name`], row[`${prefix}_owner_name`]].forEach((value) => {
+                    String(value || '').split(',').forEach((name) => {
+                        const trimmed = name.trim();
+                        if (trimmed) names.push(trimmed);
+                    });
+                });
+            });
+            const seen = new Set();
+            return names.filter((name) => {
+                const key = normalizeOwnerName(name);
+                if (!key || seen.has(key)) return false;
+                seen.add(key);
+                return true;
+            });
+        }
+
+        function ensureAssetOwnerSuggestionsDatalist() {
+            let datalist = document.getElementById('pcAssetOwnerSuggestions');
+            if (!datalist) {
+                datalist = document.createElement('datalist');
+                datalist.id = 'pcAssetOwnerSuggestions';
+                document.body.appendChild(datalist);
+            }
+            datalist.innerHTML = getAssetOwnerSuggestionNames()
+                .map((name) => `<option value="${escapeHtml(name)}"></option>`)
+                .join('');
+        }
+
         function ensureAssetOwnerNameInputs(container, values = []) {
             if (!(container instanceof HTMLDivElement)) return;
             const inputName = container.dataset.ownerInputName || '';
+            ensureAssetOwnerSuggestionsDatalist();
             const normalizedValues = Array.isArray(values)
                 ? values.map((value) => String(value || '').trim()).filter(Boolean)
                 : [];
@@ -3473,7 +3513,7 @@
                     ${showOwnerControls ? `
                         <div class="md:col-span-3">
                             <label class="pc-label">भूधारकाचे नाव</label>
-                            <input class="pc-input pc-repeatable-asset-owner-input" name="${prefix}_related_owner_name" type="text" value="${relatedOwnerName}" placeholder="भूधारकाचे नाव">
+                            <input class="pc-input pc-repeatable-asset-owner-input" name="${prefix}_related_owner_name" type="text" list="pcAssetOwnerSuggestions" value="${relatedOwnerName}" placeholder="भूधारकाचे नाव">
                         </div>
                         <div class="md:col-span-3">
                             <label class="pc-label">इतर</label>
@@ -3511,7 +3551,7 @@
                 <div class="grid gap-4 md:grid-cols-12 md:items-end">
                     <div class="md:col-span-3">
                         ${ownerLabel}
-                        <input class="pc-input pc-repeatable-asset-owner-input" name="${prefix}_related_owner_name" type="text" value="${relatedOwnerName}" placeholder="भूधारकाचे नाव">
+                        <input class="pc-input pc-repeatable-asset-owner-input" name="${prefix}_related_owner_name" type="text" list="pcAssetOwnerSuggestions" value="${relatedOwnerName}" placeholder="भूधारकाचे नाव">
                     </div>
                     <div class="md:col-span-3">
                         ${otherLabel}
@@ -3557,6 +3597,9 @@
 
             const wrapper = document.createElement('div');
             wrapper.className = 'pc-repeatable-asset-row rounded-xl border border-[#d7e5f6] bg-[#f8fbff] p-4';
+            if (values._asset_group) {
+                wrapper.dataset.assetGroup = values._asset_group;
+            }
             wrapper.innerHTML = buildRepeatableAssetRow(prefix, values);
             container.appendChild(wrapper);
             syncRepeatableAssetRowButtons(container);
@@ -3566,51 +3609,59 @@
             if (!container) return;
             const prefix = container.dataset.namePrefix || '';
             if (!prefix) return;
-            const wrapper = container.querySelector('.pc-repeatable-asset-row:last-child');
-            const componentsHost = wrapper?.querySelector('.pc-repeatable-asset-components');
-            if (!wrapper || !componentsHost) {
-                appendRepeatableAssetRow(container, { _force_empty_component: true });
-                return;
-            }
-            appendRepeatableAssetRow(container, { _owner_only: true });
+            appendRepeatableAssetRow(container, {});
+        }
+
+        function mergeCommaSeparatedNames(existingValue = '', incomingValue = '') {
+            const names = [];
+            const seen = new Set();
+            [existingValue, incomingValue].forEach((value) => {
+                String(value || '').split(',').forEach((name) => {
+                    const trimmedName = name.trim();
+                    const key = normalizeOwnerName(trimmedName);
+                    if (trimmedName && !seen.has(key)) {
+                        seen.add(key);
+                        names.push(trimmedName);
+                    }
+                });
+            });
+            return names.join(', ');
         }
 
         function renderRepeatableAssetRows(container, rows = []) {
             if (!container) return;
             container.innerHTML = '';
-            const groupedRows = [];
+            const groupedRows = new Map();
             (rows.length ? rows : [{}]).forEach((row) => {
                 const prefix = container.dataset.namePrefix || '';
                 const ownerName = row?.[`${prefix}_related_owner_name`] || '';
                 const assetOwnerName = row?.[`${prefix}_owner_name`] || '';
                 const componentDetail = row?.[`${prefix}_component_detail`] || '';
                 const componentValuation = row?.[`${prefix}_component_valuation`] || '';
-                const componentKey = `${componentDetail}||${componentValuation}`;
-                const previous = groupedRows[groupedRows.length - 1];
-                if (previous && previous._component_key === componentKey) {
-                    groupedRows.push({
-                        _owner_only: true,
-                        _component_key: componentKey,
-                        [`${prefix}_related_owner_name`]: ownerName,
-                        [`${prefix}_owner_name`]: assetOwnerName,
+                const componentKey = row?._asset_group || `${componentDetail}||${componentValuation}`;
+                if (!groupedRows.has(componentKey)) {
+                    groupedRows.set(componentKey, {
+                        _asset_group: row?._asset_group || '',
+                        [`${prefix}_related_owner_name`]: '',
+                        [`${prefix}_owner_name`]: '',
+                        component_rows: [{
+                            [`${prefix}_component_detail`]: componentDetail,
+                            [`${prefix}_component_valuation`]: componentValuation,
+                        }],
                     });
-                    return;
                 }
-                groupedRows.push({
-                    _component_key: componentKey,
-                    [`${prefix}_related_owner_name`]: ownerName,
-                    [`${prefix}_owner_name`]: assetOwnerName,
-                    component_rows: [{
-                        [`${prefix}_component_detail`]: componentDetail,
-                        [`${prefix}_component_valuation`]: componentValuation,
-                    }],
-                });
+                const groupedRow = groupedRows.get(componentKey);
+                groupedRow[`${prefix}_related_owner_name`] = mergeCommaSeparatedNames(
+                    groupedRow[`${prefix}_related_owner_name`],
+                    ownerName
+                );
+                groupedRow[`${prefix}_owner_name`] = mergeCommaSeparatedNames(
+                    groupedRow[`${prefix}_owner_name`],
+                    assetOwnerName
+                );
             });
-            const nextRows = groupedRows.length ? groupedRows : [{}];
-            nextRows.forEach((row) => {
-                delete row._component_key;
-                appendRepeatableAssetRow(container, row);
-            });
+            const nextRows = groupedRows.size ? Array.from(groupedRows.values()) : [{}];
+            nextRows.forEach((row) => appendRepeatableAssetRow(container, row));
             updateTotalAssetValuation();
         }
 
@@ -3622,11 +3673,13 @@
             let inheritedComponentDetail = '';
             let inheritedComponentValuation = '';
             container.querySelectorAll('.pc-repeatable-asset-row').forEach((row) => {
+                const assetGroup = row.dataset.assetGroup || '';
                 const ownerName = row.querySelector(`.pc-repeatable-asset-owner-input[name="${prefix}_related_owner_name"]`)?.value || '';
                 const assetOwnerName = row.querySelector(`.owner-name-dropdown[data-owner-input-name="${prefix}_owner_name"] input`)?.value || '';
                 const componentRows = Array.from(row.querySelectorAll('.pc-repeatable-asset-component-row'));
                 if (!componentRows.length) {
                     rows.push({
+                        _asset_group: assetGroup,
                         [`${prefix}_related_owner_name`]: ownerName,
                         [`${prefix}_owner_name`]: assetOwnerName,
                         [`${prefix}_component_detail`]: inheritedComponentDetail,
@@ -3640,6 +3693,7 @@
                     inheritedComponentDetail = componentDetail;
                     inheritedComponentValuation = componentValuation;
                     rows.push({
+                        _asset_group: assetGroup,
                         [`${prefix}_related_owner_name`]: ownerName,
                         [`${prefix}_owner_name`]: assetOwnerName,
                         [`${prefix}_component_detail`]: componentDetail,
@@ -3648,6 +3702,35 @@
                 });
             });
             return rows.filter((row) => Object.values(row).some((value) => String(value || '').trim()));
+        }
+
+        function collectRepeatableAssetRowsFromAllSections() {
+            const rows = [];
+            document.querySelectorAll('[data-repeatable-asset-rows]').forEach((container) => {
+                if (!(container instanceof HTMLElement)) return;
+                const prefix = container.dataset.namePrefix || '';
+                collectRepeatableAssetRows(container).forEach((row) => {
+                    rows.push({ ...row, prefix });
+                });
+            });
+            return rows;
+        }
+
+        function isRepeatableAssetWrapperBlank(wrapper, prefix = '') {
+            if (!wrapper || !prefix) return false;
+            const values = [];
+            values.push(wrapper.querySelector(`.pc-repeatable-asset-owner-input[name="${prefix}_related_owner_name"]`)?.value || '');
+            values.push(wrapper.querySelector(`.owner-name-dropdown[data-owner-input-name="${prefix}_owner_name"] input`)?.value || '');
+            wrapper.querySelectorAll('.pc-repeatable-asset-component-row').forEach((componentRow) => {
+                values.push(componentRow.querySelector(`[name="${prefix}_component_detail"]`)?.value || '');
+                values.push(componentRow.querySelector(`[name="${prefix}_component_valuation"]`)?.value || '');
+            });
+            return values.every((value) => !String(value || '').trim());
+        }
+
+        function hasTrailingBlankRepeatableAssetRow(container, prefix = '') {
+            const lastRow = container?.querySelector('.pc-repeatable-asset-row:last-child');
+            return Boolean(lastRow && isRepeatableAssetWrapperBlank(lastRow, prefix));
         }
 
         function collectCurrentAssetComponentTemplates(container, prefix) {
@@ -3659,6 +3742,9 @@
                     detail: componentRow.querySelector(`[name="${prefix}_component_detail"]`)?.value || '',
                     valuation: componentRow.querySelector(`[name="${prefix}_component_valuation"]`)?.value || '',
                 }));
+                if (wrapper === wrappers[0] && isRepeatableAssetWrapperBlank(wrapper, prefix)) {
+                    return templates.length ? templates : [{ detail: '', valuation: '' }];
+                }
                 if (templates.some((row) => String(row.detail || '').trim() || String(row.valuation || '').trim())) {
                     return templates.length ? templates : [{ detail: '', valuation: '' }];
                 }
@@ -3668,6 +3754,7 @@
 
         function buildRepeatableAssetRowKey(prefix, row = {}) {
             return [
+                row._asset_group || '',
                 normalizeOwnerName(row[`${prefix}_related_owner_name`] || ''),
                 String(row[`${prefix}_component_detail`] || '').trim().toLowerCase(),
                 String(row[`${prefix}_component_valuation`] || '').trim(),
@@ -5225,6 +5312,9 @@
             const selectedRows = [];
             const existingRows = collectRepeatableAssetRows(container);
             const componentTemplates = collectCurrentAssetComponentTemplates(container, prefix);
+            const selectedAssetGroup = hasTrailingBlankRepeatableAssetRow(container, prefix)
+                ? `asset_${prefix}_${Date.now()}`
+                : '';
             const existingRowKeys = new Set(
                 existingRows
                     .map((row) => buildRepeatableAssetRowKey(prefix, row))
@@ -5238,6 +5328,7 @@
                 if (!ownerName) return;
                 componentTemplates.forEach((component) => {
                     const selectedRow = {
+                        _asset_group: selectedAssetGroup,
                         [`${prefix}_related_owner_name`]: ownerName,
                         [`${prefix}_component_detail`]: component.detail || '',
                         [`${prefix}_component_valuation`]: component.valuation || '',
@@ -5250,13 +5341,12 @@
                 });
             });
 
-            const renderRows = selectedRows.length
-                ? existingRows.filter((row) =>
-                    normalizeOwnerName(row[`${prefix}_related_owner_name`] || '')
-                    || String(row[`${prefix}_owner_name`] || '').trim()
-                )
-                : existingRows;
-            renderRepeatableAssetRows(container, [...renderRows, ...selectedRows]);
+            selectedRows.forEach((row) => {
+                const ownerName = row[`${prefix}_related_owner_name`] || '';
+                if (ownerName) currentOwnerNames.push(ownerName);
+            });
+            ensureAssetOwnerSuggestionsDatalist();
+            renderRepeatableAssetRows(container, [...existingRows, ...selectedRows]);
             saveTab7LocalDraft();
             scheduleTab7AutoSave();
             closeJointSurveyNamesModal();
@@ -8955,6 +9045,7 @@
             }
             if (event.target instanceof HTMLInputElement && event.target.classList.contains('pc-repeatable-asset-owner-input')) {
                 syncRepeatableAssetOwnerHiddenInputs(event.target.closest('.pc-repeatable-asset-row'));
+                ensureAssetOwnerSuggestionsDatalist();
                 saveTab7LocalDraft();
                 scheduleTab7AutoSave();
             }
@@ -8975,6 +9066,7 @@
             }
             if (event.target instanceof HTMLInputElement && event.target.classList.contains('pc-repeatable-asset-owner-input')) {
                 syncRepeatableAssetOwnerHiddenInputs(event.target.closest('.pc-repeatable-asset-row'));
+                ensureAssetOwnerSuggestionsDatalist();
                 saveTab7LocalDraft();
                 scheduleTab7AutoSave();
             }
@@ -9384,4 +9476,3 @@
     })();
 </script>
 {% endblock %}
-
