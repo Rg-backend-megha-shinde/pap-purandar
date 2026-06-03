@@ -698,19 +698,19 @@
                                                 <label class="pc-label">अधिसूचना दिनांक</label>
                                                 <input class="pc-input pc-date-input pc-sec3-date" name="sec3_date" type="date" placeholder="dd-mm-yyyy">
                                             </div>
-                                            <div>
-                                                <label class="pc-label">अधिसूचना/पत्र प्रत</label>
-                                                <input class="pc-input pc-sec3-files" name="sec3_files_0" type="file">
-                                                <a class="mt-2 hidden text-xs font-semibold text-[#125fcb] underline pc-sec3-file-link" target="_blank" rel="noopener"></a>
-                                            </div>
-                                            <div class="pc-eye-col">
-                                                <button type="button" class="pc-eye-view pc-sec3-row-files-view-btn" aria-label="View Documents" title="View Documents">
-                                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                                                        <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"></path>
-                                                        <circle cx="12" cy="12" r="3"></circle>
-                                                    </svg>
-                                                </button>
-                                            </div>
+	                                            <div>
+	                                                <div class="flex items-center gap-3">
+	                                                    <label class="pc-label mb-0">अधिसूचना/पत्र प्रत</label>
+	                                                    <button type="button" class="pc-eye-view pc-sec3-row-files-view-btn" aria-label="View Documents" title="View Documents">
+	                                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+	                                                            <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"></path>
+	                                                            <circle cx="12" cy="12" r="3"></circle>
+	                                                        </svg>
+	                                                    </button>
+	                                                </div>
+	                                                <input class="pc-input pc-sec3-files mt-2" name="sec3_files_0" type="file">
+	                                                <a class="mt-2 hidden text-xs font-semibold text-[#125fcb] underline pc-sec3-file-link" target="_blank" rel="noopener"></a>
+	                                            </div>
                                         </div>
                                     </div>
                                 </template>
@@ -959,12 +959,25 @@
                             <div class="pc-section">
                                 <h3 class="mb-4 text-lg font-bold text-[#244271]">संयुक्त मोजणी संदर्भानुसार आवश्यक जमिन तपशील</h3>
                                 <input type="hidden" id="pcJointSurveySelectedNamesJson" name="joint_survey_selected_names_json" value="[]">
-                                <div class="mb-4 flex justify-end">
-                                    <button type="button" id="pcFetchJointSurveyNamesBtn" class="rounded-lg bg-[#0f766e] px-4 py-2 text-sm font-semibold text-white">7/12 मधून सर्व नावे भरा</button>
+                                <div class="mb-4 flex flex-wrap gap-4 text-sm font-semibold text-[#244271]">
+                                    <label class="inline-flex items-center gap-2">
+                                        <input type="radio" name="joint_survey_owner_table_mode" value="single" checked>
+                                        <span>स्वतंत्र क्षेत्र नमूद असल्यास अन्य खातेदारांचे नाव समाविष्ट करण्यासाठी</span>
+                                    </label>
+                                    <label class="inline-flex items-center gap-2">
+                                        <input type="radio" name="joint_survey_owner_table_mode" value="multi">
+                                        <span>स्वतंत्र क्षेत्र नसल्यास अन्य खातेदारांचे नाव समाविष्ट करण्यासाठी</span>
+                                    </label>
                                 </div>
+                            </div>
+
+                            <div class="pc-section" id="pcSingleKhataSection">
                                 <div class="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                                    <p class="text-sm font-semibold text-[#2a3f62]">स्वतंत्र क्षेत्र नमूद असल्यास अन्य खातेदारांचे नाव समाविष्ट करण्यासाठी</p>
-                                    <button type="button" id="pcAddSingleKhataOwnerRowBtn" class="rounded-lg bg-[#125fcb] px-4 py-2 text-sm font-semibold text-white">ओळ जोडा</button>
+	                                    <h3 class="text-lg font-bold text-[#244271]">स्वतंत्र क्षेत्र नमूद असल्यास अन्य खातेदारांचे नाव समाविष्ट करण्यासाठी</h3>
+                                    <div class="flex flex-wrap items-center justify-end gap-2">
+                                        <button type="button" id="pcFetchJointSurveyNamesBtn" class="rounded-lg bg-[#0f766e] px-4 py-2 text-sm font-semibold text-white">7/12 मधून सर्व नावे भरा</button>
+                                        <button type="button" id="pcAddSingleKhataOwnerRowBtn" class="rounded-lg bg-[#125fcb] px-4 py-2 text-sm font-semibold text-white">ओळ जोडा</button>
+                                    </div>
                                 </div>
                                 <div class="overflow-x-auto">
                                     <table class="pc-table">
@@ -974,7 +987,7 @@
                                 </div>
                             </div>
 
-                            <div class="pc-section">
+                            <div class="pc-section" id="pcMultiKhataSection">
                                 <div class="mb-4 flex items-center justify-between gap-3">
                                     <h3 class="text-lg font-bold text-[#244271]">स्वतंत्र क्षेत्र नसल्यास अन्य खातेदारांचे नाव समाविष्ट करण्यासाठी</h3>
                                     <div class="flex flex-wrap items-center justify-end gap-2">
@@ -1194,7 +1207,7 @@
                                             </div>
                                            
                                             <div>
-                                                <label class="pc-label">अधिसूचना प्रत (Village Info मधून येईल)</label>
+                                                <label class="pc-label">अधिसूचना प्रत </label>
                                                 <div class="flex items-end gap-3">
                                                     <div class="pc-eye-col">
                                                         <button type="button" id="pcSec8FilesViewBtn" class="pc-eye-view" aria-label="View Documents" title="View Documents">
@@ -1510,12 +1523,18 @@
                             <div class="pc-section">
                                 <h3 class="mb-4 text-lg font-bold text-[#244271]">अधिनियमाचे कलम ३२(५), ३३(२) व ३६(१) अन्वये संपादनाचा निवाडा (संमती / विनासंमती)</h3>
                                 <div class="grid gap-4 md:grid-cols-3">
-                                    <div><label class="pc-label">निवाडा क्रमांक</label><input class="pc-input" name="award_number" type="text"></div>
-                                    <div><label class="pc-label">दिनांक</label><input class="pc-input" name="award_date" type="date"></div>
+                                    <div><label class="pc-label">निवाडा क्रमांक</label><input class="pc-input" id="pcAwardNumber" name="award_number" type="text"></div>
+                                    <div><label class="pc-label">दिनांक</label><input class="pc-input" id="pcAwardDate" name="award_date" type="date"></div>
                                     <div>
                                         <label class="pc-label">निवाडा पत्र</label>
-                                        <input class="pc-upload" name="award_file" type="file">
-                                        <a class="mt-2 hidden text-xs font-semibold text-[#125fcb] underline" data-pc-doc-link-for="award_file" target="_blank" rel="noopener"></a>
+                                        <div class="mt-2">
+                                            <button type="button" id="pcAwardFilesViewBtn" class="pc-eye-view hidden" aria-label="View Documents" title="View Documents">
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                                    <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"></path>
+                                                    <circle cx="12" cy="12" r="3"></circle>
+                                                </svg>
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                                 <div class="mt-4 flex justify-end">
@@ -1807,6 +1826,7 @@
         const sec10FilesViewBtn = document.getElementById('pcSec10FilesViewBtn');
         const sec11FilesViewBtn = document.getElementById('pcSec11FilesViewBtn');
         const sec14FilesViewBtn = document.getElementById('pcSec14FilesViewBtn');
+        const awardFilesViewBtn = document.getElementById('pcAwardFilesViewBtn');
         const step10FetchOwnersBtn = document.getElementById('pcStep10FetchOwnersBtn');
         const step10AddOwnerCardBtn = document.getElementById('pcStep10AddOwnerCardBtn');
         const step10OwnerCardsContainer = document.getElementById('pcStep10OwnerCards');
@@ -2013,13 +2033,14 @@
         const totalSteps = 12;
         let currentCaseStatus = 'draft';
         let currentVillageFiles = {};
-        let currentOwnerNames = [];
-        let currentAgreementDraftHtml = '';
-        let currentAgreementDraftTitle = 'draft';
-        let currentJointSurveyApplyMode = 'joint';
-        let currentAssetOwnerTargetId = '';
-        let currentStep10SelectedOwnerKeys = [];
-        let latestProcessChartStepData = {};
+	        let currentOwnerNames = [];
+	        let currentAgreementDraftHtml = '';
+	        let currentAgreementDraftTitle = 'draft';
+	        let currentJointSurveyApplyMode = 'joint';
+	        let currentAssetOwnerTargetId = '';
+	        let currentStep10SelectedOwnerKeys = [];
+	        let currentSec21FileBuckets = {};
+	        let latestProcessChartStepData = {};
         const todayIsoDate = new Date().toISOString().split('T')[0];
 
         function getCookie(name) {
@@ -2098,6 +2119,17 @@
             return matchedRow || sec8Rows[0] || null;
         }
 
+        function hasVillageInfoPayloadForClauseOne(prefill = currentProcessChartPrefill) {
+            const villageDataPayload = prefill?.village_data || prefill || {};
+            return Boolean(
+                currentProcessChartPrefill?.village_data
+                || prefill?.village_data
+                || Object.prototype.hasOwnProperty.call(villageDataPayload, 'sec8_rows')
+                || Object.prototype.hasOwnProperty.call(villageDataPayload, 'notified_area_rows')
+                || Object.prototype.hasOwnProperty.call(villageDataPayload, 'data')
+            );
+        }
+
         function flattenNotifiedAreaBlocks(blocks = []) {
             if (!Array.isArray(blocks)) return [];
             return blocks.flatMap((block) => {
@@ -2148,7 +2180,7 @@
                 const matchedSec8Row = getMatchingSec8Row(villageDataPayload);
                 const sec8Rows = Array.isArray(matchedSec8Row?.notified_rows) ? matchedSec8Row.notified_rows : [];
                 if (sec8Rows.length) return sec8Rows;
-                return getAllVillageNotifiedRows(villageDataPayload, prefill);
+                return [];
             }
 
             if (sectionKey === 'proposal') {
@@ -2162,33 +2194,46 @@
                 .flatMap((block) => Array.isArray(block?.rows) ? block.rows : []);
         }
 
-        function getNotifiedAreaMatchResult(prefill = currentProcessChartPrefill, sectionKey = '') {
-            const selectedGut = normalizeGutMatchValue(gutSelect?.value || '');
-            let rowsToSearch = getNotifiedRowsForSection(prefill, sectionKey);
-            let matchedNotifiedArea = '';
+	        function getNotifiedAreaMatchResult(prefill = currentProcessChartPrefill, sectionKey = '') {
+	            const selectedGut = normalizeGutMatchValue(gutSelect?.value || '');
+	            let rowsToSearch = getNotifiedRowsForSection(prefill, sectionKey);
+	            let matchedNotifiedArea = '';
+	            const getRowArea = (row = {}) => String(
+	                row.notified_area
+	                || row.proposed_area
+	                || row.proposal_area
+	                || row.prastavit_area
+	                || row.area
+	                || row.area_hector
+	                || row.area_hr
+	                || ''
+	            ).trim();
 
-            rowsToSearch.forEach((row) => {
-                if (matchedNotifiedArea || !row) return;
-                const gutValue = normalizeGutMatchValue(row.gut_number || row.other_gut || '');
-                if (selectedGut && gutValue && gutValue === selectedGut) {
-                    matchedNotifiedArea = String(row.notified_area || row.proposed_area || row.area || '').trim();
-                }
-            });
-            if (!matchedNotifiedArea && sectionKey === 'clause_one') {
-                const villageDataPayload = prefill?.village_data || prefill || {};
-                rowsToSearch = getAllVillageNotifiedRows(villageDataPayload, prefill);
-                rowsToSearch.forEach((row) => {
-                    if (matchedNotifiedArea || !row) return;
-                    const gutValue = normalizeGutMatchValue(row.gut_number || row.other_gut || '');
-                    if (selectedGut && gutValue && gutValue === selectedGut) {
-                        matchedNotifiedArea = String(row.notified_area || row.proposed_area || row.area || '').trim();
-                    }
-                });
-            }
+	            rowsToSearch.forEach((row) => {
+	                if (matchedNotifiedArea || !row) return;
+	                const gutValue = normalizeGutMatchValue(row.gut_number || row.other_gut || '');
+	                if (selectedGut && gutValue && gutValue === selectedGut) {
+	                    matchedNotifiedArea = getRowArea(row);
+	                }
+	            });
+	            if (!matchedNotifiedArea && !rowsToSearch.length && sectionKey !== 'clause_one') {
+	                const villageDataPayload = prefill?.village_data || prefill || {};
+	                const fallbackRows = getAllVillageNotifiedRows(villageDataPayload, prefill);
+	                fallbackRows.forEach((row) => {
+	                    if (matchedNotifiedArea || !row) return;
+	                    const gutValue = normalizeGutMatchValue(row.gut_number || row.other_gut || '');
+	                    if (selectedGut && gutValue && gutValue === selectedGut) {
+	                        matchedNotifiedArea = getRowArea(row);
+	                    }
+	                });
+	                if (fallbackRows.length) {
+	                    rowsToSearch = fallbackRows;
+	                }
+	            }
 
-            const fallbackNotifiedArea = rowsToSearch
-                .map((row) => String(row?.notified_area || row?.proposed_area || row?.area || '').trim())
-                .find(Boolean) || '';
+	            const fallbackNotifiedArea = rowsToSearch
+	                .map((row) => getRowArea(row))
+	                .find(Boolean) || '';
 
             return {
                 selectedGut,
@@ -2198,15 +2243,22 @@
             };
         }
 
-        function getNotifiedAreaPrefill(prefill = currentProcessChartPrefill, sectionKey = '') {
-            const landRecord = prefill?.land_record || null;
-            const villageData = prefill?.village_data?.data || {};
-            const { matchedNotifiedArea, fallbackNotifiedArea } = getNotifiedAreaMatchResult(prefill, sectionKey);
+	        function getNotifiedAreaPrefill(prefill = currentProcessChartPrefill, sectionKey = '') {
+	            const landRecord = prefill?.land_record || null;
+	            const villageData = prefill?.village_data?.data || {};
+	            const { matchedNotifiedArea, fallbackNotifiedArea } = getNotifiedAreaMatchResult(prefill, sectionKey);
 
-            return matchedNotifiedArea || fallbackNotifiedArea || villageData.notice_publication_area || villageData.sec4_notified_area || villageData.sec4_area || (landRecord && landRecord.total_area) || '';
-        }
+	            return matchedNotifiedArea || fallbackNotifiedArea || villageData.notice_publication_area || villageData.sec4_notified_area || villageData.sec4_area || (landRecord && landRecord.total_area) || '';
+	        }
+	        window.pcDebugNotifiedAreaMatch = (sectionKey = 'survey_notification') => ({
+	            sectionKey,
+	            selectedGut: normalizeGutMatchValue(gutSelect?.value || ''),
+	            result: getNotifiedAreaMatchResult(currentProcessChartPrefill, sectionKey),
+	            sectionRows: getNotifiedRowsForSection(currentProcessChartPrefill, sectionKey),
+	            allRows: getAllVillageNotifiedRows(currentProcessChartPrefill?.village_data || {}, currentProcessChartPrefill),
+	        });
 
-        function enhanceProcessChartDateInputs() {
+	        function enhanceProcessChartDateInputs() {
             if (!processChartForm) return;
 
             const dateInputs = processChartForm.querySelectorAll('input[type="date"], input[placeholder="dd-mm-yyyy"], input[placeholder="mm/dd/yyyy"], input[placeholder="Select Date"], input[placeholder="दिनांक निवडा"]');
@@ -3059,6 +3111,12 @@
             });
         }
 
+        function markVillageManagedField(field, sourceKey = '') {
+            if (!(field instanceof HTMLInputElement || field instanceof HTMLTextAreaElement || field instanceof HTMLSelectElement)) return;
+            field.dataset.pcVillageManaged = sourceKey || 'village-info';
+            field.dataset.pcPrefillSource = 'village-info';
+        }
+
         function getFieldValue(selectorOrElement) {
             const field = typeof selectorOrElement === 'string'
                 ? document.querySelector(selectorOrElement)
@@ -3088,6 +3146,16 @@
 
             document.querySelectorAll('[data-pc-doc-link-for]').forEach((link) => {
                 const key = link.getAttribute('data-pc-doc-link-for') || '';
+                if (key === 'award_file' && document.getElementById('pcAwardNumber')?.dataset?.pcVillageManaged) {
+                    link.classList.add('hidden');
+                    link.removeAttribute('href');
+                    delete link.dataset.pcDocUrl;
+                    delete link.dataset.pcDocName;
+                    if (link.dataset.pcDocLinkIcon !== 'true') {
+                        link.textContent = '';
+                    }
+                    return;
+                }
                 const doc = documents?.[key] || null;
                 if (!doc?.url) {
                     link.classList.add('hidden');
@@ -3125,33 +3193,64 @@
             return Array.isArray(rows) && rows.length ? rows : [{}];
         }
 
-        function buildSec21SavedFilesHtml(files = [], savedDoc = null) {
-            const allFiles = [
-                ...(savedDoc?.url ? [savedDoc] : []),
-                ...(Array.isArray(files) ? files : []),
-            ].filter((file) => file?.url);
+	        function buildSec21SavedFilesHtml(files = [], savedDoc = null) {
+	            const allFiles = [
+	                ...(savedDoc?.url ? [savedDoc] : []),
+	                ...(Array.isArray(files) ? files : []),
+	            ].filter((file) => file?.url);
             if (!allFiles.length) return '';
             return `
                 <div class="mt-2 space-y-1 text-xs font-semibold text-[#125fcb]">
                     ${allFiles.map((file) => `
                         <a class="block underline" href="${escapeHtml(file.url)}" target="_blank" rel="noopener">${escapeHtml(file.name || 'अपलोड केलेली प्रत')}</a>
                     `).join('')}
-                </div>
-            `;
-        }
+	                </div>
+	            `;
+	        }
 
-        function buildSec21Row(row = {}, index = 0) {
-            const files = row.files && typeof row.files === 'object' ? row.files : {};
-            const savedPrastaavDoc = currentProcessChartDocuments[`sec21_row_${index}_prastaav`] || null;
-            const savedKaryavrutantDoc = currentProcessChartDocuments[`sec21_row_${index}_karyavrutant`] || null;
+	        function getSec21FileList(files = [], savedDoc = null) {
+	            return [
+	                ...(savedDoc?.url ? [savedDoc] : []),
+	                ...(Array.isArray(files) ? files : []),
+	            ].filter((file) => file?.url);
+	        }
+
+	        function buildSec21EyeButtonHtml(index = 0, bucket = 'prastaav', files = [], savedDoc = null) {
+	            const fileList = getSec21FileList(files, savedDoc);
+	            currentSec21FileBuckets[`${index}_${bucket}`] = fileList;
+	            if (!fileList.length) {
+	                return '<div class="mt-2 text-xs font-semibold text-[#6b7d99]">प्रत उपलब्ध नाही.</div>';
+	            }
+	            return `
+	                <button type="button" class="pc-eye-view" aria-label="View Documents" title="View Documents" onclick="window.pcOpenSec21Files && window.pcOpenSec21Files(${index}, '${bucket}')">
+	                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+	                        <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"></path>
+	                        <circle cx="12" cy="12" r="3"></circle>
+	                    </svg>
+	                </button>
+	            `;
+	        }
+
+	        function buildSec21Row(row = {}, index = 0) {
+	            const files = row.files && typeof row.files === 'object' ? row.files : {};
+	            const savedPrastaavDoc = currentProcessChartDocuments[`sec21_row_${index}_prastaav`] || null;
+	            const savedKaryavrutantDoc = currentProcessChartDocuments[`sec21_row_${index}_karyavrutant`] || null;
             const prastaav = row.prastaav || row.sec21_prastaav || '';
             const prastaavDate = row.prastaav_date || row.sec21_prastaav_date || '';
-            const karyavrutant = row.karyavrutant || row.sec21_karyavrutant || '';
-            const karyavrutantDate = row.karyavrutant_date || row.sec21_karyavrutant_date || '';
-            const lockedAttr = row.source_locked ? ' readonly data-pc-prefill-source="village-info"' : '';
-            return `
-                <div class="pc-sec21-row rounded-xl border border-[#d7e5f6] bg-[#f8fbff] p-4" data-sec21-index="${index}">
-                    <div class="grid gap-4 md:grid-cols-3 md:items-end">
+	            const karyavrutant = row.karyavrutant || row.sec21_karyavrutant || '';
+	            const karyavrutantDate = row.karyavrutant_date || row.sec21_karyavrutant_date || '';
+	            const lockedAttr = row.source_locked ? ' readonly data-pc-prefill-source="village-info"' : '';
+	            const prastaavFilesHtml = row.source_locked
+	                ? buildSec21EyeButtonHtml(index, 'prastaav', files.prastaav_files, savedPrastaavDoc)
+	                : buildSec21SavedFilesHtml(files.prastaav_files, savedPrastaavDoc);
+	            const karyavrutantFilesHtml = row.source_locked
+	                ? buildSec21EyeButtonHtml(index, 'karyavrutant', files.karyavrutant_files, savedKaryavrutantDoc)
+	                : buildSec21SavedFilesHtml(files.karyavrutant_files, savedKaryavrutantDoc);
+	            const showPrastaavUpload = !row.source_locked && !prastaavFilesHtml;
+	            const showKaryavrutantUpload = !row.source_locked && !karyavrutantFilesHtml;
+	            return `
+	                <div class="pc-sec21-row rounded-xl border border-[#d7e5f6] bg-[#f8fbff] p-4" data-sec21-index="${index}">
+	                    <div class="grid gap-4 md:grid-cols-3 md:items-end">
                         <div>
                             <label class="pc-label">प्राधिकृत अधिकारी यांचा प्रस्ताव क्रमांक</label>
                             <input class="pc-input" name="sec21_prastaav" type="text" value="${escapeHtml(prastaav)}" placeholder="प्रस्ताव"${lockedAttr}>
@@ -3159,14 +3258,14 @@
                         <div>
                             <label class="pc-label">दिनांक</label>
                             <input class="pc-input pc-date-input" name="sec21_prastaav_date" type="date" value="${escapeHtml(normalizeDateInputValue(prastaavDate))}"${lockedAttr}>
-                        </div>
-                        <div>
-                            <label class="pc-label">अपलोड करा</label>
-                            <input class="pc-upload pc-sec21-file-input" name="sec21_row_${index}_prastaav" type="file">
-                            <div class="pc-sec21-prastaav-files">${buildSec21SavedFilesHtml(files.prastaav_files, savedPrastaavDoc)}</div>
-                        </div>
-                    </div>
-                    <div class="mt-4 grid gap-4 md:grid-cols-3 md:items-end">
+	                        </div>
+	                        <div>
+	                            ${row.source_locked ? '' : '<label class="pc-label">अपलोड करा</label>'}
+	                            ${showPrastaavUpload ? `<input class="pc-upload pc-sec21-file-input" name="sec21_row_${index}_prastaav" type="file">` : ''}
+	                            <div class="pc-sec21-prastaav-files">${prastaavFilesHtml}</div>
+	                        </div>
+	                    </div>
+	                    <div class="mt-4 grid gap-4 md:grid-cols-3 md:items-end">
                         <div>
                             <label class="pc-label">कार्यवृत्तांत</label>
                             <input class="pc-input" name="sec21_karyavrutant" type="text" value="${escapeHtml(karyavrutant)}" placeholder="कार्यवृत्तांत"${lockedAttr}>
@@ -3174,39 +3273,57 @@
                         <div>
                             <label class="pc-label">दिनांक</label>
                             <input class="pc-input pc-date-input" name="sec21_karyavrutant_date" type="date" value="${escapeHtml(normalizeDateInputValue(karyavrutantDate))}"${lockedAttr}>
-                        </div>
-                        <div>
-                            <label class="pc-label">अपलोड करा</label>
-                            <input class="pc-upload pc-sec21-file-input" name="sec21_row_${index}_karyavrutant" type="file">
-                            <div class="pc-sec21-karyavrutant-files">${buildSec21SavedFilesHtml(files.karyavrutant_files, savedKaryavrutantDoc)}</div>
-                        </div>
-                    </div>
-                </div>
+	                        </div>
+	                        <div>
+	                            ${row.source_locked ? '' : '<label class="pc-label">अपलोड करा</label>'}
+	                            ${showKaryavrutantUpload ? `<input class="pc-upload pc-sec21-file-input" name="sec21_row_${index}_karyavrutant" type="file">` : ''}
+	                            <div class="pc-sec21-karyavrutant-files">${karyavrutantFilesHtml}</div>
+	                        </div>
+	                    </div>
+	                </div>
             `;
         }
 
-        function renderSec21Rows(rows = []) {
-            const container = document.getElementById('pcSec21Rows');
-            if (!container) return;
-            container.innerHTML = normalizeSec21Rows(rows).map((row, index) => buildSec21Row(row || {}, index)).join('');
-        }
+	        function renderSec21Rows(rows = []) {
+	            const container = document.getElementById('pcSec21Rows');
+	            if (!container) return;
+	            currentSec21FileBuckets = {};
+	            container.innerHTML = normalizeSec21Rows(rows).map((row, index) => buildSec21Row(row || {}, index)).join('');
+	        }
 
-        function updateSec21RowDocumentLinks(documents = currentProcessChartDocuments) {
-            const container = document.getElementById('pcSec21Rows');
-            if (!container) return;
-            container.querySelectorAll('.pc-sec21-row').forEach((rowEl, index) => {
-                const sourceRows = currentProcessChartPrefill?.village_data?.sec21_rows || [];
-                const sourceFiles = sourceRows[index]?.files || {};
-                const prastaavHost = rowEl.querySelector('.pc-sec21-prastaav-files');
-                const karyavrutantHost = rowEl.querySelector('.pc-sec21-karyavrutant-files');
-                if (prastaavHost) {
-                    prastaavHost.innerHTML = buildSec21SavedFilesHtml(sourceFiles.prastaav_files, documents?.[`sec21_row_${index}_prastaav`]);
-                }
-                if (karyavrutantHost) {
-                    karyavrutantHost.innerHTML = buildSec21SavedFilesHtml(sourceFiles.karyavrutant_files, documents?.[`sec21_row_${index}_karyavrutant`]);
-                }
-            });
-        }
+	        function updateSec21RowDocumentLinks(documents = currentProcessChartDocuments) {
+	            const container = document.getElementById('pcSec21Rows');
+	            if (!container) return;
+	            container.querySelectorAll('.pc-sec21-row').forEach((rowEl, index) => {
+	                const sourceRows = currentProcessChartPrefill?.village_data?.sec21_rows || [];
+	                const sourceFiles = sourceRows[index]?.files || {};
+	                const sourceLocked = rowEl.querySelector('[data-pc-prefill-source="village-info"]') instanceof HTMLElement;
+	                const prastaavHost = rowEl.querySelector('.pc-sec21-prastaav-files');
+	                const karyavrutantHost = rowEl.querySelector('.pc-sec21-karyavrutant-files');
+	                if (prastaavHost) {
+	                    prastaavHost.innerHTML = sourceLocked
+	                        ? buildSec21EyeButtonHtml(index, 'prastaav', sourceFiles.prastaav_files, documents?.[`sec21_row_${index}_prastaav`])
+	                        : buildSec21SavedFilesHtml(sourceFiles.prastaav_files, documents?.[`sec21_row_${index}_prastaav`]);
+	                }
+	                if (karyavrutantHost) {
+	                    karyavrutantHost.innerHTML = sourceLocked
+	                        ? buildSec21EyeButtonHtml(index, 'karyavrutant', sourceFiles.karyavrutant_files, documents?.[`sec21_row_${index}_karyavrutant`])
+	                        : buildSec21SavedFilesHtml(sourceFiles.karyavrutant_files, documents?.[`sec21_row_${index}_karyavrutant`]);
+	                }
+	            });
+	        }
+	        window.pcOpenSec21Files = (index = 0, bucket = 'prastaav') => {
+	            const cachedFiles = currentSec21FileBuckets?.[`${index}_${bucket}`];
+	            if (Array.isArray(cachedFiles) && cachedFiles.length) {
+	                openFilesModal(cachedFiles);
+	                return;
+	            }
+	            const sourceRows = currentProcessChartPrefill?.village_data?.sec21_rows || [];
+	            const sourceFiles = sourceRows[index]?.files || {};
+	            const savedDoc = currentProcessChartDocuments?.[`sec21_row_${index}_${bucket}`] || null;
+	            const files = getSec21FileList(sourceFiles[`${bucket}_files`], savedDoc);
+	            openFilesModal(files);
+	        };
 
         function getDisplayValue(value, fallback = '________') {
             return escapeHtml(value || fallback);
@@ -3901,7 +4018,8 @@
                 'notice_publication_included',
                 'proposal_included',
             ]);
-            restoreSavedRadioValues(stepData, 4, ['joint_done', 'demarcation_done']);
+	            restoreSavedRadioValues(stepData, 4, ['joint_done', 'demarcation_done', 'joint_survey_owner_table_mode']);
+	            toggleJointSurveyOwnerTables();
             restoreSavedRadioValues(stepData, 5, ['group_in_clause_one_included']);
             restoreSavedRadioValues(stepData, 9, ['consent_submitted']);
             restoreSavedRadioValues(stepData, 12, [
@@ -3916,11 +4034,11 @@
             toggleGroupClauseFields();
             togglePossessionHandedFields();
             toggleRecordUpdatedFields();
-            toggleArbitrationFields();
-            toggleConsentSubmittedFields();
-            if (currentProcessChartPrefill?.village_data) {
-                applyDemarcationPrefill(currentProcessChartPrefill.village_data);
-            }
+	            toggleArbitrationFields();
+	            toggleConsentSubmittedFields();
+	            if (currentProcessChartPrefill?.village_data) {
+	                applyDemarcationPrefill(currentProcessChartPrefill.village_data);
+	            }
             toggleDemarcationFields();
         }
 
@@ -4097,22 +4215,28 @@
                 if (!Object.prototype.hasOwnProperty.call(sectionData, key)) return;
                 const field = document.querySelector(`[name="${CSS.escape(key)}"], #${CSS.escape(key)}`);
                 if (field instanceof HTMLInputElement) {
-                    field.value = normalizeDateInputValue(sectionData[key]);
+                    if (field.dataset?.pcPrefillSource) return;
+                    const nextValue = normalizeDateInputValue(sectionData[key]);
+                    if (!nextValue && String(field.value || '').trim()) return;
+                    field.value = nextValue;
                 }
             });
 
-            [
-                'group_clause_area',
-                'group_clause_reason',
-            ].forEach((key) => {
-                if (!Object.prototype.hasOwnProperty.call(sectionData, key)) return;
-                const field = document.querySelector(`[name="${CSS.escape(key)}"], #${CSS.escape(key)}`);
-                if (field instanceof HTMLInputElement) {
-                    field.value = sectionData[key] || '';
-                }
-            });
-            window.setTimeout(() => toggleGroupClauseFields(currentProcessChartPrefill), 0);
-        }
+	            const hasVillageGroupAreaState = hasVillageInfoPayloadForClauseOne(currentProcessChartPrefill);
+	            if (!hasVillageGroupAreaState && Object.prototype.hasOwnProperty.call(sectionData, 'group_clause_area')) {
+	                const field = document.querySelector('[name="group_clause_area"], #pcGroupClauseArea');
+	                if (field instanceof HTMLInputElement) {
+	                    field.value = sectionData.group_clause_area || '';
+	                }
+	            }
+	            if (Object.prototype.hasOwnProperty.call(sectionData, 'group_clause_reason')) {
+	                const field = document.querySelector('[name="group_clause_reason"], #pcGroupClauseReason');
+	                if (field instanceof HTMLInputElement) {
+	                    field.value = sectionData.group_clause_reason || '';
+	                }
+	            }
+	            window.setTimeout(() => toggleGroupClauseFields(currentProcessChartPrefill), 0);
+	        }
 
         function restoreTab7Data(stepData = {}) {
             const tab7Data = stepData?.['7:step_7'] || getSavedStepSectionData(stepData, 7, 'step_7');
@@ -4238,10 +4362,10 @@
             });
         }
 
-        function collectSingleKhataOwnerRows() {
-            const tbody = document.getElementById('pcSingleKhataOwnersBody');
-            if (!tbody) return [];
-            return Array.from(tbody.querySelectorAll('tr')).map((row) => {
+	        function collectSingleKhataOwnerRows() {
+	            const tbody = document.getElementById('pcSingleKhataOwnersBody');
+	            if (!tbody) return [];
+	            return Array.from(tbody.querySelectorAll('tr')).map((row) => {
                 const inputs = row.querySelectorAll('input');
                 return {
                     owner_name: String(inputs[0]?.value || '').trim(),
@@ -4249,25 +4373,74 @@
                     address: String(inputs[2]?.value || '').trim(),
                     acquisition_area: String(inputs[3]?.value || '').trim(),
                 };
-            });
-        }
+	            });
+	        }
 
-        function collectTab4Snapshot() {
-            return {
-                single_rows: collectSingleKhataOwnerRows(),
-                multi_rows: collectMultiKhataOwnerRows(),
-                multi_common_area: getMultiKhataCommonAreaValue(),
+	        function getJointSurveyOwnerTableMode() {
+	            const checked = document.querySelector('input[name="joint_survey_owner_table_mode"]:checked');
+	            return checked?.value === 'multi' ? 'multi' : 'single';
+	        }
+
+	        function setJointSurveyOwnerTableMode(mode = 'single') {
+	            const nextMode = mode === 'multi' ? 'multi' : 'single';
+	            document.querySelectorAll('input[name="joint_survey_owner_table_mode"]').forEach((radio) => {
+	                if (radio instanceof HTMLInputElement) {
+	                    radio.checked = radio.value === nextMode;
+	                }
+	            });
+	            toggleJointSurveyOwnerTables(nextMode);
+	        }
+
+	        function toggleJointSurveyOwnerTables(mode = getJointSurveyOwnerTableMode()) {
+	            const nextMode = mode === 'multi' ? 'multi' : 'single';
+	            const singleSection = document.getElementById('pcSingleKhataSection');
+	            const multiSection = document.getElementById('pcMultiKhataSection');
+	            singleSection?.classList.toggle('hidden', nextMode !== 'single');
+	            multiSection?.classList.toggle('hidden', nextMode !== 'multi');
+	            singleSection?.querySelectorAll('input, select, textarea, button').forEach((field) => {
+	                if (field instanceof HTMLInputElement || field instanceof HTMLSelectElement || field instanceof HTMLTextAreaElement || field instanceof HTMLButtonElement) {
+	                    field.disabled = nextMode !== 'single';
+	                }
+	            });
+	            multiSection?.querySelectorAll('input, select, textarea, button').forEach((field) => {
+	                if (field instanceof HTMLInputElement || field instanceof HTMLSelectElement || field instanceof HTMLTextAreaElement || field instanceof HTMLButtonElement) {
+	                    field.disabled = nextMode !== 'multi';
+	                }
+	            });
+	            if (nextMode === 'single') {
+	                const singleBody = document.getElementById('pcSingleKhataOwnersBody');
+	                if (singleBody && !singleBody.children.length) appendSingleKhataOwnerRow();
+	            } else {
+	                const multiBody = document.getElementById('pcMultiKhataOwnersBody');
+	                if (multiBody && !multiBody.children.length) appendMultiKhataOwnerRow();
+	            }
+	        }
+
+	        function collectTab4Snapshot() {
+	            const tableMode = getJointSurveyOwnerTableMode();
+	            return {
+	                owner_table_mode: tableMode,
+	                single_rows: tableMode === 'single' ? collectSingleKhataOwnerRows() : [],
+	                multi_rows: tableMode === 'multi' ? collectMultiKhataOwnerRows() : [],
+	                multi_common_area: tableMode === 'multi' ? getMultiKhataCommonAreaValue() : '',
                 selected_keys: getSelectedJointSurveyKeys(),
             };
         }
-
         function restoreTab4Snapshot(snapshot = {}) {
             const singleBody = document.getElementById('pcSingleKhataOwnersBody');
             const multiBody = document.getElementById('pcMultiKhataOwnersBody');
+            if (typeof snapshot === 'string') {
+                try {
+                    snapshot = JSON.parse(snapshot);
+                } catch (error) {
+                    snapshot = {};
+                }
+            }
             if (!singleBody || !multiBody || !snapshot || typeof snapshot !== 'object') return false;
 
             const singleRows = Array.isArray(snapshot.single_rows) ? snapshot.single_rows : [];
             const multiRows = Array.isArray(snapshot.multi_rows) ? snapshot.multi_rows : [];
+            const tableMode = snapshot.owner_table_mode === 'multi' || (!singleRows.length && multiRows.length) ? 'multi' : 'single';
             const hasData = [...singleRows, ...multiRows].some((row) =>
                 Object.values(row || {}).some((value) => String(value || '').trim())
             ) || String(snapshot.multi_common_area || '').trim();
@@ -4278,12 +4451,13 @@
                 : '';
             renderMultiKhataOwnerRows(multiRows, snapshot.multi_common_area || '');
             syncSingleKhataOwnerRowButtons();
-            if (Array.isArray(snapshot.selected_keys)) {
-                setSelectedJointSurveyKeys(snapshot.selected_keys);
-            }
-            renderAcquisitionDetailTable(currentProcessChartPrefill);
-            return true;
-        }
+	            if (Array.isArray(snapshot.selected_keys)) {
+	                setSelectedJointSurveyKeys(snapshot.selected_keys);
+	            }
+	            setJointSurveyOwnerTableMode(tableMode);
+	            renderAcquisitionDetailTable(currentProcessChartPrefill);
+	            return true;
+	        }
 
         function collectTab4AcquisitionOwnerRows() {
             const rows = [];
@@ -4523,9 +4697,9 @@
             arbitrationSelectedOwnerKeysField.value = JSON.stringify(Array.from(new Set(keys.filter(Boolean))));
         }
 
-        function groupJointSurveyRows(prefill = currentProcessChartPrefill) {
-            const ownerRows = collectStep1OwnerRows(prefill);
-            const groupedByKhata = new Map();
+	        function groupJointSurveyRows(prefill = currentProcessChartPrefill) {
+	            const ownerRows = collectStep1OwnerRows(prefill);
+	            const groupedByKhata = new Map();
 
             ownerRows.forEach((row) => {
                 const khataKey = String(row.khata_number || '').trim() || `__no_khata__${groupedByKhata.size}`;
@@ -4556,17 +4730,30 @@
                 }
             });
 
-            return { singleGroups, multiGroups };
-        }
+	            return { singleGroups, multiGroups };
+	        }
 
-        function setJointSurveyModalSectionMode(mode = 'default') {
-            const singleSection = document.getElementById('pcJointSurveySingleNamesSection');
-            const multiSection = document.getElementById('pcJointSurveyMultiNamesSection');
-            const isAssetOwnerMode = mode === 'asset';
-            const isPlainNamesMode = isAssetOwnerMode || mode === 'step10';
-            singleSection?.classList.toggle('hidden', mode === 'joint_multi');
-            multiSection?.classList.toggle('hidden', isPlainNamesMode || mode === 'joint_single');
-        }
+	        function collectJointSurveyFlatOwnerRows(prefill = currentProcessChartPrefill) {
+	            return collectStep1OwnerRows(prefill)
+	                .map((row) => ({
+	                    ...row,
+	                    source_locked: true,
+	                    owner_name: String(row.owner_name || '').trim(),
+	                    mobile_number: row.mobile_number || '',
+	                    address: row.address || '',
+	                }))
+	                .filter((row) => row.owner_name);
+	        }
+
+	        function setJointSurveyModalSectionMode(mode = 'default') {
+	            const singleSection = document.getElementById('pcJointSurveySingleNamesSection');
+	            const multiSection = document.getElementById('pcJointSurveyMultiNamesSection');
+	            const isAssetOwnerMode = mode === 'asset';
+	            const isPlainNamesMode = isAssetOwnerMode || mode === 'step10';
+	            const isTab1OwnerMode = mode === 'joint_single' || mode === 'joint_multi';
+	            singleSection?.classList.toggle('hidden', false);
+	            multiSection?.classList.toggle('hidden', isPlainNamesMode || isTab1OwnerMode || mode === 'joint_single');
+	        }
 
         function openJointSurveyNamesModal(prefill = currentProcessChartPrefill, options = {}) {
             if (!jointSurveyNamesModal || !jointSurveySingleNamesList || !jointSurveyMultiNamesList) return;
@@ -4631,10 +4818,49 @@
                 document.body.style.overflow = 'hidden';
                 return;
             }
-            const { singleGroups, multiGroups } = groupJointSurveyRows(prefill);
-            const selectedKeys = currentJointSurveyApplyMode === 'asset'
-                ? new Set()
-                : new Set(getSelectedJointSurveyKeys());
+	            if (currentJointSurveyApplyMode === 'joint_single' || currentJointSurveyApplyMode === 'joint_multi') {
+	                const rows = collectJointSurveyFlatOwnerRows(prefill);
+	                const selectedKeys = new Set(getSelectedJointSurveyKeys());
+	                jointSurveySingleNamesList.innerHTML = rows.length
+	                    ? currentJointSurveyApplyMode === 'joint_single'
+	                        ? rows.map((row, index) => {
+	                            const rowKey = buildJointSurveyRowKey(row);
+	                            return `
+	                                <label class="flex items-center gap-3 rounded border border-[#dbe8f8] bg-[#f8fbff] px-3 py-3">
+	                                    <input type="radio" name="pc_joint_survey_single_owner" class="pc-joint-survey-name-radio" data-group-type="tab1-owner-single" data-row-index="${index}" data-row-key="${escapeHtml(rowKey)}" ${selectedKeys.has(rowKey) ? 'checked' : ''}>
+	                                    <span class="text-sm text-[#244271]"><strong>खाता:</strong> ${escapeHtml(row.khata_number || '-')} | <strong>नाव:</strong> ${escapeHtml(row.owner_name || '')}</span>
+	                                </label>
+	                            `;
+	                        }).join('')
+	                        : `
+	                        <label class="mb-3 flex items-center gap-2 rounded border border-[#dbe8f8] bg-white px-3 py-2 text-sm font-semibold text-[#244271]">
+	                            <input type="checkbox" class="pc-joint-survey-select-all-single">
+	                            <span>सर्व निवडा</span>
+	                        </label>
+	                        ${rows.map((row, index) => {
+	                            const rowKey = buildJointSurveyRowKey(row);
+	                            return `
+	                                <label class="flex items-center gap-3 rounded border border-[#dbe8f8] bg-[#f8fbff] px-3 py-3">
+	                                    <input type="checkbox" class="pc-joint-survey-name-checkbox" data-group-type="tab1-owner" data-row-index="${index}" data-row-key="${escapeHtml(rowKey)}" ${selectedKeys.has(rowKey) ? 'checked' : ''}>
+	                                    <span class="text-sm text-[#244271]"><strong>खाता:</strong> ${escapeHtml(row.khata_number || '-')} | <strong>नाव:</strong> ${escapeHtml(row.owner_name || '')}</span>
+	                                </label>
+	                            `;
+	                        }).join('')}`
+	                    : '<div class="rounded border border-dashed border-[#d6e3f5] px-3 py-3 text-sm text-[#6b7d99]">टॅब 1 मधील 7/12 भूधारक नावे उपलब्ध नाहीत.</div>';
+	                const selectAll = jointSurveySingleNamesList.querySelector('.pc-joint-survey-select-all-single');
+	                const checkboxes = Array.from(jointSurveySingleNamesList.querySelectorAll('.pc-joint-survey-name-checkbox[data-group-type="tab1-owner"]'));
+	                if (selectAll instanceof HTMLInputElement) {
+	                    selectAll.checked = checkboxes.length > 0 && checkboxes.every((checkbox) => checkbox.checked);
+	                }
+	                jointSurveyMultiNamesList.innerHTML = '';
+	                jointSurveyNamesModal.classList.remove('hidden');
+	                document.body.style.overflow = 'hidden';
+	                return;
+	            }
+	            const { singleGroups, multiGroups } = groupJointSurveyRows(prefill);
+	            const selectedKeys = currentJointSurveyApplyMode === 'asset'
+	                ? new Set()
+	                : new Set(getSelectedJointSurveyKeys());
 
             jointSurveySingleNamesList.innerHTML = singleGroups.length
                 ? `
@@ -4866,11 +5092,11 @@
                 .map((row) => buildJointSurveyRowKey(row));
         }
 
-        function applySelectedJointSurveyNames(prefill = currentProcessChartPrefill, options = {}) {
-            if (currentJointSurveyApplyMode === 'asset') {
-                populateAssetOwnerFieldFromSelection(prefill, currentAssetOwnerTargetId);
-                return;
-            }
+	        function applySelectedJointSurveyNames(prefill = currentProcessChartPrefill, options = {}) {
+	            if (currentJointSurveyApplyMode === 'asset') {
+	                populateAssetOwnerFieldFromSelection(prefill, currentAssetOwnerTargetId);
+	                return;
+	            }
             if (currentJointSurveyApplyMode === 'step10') {
                 populateStep10OwnerSelection(prefill);
                 return;
@@ -4880,12 +5106,40 @@
                 return;
             }
 
-            const singleBody = document.getElementById('pcSingleKhataOwnersBody');
-            const multiBody = document.getElementById('pcMultiKhataOwnersBody');
-            if (!singleBody || !multiBody) return;
+	            const singleBody = document.getElementById('pcSingleKhataOwnersBody');
+	            const multiBody = document.getElementById('pcMultiKhataOwnersBody');
+	            if (!singleBody || !multiBody) return;
 
-            const { singleGroups, multiGroups } = groupJointSurveyRows(prefill);
-            const checkboxes = Array.from(document.querySelectorAll('.pc-joint-survey-name-checkbox:checked'));
+	            if (currentJointSurveyApplyMode === 'joint_single' || currentJointSurveyApplyMode === 'joint_multi') {
+	                const selectedKeys = currentJointSurveyApplyMode === 'joint_single'
+	                    ? [document.querySelector('.pc-joint-survey-name-radio[data-group-type="tab1-owner-single"]:checked')?.getAttribute('data-row-key') || ''].filter(Boolean)
+	                    : Array.from(document.querySelectorAll('.pc-joint-survey-name-checkbox[data-group-type="tab1-owner"]:checked'))
+	                        .map((checkbox) => checkbox.getAttribute('data-row-key') || '')
+	                        .filter(Boolean);
+	                const selectedKeySet = new Set(selectedKeys);
+	                const selectedRows = collectJointSurveyFlatOwnerRows(prefill)
+	                    .filter((row) => selectedKeySet.has(buildJointSurveyRowKey(row)));
+	                setSelectedJointSurveyKeys(selectedKeys);
+	                if (currentJointSurveyApplyMode === 'joint_single') {
+	                    setJointSurveyOwnerTableMode('single');
+	                    singleBody.innerHTML = selectedRows.length
+	                        ? selectedRows.map((row) => buildSingleKhataOwnerRow(row)).join('')
+	                        : '';
+	                    syncSingleKhataOwnerRowButtons();
+	                } else {
+	                    setJointSurveyOwnerTableMode('multi');
+	                    renderMultiKhataOwnerRows(selectedRows, getMultiKhataCommonAreaValue());
+	                }
+	                ensureTab4OwnerTablesHaveRows();
+	                renderAcquisitionDetailTable(prefill);
+	                if (options.closeModal !== false) {
+	                    closeJointSurveyNamesModal();
+	                }
+	                return;
+	            }
+
+	            const { singleGroups, multiGroups } = groupJointSurveyRows(prefill);
+	            const checkboxes = Array.from(document.querySelectorAll('.pc-joint-survey-name-checkbox:checked'));
             const currentMultiSharedArea = getMultiKhataCommonAreaValue();
             const selectedSingles = [];
             const selectedMultis = [];
@@ -5018,13 +5272,13 @@
             }
         }
 
-        function defaultAreaQuestionToYes(radioName, matchedArea) {
-            if (!matchedArea) return '';
-            const checkedRadio = processChartForm?.querySelector(`input[name="${radioName}"]:checked`);
-            if (checkedRadio) return checkedRadio.value || '';
-            processChartForm?.querySelectorAll(`input[name="${radioName}"]`).forEach((radio) => {
-                radio.checked = radio.value === 'yes';
-            });
+	        function defaultAreaQuestionToYes(radioName, fetchedArea) {
+	            if (!fetchedArea || fetchedArea === 'गट आढळला नाही') return '';
+	            const checkedRadio = processChartForm?.querySelector(`input[name="${radioName}"]:checked`);
+	            if (checkedRadio) return checkedRadio.value || '';
+	            processChartForm?.querySelectorAll(`input[name="${radioName}"]`).forEach((radio) => {
+	                radio.checked = radio.value === 'yes';
+	            });
             return 'yes';
         }
 
@@ -5133,9 +5387,9 @@
             const reasonField = document.getElementById('pcNoticePublicationReason');
             if (!areaWrap || !areaField || !reasonWrap || !reasonField) return;
 
-            const { selectedGut, matchedNotifiedArea, hasRows } = getNotifiedAreaMatchResult(prefill, 'notice');
-            const prefillArea = matchedNotifiedArea || ((selectedGut && hasRows) ? 'गट आढळला नाही' : '');
-            selectedValue = selectedValue || defaultAreaQuestionToYes('notice_publication_included', matchedNotifiedArea);
+	            const { selectedGut, matchedNotifiedArea, hasRows } = getNotifiedAreaMatchResult(prefill, 'notice');
+	            const prefillArea = matchedNotifiedArea || ((selectedGut && hasRows) ? 'गट आढळला नाही' : '');
+	            selectedValue = selectedValue || defaultAreaQuestionToYes('notice_publication_included', prefillArea || areaField.value);
 
             if (selectedValue === 'yes') {
                 setQuestionBlockVisible(areaWrap, true);
@@ -5172,10 +5426,10 @@
             const reasonField = document.getElementById('pcProposalReason');
             if (!areaWrap || !areaField || !reasonWrap || !reasonField) return;
 
-            const { selectedGut, matchedNotifiedArea, hasRows } = getNotifiedAreaMatchResult(prefill, 'proposal');
-            const gutNotFoundText = 'गट आढळला नाही';
-            const prefillArea = matchedNotifiedArea || ((selectedGut && hasRows) ? gutNotFoundText : '');
-            selectedValue = selectedValue || defaultAreaQuestionToYes('proposal_included', matchedNotifiedArea);
+	            const { selectedGut, matchedNotifiedArea, hasRows } = getNotifiedAreaMatchResult(prefill, 'proposal');
+	            const gutNotFoundText = 'गट आढळला नाही';
+	            const prefillArea = matchedNotifiedArea || ((selectedGut && hasRows) ? gutNotFoundText : '');
+	            selectedValue = selectedValue || defaultAreaQuestionToYes('proposal_included', prefillArea || areaField.value);
 
             if (selectedValue === 'yes') {
                 setQuestionBlockVisible(areaWrap, true);
@@ -5269,6 +5523,7 @@
                     rowsKey: 'sec17_rows',
                     detailKey: 'sec17_letter_details',
                     dateKey: 'sec17_date',
+                    rowsContainerId: 'pcWaterSupplyRows',
                     targetDetail: 'water_supply_valuation_letter_detail',
                     targetDate: 'water_supply_valuation_date',
                 },
@@ -5276,6 +5531,7 @@
                     rowsKey: 'sec18_rows',
                     detailKey: 'sec18_letter_details',
                     dateKey: 'sec18_date',
+                    rowsContainerId: 'pcAgricultureRows',
                     targetDetail: 'agriculture_valuation_letter_detail',
                     targetDate: 'agriculture_valuation_date',
                 },
@@ -5283,6 +5539,7 @@
                     rowsKey: 'sec19_rows',
                     detailKey: 'sec19_letter_details',
                     dateKey: 'sec19_date',
+                    rowsContainerId: 'pcConstructionRows',
                     targetDetail: 'construction_valuation_letter_detail',
                     targetDate: 'construction_valuation_date',
                 },
@@ -5290,6 +5547,7 @@
                     rowsKey: 'sec16_rows',
                     detailKey: 'sec16_letter_details',
                     dateKey: 'sec16_date',
+                    rowsContainerId: 'pcForestRows',
                     targetDetail: 'forest_valuation_letter_detail',
                     targetDate: 'forest_valuation_date',
                 },
@@ -5297,15 +5555,34 @@
                     rowsKey: 'sec20_rows',
                     detailKey: 'sec20_letter_details',
                     dateKey: 'sec20_date',
+                    rowsContainerId: 'pcOtherDepartmentRows',
                     targetDetail: 'other_department_valuation_letter_detail',
                     targetDate: 'other_department_valuation_date',
                 },
             ];
         }
 
+        function getAssetValuationSection(mapping) {
+            return document.getElementById(mapping.rowsContainerId)?.closest('.pc-section') || null;
+        }
+
+        function getAssetValuationField(mapping, fieldType) {
+            const targetName = fieldType === 'date' ? mapping.targetDate : mapping.targetDetail;
+            const namedField = document.querySelector(`[name="${CSS.escape(targetName)}"]`);
+            if (namedField instanceof HTMLInputElement) return namedField;
+            const section = getAssetValuationSection(mapping);
+            if (!section) return null;
+            if (fieldType === 'date') {
+                const dateField = section.querySelector('input[type="date"], input[placeholder="dd-mm-yyyy"], input[placeholder="mm/dd/yyyy"]');
+                return dateField instanceof HTMLInputElement ? dateField : null;
+            }
+            const detailField = section.querySelector('input[placeholder="मूल्यांकन सादर केलेल्या पत्राचा तपशील"]');
+            return detailField instanceof HTMLInputElement ? detailField : null;
+        }
+
         function assetValuationLetterDetailsFilled() {
             return getAssetValuationLetterMappings().every((mapping) => {
-                const field = processChartForm?.querySelector(`[name="${mapping.targetDetail}"]`);
+                const field = getAssetValuationField(mapping, 'detail');
                 return field instanceof HTMLInputElement && String(field.value || '').trim();
             });
         }
@@ -5322,8 +5599,8 @@
                     mapping.detailKey,
                     mapping.dateKey
                 );
-                const detailField = processChartForm?.querySelector(`[name="${mapping.targetDetail}"]`);
-                const dateField = processChartForm?.querySelector(`[name="${mapping.targetDate}"]`);
+                const detailField = getAssetValuationField(mapping, 'detail');
+                const dateField = getAssetValuationField(mapping, 'date');
                 if (detailField instanceof HTMLInputElement) {
                     if (detail) {
                         detailField.value = detail;
@@ -5344,12 +5621,26 @@
         }
 
         function hasAssetValuationLetterPrefillPayload(villageDataPayload) {
-            return ['sec16_rows', 'sec17_rows', 'sec18_rows', 'sec19_rows', 'sec20_rows'].some((rowsKey) => {
+            const villageData = villageDataPayload?.data || {};
+            return getAssetValuationLetterMappings().some((mapping) => {
+                if (String(villageData[mapping.detailKey] || villageData[mapping.dateKey] || '').trim()) {
+                    return true;
+                }
+                const rowsKey = mapping.rowsKey;
                 const rows = [
                     ...(Array.isArray(villageDataPayload?.[rowsKey]) ? villageDataPayload[rowsKey] : []),
                     ...(Array.isArray(villageDataPayload?.data?.[rowsKey]) ? villageDataPayload.data[rowsKey] : []),
                 ];
-                return rows.some((row) => String(row?.detail || row?.letter_details || row?.date || '').trim());
+                return rows.some((row) => String(
+                    row?.detail
+                    || row?.details
+                    || row?.letter_detail
+                    || row?.letter_details
+                    || row?.valuation_letter_detail
+                    || row?.valuation_letter_details
+                    || row?.date
+                    || ''
+                ).trim());
             });
         }
 
@@ -5372,6 +5663,7 @@
                 console.error('Village Info tab 6 valuation prefill failed:', error);
             }
         }
+        window.pcForceAssetValuationPrefill = ensureAssetValuationLetterPrefillLoaded;
         window.pcDebugAssetValuationPrefill = () => {
             const payload = currentProcessChartPrefill?.village_data || {};
             return {
@@ -5379,8 +5671,10 @@
                 mappings: getAssetValuationLetterMappings().map((mapping) => ({
                     rowsKey: mapping.rowsKey,
                     source: getFirstVillageRelatedSectionValue(payload, mapping.rowsKey, mapping.detailKey, mapping.dateKey),
-                    detailFieldValue: processChartForm?.querySelector(`[name="${mapping.targetDetail}"]`)?.value || '',
-                    dateFieldValue: processChartForm?.querySelector(`[name="${mapping.targetDate}"]`)?.value || '',
+                    detailFieldName: getAssetValuationField(mapping, 'detail')?.name || '',
+                    detailFieldValue: getAssetValuationField(mapping, 'detail')?.value || '',
+                    dateFieldName: getAssetValuationField(mapping, 'date')?.name || '',
+                    dateFieldValue: getAssetValuationField(mapping, 'date')?.value || '',
                 })),
             };
         };
@@ -5392,16 +5686,17 @@
             const kramankField = document.getElementById('pcSec8AdhisuchanaKramank');
             const dateField = document.getElementById('pcSec8Date');
             const clauseAreaField = document.getElementById('pcGroupClauseArea');
-            const { matchedNotifiedArea, fallbackNotifiedArea } = getNotifiedAreaMatchResult({ village_data: villageDataPayload }, 'clause_one');
+            const { selectedGut, matchedNotifiedArea } = getNotifiedAreaMatchResult({ village_data: villageDataPayload }, 'clause_one');
+            const areaValue = matchedNotifiedArea || ((selectedGut && hasVillageInfoPayloadForClauseOne({ village_data: villageDataPayload })) ? 'गट आढळला नाही' : '');
 
-            if (kramankField && !kramankField.value) {
-                applyFieldValue(kramankField, matchedSec8Row.adhisuchana_kramank || '');
+            if (kramankField) {
+                kramankField.value = matchedSec8Row.adhisuchana_kramank || '';
             }
-            if (dateField && !dateField.value) {
-                applyFieldValue(dateField, matchedSec8Row.adhisuchana_date || '');
+            if (dateField) {
+                dateField.value = normalizeDateInputValue(matchedSec8Row.adhisuchana_date || '');
             }
-            if (clauseAreaField && !clauseAreaField.value) {
-                applyFieldValue(clauseAreaField, matchedNotifiedArea || '');
+            if (clauseAreaField) {
+                clauseAreaField.value = areaValue;
             }
             if (matchedSec8Row?.files?.main?.length) {
                 currentVillageFiles.sec8_files = matchedSec8Row.files.main;
@@ -5821,10 +6116,10 @@
             const reasonField = document.getElementById('pcSurveyNotificationReason');
             if (!areaWrap || !areaField || !reasonWrap || !reasonField) return;
 
-            const { selectedGut, matchedNotifiedArea, hasRows } = getNotifiedAreaMatchResult(prefill, 'survey_notification');
-            const gutNotFoundText = 'गट आढळला नाही';
-            const prefillArea = matchedNotifiedArea || ((selectedGut && hasRows) ? gutNotFoundText : '');
-            selectedValue = selectedValue || defaultAreaQuestionToYes('survey_in_notification', matchedNotifiedArea);
+	            const { selectedGut, matchedNotifiedArea, hasRows } = getNotifiedAreaMatchResult(prefill, 'survey_notification');
+	            const gutNotFoundText = 'गट आढळला नाही';
+	            const prefillArea = matchedNotifiedArea || ((selectedGut && hasRows) ? gutNotFoundText : '');
+	            selectedValue = selectedValue || defaultAreaQuestionToYes('survey_in_notification', prefillArea || areaField.value);
 
             if (selectedValue === 'yes') {
                 setQuestionBlockVisible(areaWrap, true);
@@ -5864,9 +6159,15 @@
             const reasonField = document.getElementById('pcGroupClauseReason');
             if (!areaWrap || !areaField || !reasonWrap || !reasonField) return;
 
-            const { selectedGut, matchedNotifiedArea, hasRows } = getNotifiedAreaMatchResult(prefill, 'clause_one');
-            const rawArea = matchedNotifiedArea || ((selectedGut && hasRows) ? 'गट आढळला नाही' : '');
-            selectedValue = selectedValue || defaultAreaQuestionToYes('group_in_clause_one_included', matchedNotifiedArea);
+	            const { selectedGut, matchedNotifiedArea } = getNotifiedAreaMatchResult(prefill, 'clause_one');
+	            const hasVillageInfoPayload = hasVillageInfoPayloadForClauseOne(prefill);
+	            const rawArea = matchedNotifiedArea || ((selectedGut && hasVillageInfoPayload) ? 'गट आढळला नाही' : '');
+	            if (!selectedValue && rawArea) {
+	                processChartForm?.querySelectorAll('input[name="group_in_clause_one_included"]').forEach((radio) => {
+	                    radio.checked = radio.value === 'yes';
+	                });
+	                selectedValue = 'yes';
+	            }
 
             if (selectedValue === 'yes') {
                 setQuestionBlockVisible(areaWrap, true);
@@ -6351,6 +6652,49 @@
             document.body.style.overflow = '';
         }
 
+        function renderVillageAwardFileState(files = []) {
+            const fileInput = processChartForm?.querySelector('input[name="award_file"]');
+            const savedLink = processChartForm?.querySelector('[data-pc-doc-link-for="award_file"]');
+            const viewBtn = document.getElementById('pcAwardFilesViewBtn');
+            const hasFiles = Array.isArray(files) && files.some((file) => file?.url);
+            if (fileInput instanceof HTMLInputElement) {
+                fileInput.classList.add('hidden');
+            }
+            if (savedLink instanceof HTMLAnchorElement) {
+                savedLink.classList.add('hidden');
+                savedLink.removeAttribute('href');
+                delete savedLink.dataset.pcDocUrl;
+                delete savedLink.dataset.pcDocName;
+                savedLink.textContent = '';
+            }
+            viewBtn?.classList.toggle('hidden', !hasFiles);
+        }
+
+        function applyAwardPrefill(villageDataPayload) {
+            if (!villageDataPayload) return;
+            const villageData = villageDataPayload?.data || {};
+            const numberField = document.getElementById('pcAwardNumber') || processChartForm?.querySelector('[name="award_number"]');
+            const dateField = document.getElementById('pcAwardDate') || processChartForm?.querySelector('[name="award_date"]');
+            const files = Array.isArray(villageDataPayload?.files?.sec23_files) ? villageDataPayload.files.sec23_files : [];
+
+            [
+                [numberField, villageData.sec23_kramank || ''],
+                [dateField, villageData.sec23_date || ''],
+            ].forEach(([field, value]) => {
+                if (!(field instanceof HTMLInputElement)) return;
+                markVillageManagedField(field, 'sec23');
+                field.value = value || '';
+                field.setAttribute('value', value || '');
+                field.readOnly = true;
+                field.setAttribute('readonly', 'readonly');
+                field.classList.add('pc-readonly-lock');
+                field.tabIndex = -1;
+            });
+
+            currentVillageFiles.sec23_files = files;
+            renderVillageAwardFileState(files);
+        }
+
         function applyVillageDataPrefill(villageDataPayload) {
             const villageData = villageDataPayload?.data || {};
             const sec3Rows = Array.isArray(villageDataPayload?.sec3_rows) ? villageDataPayload.sec3_rows : [];
@@ -6419,9 +6763,9 @@
                 renderSec3Rows(sec3PrefillRows.map((row) => ({ ...row, source_locked: true })));
             }
 
-            if (!hasSavedSec21Rows()) {
-                renderSec21Rows((villageDataPayload?.sec21_rows || []).map((row) => ({ ...row, source_locked: true })));
-            }
+	            if ((villageDataPayload?.sec21_rows || []).length) {
+	                renderSec21Rows((villageDataPayload?.sec21_rows || []).map((row) => ({ ...row, source_locked: true })));
+	            }
 
             applyDemarcationPrefill(villageDataPayload);
             ensureDemarcationPrefillLoaded().then(() => toggleDemarcationFields());
@@ -6432,6 +6776,7 @@
             applyAssetValuationLetterPrefill(villageDataPayload);
             ensureAssetValuationLetterPrefillLoaded();
             applyCommitteeInfoPrefill(villageDataPayload);
+            applyAwardPrefill(villageDataPayload);
             renderCommitteeRateRows(villageDataPayload);
             renderAcquisitionDetailTable(currentProcessChartPrefill);
             applyCompensationPrefill(currentProcessChartPrefill);
@@ -7240,7 +7585,18 @@
             const sec2NotificationNumber = getFieldValue('#pcSec2AdhisuchanaKramank');
             const sec2NotificationDate = getFieldValue('#pcSec2Date');
             const sec2NotificationDateLong = formatNoticeLongDate(sec2NotificationDate) || '________';
-            const sec3OfficeName = villageData.sec3_upvibhag_name || getFieldValue('#pcSec3UpvibhagName') || 'उपजिल्हाधिकारी भूसंपादन क्र. 1, पुणे';
+            const sec3UpvibhagName = primarySec3Row.upvibhag_name
+                || primarySec3Row.sec3_upvibhag_name
+                || villageData.sec3_upvibhag_name
+                || getFieldValue('#pcSec3UpvibhagName')
+                || 'उपजिल्हाधिकारी भूसंपादन क्र. 1, पुणे';
+            const sec3OfficerPersonName = primarySec3Row.officer_name
+                || primarySec3Row.sec3_officer_name
+                || villageData.sec3_officer_name
+                || getFieldValue('#pcSec3Rows .pc-sec3-officer-name')
+                || villageData.collector_name
+                || '________';
+            const sec3OfficeName = sec3UpvibhagName;
             const applicantName = getFieldValue('[name="objection_applicant_name"]') || '________';
             const applicantAddress = getFieldValue('[name="objection_applicant_address"]') || `रा. ${village || '________'} ता.${taluka || '________'} जि. ${district || '________'}`;
             const objectionNature = getFieldValue('[name="objection_nature"]') || 'भूसंपादनास हरकत';
@@ -7255,7 +7611,8 @@
             const officeHeader = sec3OfficeName || villageData.collector_office_name || 'उपजिल्हाधिकारी भूसंपादन क्र. 1 पुणे, यांचे कार्यालय';
             const officeAddress = primarySec3Row.address || villageData.collector_office_address || '________';
             const hearingLocation = officeAddress;
-            const signingOfficerName = villageData.collector_name || '________';
+            const signingOfficerName = sec3OfficerPersonName;
+            const signingOfficerDesignation = sec3UpvibhagName;
 
             const red = (value) => `<span style="color:#d62828; font-weight:700;">${getDisplayValue(value)}</span>`;
 
@@ -7304,7 +7661,7 @@
                     <p class="paragraph">सदर सुनावणीकामी आपण आवश्यक त्या कागदपत्रांसह उपस्थित रहावे.</p>
                     <div class="signature">
                         <p class="red name">(${getDisplayValue(signingOfficerName)})</p>
-                        <p class="designation">${red('उपजिल्हाधिकारी भूसंपादन क्र.1, पुणे.')}</p>
+                        <p class="designation">${red(signingOfficerDesignation)}</p>
                     </div>
                     <div style="margin-top: 28px;">
                         <p class="paragraph">प्रत :- 1) प्रादेशिक अधिकारी, महाराष्ट्र औद्योगिक विकास महामंडळ,</p>
@@ -7387,14 +7744,14 @@
             return field.value;
         }
 
-        function collectPanelData(panel) {
-            if (!panel) return {};
-            if (Number(panel.dataset.pcPanel || 0) === 7) {
-                panel.querySelectorAll('.pc-repeatable-asset-row').forEach((row) => syncRepeatableAssetOwnerHiddenInputs(row));
-                updateTotalAssetValuation();
-                syncTab7SnapshotField();
-            }
-            const data = {};
+	        function collectPanelData(panel) {
+	            if (!panel) return {};
+	            if (Number(panel.dataset.pcPanel || 0) === 7) {
+	                panel.querySelectorAll('.pc-repeatable-asset-row').forEach((row) => syncRepeatableAssetOwnerHiddenInputs(row));
+	                updateTotalAssetValuation();
+	                syncTab7SnapshotField();
+	            }
+	            const data = {};
             const radioNames = new Set();
 
             panel.querySelectorAll('input, select, textarea').forEach((field) => {
@@ -7499,6 +7856,7 @@
 
         function applyFieldValue(field, value) {
             if (!field || field.type === 'file' || value === undefined || value === null) return;
+            if (field.dataset?.pcVillageManaged) return;
             const incomingText = typeof value === 'string' ? value : null;
             // Don't overwrite non-empty inputs with empty saved values (common in old step_data).
             // This is important for tabs like 9 where reopening was wiping fields back to blank.
@@ -7577,10 +7935,28 @@
             }, 0);
         }
 
+        function hasTab4OwnerTablePayload(sectionData = {}) {
+            if (!sectionData || typeof sectionData !== 'object') return false;
+            return [
+                'tab4_snapshot',
+                'joint_survey_selected_names_json',
+                'joint_survey_owner_table_mode',
+                'single_khata_owner_name',
+                'single_khata_mobile_number',
+                'single_khata_address',
+                'single_khata_acquisition_area',
+                'multi_khata_owner_name',
+                'multi_khata_mobile_number',
+                'multi_khata_address',
+                'multi_khata_common_acquisition_area',
+            ].some((key) => Object.prototype.hasOwnProperty.call(sectionData, key));
+        }
+
         function ensureTab4OwnerRowsForData(sectionData = {}) {
             const singleBody = document.getElementById('pcSingleKhataOwnersBody');
             const multiBody = document.getElementById('pcMultiKhataOwnersBody');
             if (!singleBody || !multiBody) return;
+            if (!hasTab4OwnerTablePayload(sectionData)) return;
             if (restoreTab4Snapshot(sectionData.tab4_snapshot)) return;
 
             const singleCount = getStep4RowCount(sectionData, [
@@ -7590,7 +7966,13 @@
                 'single_khata_acquisition_area',
             ]);
             if (singleCount) {
-                singleBody.innerHTML = Array.from({ length: singleCount }, () => buildSingleKhataOwnerRow({})).join('');
+                const singleRows = Array.from({ length: singleCount }, (_, index) => ({
+                    owner_name: getArrayValue(sectionData, 'single_khata_owner_name', index),
+                    mobile_number: getArrayValue(sectionData, 'single_khata_mobile_number', index),
+                    address: getArrayValue(sectionData, 'single_khata_address', index),
+                    acquisition_area: getArrayValue(sectionData, 'single_khata_acquisition_area', index),
+                }));
+                singleBody.innerHTML = singleRows.map((row) => buildSingleKhataOwnerRow(row)).join('');
                 syncSingleKhataOwnerRowButtons();
             }
 
@@ -7599,10 +7981,17 @@
                 'multi_khata_mobile_number',
                 'multi_khata_address',
             ]);
-            if (multiCount) {
-                renderMultiKhataOwnerRows(Array.from({ length: multiCount }, () => ({})), getArrayValue(sectionData, 'multi_khata_common_acquisition_area', 0));
-            }
-        }
+            const savedMode = sectionData.joint_survey_owner_table_mode === 'multi' || (!singleCount && multiCount) ? 'multi' : 'single';
+	            if (multiCount) {
+	                const multiRows = Array.from({ length: multiCount }, (_, index) => ({
+	                    owner_name: getArrayValue(sectionData, 'multi_khata_owner_name', index),
+	                    mobile_number: getArrayValue(sectionData, 'multi_khata_mobile_number', index),
+	                    address: getArrayValue(sectionData, 'multi_khata_address', index),
+	                }));
+	                renderMultiKhataOwnerRows(multiRows, getArrayValue(sectionData, 'multi_khata_common_acquisition_area', 0));
+	            }
+            setJointSurveyOwnerTableMode(savedMode);
+	        }
 
         function applyStepDataToForm(stepData = {}) {
             Object.values(stepData || {}).forEach((sectionData) => {
@@ -7745,9 +8134,9 @@
                     if (prefill.village_data?.sec3_rows?.length && !hasSavedSec3Rows(latestProcessChartStepData)) {
                         renderSec3Rows(prefill.village_data.sec3_rows);
                     }
-                    if (prefill.village_data?.sec21_rows?.length && !hasSavedSec21Rows(latestProcessChartStepData)) {
-                        renderSec21Rows(prefill.village_data.sec21_rows);
-                    }
+	                    if (prefill.village_data?.sec21_rows?.length) {
+	                        renderSec21Rows(prefill.village_data.sec21_rows.map((row) => ({ ...row, source_locked: true })));
+	                    }
                     scheduleTab7Restore(latestProcessChartStepData);
                     window.setTimeout(() => restoreSavedProcessChartRadios(latestProcessChartStepData), 0);
                     window.setTimeout(() => restoreSavedProcessChartRadios(latestProcessChartStepData), 150);
@@ -7800,7 +8189,6 @@
                 const tab7Row = buildStepDataPayload(7, tab7Panel);
                 if (tab7Row) stepRows.push(tab7Row);
             }
-
             const prefillLand = currentProcessChartPrefill?.land_record || {};
             const districtValue = districtSelect?.value || prefillLand.district || '';
             const talukaValue = talukaSelect?.value || prefillLand.taluka || '';
@@ -8236,12 +8624,12 @@
             if (event.target instanceof HTMLSelectElement && event.target.id === 'pcOccupancyClass') {
                 updateCompensationFields(currentProcessChartPrefill);
             }
-            if (event.target instanceof HTMLInputElement && event.target.classList.contains('pc-sec15-row-radio')) {
-                updateCompensationFields(currentProcessChartPrefill);
-            }
-            if (event.target instanceof HTMLInputElement && event.target.name === 'notice_publication_included') {
-                toggleNoticePublicationFields();
-            }
+	            if (event.target instanceof HTMLInputElement && event.target.classList.contains('pc-sec15-row-radio')) {
+	                updateCompensationFields(currentProcessChartPrefill);
+	            }
+	            if (event.target instanceof HTMLInputElement && event.target.name === 'notice_publication_included') {
+	                toggleNoticePublicationFields();
+	            }
             if (event.target instanceof HTMLInputElement && event.target.name === 'proposal_included') {
                 toggleProposalFields();
                 forceToggleProposalQuestionBlock();
@@ -8265,13 +8653,15 @@
             document.getElementById('pcCompensation2')?.addEventListener(eventName, () => {
                 requestAnimationFrame(() => updateCompensationFields(currentProcessChartPrefill));
             });
-        });
-        document.getElementById('pcFetchJointSurveyNamesBtn')?.addEventListener('click', () => {
-            openJointSurveyNamesModal(currentProcessChartPrefill, { mode: 'joint_single' });
-        });
-        document.getElementById('pcFetchJointSurveyMultiNamesBtn')?.addEventListener('click', () => {
-            openJointSurveyNamesModal(currentProcessChartPrefill, { mode: 'joint_multi' });
-        });
+	        });
+	        document.getElementById('pcFetchJointSurveyNamesBtn')?.addEventListener('click', () => {
+	            setJointSurveyOwnerTableMode('single');
+	            openJointSurveyNamesModal(currentProcessChartPrefill, { mode: 'joint_single' });
+	        });
+	        document.getElementById('pcFetchJointSurveyMultiNamesBtn')?.addEventListener('click', () => {
+	            setJointSurveyOwnerTableMode('multi');
+	            openJointSurveyNamesModal(currentProcessChartPrefill, { mode: 'joint_multi' });
+	        });
         closeJointSurveyNamesModalBtn?.addEventListener('click', closeJointSurveyNamesModal);
         closeJointSurveyNamesModalFooterBtn?.addEventListener('click', closeJointSurveyNamesModal);
         applyJointSurveyNamesBtn?.addEventListener('click', () => applySelectedJointSurveyNames(currentProcessChartPrefill));
@@ -8394,8 +8784,22 @@
                 updateCompensationFields(currentProcessChartPrefill);
             }
         });
-        addSingleKhataOwnerRowBtn?.addEventListener('click', () => appendSingleKhataOwnerRow());
-        addMultiKhataOwnerRowBtn?.addEventListener('click', () => appendMultiKhataOwnerRow());
+        document.querySelectorAll('input[name="joint_survey_owner_table_mode"]').forEach((radio) => {
+            radio.addEventListener('change', () => {
+                toggleJointSurveyOwnerTables();
+                renderAcquisitionDetailTable(currentProcessChartPrefill);
+                updateStep10AadhaarFromOwner(currentProcessChartPrefill);
+                updateCompensationFields(currentProcessChartPrefill);
+            });
+        });
+        addSingleKhataOwnerRowBtn?.addEventListener('click', () => {
+            setJointSurveyOwnerTableMode('single');
+            appendSingleKhataOwnerRow();
+        });
+        addMultiKhataOwnerRowBtn?.addEventListener('click', () => {
+            setJointSurveyOwnerTableMode('multi');
+            appendMultiKhataOwnerRow();
+        });
         document.querySelectorAll('[data-repeatable-asset-rows]').forEach((container) => {
             container.addEventListener('click', (event) => {
                 const addBtn = event.target.closest('.pc-inline-add-asset-row');
@@ -8457,6 +8861,7 @@
         sec10FilesViewBtn?.addEventListener('click', () => openFilesModal(currentVillageFiles.sec10_files || []));
         sec11FilesViewBtn?.addEventListener('click', () => openFilesModal(currentVillageFiles.sec11_files || []));
         sec14FilesViewBtn?.addEventListener('click', () => openFilesModal(currentVillageFiles.sec14_files || []));
+        awardFilesViewBtn?.addEventListener('click', () => openFilesModal(currentVillageFiles.sec23_files || []));
         closeFilesModalBtn?.addEventListener('click', closeFilesModal);
         closeFilesModalFooterBtn?.addEventListener('click', closeFilesModal);
         agreementDraftGenerateBtn?.addEventListener('click', () => {
@@ -8510,17 +8915,20 @@
                 populateStep10OwnerSelection(currentProcessChartPrefill, { closeModal: false });
                 return;
             }
-            if (target.classList.contains('pc-joint-survey-select-all-single')) {
-                jointSurveyNamesModal.querySelectorAll('.pc-joint-survey-name-checkbox[data-group-type="single"]').forEach((checkbox) => {
-                    if (checkbox instanceof HTMLInputElement) {
-                        checkbox.checked = target.checked;
-                    }
-                });
-                if (currentJointSurveyApplyMode === 'joint_single') {
-                    applySelectedJointSurveyNames(currentProcessChartPrefill, { closeModal: false });
-                }
-                return;
-            }
+	            if (target.classList.contains('pc-joint-survey-select-all-single')) {
+	                const selector = (currentJointSurveyApplyMode === 'joint_single' || currentJointSurveyApplyMode === 'joint_multi')
+	                    ? '.pc-joint-survey-name-checkbox[data-group-type="tab1-owner"]'
+	                    : '.pc-joint-survey-name-checkbox[data-group-type="single"]';
+	                jointSurveyNamesModal.querySelectorAll(selector).forEach((checkbox) => {
+	                    if (checkbox instanceof HTMLInputElement) {
+	                        checkbox.checked = target.checked;
+	                    }
+	                });
+	                if (currentJointSurveyApplyMode === 'joint_single' || currentJointSurveyApplyMode === 'joint_multi') {
+	                    applySelectedJointSurveyNames(currentProcessChartPrefill, { closeModal: false });
+	                }
+	                return;
+	            }
             if (target.classList.contains('pc-joint-survey-select-all')) {
                 const groupIndex = target.getAttribute('data-group-index');
                 if (groupIndex === null) return;
@@ -8536,17 +8944,35 @@
                 return;
             }
 
-            if (target.classList.contains('pc-joint-survey-name-checkbox') && target.getAttribute('data-group-type') === 'single') {
-                const singleCheckboxes = Array.from(jointSurveyNamesModal.querySelectorAll('.pc-joint-survey-name-checkbox[data-group-type="single"]'))
-                    .filter((checkbox) => checkbox instanceof HTMLInputElement);
-                const selectAllCheckbox = jointSurveyNamesModal.querySelector('.pc-joint-survey-select-all-single');
-                if (selectAllCheckbox instanceof HTMLInputElement) {
-                    selectAllCheckbox.checked = singleCheckboxes.length > 0 && singleCheckboxes.every((checkbox) => checkbox.checked);
-                }
-                if (currentJointSurveyApplyMode === 'joint_single') {
-                    applySelectedJointSurveyNames(currentProcessChartPrefill, { closeModal: false });
-                }
-                return;
+	            if (target.classList.contains('pc-joint-survey-name-checkbox') && target.getAttribute('data-group-type') === 'tab1-owner') {
+	                const singleCheckboxes = Array.from(jointSurveyNamesModal.querySelectorAll('.pc-joint-survey-name-checkbox[data-group-type="tab1-owner"]'))
+	                    .filter((checkbox) => checkbox instanceof HTMLInputElement);
+	                const selectAllCheckbox = jointSurveyNamesModal.querySelector('.pc-joint-survey-select-all-single');
+	                if (selectAllCheckbox instanceof HTMLInputElement) {
+	                    selectAllCheckbox.checked = singleCheckboxes.length > 0 && singleCheckboxes.every((checkbox) => checkbox.checked);
+	                }
+	                if (currentJointSurveyApplyMode === 'joint_single' || currentJointSurveyApplyMode === 'joint_multi') {
+	                    applySelectedJointSurveyNames(currentProcessChartPrefill, { closeModal: false });
+	                }
+	                return;
+	            }
+
+	            if (target.classList.contains('pc-joint-survey-name-radio') && target.getAttribute('data-group-type') === 'tab1-owner-single') {
+	                applySelectedJointSurveyNames(currentProcessChartPrefill, { closeModal: false });
+	                return;
+	            }
+
+	            if (target.classList.contains('pc-joint-survey-name-checkbox') && target.getAttribute('data-group-type') === 'single') {
+	                const singleCheckboxes = Array.from(jointSurveyNamesModal.querySelectorAll('.pc-joint-survey-name-checkbox[data-group-type="single"]'))
+	                    .filter((checkbox) => checkbox instanceof HTMLInputElement);
+	                const selectAllCheckbox = jointSurveyNamesModal.querySelector('.pc-joint-survey-select-all-single');
+	                if (selectAllCheckbox instanceof HTMLInputElement) {
+	                    selectAllCheckbox.checked = singleCheckboxes.length > 0 && singleCheckboxes.every((checkbox) => checkbox.checked);
+	                }
+	                if (currentJointSurveyApplyMode === 'joint_single') {
+	                    applySelectedJointSurveyNames(currentProcessChartPrefill, { closeModal: false });
+	                }
+	                return;
             }
 
             if (target.classList.contains('pc-joint-survey-name-checkbox') && target.getAttribute('data-group-type') === 'multi') {
@@ -8566,10 +8992,11 @@
 
         recordUpdatedRadios.forEach((radio) => radio.addEventListener('change', toggleRecordUpdatedFields));
         toggleRecordUpdatedFields();
-        renderSec3Rows([{}]);
-        renderSec21Rows([{}]);
-        ensureTab4OwnerTablesHaveRows();
-        enhanceProcessChartDateInputs();
+	        renderSec3Rows([{}]);
+	        renderSec21Rows([{}]);
+	        ensureTab4OwnerTablesHaveRows();
+	        toggleJointSurveyOwnerTables();
+	        enhanceProcessChartDateInputs();
         enhanceProcessChartAreaInputs();
         updateTotalAssetValuation();
         window.setInterval(() => {
