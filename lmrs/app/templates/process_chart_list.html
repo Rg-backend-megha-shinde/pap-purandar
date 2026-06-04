@@ -166,6 +166,8 @@
                                 <th class="border border-[#d7e5f6] px-3 py-2 text-center font-semibold">गाव</th>
                                 <th class="border border-[#d7e5f6] px-3 py-2 text-center font-semibold">गट क्रमांक</th>
                                 <th class="border border-[#d7e5f6] px-3 py-2 text-center font-semibold">भूधारकाचे नाव</th>
+                                <th class="border border-[#d7e5f6] px-3 py-2 text-center font-semibold">संपादन क्षेत्र</th>
+                                <th class="border border-[#d7e5f6] px-3 py-2 text-center font-semibold">मोबदला</th>
                                 <th class="border border-[#d7e5f6] px-3 py-2 text-center font-semibold">Status</th>
                                 <th class="border border-[#d7e5f6] px-3 py-2 text-center font-semibold">टप्पा</th>
                                 <th class="border border-[#d7e5f6] px-3 py-2 text-center font-semibold">Updated</th>
@@ -194,6 +196,12 @@
                                     {% else %}
                                         -
                                     {% endif %}
+                                </td>
+                                <td class="border border-[#d7e5f6] px-3 py-2 text-center" data-search="{{ item.acquisition_area_from_joint_survey|default:'' }}">
+                                    {{ item.acquisition_area_from_joint_survey|default:"-" }}
+                                </td>
+                                <td class="border border-[#d7e5f6] px-3 py-2 text-center" data-search="{{ item.consent_compensation_amount|default:'' }}">
+                                    {{ item.consent_compensation_amount|default:"-" }}
                                 </td>
                                 <td class="border border-[#d7e5f6] px-3 py-2 text-center" data-search="{{ item.status }} {% if item.status == 'draft' %}Draft मसुदा{% else %}Completed पूर्ण{% endif %}">
                                     <span class="pc-status-badge {% if item.status == 'submitted' %}pc-status-submitted{% elif item.status == 'approved' %}pc-status-approved{% else %}pc-status-draft{% endif %}">
@@ -321,4 +329,4 @@ $(document).ready(function () {
     });
 });
 </script>
-{% endblock %} 
+{% endblock %}

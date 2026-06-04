@@ -577,19 +577,39 @@ def get_land_record_owner_names(request):
     if not all([district, taluka, village]):
         return JsonResponse({'owners': []})
 
-    records = LandRecord712.objects.filter(
-        district=district,
-        taluka=taluka,
-        village=village,
-    ).order_by('-updated_at', '-id')
-
     if gut_number:
-        records = records.filter(gut_number__icontains=gut_number)
+        records = _get_matching_land_records_for_process_chart(district, taluka, village, gut_number)
+    else:
+        records = list(LandRecord712.objects.filter(
+            district__iexact=district,
+            taluka__iexact=taluka,
+            village__iexact=village,
+        ).prefetch_related('farmers').order_by('-updated_at', '-id'))
+
+        if not records:
+            district_key = normalize_match_text(district)
+            taluka_key = normalize_match_text(taluka)
+            village_key = normalize_match_text(village)
+            for candidate in LandRecord712.objects.all().prefetch_related('farmers').order_by('-updated_at', '-id'):
+                if (
+                    normalize_match_text(candidate.district) == district_key
+                    and normalize_match_text(candidate.taluka) == taluka_key
+                    and normalize_match_text(candidate.village) == village_key
+                ):
+                    records.append(candidate)
 
     unique_names = []
     seen = set()
 
     for record in records:
+        farmers = list(record.farmers.all().order_by('id')) if hasattr(record, 'farmers') else []
+        for farmer in farmers:
+            name = (farmer.farmer_name or '').strip()
+            key = normalize_match_text(name)
+            if not key or key in seen:
+                continue
+            seen.add(key)
+            unique_names.append(name)
         for name in split_holder_names(record.holder_name):
             key = normalize_match_text(name)
             if not key or key in seen:
@@ -4735,6 +4755,36 @@ def _process_chart_owner_names_summary(owner_names):
     return f'{names[0]} आणि इतर'
 
 
+def _process_chart_step_data(case, step_no):
+    row = next((item for item in case.step_data.all() if item.step_no == step_no), None)
+    return row.data if row and isinstance(row.data, dict) else {}
+
+
+def _process_chart_first_value(value):
+    if isinstance(value, list):
+        for item in value:
+            text = str(item or '').strip()
+            if text:
+                return text
+        return ''
+    return str(value or '').strip()
+
+
+def _process_chart_case_acquisition_area(case):
+    step_four_data = _process_chart_step_data(case, 4)
+    mode = step_four_data.get('joint_survey_owner_table_mode')
+    single_area = _process_chart_first_value(step_four_data.get('single_khata_acquisition_area'))
+    multi_area = _process_chart_first_value(step_four_data.get('multi_khata_common_acquisition_area'))
+    if mode == 'multi':
+        return multi_area or single_area
+    return single_area or multi_area
+
+
+def _process_chart_case_consent_compensation(case):
+    step_eight_data = _process_chart_step_data(case, 8)
+    return _process_chart_first_value(step_eight_data.get('pcCompensation11'))
+
+
 @login_required
 def process_chart_list(request):
     cases = ProcessChartCase.objects.select_related('user').prefetch_related('step_data').all().order_by('-updated_at', '-id')
@@ -4747,6 +4797,8 @@ def process_chart_list(request):
         case.village_mr = village_mr or case.village
         case.owner_names_mr = _process_chart_case_owner_names(case)
         case.owner_names_summary_mr = _process_chart_owner_names_summary(case.owner_names_mr)
+        case.acquisition_area_from_joint_survey = _process_chart_case_acquisition_area(case)
+        case.consent_compensation_amount = _process_chart_case_consent_compensation(case)
     return render(request, 'process_chart_list.html', {
         'active_tab': 'process-chart',
         'cases': cases,
@@ -4945,6 +4997,21 @@ def _get_matching_land_records_for_process_chart(district, taluka, village, gut_
         normalized_candidates = LandRecord712.objects.filter(
             village__iexact=village,
         ).prefetch_related('farmers').order_by('khata_number', 'id')
+
+        for candidate in normalized_candidates:
+            if candidate.id in seen_ids:
+                continue
+            if (
+                normalize_gut_value(candidate.gut_number) == gut_key
+                and normalize_match_text(candidate.district) == district_key
+                and normalize_match_text(candidate.taluka) == taluka_key
+                and normalize_match_text(candidate.village) == village_key
+            ):
+                seen_ids.add(candidate.id)
+                records.append(candidate)
+
+    if gut_key and not records:
+        normalized_candidates = LandRecord712.objects.all().prefetch_related('farmers').order_by('khata_number', 'id')
 
         for candidate in normalized_candidates:
             if candidate.id in seen_ids:
@@ -5548,19 +5615,17 @@ def save_process_chart_form(request):
         if not case:
             return JsonResponse({'success': False, 'error': 'Process chart case not found.'}, status=404)
     else:
-        case, _created = ProcessChartCase.objects.get_or_create(
+        case = ProcessChartCase.objects.create(
             district=district,
             taluka=taluka,
             village=village,
             gut_number=gut_number,
-            defaults={
-                'user': request.user,
-                'division': clean_optional_char(payload.get('division')),
-                'project_purpose': clean_optional_char(payload.get('project_purpose')),
-                'acquisition_type': clean_optional_char(payload.get('acquisition_type')),
-                'current_step': int(payload.get('current_step') or 1),
-                'status': clean_optional_char(payload.get('status')) or 'draft',
-            },
+            user=request.user,
+            division=clean_optional_char(payload.get('division')),
+            project_purpose=clean_optional_char(payload.get('project_purpose')),
+            acquisition_type=clean_optional_char(payload.get('acquisition_type')),
+            current_step=int(payload.get('current_step') or 1),
+            status=clean_optional_char(payload.get('status')) or 'draft',
         )
         case.user = request.user
         case.division = clean_optional_char(payload.get('division'))
@@ -6960,4 +7025,3 @@ def get_village_sec15_rates(request):
         'rates': rates_payload,
         'message': '' if rates_payload else 'No ready reckoner rates found for selected village'
     })
-
