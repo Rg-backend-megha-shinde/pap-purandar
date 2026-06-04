@@ -2913,6 +2913,42 @@
             container.innerHTML = finalValues.map((value) => buildAssetOwnerNameInput(inputName, value)).join('');
         }
 
+        function hasOwnerTableAreaValue(value) {
+            const raw = String(value ?? '').trim();
+            return Boolean(raw && raw !== '-' && raw.toLowerCase() !== 'null' && raw.toLowerCase() !== 'none');
+        }
+
+        function parseDecimalHectareAreaToSqm(value) {
+            const raw = String(value ?? '').trim();
+            if (!hasOwnerTableAreaValue(raw)) return 0;
+            const decimal = Number.parseFloat(raw);
+            return Number.isFinite(decimal) ? Math.round(decimal * 10000) : 0;
+        }
+
+        function parseSevenTwelvePotkharabaToSqm(value) {
+            const raw = String(value ?? '').trim();
+            if (!hasOwnerTableAreaValue(raw)) return 0;
+            if (/[.\-]/.test(raw)) {
+                const parts = raw.split(/[.\-]/).map((part) => Number.parseInt(part.replace(/\D/g, ''), 10) || 0);
+                if (parts.length >= 3) {
+                    return ((parts[0] || 0) * 10000) + ((parts[1] || 0) * 100) + (parts[2] || 0);
+                }
+                if (parts.length === 2) {
+                    return ((parts[0] || 0) * 10000) + ((parts[1] || 0) * 100);
+                }
+            }
+            const decimal = Number.parseFloat(raw);
+            return Number.isFinite(decimal) ? Math.round(decimal * 10000) : 0;
+        }
+
+        function formatOwnerTableCultivableArea(totalArea, potkharaba, fallback = '') {
+            if (!hasOwnerTableAreaValue(potkharaba)) return totalArea || fallback || '';
+            const totalSqm = parseDecimalHectareAreaToSqm(totalArea);
+            const potSqm = parseSevenTwelvePotkharabaToSqm(potkharaba);
+            if (totalSqm <= 0) return totalArea || fallback || '';
+            return ((Math.max(totalSqm - potSqm, 0)) / 10000).toFixed(4);
+        }
+
         async function loadProcessChartDistricts() {
             if (!districtSelect) return;
             districtSelect.innerHTML = '<option value="">जिल्हा निवडा</option>';
@@ -3008,6 +3044,8 @@
             const aadhaarFileInfo = rowData.aadhaar_file_info || currentProcessChartDocuments[`owner_info_aadhaar_file_${rowIndex}`] || null;
             const panFileInfo = rowData.pan_file_info || currentProcessChartDocuments[`owner_info_pan_file_${rowIndex}`] || null;
             const lockedAttr = rowData.source_locked ? ' readonly data-pc-prefill-source="712"' : '';
+            const totalAreaValue = rowData.total_area || '';
+            const cultivableAreaValue = formatOwnerTableCultivableArea(totalAreaValue, rowData.potkharaba, rowData.cultivable_area);
             return `
                 <tr>
                     <td><input class="pc-input" name="owner_info_owner_name" type="text" value="${rowData.owner_name || ''}"${lockedAttr}></td>
@@ -3018,9 +3056,9 @@
                     <td><input class="pc-upload" name="owner_info_pan_file" data-file-field="owner_info_pan_file" type="file">${panFileInfo?.url ? `<a class="mt-2 inline-block text-xs font-semibold text-[#125fcb] underline" href="${escapeHtml(panFileInfo.url)}" target="_blank" rel="noopener">${escapeHtml(panFileInfo.name || 'अपलोड केलेली प्रत')}</a>` : ''}</td>
                     <td><input class="pc-input" name="owner_info_mobile_number" type="tel" inputmode="numeric" maxlength="10" pattern="[0-9]{10}" placeholder="10 अंक" title="मोबाईल नंबर 10 अंकी असावा." value="${rowData.mobile_number || ''}"></td>
                     <td><textarea class="pc-input" name="owner_info_address" rows="2">${rowData.address || ''}</textarea></td>
-                    <td><input class="pc-input" name="owner_info_cultivable_area" type="text" placeholder="हे.आर" value="${rowData.cultivable_area || ''}"${lockedAttr}></td>
+                    <td><input class="pc-input" name="owner_info_cultivable_area" type="text" placeholder="हे.आर" value="${cultivableAreaValue}"${lockedAttr}></td>
                     <td><input class="pc-input" name="owner_info_potkharaba" type="text" placeholder="हे.आर" value="${rowData.potkharaba || ''}"${lockedAttr}></td>
-                    <td><input class="pc-input" name="owner_info_total_area" type="text" placeholder="हे.आर" value="${rowData.total_area || ''}"${lockedAttr}></td>
+                    <td><input class="pc-input" name="owner_info_total_area" type="text" placeholder="हे.आर" value="${totalAreaValue}"${lockedAttr}></td>
                     <td><input class="pc-input" name="owner_info_aakarni" type="text" value="${rowData.aakarni || ''}"${lockedAttr}></td>
                     <td>
                         <button type="button" class="pc-table-view-btn pc-other-rights-btn" data-other-rights="${otherRights}">
@@ -3947,6 +3985,23 @@
             }
         }
 
+        async function readJsonResponse(response, fallbackMessage = 'Request failed.') {
+            const contentType = response?.headers?.get('content-type') || '';
+            const rawText = await response.text();
+            if (contentType.includes('application/json')) {
+                try {
+                    return rawText ? JSON.parse(rawText) : {};
+                } catch (error) {
+                    throw new Error(fallbackMessage);
+                }
+            }
+            try {
+                return rawText ? JSON.parse(rawText) : {};
+            } catch (error) {
+                throw new Error(fallbackMessage);
+            }
+        }
+
         function mergeTab7SnapshotIntoData(data = {}, snapshot = {}) {
             if (!data || typeof data !== 'object' || !snapshot || typeof snapshot !== 'object') return data;
             const fields = snapshot.fields && typeof snapshot.fields === 'object' ? snapshot.fields : {};
@@ -4174,7 +4229,7 @@
             if (!caseId) return false;
             try {
                 const response = await fetch(`/api/process-chart-form/data/?case_id=${encodeURIComponent(caseId)}`);
-                const result = await response.json();
+                const result = await readJsonResponse(response, 'Saved process chart load करता आले नाही.');
                 if (!response.ok || !result.success) return false;
                 latestProcessChartStepData = result.step_data || {};
                 window.pcLatestStepData = latestProcessChartStepData;
@@ -4202,7 +4257,7 @@
             if (caseId) {
                 try {
                     const response = await fetch(`/api/process-chart-form/data/?case_id=${encodeURIComponent(caseId)}`);
-                    const payload = await response.json();
+                    const payload = await readJsonResponse(response, 'Saved process chart load करता आले नाही.');
                     result.apiSuccess = Boolean(response.ok && payload?.success);
                     result.apiStep7 = payload?.step_data?.['7:step_7'] || payload?.step_data?.step_7 || null;
                     result.restoredFromApi = forceRestoreTab7FlatData(payload?.step_data || {});
@@ -8608,7 +8663,7 @@
 
             try {
                 const response = await fetch(`/api/process-chart-form/data/?case_id=${encodeURIComponent(currentCaseId)}`);
-                const result = await response.json();
+                const result = await readJsonResponse(response, 'Saved process chart load करता आले नाही.');
                 if (!response.ok || !result.success) {
                     throw new Error(result.error || 'Existing process chart could not be loaded.');
                 }
@@ -8832,7 +8887,7 @@
             if ((!payload.district || !payload.taluka || !payload.village || !payload.gut_number) && currentCaseId) {
                 try {
                     const response = await fetch(`/api/process-chart-form/data/?case_id=${encodeURIComponent(currentCaseId)}`);
-                    const result = await response.json();
+                    const result = await readJsonResponse(response, 'Saved process chart load करता आले नाही.');
                     if (response.ok && result?.success) {
                         const fetchedCase = result.case || {};
                         const fetchedPrefill = result.prefill || {};
@@ -8902,7 +8957,7 @@
                     },
                     body: formData,
                 });
-                const result = await response.json();
+                const result = await readJsonResponse(response, 'Process chart save करता आले नाही.');
                 window.pcLastSaveResult = result;
                 if (!response.ok || !result.success) {
                     throw new Error(result.error || 'Unable to save process chart.');

@@ -4937,6 +4937,38 @@ def _format_sqm_to_har(value):
     return f"{hectare}.{aar:02d}.{sqm:02d}"
 
 
+def _format_sqm_to_decimal_hectare(value):
+    if not value or value <= 0:
+        return ''
+    return f"{Decimal(value) / Decimal('10000'):.4f}"
+
+
+def _has_area_value(value):
+    text = str(value or '').strip()
+    return bool(text and text not in ('-', 'None', 'none', 'NULL', 'null'))
+
+
+def _parse_decimal_hectare_area_to_sqm(value):
+    text = str(value or '').strip()
+    if not _has_area_value(text):
+        return 0
+    try:
+        dec = Decimal(text)
+        return int((dec * Decimal('10000')).to_integral_value())
+    except (InvalidOperation, TypeError, ValueError):
+        return _parse_area_to_sqm(text)
+
+
+def _owner_table_cultivable_from_total_and_potkharaba(total_area, potkharaba):
+    if not _has_area_value(potkharaba):
+        return total_area or ''
+    total_sqm = _parse_decimal_hectare_area_to_sqm(total_area)
+    pot_sqm = _parse_area_to_sqm(potkharaba)
+    if total_sqm <= 0:
+        return total_area or ''
+    return _format_sqm_to_decimal_hectare(max(total_sqm - pot_sqm, 0))
+
+
 def _combined_cultivable_area(land_record):
     total_sqm = _parse_area_to_sqm(land_record.jirayit) + _parse_area_to_sqm(land_record.bagayat)
     return _format_sqm_to_har(total_sqm)
@@ -5035,23 +5067,17 @@ def _serialize_owner_rows_for_process_chart(land_records):
         # For per-owner table we prefer per-khata area when present (matches 7/12 layout),
         # otherwise fall back to full-gut totals.
         base_total_area = land_record.khata_area or land_record.total_area or ''
-        cultivable_area = (
-            _cultivable_from_total_minus_potkharaba(base_total_area, sanitized_potkharaba)
-            or _combined_cultivable_area(land_record)
-            or base_total_area
-            or land_record.khata_area
-            or ''
-        )
         potkharaba = sanitized_potkharaba
+        cultivable_area = _owner_table_cultivable_from_total_and_potkharaba(base_total_area, potkharaba)
         total_area = base_total_area
         farmers = list(land_record.farmers.all().order_by('id'))
         if farmers:
             for index, farmer in enumerate(farmers):
                 farmer_total = farmer.total_area or total_area
                 farmer_pot = farmer.potkharaba or potkharaba
-                farmer_cultivable = (
-                    _cultivable_from_total_minus_potkharaba(farmer_total, farmer_pot)
-                    or (farmer_total or cultivable_area)
+                farmer_cultivable = _owner_table_cultivable_from_total_and_potkharaba(
+                    farmer_total,
+                    farmer_pot,
                 )
                 rows.append({
                     'source_land_record_id': land_record.id,
