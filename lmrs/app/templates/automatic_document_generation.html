@@ -83,15 +83,228 @@
                     </div>
                 </form>
             </section>
+
+            <section class="mt-6 rounded-xl border border-[#d7e5f6] bg-[#fbfdff] p-4 md:p-6">
+                <h2 class="mb-5 text-xl font-bold text-[#173d72]">कागदपत्र निर्मिती</h2>
+                <div class="grid grid-cols-1 gap-5 md:grid-cols-3">
+                    <div>
+                        <label for="documentGutCase" class="mb-2 block text-sm font-semibold text-[#244271]">गट निवडा</label>
+                        <select id="documentGutCase" class="w-full rounded-lg border border-[#cbd8ea] bg-white px-3 py-3 text-[#244271]">
+                            <option value="">गट निवडा</option>
+                            {% for option in process_case_options %}
+                            <option value="{{ option.id }}" {% if option.selected %}selected{% endif %}>{{ option.label }}</option>
+                            {% endfor %}
+                        </select>
+                        {% if selected_source != 'process_chart' %}
+                        <p class="mt-2 text-xs text-[#6b7d99]">कागदपत्र निर्मितीसाठी माहिती स्त्रोत “भूसंपादन प्रक्रिया” निवडा.</p>
+                        {% elif selected_location and not process_case_options %}
+                        <p class="mt-2 text-xs text-[#b45309]">या गावासाठी भूसंपादन प्रक्रिया नोंद उपलब्ध नाही.</p>
+                        {% endif %}
+                    </div>
+
+                    <div>
+                        <label for="documentType" class="mb-2 block text-sm font-semibold text-[#244271]">कागदपत्राचा प्रकार</label>
+                        <select id="documentType" class="w-full rounded-lg border border-[#cbd8ea] bg-white px-3 py-3 text-[#244271]">
+                            <option value="">कागदपत्राचा प्रकार निवडा</option>
+                            <option value="section32_personal_notice" {% if selected_document_type == 'section32_personal_notice' %}selected{% endif %}>कलम 32(2) व्यक्तिगत नोटीस</option>
+                            <option value="consent_option_notice" {% if selected_document_type == 'consent_option_notice' %}selected{% endif %}>संमती विकल्प नोटीस</option>
+                            <option value="agreement_draft" {% if selected_document_type == 'agreement_draft' %}selected{% endif %}>करारनामा Draft</option>
+                        </select>
+                    </div>
+
+                    <div class="flex items-end justify-end">
+                        <button type="button" id="generateDocumentBtn" class="w-full rounded-lg bg-[#1264cf] px-6 py-3 text-sm font-semibold text-white shadow-sm hover:bg-[#0f56b4] md:w-auto">
+                            Generate
+                        </button>
+                    </div>
+                </div>
+                <p id="documentGenerateStatus" class="mt-3 text-sm text-[#6b7d99]"></p>
+            </section>
         </div>
     </div>
 </div>
 
+<div id="autoDocumentModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 p-4">
+    <div class="bg-white w-full max-w-4xl rounded-lg shadow-xl">
+        <div class="flex items-center justify-between border-b px-4 py-3">
+            <h3 id="autoDocumentModalTitle" class="text-base font-semibold">कागदपत्र</h3>
+            <button type="button" id="closeAutoDocumentModalBtn" class="text-gray-500 hover:text-gray-700 text-lg leading-none">&times;</button>
+        </div>
+        <div class="px-4 py-4">
+            <iframe id="autoDocumentFrame" class="h-[70vh] w-full rounded border border-[#dbe8f8] bg-white"></iframe>
+        </div>
+        <div class="border-t px-4 py-3 flex flex-wrap justify-end gap-3">
+            <button type="button" id="downloadAutoDocumentDocBtn" class="px-3 py-1.5 rounded border border-[#ccdbef] bg-white text-sm font-semibold text-[#4a6488]">Word डाउनलोड</button>
+            <button type="button" id="downloadAutoDocumentPdfBtn" class="px-3 py-1.5 rounded border border-[#ccdbef] bg-white text-sm font-semibold text-[#4a6488]">PDF डाउनलोड</button>
+            <button type="button" id="closeAutoDocumentModalFooterBtn" class="px-3 py-1.5 bg-gray-700 hover:bg-gray-800 text-white rounded text-sm">बंद करा</button>
+        </div>
+    </div>
+</div>
+
+<iframe id="processChartGeneratorFrame" class="hidden" title="Process chart document generator"></iframe>
+
 <script>
-    document.getElementById('documentSource')?.addEventListener('change', function () {
+    const documentSource = document.getElementById('documentSource');
+    const documentVillage = document.getElementById('documentVillage');
+    const documentGutCase = document.getElementById('documentGutCase');
+    const documentType = document.getElementById('documentType');
+    const generateDocumentBtn = document.getElementById('generateDocumentBtn');
+    const statusEl = document.getElementById('documentGenerateStatus');
+    const generatorFrame = document.getElementById('processChartGeneratorFrame');
+    const autoDocumentModal = document.getElementById('autoDocumentModal');
+    const autoDocumentFrame = document.getElementById('autoDocumentFrame');
+    const autoDocumentModalTitle = document.getElementById('autoDocumentModalTitle');
+    const closeAutoDocumentModalBtn = document.getElementById('closeAutoDocumentModalBtn');
+    const closeAutoDocumentModalFooterBtn = document.getElementById('closeAutoDocumentModalFooterBtn');
+    const downloadAutoDocumentDocBtn = document.getElementById('downloadAutoDocumentDocBtn');
+    const downloadAutoDocumentPdfBtn = document.getElementById('downloadAutoDocumentPdfBtn');
+    let currentAutoDocumentHtml = '';
+    let currentAutoDocumentTitle = 'document';
+
+    function updatePageSelection(params = {}) {
         const url = new URL(window.location.href);
-        url.searchParams.set('source', this.value);
+        Object.entries(params).forEach(([key, value]) => {
+            if (value) {
+                url.searchParams.set(key, value);
+            } else {
+                url.searchParams.delete(key);
+            }
+        });
         window.location.href = url.toString();
+    }
+
+    function sanitizeFilename(name = 'document') {
+        return String(name || 'document')
+            .replace(/[\\/:*?"<>|]+/g, '-')
+            .replace(/\s+/g, ' ')
+            .trim() || 'document';
+    }
+
+    function openAutoDocumentModal(html, title) {
+        currentAutoDocumentHtml = html;
+        currentAutoDocumentTitle = title || 'कागदपत्र';
+        if (autoDocumentModalTitle) autoDocumentModalTitle.textContent = currentAutoDocumentTitle;
+        if (autoDocumentFrame) autoDocumentFrame.srcdoc = html;
+        autoDocumentModal?.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeAutoDocumentModal() {
+        autoDocumentModal?.classList.add('hidden');
+        if (autoDocumentFrame) autoDocumentFrame.srcdoc = '';
+        document.body.style.overflow = '';
+    }
+
+    function downloadAutoDocumentAsDoc() {
+        if (!currentAutoDocumentHtml) return;
+        const blob = new Blob([currentAutoDocumentHtml], { type: 'application/msword;charset=utf-8' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        link.href = url;
+        link.download = `${sanitizeFilename(currentAutoDocumentTitle)}.doc`;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+
+    function downloadAutoDocumentAsPdf() {
+        if (!currentAutoDocumentHtml) return;
+        const printWindow = window.open('', '_blank', 'width=1024,height=768');
+        if (!printWindow) return;
+        printWindow.document.open();
+        printWindow.document.write(currentAutoDocumentHtml);
+        printWindow.document.close();
+        printWindow.focus();
+        printWindow.onload = () => printWindow.print();
+    }
+
+    function waitForFrameLoad(frame) {
+        return new Promise((resolve, reject) => {
+            const timer = window.setTimeout(() => reject(new Error('कागदपत्र तयार करण्यासाठी form load झाले नाही.')), 30000);
+            frame.onload = () => {
+                window.clearTimeout(timer);
+                resolve();
+            };
+        });
+    }
+
+    async function generateSelectedDocument() {
+        const caseId = documentGutCase?.value || '';
+        const docType = documentType?.value || '';
+        if (!caseId) {
+            alert('कृपया गट निवडा.');
+            return;
+        }
+        if (!docType) {
+            alert('कृपया कागदपत्राचा प्रकार निवडा.');
+            return;
+        }
+        if (!generatorFrame) return;
+
+        try {
+            generateDocumentBtn.disabled = true;
+            generateDocumentBtn.classList.add('opacity-60', 'cursor-wait');
+            if (statusEl) statusEl.textContent = 'कागदपत्र तयार होत आहे...';
+
+            const loadPromise = waitForFrameLoad(generatorFrame);
+            generatorFrame.src = `/tools/process-chart-form/form/?case_id=${encodeURIComponent(caseId)}&embedded=1&_doc_ts=${Date.now()}`;
+            await loadPromise;
+
+            const win = generatorFrame.contentWindow;
+            if (win?.pcProcessChartLoadPromise) {
+                await win.pcProcessChartLoadPromise;
+            }
+            await new Promise((resolve) => window.setTimeout(resolve, 350));
+
+            if (typeof win?.pcGenerateAutomaticDocument !== 'function') {
+                throw new Error('कागदपत्र generator उपलब्ध नाही.');
+            }
+            const generated = win.pcGenerateAutomaticDocument(docType);
+            if (!generated?.html) {
+                throw new Error('कागदपत्र तयार झाले नाही.');
+            }
+            openAutoDocumentModal(generated.html, generated.title);
+            if (statusEl) statusEl.textContent = '';
+        } catch (error) {
+            console.error(error);
+            if (statusEl) statusEl.textContent = '';
+            alert(error.message || 'कागदपत्र तयार करता आले नाही.');
+        } finally {
+            generateDocumentBtn.disabled = false;
+            generateDocumentBtn.classList.remove('opacity-60', 'cursor-wait');
+        }
+    }
+
+    documentSource?.addEventListener('change', function () {
+        updatePageSelection({ source: this.value, location: '', case_id: '', document_type: documentType?.value || '' });
     });
+
+    documentVillage?.addEventListener('change', function () {
+        updatePageSelection({ source: documentSource?.value || 'process_chart', location: this.value, case_id: '', document_type: documentType?.value || '' });
+    });
+
+    documentGutCase?.addEventListener('change', function () {
+        const url = new URL(window.location.href);
+        if (this.value) url.searchParams.set('case_id', this.value);
+        else url.searchParams.delete('case_id');
+        window.history.replaceState({}, '', url.toString());
+    });
+
+    documentType?.addEventListener('change', function () {
+        const url = new URL(window.location.href);
+        if (this.value) url.searchParams.set('document_type', this.value);
+        else url.searchParams.delete('document_type');
+        window.history.replaceState({}, '', url.toString());
+    });
+
+    generateDocumentBtn?.addEventListener('click', generateSelectedDocument);
+    closeAutoDocumentModalBtn?.addEventListener('click', closeAutoDocumentModal);
+    closeAutoDocumentModalFooterBtn?.addEventListener('click', closeAutoDocumentModal);
+    autoDocumentModal?.addEventListener('click', (event) => {
+        if (event.target === autoDocumentModal) closeAutoDocumentModal();
+    });
+    downloadAutoDocumentDocBtn?.addEventListener('click', downloadAutoDocumentAsDoc);
+    downloadAutoDocumentPdfBtn?.addEventListener('click', downloadAutoDocumentAsPdf);
 </script>
 {% endblock %}

@@ -86,6 +86,30 @@
         display: block;
     }
 
+    .pc-case-summary {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        margin: -0.75rem 0 1.5rem;
+        padding: 0.8rem 1rem;
+        border: 1px solid #d8e4f2;
+        border-radius: 0.65rem;
+        background: #f8fbff;
+    }
+
+    .pc-case-summary-item {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        color: #244271;
+        font-size: 0.9rem;
+        font-weight: 700;
+    }
+
+    .pc-case-summary-value {
+        color: #125fcb;
+    }
+
     #pcNoticePublicationAreaWrap,
     #pcProposalAreaWrap,
     #pcGroupClauseAreaWrap {
@@ -459,6 +483,17 @@
                     </div>
                 </div>
 
+                <div id="pcCaseSummary" class="pc-case-summary hidden" aria-live="polite">
+                    <div class="pc-case-summary-item">
+                        <span>गट / सर्वे क्रमांक:</span>
+                        <span id="pcCaseSummaryGut" class="pc-case-summary-value">-</span>
+                    </div>
+                    <div id="pcCaseSummaryAreaWrap" class="pc-case-summary-item hidden">
+                        <span>संपादन क्षेत्र:</span>
+                        <span id="pcCaseSummaryArea" class="pc-case-summary-value">-</span>
+                    </div>
+                </div>
+
                 <section class="pc-step-panel" data-pc-panel="1">
                     <div class="pc-form-card">
                         <div class="border-b border-[#dbe8f8] bg-[#edf5ff] px-6 py-5">
@@ -493,7 +528,7 @@
                                 <div class="grid gap-4 md:grid-cols-5">
                                     <div><label class="pc-label">विभाग</label><select class="pc-input" name="division"><option value="">विभाग निवडा</option>
                                     <!-- <option value="कोकण">कोकण</option> -->
-                                    <option value="पुणे">पुणे</option>
+                                    <option value="पुणे" selected>पुणे</option>
                                     <!-- <option value="नाशिक">नाशिक</option>
                                     <option value="औरंगाबाद (छत्रपती संभाजीनगर)">औरंगाबाद (छत्रपती संभाजीनगर)</option>
                                     <option value="अमरावती">अमरावती</option>
@@ -833,8 +868,8 @@
                                     <h3 class="text-lg font-bold text-[#244271]">३३(३) अन्वये दाखल आक्षेप/भूधारकाचे म्हणणे तपशील</h3>
                                 </div>
                                 <div class="grid gap-4 md:grid-cols-2">
-                                    <div><label class="pc-label">आक्षेप दाखल करणाऱ्याचे संपूर्ण नाव</label><input class="pc-input" name="objection_applicant_name" type="text"></div>
-                                    <div><label class="pc-label">पत्ता</label><input class="pc-input" name="objection_applicant_address" type="text"></div>
+                                    <div><label class="pc-label">आक्षेप दाखल करणाऱ्याचे संपूर्ण नाव</label><input class="pc-input" id="pcObjectionApplicantName" name="objection_applicant_name" type="text"></div>
+                                    <div><label class="pc-label">पत्ता</label><input class="pc-input" id="pcObjectionApplicantAddress" name="objection_applicant_address" type="text"></div>
                                 </div>
                                 <div class="my-6 border-t border-[#cfdceb]"></div>
 
@@ -2107,6 +2142,10 @@
         const saveBtn = document.getElementById('pcSaveBtn');
         const saveDraftBtn = document.getElementById('pcSaveDraftBtn');
         const submitBtn = document.getElementById('pcSubmitBtn');
+        const caseSummary = document.getElementById('pcCaseSummary');
+        const caseSummaryGut = document.getElementById('pcCaseSummaryGut');
+        const caseSummaryAreaWrap = document.getElementById('pcCaseSummaryAreaWrap');
+        const caseSummaryArea = document.getElementById('pcCaseSummaryArea');
         const initialCaseId = '{{ case_id|default:""|escapejs }}';
         const urlCaseId = new URLSearchParams(window.location.search).get('case_id') || '';
         let currentCaseId = initialCaseId || urlCaseId || '';
@@ -2123,8 +2162,58 @@
 	        let currentAssetOwnerTargetId = '';
 	        let currentStep10SelectedOwnerKeys = [];
 	        let currentSec21FileBuckets = {};
-	        let latestProcessChartStepData = {};
+        let latestProcessChartStepData = {};
         const todayIsoDate = new Date().toISOString().split('T')[0];
+
+        function getSummaryStepData(stepNo) {
+            return latestProcessChartStepData?.[`step_${stepNo}`]
+                || latestProcessChartStepData?.[`${stepNo}:step_${stepNo}`]
+                || {};
+        }
+
+        function getFirstSummaryValue(value) {
+            if (Array.isArray(value)) {
+                return String(value.find((item) => String(item || '').trim()) || '').trim();
+            }
+            return String(value || '').trim();
+        }
+
+        function getSavedAcquisitionAreaForSummary() {
+            const stepFourData = getSummaryStepData(4);
+            let snapshot = stepFourData.tab4_snapshot || {};
+            if (typeof snapshot === 'string') {
+                try {
+                    snapshot = JSON.parse(snapshot);
+                } catch (error) {
+                    snapshot = {};
+                }
+            }
+
+            const mode = stepFourData.joint_survey_owner_table_mode
+                || snapshot.owner_table_mode
+                || 'single';
+            const singleArea = getFirstSummaryValue(stepFourData.single_khata_acquisition_area)
+                || getFirstSummaryValue(snapshot.single_rows?.map((row) => row?.acquisition_area));
+            const multiArea = getFirstSummaryValue(stepFourData.multi_khata_common_acquisition_area)
+                || String(snapshot.multi_common_area || '').trim();
+            return mode === 'multi' ? (multiArea || singleArea) : (singleArea || multiArea);
+        }
+
+        function updateProcessChartCaseSummary() {
+            if (!caseSummary || !caseSummaryGut || !caseSummaryAreaWrap || !caseSummaryArea) return;
+
+            const gutNumber = (gutSelect?.value ? getSelectDisplayText(gutSelect) : '')
+                || currentProcessChartLocation.gut_number
+                || currentProcessChartPrefill?.land_record?.gut_number
+                || '-';
+            const showSummary = currentStep >= 2;
+            const acquisitionArea = currentStep >= 5 ? getSavedAcquisitionAreaForSummary() : '';
+
+            caseSummary.classList.toggle('hidden', !showSummary);
+            caseSummaryGut.textContent = gutNumber;
+            caseSummaryAreaWrap.classList.toggle('hidden', currentStep < 5);
+            caseSummaryArea.textContent = acquisitionArea || 'उपलब्ध नाही';
+        }
 
         function getCookie(name) {
             const value = `; ${document.cookie}`;
@@ -2405,6 +2494,30 @@
                 option.textContent = label;
                 selectEl.appendChild(option);
             });
+        }
+
+        function selectLocationOption(selectEl, candidates = []) {
+            if (!selectEl) return false;
+            const normalizedCandidates = candidates.map((value) => String(value || '').trim().toLocaleLowerCase());
+            const option = Array.from(selectEl.options).find((item) => {
+                const value = String(item.value || '').trim().toLocaleLowerCase();
+                const label = String(item.textContent || '').trim().toLocaleLowerCase();
+                return normalizedCandidates.includes(value) || normalizedCandidates.includes(label);
+            });
+            if (!option) return false;
+            selectEl.value = option.value;
+            return true;
+        }
+
+        async function initializeNewProcessChartDefaults() {
+            const divisionField = processChartForm?.querySelector('[name="division"]');
+            if (divisionField) divisionField.value = 'पुणे';
+
+            await loadProcessChartDistricts();
+            selectLocationOption(districtSelect, ['पुणे', 'Pune']);
+            await populateProcessChartTalukas(districtSelect?.value || '');
+            selectLocationOption(talukaSelect, ['पुरंदर', 'Purandar']);
+            await populateProcessChartVillages(districtSelect?.value || '', talukaSelect?.value || '');
         }
 
         function fillOwnerDropdowns(names = []) {
@@ -7849,7 +7962,19 @@
             const applicantName = primaryOwnerRow.owner_name || primaryFarmer.farmer_name || landRecord.holder_name || getFieldValue('#pcConsentApplicantName') || getFieldValue(section32OwnerNameInput) || '________';
             const applicantAddress = getFieldValue('#pcConsentApplicantAddress') || `रा. ${village} ता. ${taluka} जि. ${district}`;
             const consentNature = getFieldValue('#pcConsentNature') || 'संमती';
-            const consentArea = primaryOwnerRow.total_area || primaryFarmer.total_area || getFieldValue('#pcConsentArea') || landRecord.total_area || '________';
+            const sevenTwelveTotalArea = primaryOwnerRow.total_area || primaryFarmer.total_area || landRecord.total_area || getFieldValue('#pcSummaryTotalArea') || '________';
+            const tab4AcquisitionRows = collectTab4AcquisitionOwnerRows();
+            const matchingTab4AcquisitionRow = tab4AcquisitionRows.find((row) =>
+                normalizeOwnerLookupName(row.owner_name) === normalizeOwnerLookupName(applicantName)
+            );
+            const tab4SignatureOwnerNames = [...new Set(
+                collectTab4OwnerRows()
+                    .map((row) => String(row.owner_name || '').trim())
+                    .filter(Boolean)
+            )];
+            const agreementSignerNames = tab4SignatureOwnerNames.length ? tab4SignatureOwnerNames : [applicantName];
+            const agreementSignerNamesText = agreementSignerNames.join(', ');
+            const consentArea = matchingTab4AcquisitionRow?.acquisition_area || tab4AcquisitionRows[0]?.acquisition_area || getFieldValue('#pcConsentArea') || '________';
             const consentDecision = getFieldValue('#pcConsentDecision') || 'स्वीकार';
             const sec2NotificationNumber = getFieldValue('#pcSec2AdhisuchanaKramank') || '________';
             const sec2NotificationDate = getFieldValue('#pcSec2Date');
@@ -7858,7 +7983,7 @@
             const sec4DateLong = formatNoticeLongDate(sec4Date) || sec4Date || '________';
             const sec8Date = getFieldValue('#pcSec8Date');
             const sec8DateLong = formatNoticeLongDate(sec8Date) || sec8Date || '________';
-            const sec3OfficerName = villageData.sec3_upvibhag_name || getFieldValue('#pcSec3UpvibhagName') || 'उपजिल्हाधिकारी भूसंपादन क्र. 1, पुणे';
+            const sec3OfficerName = primarySec3Row.upvibhag_name || villageData.sec3_upvibhag_name || getFieldValue('#pcSec3UpvibhagName') || '________';
             const compensationTotal = getFieldValue('#pcCompensation11') || '________';
             const compensationBase = getFieldValue('#pcCompensation8') || '________';
             const additionalPercent = getFieldValue('#pcCompensation7') || '________';
@@ -7868,14 +7993,28 @@
             const committeeDateLong = formatNoticeLongDate(committeeDate) || committeeDate || '________';
             const holderKhata = primaryOwnerRow.khata_number || landRecord.khata_number || '________';
             const officeName = villageData.collector_office_name || 'जिल्हाधिकारी कार्यालय';
-            const officeAddress = villageData.collector_office_address || primarySec3Row.address || '________';
+            const officeAddress = primarySec3Row.address || getFieldValue('.pc-sec3-address') || villageData.collector_office_address || '________';
             const aadharNumber = '________________';
             const panNumber = '________________';
 
-            const firstApprovedRateField = document.querySelector('#pcSec15RateTableBody tr td:nth-child(5) input');
+            const firstApprovedRateField = document.querySelector('#pcSec15RateTableBody tr td:nth-child(6) input');
             const approvedRate = firstApprovedRateField?.value?.trim() || '________';
 
             const red = (value) => `<span class="dyn">${getDisplayValue(value)}</span>`;
+            const agreementCurrentDateDisplay = (() => {
+                const current = new Date();
+                const day = String(current.getDate()).padStart(2, '0');
+                const month = String(current.getMonth() + 1).padStart(2, '0');
+                const year = current.getFullYear();
+                return `${day}/${month}/${year}`;
+            })();
+            const signerSignatureBlocks = agreementSignerNames.map((name) => `
+                <div class="owner-signature-row">
+                    <p>स्वाक्षरी : ..........................................</p>
+                    <p>(${red(name)})</p>
+                    <p>(करारनामा लिहून देणार - दुसरे पक्ष)</p>
+                </div>
+            `).join('');
 
             return `
                 <!DOCTYPE html>
@@ -7892,9 +8031,14 @@
                         .dyn { color: #d62828; font-weight: 700; }
                         .section-title { margin: 10px 0 6px; font-weight: 700; text-align: center; text-decoration: underline; }
                         .subhead { margin: 0 0 6px; text-align: center; font-weight: 700; }
-                        .parties { display: grid; grid-template-columns: 1fr 1fr; gap: 36px; margin: 10px 0 8px; }
-                        .party { min-height: 120px; }
-                        .party p { margin: 0 0 4px; }
+                        .party-table { margin: 10px 0 10px; table-layout: fixed; }
+                        .party-table td { text-align: left; vertical-align: middle; padding: 8px 10px; }
+                        .party-details { width: 50%; }
+                        .party-brace-cell { width: 5%; text-align: center !important; padding: 0 !important; }
+                        .party-label { width: 45%; font-size: 16px; line-height: 1.7; }
+                        .party-yansi { font-weight: 700; text-align: center !important; }
+                        .party-brace { display: inline-block; font-size: 70px; line-height: 1; transform: scaleX(0.65); font-family: serif; }
+                        .party-details p, .party-label p { margin: 0 0 4px; }
                         .property-meta { margin: 0 0 6px; text-align: center; }
                         table { width: 100%; border-collapse: collapse; margin: 8px 0 10px; table-layout: fixed; }
                         th, td { border: 1px solid #111; padding: 6px 5px; vertical-align: top; }
@@ -7911,32 +8055,51 @@
                         .signature-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; margin-top: 18px; align-items: end; }
                         .signature-block { text-align: center; }
                         .signature-block p { margin: 0 0 4px; }
+                        .owner-signature-row { margin-bottom: 16px; }
+                        .owner-signature-row:last-child { margin-bottom: 0; }
                     </style>
                 </head>
                 <body>
                     <p class="center"><strong>महाराष्ट्र औद्योगीक विकास अधिनियम 1961 चे कलम 33(2) नुसार संपादन मिळकतीचा संमती करारनामा.</strong></p>
                     <div class="rule">----------------------------------------------------------------------------------------------------------</div>
-                    <p class="center"><strong>आज तारीख ${red(agreementDateLong)} रोजीचा</strong></p>
+                    <p class="center"><strong>आज तारीख ${red(agreementCurrentDateDisplay)} रोजीचा</strong></p>
                     <p class="center"><strong>मौजे ${red(village)}, ता. ${red(taluka)}, जिल्हा ${red(district)} येथील ${red(projectPurpose)} या प्रयोजनासाठी जमीन गट नं ${red(gutNumber)} पै. मधील संपादन जमिनीचा करारनामा.</strong></p>
                     <div class="rule">----------------------------------------------------------------------------------------------------------</div>
 
-                    <div class="parties">
-                        <div class="party">
-                            <p class="dyn"><strong>उपजिल्हाधिकारी (भूसंपादन क्र. 1) पुणे</strong></p>
-                            <p class="dyn"><strong>${getDisplayValue(officeName)}</strong></p>
-                            <p class="dyn"><strong>${getDisplayValue(officeAddress)}</strong></p>
-                            <p>करारनामा लिहून घेणार</p>
-                            <p><strong>एक पक्ष</strong></p>
-                            <p>यांसी</p>
-                        </div>
-                        <div class="party">
-                            <p class="dyn"><strong>1) ${getDisplayValue(applicantName)}</strong></p>
-                            <p class="dyn">आधार क्र. ${getDisplayValue(aadharNumber)}</p>
-                            <p class="dyn">पॅन क्र. ${getDisplayValue(panNumber)}</p>
-                            <p class="dyn">पत्ता ${getDisplayValue(applicantAddress)}</p>
-                            <p>करारनामा लिहून देणार दुसरे पक्ष</p>
-                        </div>
-                    </div>
+                    <table class="party-table">
+                        <tbody>
+                            <tr>
+                                <td class="party-details">
+                                    <p class="dyn"><strong>उपजिल्हाधिकारी (भूसंपादन क्र. 1) पुणे</strong></p>
+                                    <p class="dyn"><strong>${getDisplayValue(officeName)}</strong></p>
+                                    <p class="dyn"><strong>${getDisplayValue(officeAddress)}</strong></p>
+                                </td>
+                                <td class="party-brace-cell"><span class="party-brace">}</span></td>
+                                <td class="party-label">
+                                    <p>करारनामा लिहून घेणार</p>
+                                    <p><strong>एक पक्ष</strong></p>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="party-yansi">यांसी</td>
+                                <td></td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td class="party-details">
+                                    <p class="dyn"><strong>1) ${getDisplayValue(applicantName)}</strong></p>
+                                    <p class="dyn">आधार क्र. ${getDisplayValue(aadharNumber)}</p>
+                                    <p class="dyn">पॅन क्र. ${getDisplayValue(panNumber)}</p>
+                                    <p class="dyn">पत्ता ${getDisplayValue(applicantAddress)}</p>
+                                </td>
+                                <td class="party-brace-cell"><span class="party-brace">}</span></td>
+                                <td class="party-label">
+                                    <p>करारनामा लिहून देणार</p>
+                                    <p><strong>दुसरे पक्ष</strong></p>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
 
                     <p class="paragraph">महाराष्ट्र औद्योगीक विकास अधिनियम 1961 चे कलम 33(2) नुसार भूमि संपादनाचा करारनामा करण्यात येतो की,</p>
                     <p class="clause"><span class="no">1.</span>सदर करारनामा लिहून देणार (दुसरे पक्ष) यांचे मालकीची, वहिवाटीची व ताबा कब्जातील, जिल्हा ${red(district)}, तालुका ${red(taluka)} गाव ${red(village)} च्या हद्दीतील मिळकतीचे वर्णन महसूल अभिलेखानुसार व संयुक्त मोजणीनुसार खालीलप्रमाणे आहे.</p>
@@ -7948,14 +8111,14 @@
                                 <th style="width:10%;">अ. क्र.</th>
                                 <th style="width:28%;">संपादनाखालील गट क्रमांक / भूमापन क्रमांक</th>
                                 <th style="width:28%;">7/12 नुसार एकूण क्षेत्र (हे.आर.चौमी)</th>
-                                <th style="width:34%;">करारनाम्याद्वारे संपादन होणारे</th>
+                                <th style="width:34%;">करारनाम्याद्वारे संपादन होणारे (हे.आर.चौमी)</th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr>
                                 <td>${red('1')}</td>
                                 <td>${red(gutNumber)}</td>
-                                <td>${red(landRecord.total_area || consentArea)}</td>
+                                <td>${red(sevenTwelveTotalArea)}</td>
                                 <td>${red(consentArea)}</td>
                             </tr>
                         </tbody>
@@ -7971,7 +8134,7 @@
                     <p class="clause"><span class="no">10.</span>उच्चाधिकार समितीचा दि. ${red(committeeDateLong)} रोजीच्या निर्णयानुसार प्रति हेक्टरी दर ${red(approvedRate)} मान्य करणेत आला असून त्यानुसार मोबदला परिगणना करण्यात आली आहे.</p>
                     <p class="clause"><span class="no">11.</span>एकूण निर्धारित मोबदला ${red(compensationBase)}, निगडीत घटकांचा मोबदला ${red(assetsCompensation)}, 12% अतिरिक्त घटक रक्कम ${red(additionalPercent)} आणि वर्ग-2 / अधिनियम रक्कम वजावट ${red(class2Deduction)} विचारात घेऊन संमती निवाड्यासाठी एकूण मोबदला रक्कम ${red(compensationTotal)} निश्चित करण्यात आलेली आहे.</p>
                     <p class="clause"><span class="no">12.</span>संमतीचा स्वरूप ${red(consentNature)} असून संमती निर्णय ${red(consentDecision)} असा नोंदविण्यात आलेला आहे.</p>
-                    <p class="clause"><span class="no">13.</span>वरील मोबदला रक्कम तसेच करारातील अटी व शर्ती या ${red(applicantName)} यांना मान्य असून त्याबाबत त्यांची कोणतीही हरकत / तक्रार नाही.</p>
+                    <p class="clause"><span class="no">13.</span>वरील मोबदला रक्कम तसेच करारातील अटी व शर्ती या ${red(agreementSignerNamesText)} यांना मान्य असून त्याबाबत त्यांची कोणतीही हरकत / तक्रार नाही.</p>
                     <p class="clause"><span class="no">14.</span>वरील मोबदला रक्कम स्वीकारण्यास तयार असल्याबाबत संमतीपत्रे दाखल करण्यात आलेली आहेत. तसेच वाटपाबाबत स्वतंत्र प्रतिज्ञापत्र / संमतीपत्र सादर केलेले असल्यास त्यानुसार वाटप करण्यात येईल.</p>
                     <p class="clause"><span class="no">15.</span>मोबदला रक्कम ई.सी.एस./आर.टी.जी.एस/एन.ई.एफ.टी. प्रणालीद्वारे संबंधित बँक खात्यामध्ये जमा करण्यात येईल / आली आहे.</p>
                     <p class="clause"><span class="no">16.</span>महाराष्ट्र औद्योगीक विकास महामंडळ यांचे पुनर्वसन व पुनर्बहाली धोरण, 2019 नुसार लागू असलेले इतर लाभ स्वतंत्रपणे देय राहतील.</p>
@@ -8008,9 +8171,7 @@
 
                     <div class="signature-grid">
                         <div class="signature-block">
-                            <p>स्वाक्षरी : ..........................................</p>
-                            <p>(${red(applicantName)})</p>
-                            <p>(करारनामा लिहून देणार - दुसरे पक्ष)</p>
+                            ${signerSignatureBlocks}
                         </div>
                         <div class="signature-block">
                             <p>स्वाक्षरी : ..........................................</p>
@@ -8037,11 +8198,6 @@
                 || primaryFarmer.farmer_name
                 || landRecord.holder_name
                 || '';
-            const fallbackOwnerArea = primaryOwnerRow.total_area
-                || primaryFarmer.total_area
-                || landRecord.total_area
-                || '';
-
             const district = getSelectDisplayText(districtSelect) || caseData.district || '________';
             const taluka = getSelectDisplayText(talukaSelect) || caseData.taluka || '________';
             const village = getSelectDisplayText(villageSelect) || caseData.village || '________';
@@ -8050,35 +8206,102 @@
             const applicantName = fallbackOwnerName || getFieldValue('#pcConsentApplicantName') || getFieldValue(section32OwnerNameInput) || '________';
             const applicantAddress = getFieldValue('#pcConsentApplicantAddress') || `रा. ${village} ता. ${taluka} जि. ${district}`;
             const consentNature = getFieldValue('#pcConsentNature') || 'संमती';
-            const consentArea = fallbackOwnerArea || getFieldValue('#pcConsentArea') || landRecord.total_area || '________';
+            const tab4AcquisitionRows = collectTab4AcquisitionOwnerRows();
+            const matchingTab4AcquisitionRow = tab4AcquisitionRows.find((row) =>
+                normalizeOwnerLookupName(row.owner_name) === normalizeOwnerLookupName(applicantName)
+            );
+            const tab4OwnerNames = [...new Set(
+                tab4AcquisitionRows
+                    .map((row) => String(row.owner_name || '').trim())
+                    .filter(Boolean)
+            )];
+            const tab4OwnerNamesHtml = tab4OwnerNames.length
+                ? tab4OwnerNames.map((name) => `<span class="red">${escapeHtml(name)}</span>`).join('<br>')
+                : red(applicantName);
+            const consentArea = matchingTab4AcquisitionRow?.acquisition_area
+                || tab4AcquisitionRows[0]?.acquisition_area
+                || '________';
             const consentDecision = getFieldValue('#pcConsentDecision') || 'स्वीकार';
-            const sec4Date = getFieldValue('#pcSec4Date');
-            const sec8Date = getFieldValue('#pcSec8Date');
             const compensationTotal = getFieldValue('#pcCompensation11') || landRecord.final_compensation || '________';
             const sec2NotificationNumber = getFieldValue('#pcSec2AdhisuchanaKramank') || '________';
             const sec2NotificationDate = getFieldValue('#pcSec2Date');
             const sec2NotificationDateLong = formatNoticeLongDate(sec2NotificationDate) || sec2NotificationDate || '________';
-            const sec3OfficerName = villageData.sec3_upvibhag_name || getFieldValue('#pcSec3UpvibhagName') || '________';
+            const sec4NotificationNumber = getFieldValue('#pcSec4AdhisuchanaKramank') || '________';
+            const sec4Date = getFieldValue('#pcSec4Date');
+            const sec8NotificationNumber = getFieldValue('#pcSec8AdhisuchanaKramank') || '________';
+            const sec8Date = getFieldValue('#pcSec8Date');
+            const clauseOneNotificationArea = (() => {
+                const totalsBySection = villageData.notified_area_totals_by_section
+                    || prefill.village_data?.notified_area_totals_by_section
+                    || {};
+                const sectionSixTotal = String(totalsBySection.section_6 || '').trim();
+                if (sectionSixTotal && Number(sectionSixTotal) !== 0) return sectionSixTotal;
+
+                const getRowArea = (row = {}) => String(
+                    row.notified_area
+                    || row.proposed_area
+                    || row.proposal_area
+                    || row.prastavit_area
+                    || row.area
+                    || row.area_hector
+                    || row.area_hr
+                    || ''
+                ).trim();
+                const total = getNotifiedRowsForSection(prefill, 'clause_one').reduce((sum, row) => {
+                    const rawValue = getRowArea(row).replace(/[^0-9.\-]/g, '');
+                    const amount = Number(rawValue);
+                    return Number.isFinite(amount) ? sum + amount : sum;
+                }, 0);
+                if (total) {
+                    return Number.isInteger(total) ? String(total) : String(Number(total.toFixed(4)));
+                }
+                return '________';
+            })();
+            const sec3Rows = Array.isArray(prefill.village_data?.sec3_rows) ? prefill.village_data.sec3_rows : [];
+            const primarySec3Row = sec3Rows[0] || {};
+            const sec3OfficerName = primarySec3Row.upvibhag_name
+                || villageData.sec3_upvibhag_name
+                || getFieldValue('#pcSec3UpvibhagName')
+                || '________';
             const noticeRefNumber = agreementNumberInput?.value?.trim() || getFieldValue('#pcSec3Kramank') || getFieldValue('#pcSec4LetterNumber') || '________';
             const noticeDate = agreementDateInput?.value?.trim() || todayIsoDate;
-            const totalArea = landRecord.total_area || consentArea || '________';
+            const formatShortDate = (value) => {
+                const raw = String(value || '').trim();
+                const isoMatch = raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+                if (isoMatch) return `${isoMatch[3]}/${isoMatch[2]}/${isoMatch[1]}`;
+                const shortMatch = raw.match(/^(\d{1,2})[-/.](\d{1,2})[-/.](\d{2,4})$/);
+                if (shortMatch) {
+                    return `${shortMatch[1].padStart(2, '0')}/${shortMatch[2].padStart(2, '0')}/${shortMatch[3]}`;
+                }
+                return raw || '________';
+            };
+            const noticeDateDisplay = (() => {
+                const match = String(noticeDate).match(/^(\d{4})-(\d{2})-(\d{2})$/);
+                return match ? `${match[3]}/${match[2]}/${match[1]}` : noticeDate;
+            })();
             const ownerVillage = village || '________';
-            const officeHeader = 'उपजिल्हाधिकारी, भूसंपादन क्र. १), पुणे';
-            const officeSubHeader = 'मुंबई - पुणे द्रुतगती मार्ग यांचे कार्यालय';
-            const officeName = prefill.village_data?.data?.collector_office_name || 'जिल्हाधिकारी कार्यालय';
-            const officeAddress = prefill.village_data?.data?.collector_office_address
-                || (Array.isArray(prefill.village_data?.sec3_rows) ? prefill.village_data.sec3_rows[0]?.address : '')
+            const officeHeader = sec3OfficerName;
+            const officeAddress = primarySec3Row.address
+                || getFieldValue('.pc-sec3-address')
+                || villageData.collector_office_address
                 || '________';
             const officeEmail = 'Email- slao1pune@gmail.com';
 
-            const deadlineDate = new Date(`${noticeDate}T00:00:00`);
+            const deadlineDate = new Date(`${todayIsoDate}T00:00:00`);
             if (!Number.isNaN(deadlineDate.getTime())) {
-                deadlineDate.setDate(deadlineDate.getDate() + 15);
+                let workingDaysAdded = 0;
+                while (workingDaysAdded < 15) {
+                    deadlineDate.setDate(deadlineDate.getDate() + 1);
+                    const day = deadlineDate.getDay();
+                    if (day !== 0 && day !== 6) {
+                        workingDaysAdded += 1;
+                    }
+                }
             }
             const deadlineIso = Number.isNaN(deadlineDate.getTime()) ? '' : deadlineDate.toISOString().split('T')[0];
             const deadlineDateLong = formatNoticeLongDate(deadlineIso) || '________';
 
-            const firstApprovedRateField = document.querySelector('#pcSec15RateTableBody tr td:nth-child(5) input');
+            const firstApprovedRateField = document.querySelector('#pcSec15RateTableBody tr td:nth-child(6) input');
             const approvedRate = firstApprovedRateField?.value?.trim() || '________';
 
             const red = (value) => `<span class="red">${getDisplayValue(value)}</span>`;
@@ -8124,14 +8347,12 @@
                 </head>
                 <body>
                     <p class="center doc-header office-main"><strong>${red(officeHeader)}</strong></p>
-                    <p class="center doc-header office-sub"><strong>${red(officeSubHeader)}</strong></p>
-                    <p class="center doc-header office-sub"><strong>${red(getDisplayValue(officeName))}</strong></p>
                     <p class="center doc-header office-sub"><strong>${red(`पत्ता :- ${getDisplayValue(officeAddress)}`)}</strong></p>
                     <p class="center doc-header office-sub"><strong>${red(officeEmail)}</strong></p>
                     <div class="header-rule">----------------------------------------------------------------------------------------------------</div>
                     <div class="header-meta">
                         <p class="header-ref">क्र.${red(noticeRefNumber)}</p>
-                        <p class="header-ref">दि. ${red(noticeDate)}</p>
+                        <p class="header-ref">दि. ${red(noticeDateDisplay)}</p>
                     </div>
                     <p class="center top-heading"><strong>${red(projectPurpose)} करिता भुसंपादन -</strong></p>
                     <p class="center sub-heading"><strong>मौजे ${red(village)}, ता. ${red(taluka)}, जि. ${red(district)}</strong></p>
@@ -8150,7 +8371,7 @@
                         <tbody>
                             <tr>
                                 <td>१.</td>
-                                <td>${red(applicantName)}<br>${red(applicantAddress)}</td>
+                                <td>${tab4OwnerNamesHtml}</td>
                                 <td>${red(ownerVillage)}</td>
                                 <td>${red(gutNumber)}</td>
                                 <td>${red(consentArea)}</td>
@@ -8167,16 +8388,16 @@
                         </thead>
                         <tbody>
                             <tr>
-                                <td>${red(`क्र. ${sec2NotificationNumber}`)}<br>${red(`दि. ${sec2NotificationDate || '________'}`)}</td>
-                                <td>महाराष्ट्र औद्योगिक विकास अधिनियम, 1961 मधील तरतुदीनुसार भूसंपादन करण्यासाठी अधिसूचना प्रसिद्ध करण्यात आली आहे.</td>
+                                <td>${red(`क्र. ${sec2NotificationNumber}`)}<br>${red(`दि. ${formatShortDate(sec2NotificationDate)}`)}</td>
+                                <td>महाराष्ट्र औद्योगिक विकास अधिनियम, 1961 मधील तरतुदीनुसार भूसंपादन करण्यासाठी मौजे ${red(village)}, ता. ${red(taluka)}, जि. ${red(district)} येथे प्रकरण 6 लागू करण्याची अधिसूचना प्रसिद्ध करण्यात आली आहे.</td>
                             </tr>
                             <tr>
-                                <td>${red(`दि. ${sec4Date || '________'}`)}</td>
-                                <td>महाराष्ट्र औद्योगिक विकास अधिनियम 1961 यांच्या कलम 32 (2) अन्वये नमूना दोन मधील जाहीर नोटीस प्रसिद्ध करणेत आली आहे.</td>
+                                <td>${red(`क्र. ${sec4NotificationNumber}`)}<br>${red(`दि. ${formatShortDate(sec4Date)}`)}</td>
+                                <td>प्रस्तावित ${red(projectPurpose)} क्षेत्राच्या संदर्भात भूमि संपादन, पुनर्वसन व पुनर्वसाहत करताना उचित भरपाई मिळण्याचा आणि पारदर्शकतेचा हक्क अधिनियम, 2013 मधील तरतुदीनुसार नुकसान भरपाईच्या दराची रक्कम उच्चतम दराने घ्यावी व सदर क्षेत्रातील बहुतांश भूसंपादन हे संमतीने करणेबाबत निर्देश मा. जिल्हाधिकारी, पुणे यांना देणेत आलेले आहेत.</td>
                             </tr>
                             <tr>
-                                <td>${red(`दि. ${sec8Date || '________'}`)}</td>
-                                <td>सदर अधिनियमाच्या कलम 32 (1) अन्वये ${red(totalArea)} हे आर क्षेत्रास शासन मान्यता देवून अधिसूचना प्रसिध्द करण्यात आली आहे.</td>
+                                <td>${red(`क्र. ${sec8NotificationNumber}`)}<br>${red(`दि. ${formatShortDate(sec8Date)}`)}</td>
+                                <td>सदर अधिनियमाच्या कलम 32 (1) अन्वये ${red(clauseOneNotificationArea)} ${red(`हे आर`)} क्षेत्रास शासन मान्यता देवून अधिसूचना प्रसिध्द करण्यात आली आहे.</td>
                             </tr>
                         </tbody>
                     </table>
@@ -8184,7 +8405,7 @@
                     <p class="numbered"><span class="no">१.</span>वरिल तक्त्यात नमूद केल्याप्रमाणे ${red(projectPurpose)} करिता भूसंपादन प्रक्रीया राबविणेत आली आहे.</p>
                     <p class="numbered"><span class="no">२.</span>सदर जमिनीच्या भूसंपादन कार्यवाही अंतर्गत भूमि संपादन, पुनर्वसन व पुनर्वसाहत करताना उचित भरपाई मिळण्याचा आणि पारदर्शकतेचा हक्क अधिनियम, २०१३ चे कलम २६ ते ३० तसेच महाराष्ट्र औद्योगिक विकास अधिनियम १९६१ चे कलम ३३(२) अन्वये मा. जिल्हाधिकारी सो. पुणे यांनी प्रति हेक्टरी रक्कम रुपये ${red(approvedRate)} इतका जमीनीचा मोबदला निश्चित केलेला आहे. त्यानुसार संमती पत्र व प्रतिज्ञापत्र सादर केल्यास संमती करारनामा व संमती निवाडा करण्यात येणार आहे.</p>
                     <p class="numbered"><span class="no">३.</span>वरिल प्रमाणे निश्चीत केलेल्या दरानुसार आपले संपादीत होणाऱ्या क्षेत्राचा मोबदला सोबतच्या परिशिष्ट - अ मध्ये परिगणित करून देण्यात आला आहे.</p>
-                    <p class="numbered"><span class="no">४.</span>त्यामधील तपशिल तपासून मान्य असल्यास आपण संमती करारनामा करण्याबाबतचे हमीपत्र व खालील नमूद केलेले कागदपत्र जोडून उपजिल्हाधिकारी, भूसंपादन क्र. १, पुणे यांचे शिबीर कार्यालय दुसरा मजला, उपविभागीय अधिकारी कार्यालय पुरंदर, ता. ${red(taluka)}, जि. ${red(district)} येथे किंवा उपजिल्हाधिकारी, भूसंपादन क्र. १, पुणे, बी विंग, पहिला मजला, जिल्हाधिकारी कार्यालय पुणे येथे दि. ${red(deadlineDateLong)} पर्यंत सादर करावीत, अन्यथा सक्तीचा भूसंपादन निवाडा जाहिर करून जमीन ताब्यात घेण्यात येईल.</p>
+                    <p class="numbered"><span class="no">४.</span>त्यामधील तपशिल तपासून मान्य असल्यास आपण संमती करारनामा करण्याबाबतचे हमीपत्र व खालील नमूद केलेले कागदपत्र जोडून ${red(sec3OfficerName)}, ${red(officeAddress)} येथे दि. ${red(deadlineDateLong)} पर्यंत सादर करावीत, अन्यथा सक्तीचा भूसंपादन निवाडा जाहिर करून जमीन ताब्यात घेण्यात येईल.</p>
                     <p class="numbered"><span class="no">५.</span>संमती करारनामा केल्यास महाराष्ट्र औद्योगीक विकास महामंडळ यांचे पुनर्वसन व पुनर्बहाली धोरण, २०१९ दि. २६/०८/२०१९ नुसार पात्र व्यक्तीस देय असणारा भूखंड परतावा व इतर लाभ देय राहतील.</p>
                     <p class="numbered"><span class="no">६.</span>भूसंपादीत होणाऱ्या जमिनीच्या मोबदल्यात १०% विकसीत भूखंड परतावा क्षेत्राची मागणी केल्यास संपादीत जमीनीच्या एकूण परिगणित केलेल्या मुल्याच्या १०% रक्कम कपात करून महाराष्ट्र औद्योगिक विकास महामंडळाकडे जमा करण्यात येईल.</p>
                     <p class="numbered"><span class="no">७.</span>महाराष्ट्र औद्योगिक विकास अधिनियम १९६१ चे कलम ३२ (४)(i) अन्वये संपादीत जमिनी सर्व भारांपासून मुक्त होवून शासनाकडे संपुर्णपणे निहित होतील.</p>
@@ -8217,6 +8438,8 @@
             const caseData = prefill.case_data || {};
             const landRecord = prefill.land_record || {};
             const villageData = prefill.village_data?.data || {};
+            const sec3Rows = Array.isArray(prefill.village_data?.sec3_rows) ? prefill.village_data.sec3_rows : [];
+            const primarySec3Row = sec3Rows[0] || {};
             const district = getSelectDisplayText(districtSelect) || caseData.district || '________';
             const taluka = getSelectDisplayText(talukaSelect) || caseData.taluka || '________';
             const village = getSelectDisplayText(villageSelect) || caseData.village || '________';
@@ -8226,15 +8449,36 @@
             const sec2NotificationNumber = getFieldValue('#pcSec2AdhisuchanaKramank') || villageData.sec2_adhisuchana_kramank || '________';
             const sec2NotificationDate = getFieldValue('#pcSec2Date') || villageData.sec2_date || '________';
             const sec2NotificationDateLong = formatNoticeLongDate(sec2NotificationDate) || sec2NotificationDate || '________';
-            const sec3OfficeName = villageData.sec3_upvibhag_name || getFieldValue('#pcSec3UpvibhagName') || '________';
-            const sec3NotificationNumber = getFieldValue('#pcSec3AdhisuchanaKramank') || villageData.sec3_adhisuchana_kramank || '________';
-            const sec3NotificationDate = getFieldValue('#pcSec3Date') || villageData.sec3_date || '________';
-            const proposalNumber = getFieldValue('#pcSec5PrastaavKramank') || villageData.sec5_prastaav_kramank || '________';
-            const proposalDate = getFieldValue('#pcSec5Date') || villageData.sec5_date || '________';
-            const totalArea = getFieldValue('#pcSummaryTotalArea') || landRecord.total_area || '________';
+            const sec3OfficeName = primarySec3Row.upvibhag_name
+                || primarySec3Row.sec3_upvibhag_name
+                || villageData.sec3_upvibhag_name
+                || getFieldValue('#pcSec3UpvibhagName')
+                || '________';
+            const sec3OfficerPersonName = primarySec3Row.officer_name
+                || primarySec3Row.sec3_officer_name
+                || villageData.sec3_officer_name
+                || getFieldValue('#pcSec3Rows .pc-sec3-officer-name')
+                || '________';
+            const industrialNotificationRows = getNotifiedRowsForSection(prefill, 'survey_notification');
+            const industrialNotificationRow = findMatchingRowByGut(industrialNotificationRows);
+            const industrialNotificationArea = String(
+                industrialNotificationRow?.notified_area
+                || industrialNotificationRow?.proposed_area
+                || industrialNotificationRow?.proposal_area
+                || industrialNotificationRow?.prastavit_area
+                || industrialNotificationRow?.area
+                || industrialNotificationRow?.area_hector
+                || industrialNotificationRow?.area_hr
+                || ''
+            ).trim() || '________';
             const projectPurpose = caseData.project_purpose || getFieldValue('[name="project_purpose"]') || '________';
-            const collectorName = villageData.collector_name || sec3OfficeName || '________';
             const ownerNamesBlock = buildOwnerNamesNoticeBlock(ownerNamesRaw);
+            const generatedAt = new Date();
+            const generatedDate = [
+                String(generatedAt.getDate()).padStart(2, '0'),
+                String(generatedAt.getMonth() + 1).padStart(2, '0'),
+                generatedAt.getFullYear(),
+            ].join('/');
             const objectionDeadline = (() => {
                 const d = new Date(`${noticeDate}T00:00:00`);
                 if (Number.isNaN(d.getTime())) return '________';
@@ -8244,7 +8488,6 @@
             const hearingAddress = (Array.isArray(prefill.village_data?.sec3_rows) ? prefill.village_data.sec3_rows[0]?.address : '')
                 || villageData.collector_office_address
                 || '________';
-            const noticeRefNumber = sec3NotificationNumber || proposalNumber || '________';
             const officeDisplayName = sec3OfficeName || '________';
             const officeDisplayAddress = hearingAddress || '________';
 
@@ -8281,8 +8524,8 @@
                     <p class="center"><strong>${red(officeDisplayAddress)}</strong></p>
                     <div class="header-rule">--------------------------------------------------------------------------</div>
                     <div class="header-meta">
-                        <p>क्र.${red(noticeRefNumber)}</p>
-                        <p>दि. ${red(noticeDate || proposalDate || '________')}</p>
+                        <p>क्र.उपजि/ भूसं/ निवाडा/ कावि /</p>
+                        <p>दि. ${red(generatedDate)}</p>
                     </div>
                     <p class="center"><strong>महाराष्ट्र औद्योगिक विकास अधिनियम - 1961 यांच्या कलम 32(2) अन्वये</strong></p>
                     <p class="center"><strong>व्यक्तिगत नोटीस</strong></p>
@@ -8295,9 +8538,9 @@
                     <p class="paragraph">1. ज्याअर्थी, या सोबतच्या अनुसुचीत नमूद केलेल्या जमिनी उक्त प्रकरण सहाचे उपबंध उपरोक्तप्रमाणे अंमलात आले आहे अशा क्षेत्रात आहेत.</p>
                     <p class="paragraph">2. ज्याअर्थी, उपरोक्त अधिनियमाचे प्रकरण सहा हे ज्या क्षेत्रांना लागू करण्यात आले आहे अशा क्षेत्रात असणाऱ्या आणि महाराष्ट्र औद्योगिक विकास महामंडळामार्फत विकास करण्याच्या प्रयोजनार्थ आवश्यक असणाऱ्या जमिनी संपादन करण्याची शक्ती उक्त अधिनियमाच्या कलम 32 अन्वये राज्य शासनास प्रदान करण्यात आली आहे.</p>
                     <p class="paragraph">3. ज्याअर्थी, महाराष्ट्र शासनाच्या शुध्दीपत्रकानुसार अधिसुचित क्षेत्राच्या भूसंपादनाकरिता मौजे ${red(village || '________')} ता. ${red(taluka || '________')} जि. ${red(district || '________')} या गावांचे भूसंपादन अधिकारी म्हणून ${red(sec3OfficeName)} यांना प्राधिकृत करणेत आले आहे.</p>
-                    <p class="paragraph">4. ज्याअर्थी, राज्य शासनाने, महाराष्ट्र औद्योगिक विकास अधिनियम 1961 याचे कलम 32, कलम 33, पोटकलम(2), कलम 36 व कलम 38 अन्वये जिल्हाधिका-याची कामे पार पाडण्यासाठी ${red(collectorName)} यांची विशेषरित्या नेमणूक केलेली आहे.</p>
+                    <p class="paragraph">4. ज्याअर्थी, राज्य शासनाने, महाराष्ट्र औद्योगिक विकास अधिनियम 1961 याचे कलम 32, कलम 33, पोटकलम(2), कलम 36 व कलम 38 अन्वये जिल्हाधिका-याची कामे पार पाडण्यासाठी ${red(sec3OfficeName)} यांची विशेषरित्या नेमणूक केलेली आहे.</p>
                     <p class="paragraph">5. ज्याअर्थी, औद्योगिक क्षेत्र/वसाहत म्हणून विकसित करण्यासाठी किंवा दोन्ही करीता सोबतच्या अनुसुचित वर्णन केलेल्या जमिनी महामंडळास आवश्यक आहेत असे शासनाचे मत झाले आहे.</p>
-                    <p class="paragraph">6. ज्याअर्थी, उक्त अधिनियमाचे कलम 32, पोटकलम (2) अन्वये उपरोक्त प्रमाणे प्रदान करणेत आलेल्या राज्य शासनाच्या शक्तीचा वापर करून मी ${red(collectorName)}, उपजिल्हाधिकारी भूसंपादन क्र. 1, पुणे, याद्वारे यासोबतच्या अनुसुचित उल्लेख केलेल्या जमीनीमध्ये हितसंबंध आणि अधिकार असणाऱ्या सर्व व्यक्तींना यासोबतच्या अनुसुचित उल्लेख केलेल्या जमीनी उक्त प्रयोजनार्थ का संपादन करण्यात येवू नये यासंबंधी काही हरकती असल्यास त्यांनी सदरची नोटीस प्रसिद्ध झाल्यापासून ${red(objectionDeadline)} पूर्वी लेखी स्वरुपात कारण दर्शविण्याबाबत आपणास फर्मावित आहे.</p>
+                    <p class="paragraph">6. ज्याअर्थी, उक्त अधिनियमाचे कलम 32, पोटकलम (2) अन्वये उपरोक्त प्रमाणे प्रदान करणेत आलेल्या राज्य शासनाच्या शक्तीचा वापर करून मी ${red(sec3OfficerPersonName)}, ${red(sec3OfficeName)}, याद्वारे यासोबतच्या अनुसुचित उल्लेख केलेल्या जमीनीमध्ये हितसंबंध आणि अधिकार असणाऱ्या सर्व व्यक्तींना यासोबतच्या अनुसुचित उल्लेख केलेल्या जमीनी उक्त प्रयोजनार्थ का संपादन करण्यात येवू नये यासंबंधी काही हरकती असल्यास त्यांनी सदरची नोटीस प्रसिद्ध झाल्यापासून ${red(objectionDeadline)} पूर्वी लेखी स्वरुपात कारण दर्शविण्याबाबत आपणास फर्मावित आहे.</p>
                     <p class="paragraph">7. या नोटीसीच्या तारखेनंतर, जिल्हाधिका·याच्या मंजूरीशिवाय विक्री करून, पट्टयाने देऊन, गहाण ठेवून, अभिहस्तांकन करून, अदलाबदल करून किंवा अन्यरितीने, करावयाच्या उक्त जमिनीच्या / जमिनींच्या विल्हेवाटीसंबंधी केलेला कोणताही करार किंवा त्यावर केलेला कोणताही खर्च किंवा तीमध्ये / त्यामध्ये केलेल्या सुधारणा या उक्त जमिनीच्या / जमिनींच्या अंतिमत: संपादन करण्यात येतील अशा भागासंबंधी भरपाई निर्धारित करणाऱ्या अधिकाऱ्याकडून विचारात घेतल्या जाणार नाहीत.</p>
                     <p class="paragraph">8. आपली व्यक्तीगत सुनावणी करण्याची इच्छा असेल तर आपणास या नोटीशीच्या तारखेपासून एक महिन्याचे आत, भेटीची वेळ ठरवून, कोणत्याही कामाच्या दिवशी सकाळी 11.00 ते दुपारी 2.00 वाजेपर्यंत खाली सही करणाऱ्यांच्या पुढे समक्ष जातीने किंवा आपल्या कायदेशीर मुखत्यारामार्फत ${red(hearingAddress)} या कार्यालयात हजर राहता येईल.</p>
                     <p class="schedule-title"><strong>अनुसूची</strong></p>
@@ -8312,13 +8555,13 @@
                         <tbody>
                             <tr>
                                 <td>${red(gutNumber || '________')}</td>
-                                <td>${red(totalArea || '________')}</td>
+                                <td>${red(industrialNotificationArea)}</td>
                             </tr>
                         </tbody>
                     </table>
                     <div class="signature right">
-                        <p>(${red(collectorName || '________')})</p>
-                        <p>उपजिल्हाधिकारी भूसंपादन क्र. 1, पुणे</p>
+                        <p>(${red(sec3OfficerPersonName)})</p>
+                        <p>${red(sec3OfficeName)}</p>
                     </div>
                 </body>
                 </html>
@@ -8353,22 +8596,20 @@
                 || villageData.collector_name
                 || '________';
             const sec3OfficeName = sec3UpvibhagName;
-            const applicantName = getFieldValue('[name="objection_applicant_name"]') || '________';
-            const applicantAddress = getFieldValue('[name="objection_applicant_address"]') || `रा. ${village || '________'} ता.${taluka || '________'} जि. ${district || '________'}`;
-            const objectionNature = getFieldValue('[name="objection_nature"]') || 'भूसंपादनास हरकत';
+            const applicantName = getFieldValue('#pcObjectionApplicantName') || '________';
+            const applicantAddress = getFieldValue('#pcObjectionApplicantAddress') || '________';
             const gutNumber = getSelectDisplayText(gutSelect) || '________';
-            const sec3NotificationNumber = getFieldValue('#pcSec3AdhisuchanaKramank')
-                || villageData.sec3_adhisuchana_kramank
-                || '________';
-            const noticeRefNumber = getFieldValue('#pcAgreementNumber')
-                || sec3NotificationNumber
-                || getFieldValue('#pcSec5PrastaavKramank')
-                || '________';
             const officeHeader = sec3OfficeName || villageData.collector_office_name || 'उपजिल्हाधिकारी भूसंपादन क्र. 1 पुणे, यांचे कार्यालय';
             const officeAddress = primarySec3Row.address || villageData.collector_office_address || '________';
             const hearingLocation = officeAddress;
             const signingOfficerName = sec3OfficerPersonName;
             const signingOfficerDesignation = sec3UpvibhagName;
+            const generatedAt = new Date();
+            const generatedDate = [
+                String(generatedAt.getDate()).padStart(2, '0'),
+                String(generatedAt.getMonth() + 1).padStart(2, '0'),
+                generatedAt.getFullYear(),
+            ].join('/');
 
             const red = (value) => `<span style="color:#d62828; font-weight:700;">${getDisplayValue(value)}</span>`;
 
@@ -8388,7 +8629,7 @@
                         .header-meta p { margin: 0; }
                         .office-name { font-size: 20px; line-height: 1.4; margin: 0 0 2px; }
                         .office-address { font-size: 18px; line-height: 1.4; margin: 0 0 6px; }
-                        .header-ref { font-size: 18px; line-height: 1.5; }
+                        .header-ref { margin-right: 90px; font-size: 18px; line-height: 1.5; white-space: nowrap; }
                         .notice-title { font-size: 18px; line-height: 1.5; font-weight: 700; }
                         .topic { margin: 16px 0 10px; font-weight: 700; }
                         .signature { margin-top: 40px; text-align: right; }
@@ -8403,7 +8644,7 @@
                     <div class="header-rule">----------------------------------------------------------------------------------------------------</div>
                     <div class="header-meta">
                         <p class="notice-title">महाराष्ट्र औदयोगिक विकास अधिनियम -1961<br>चे कलम 32(3) अन्वये सुनावणीची नोटीस</p>
-                        <p class="header-ref"><span class="red">क्र.${getDisplayValue(noticeRefNumber)}</span><br><span class="red">दि.${getDisplayValue(hearingNoticeDate || '________')}</span></p>
+                        <p class="header-ref"><span class="red">क्र.उपजि/भूसं/ निवाडा/ कावि /</span><br><span class="red">दि.${getDisplayValue(generatedDate)}</span></p>
                     </div>
                     <p class="paragraph">प्रति,</p>
                     <p class="paragraph">${red(applicantName)}</p>
@@ -8412,7 +8653,7 @@
                     <p class="paragraph">महाराष्ट्र औदयोगिक विकास अधिनियम-1961 (सन 1962 च्या महाराष्ट्र तीन) यांच्या कलम -1, पोट - कलम (3) अन्वये काढणेत आलेली व महाराष्ट्र शासन राजपत्र भाग चार-ब मध्ये प्रसिद्ध करण्यात आलेली शासकीय अधिसूचना क्रमांक ${red(sec2NotificationNumber || '________')} दिनांक ${red(sec2NotificationDateLong)} अन्वये उक्त अधिनियमाचे उपबंध संबंधित अधिसूचित क्षेत्रात अंमलात आले आहेत.</p>
                     <p class="paragraph">महाराष्ट्र शासनाने महाराष्ट्र औदयोगिक विकास अधिनियम-1961 च्या नियम 28 प्रमाणे प्रदान करण्यात आलेल्या अधिकाराचा वापर करून जिल्हाधिकारी यांची कामे पार पाडण्यासाठी ${red(sec3OfficeName)} यांची विशेषरित्या नेमणूक केलेली आहे.</p>
                     <p class="paragraph">त्यानुसार महाराष्ट्र औदयोगिक विकास अधिनियम, 1961 चे कलम 32 (2) अन्वये जाहिर नोटीस दिनांक ${red(publicNoticeDateLong)} रोजी गावात प्रसिद्ध करण्यात आलेली आहे. तसेच महाराष्ट्र औदयोगिक विकास अधिनियम, 1961 चे कलम 32 (2) अन्वये व्यक्तिगत नोटीस आपणांस देण्यात आलेली आहे.</p>
-                    <p class="paragraph">सदर नोटीसीचे अनुषंगाने आपण मौजे ${red(village || '________')} ता. ${red(taluka || '________')} जि. ${red(district || '________')} येथील जमीन गट नंबर ${red(gutNumber)} मधील आपल्या हिश्शाच्या क्षेत्राच्या भूसंपादनास ${red(objectionNature)} बाबतचा अर्ज या कार्यालयास दाखल केलेला आहे.</p>
+                    <p class="paragraph">सदर नोटीसीचे अनुषंगाने आपण मौजे ${red(village || '________')} ता. ${red(taluka || '________')} जि. ${red(district || '________')} येथील जमीन गट नंबर ${red(gutNumber)} मधील आपल्या हिश्शाच्या क्षेत्राच्या भूसंपादनास हरकत बाबतचा अर्ज या कार्यालयास दाखल केलेला आहे.</p>
                     <p class="paragraph">त्यानुसार, महाराष्ट्र औदयोगिक विकास अधिनियम, 1961 चे कलम 32 (3) अन्वये सदर हरकत अर्जाची सुनावणी दि. ${red(hearingNoticeDateLong)} रोजी दुपारी 5.00 ते 6.00 वाजता, ${red(hearingLocation)} येथे घेण्यात येणार आहे.</p>
                     <p class="paragraph">सदर सुनावणीकामी आपण आवश्यक त्या कागदपत्रांसह उपस्थित रहावे.</p>
                     <div class="signature">
@@ -9139,6 +9380,7 @@
                     window.pcLatestStepData = latestProcessChartStepData;
                     window.pcRestoreTab7Draft = () => restoreTab7DataWithFallback(latestProcessChartStepData);
                 }
+                updateProcessChartCaseSummary();
                 const nextUrl = new URL(window.location.href);
                 nextUrl.searchParams.set('case_id', currentCaseId);
                 window.history.replaceState({}, '', nextUrl.toString());
@@ -9203,6 +9445,7 @@
             if (currentStep === 9) {
                 toggleConsentSubmittedFields();
             }
+            updateProcessChartCaseSummary();
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
@@ -9261,6 +9504,7 @@
                 await populateProcessChartTalukas(districtSelect.value);
                 await loadOwnerNamesFrom712();
                 populateOwnerInfoTable();
+                updateProcessChartCaseSummary();
             });
 
             talukaSelect.addEventListener('change', async () => {
@@ -9268,17 +9512,20 @@
                 await populateProcessChartVillages(districtSelect.value, talukaSelect.value);
                 await loadOwnerNamesFrom712();
                 populateOwnerInfoTable();
+                updateProcessChartCaseSummary();
             });
 
             villageSelect.addEventListener('change', async () => {
                 clearCurrentCaseForManualLocationChange();
                 await loadProcessChartGuts(districtSelect.value, talukaSelect.value, villageSelect.value);
                 await refreshTabOneSevenTwelveData();
+                updateProcessChartCaseSummary();
             });
 
             gutSelect.addEventListener('change', async () => {
                 clearCurrentCaseForManualLocationChange();
                 await refreshTabOneSevenTwelveData();
+                updateProcessChartCaseSummary();
             });
         }
 
@@ -9286,6 +9533,7 @@
             window.jQuery(gutSelect).on('select2:select.pc712 select2:clear.pc712', async () => {
                 clearCurrentCaseForManualLocationChange();
                 await refreshTabOneSevenTwelveData();
+                updateProcessChartCaseSummary();
             });
         }
 
@@ -9693,6 +9941,30 @@
                 openAgreementDraft(html, 'कलम 32(3) सुनावणीची नोटीस');
             });
         });
+        window.pcGenerateAutomaticDocument = (documentType) => {
+            const generators = {
+                section32_personal_notice: {
+                    title: 'कलम 32(2) व्यक्तिगत नोटीस',
+                    build: buildSection32NoticeHtml,
+                },
+                consent_option_notice: {
+                    title: 'संमती विकल्प नोटीस',
+                    build: buildConsentOptionNoticeHtml,
+                },
+                agreement_draft: {
+                    title: 'करारनामा Draft',
+                    build: buildAgreementDraftHtml,
+                },
+            };
+            const generator = generators[documentType];
+            if (!generator) {
+                throw new Error('कागदपत्राचा प्रकार निवडा.');
+            }
+            return {
+                title: generator.title,
+                html: generator.build(),
+            };
+        };
         closeAgreementDraftModalBtn?.addEventListener('click', closeAgreementDraftModal);
         closeAgreementDraftModalFooterBtn?.addEventListener('click', closeAgreementDraftModal);
         downloadPcDraftDocBtn?.addEventListener('click', downloadCurrentDraftAsDoc);
@@ -9817,12 +10089,14 @@
         }, 500);
         setStep(1);
 
-        (async () => {
+        window.pcProcessChartLoadPromise = (async () => {
             if (currentCaseId) {
                 await loadExistingProcessChartCase();
             } else {
-                await loadProcessChartDistricts();
+                await initializeNewProcessChartDefaults();
             }
+            updateProcessChartCaseSummary();
+            window.dispatchEvent(new CustomEvent('pc-process-chart-loaded'));
         })();
     })();
 </script>

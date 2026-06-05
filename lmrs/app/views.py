@@ -4846,6 +4846,31 @@ def _automatic_document_location_options(source):
     return sorted(options, key=lambda item: normalize_match_text(item['label']))
 
 
+def _automatic_document_process_case_options(district, taluka, village):
+    if not all([district, taluka, village]):
+        return []
+
+    cases = ProcessChartCase.objects.filter(
+        district__iexact=district,
+        taluka__iexact=taluka,
+        village__iexact=village,
+    ).order_by('gut_number', '-updated_at', '-id')
+
+    options = []
+    for case in cases:
+        gut_number = clean_optional_char(case.gut_number) or f'Case #{case.id}'
+        owner_summary = _process_chart_owner_names_summary(_process_chart_case_owner_names(case))
+        label_parts = [gut_number]
+        if owner_summary:
+            label_parts.append(owner_summary)
+        options.append({
+            'id': case.id,
+            'gut_number': gut_number,
+            'label': ' - '.join(label_parts),
+        })
+    return options
+
+
 def _automatic_document_parse_location(raw_value):
     try:
         values = json.loads(raw_value or '')
@@ -5006,13 +5031,20 @@ def _automatic_document_process_rows(district, taluka, village):
             class_values = [class_values]
         if not isinstance(rights_values, list):
             rights_values = [rights_values]
+        land_record, _, _, _ = _get_process_chart_source_records(
+            case.district,
+            case.taluka,
+            case.village,
+            case.gut_number,
+        )
+        seven_twelve_total_area = clean_optional_char(getattr(land_record, 'total_area', '') or '')
         rows.append({
             'gut_number': case.gut_number,
             'land_class': _automatic_document_join_unique(class_values),
             'khata_number': _automatic_document_join_unique(khata_values),
             'owner_name': _automatic_document_join_unique(names),
             'other_rights': _automatic_document_join_unique(rights_values),
-            'total_area': next((value for value in total_values if clean_optional_char(value)), ''),
+            'total_area': seven_twelve_total_area or next((value for value in total_values if clean_optional_char(value)), ''),
             'acquisition_area': _process_chart_case_acquisition_area(case),
             'rate': _automatic_document_selected_committee_rate(step_six, village_data)
                 or _automatic_document_first_list_value(step_eight, 'pcHpcRate')
@@ -5256,7 +5288,18 @@ def automatic_document_generation(request):
     source = clean_optional_char(request.POST.get('source') or request.GET.get('source')) or 'process_chart'
     if source not in {'village_info', 'process_chart'}:
         source = 'process_chart'
-    selected_location = clean_optional_char(request.POST.get('location'))
+    selected_location = clean_optional_char(request.POST.get('location') or request.GET.get('location'))
+    selected_case_id = clean_optional_char(request.POST.get('case_id') or request.GET.get('case_id'))
+    selected_document_type = clean_optional_char(request.POST.get('document_type') or request.GET.get('document_type'))
+    location_options = _automatic_document_location_options(source)
+    selected_location_tuple = _automatic_document_parse_location(selected_location)
+    process_case_options = (
+        _automatic_document_process_case_options(*selected_location_tuple)
+        if source == 'process_chart' and selected_location_tuple
+        else []
+    )
+    for option in process_case_options:
+        option['selected'] = str(option.get('id') or '') == selected_case_id
 
     if request.method == 'POST':
         location = _automatic_document_parse_location(selected_location)
@@ -5265,7 +5308,10 @@ def automatic_document_generation(request):
                 'active_tab': 'automatic-documents',
                 'selected_source': source,
                 'selected_location': selected_location,
-                'location_options': _automatic_document_location_options(source),
+                'selected_case_id': selected_case_id,
+                'selected_document_type': selected_document_type,
+                'location_options': location_options,
+                'process_case_options': process_case_options,
                 'error': 'कृपया गाव निवडा.',
             })
         district, taluka, village = location
@@ -5285,7 +5331,10 @@ def automatic_document_generation(request):
         'active_tab': 'automatic-documents',
         'selected_source': source,
         'selected_location': selected_location,
-        'location_options': _automatic_document_location_options(source),
+        'selected_case_id': selected_case_id,
+        'selected_document_type': selected_document_type,
+        'location_options': location_options,
+        'process_case_options': process_case_options,
     })
 
 
