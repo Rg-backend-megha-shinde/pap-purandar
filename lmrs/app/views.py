@@ -4941,15 +4941,47 @@ def _automatic_document_asset_group(step_seven, prefix):
     }
 
 
+def _automatic_document_selected_committee_rate(step_six, village_data):
+    selected_rate_id = _process_chart_first_value(step_six.get('pc_sec15_selected_row'))
+    if selected_rate_id and village_data:
+        selected_rate = village_data.sec15_rates.filter(rr_rate_id=selected_rate_id).first()
+        if selected_rate and selected_rate.approved_rate is not None:
+            return selected_rate.approved_rate
+
+    if village_data:
+        fallback_rate = (
+            village_data.sec15_rates
+            .exclude(approved_rate__isnull=True)
+            .order_by('id')
+            .values_list('approved_rate', flat=True)
+            .first()
+        )
+        if fallback_rate is not None:
+            return fallback_rate
+    return ''
+
+
 def _automatic_document_process_rows(district, taluka, village):
     cases = ProcessChartCase.objects.prefetch_related('step_data').filter(
         district__iexact=district,
         taluka__iexact=taluka,
         village__iexact=village,
     ).order_by('gut_number', 'id')
+    village_data = (
+        VillageData.objects
+        .prefetch_related('sec15_rates')
+        .filter(
+            district__iexact=district,
+            taluka__iexact=taluka,
+            village__iexact=village,
+        )
+        .order_by('-updated_at', '-id')
+        .first()
+    )
     rows = []
     for case in cases:
         step_one = _process_chart_step_data(case, 1)
+        step_six = _process_chart_step_data(case, 6)
         step_seven = _process_chart_step_data(case, 7)
         step_eight = _process_chart_step_data(case, 8)
         construction = _automatic_document_asset_group(step_seven, 'construction')
@@ -4959,7 +4991,12 @@ def _automatic_document_process_rows(district, taluka, village):
         names = split_holder_names(_process_chart_case_owner_names(case)) or ['']
         khata_values = step_one.get('owner_info_khata_number') or []
         total_values = step_one.get('owner_info_total_area') or []
-        class_values = step_one.get('land_tenure_class') or step_one.get('occupant_class') or []
+        class_values = (
+            step_one.get('occupancy_class')
+            or step_one.get('land_tenure_class')
+            or step_one.get('occupant_class')
+            or []
+        )
         rights_values = step_one.get('owner_info_other_rights') or []
         if not isinstance(khata_values, list):
             khata_values = [khata_values]
@@ -4977,9 +5014,11 @@ def _automatic_document_process_rows(district, taluka, village):
             'other_rights': _automatic_document_join_unique(rights_values),
             'total_area': next((value for value in total_values if clean_optional_char(value)), ''),
             'acquisition_area': _process_chart_case_acquisition_area(case),
-            'rate': _automatic_document_first_list_value(step_eight, 'pcHpcRate')
+            'rate': _automatic_document_selected_committee_rate(step_six, village_data)
+                or _automatic_document_first_list_value(step_eight, 'pcHpcRate')
                 or _automatic_document_first_list_value(step_eight, 'hpc_rate'),
             'coefficient': _automatic_document_first_list_value(step_eight, 'pcCompensation2') or 1,
+            'acquired_land_value': _automatic_document_first_list_value(step_eight, 'pcCompensation1'),
             'land_market_value': _automatic_document_first_list_value(step_eight, 'pcCompensation3'),
             'construction_type': construction['type'],
             'construction_count': construction['count'],
@@ -5093,10 +5132,12 @@ def _automatic_document_statement_workbook(source, district, taluka, village):
             sheet['AC9'].alignment = center
 
     headers = {
-        1: 'अ.क्र.', 2: 'स.नं./ग.नं.', 3: 'भुधारणा पद्धती', 4: 'खाते क्रमांक',
+        1: 'अ.क्र.', 2: 'स.नं./ग.नं.',
+        3: 'भुधारणा पद्धती\n(भोगवटदार वर्ग १ / २)', 4: 'खाते क्रमांक',
         5: 'भोगवटदाराचे नाव', 6: 'कुळ, खंड व इतर अधिकारातील तपशील',
         7: '७/१२ प्रमाणे एकूण क्षेत्र', 8: 'संपादित क्षेत्र',
-        9: 'उच्च अधिकार समितीने निश्चित केलेला दर', 10: 'संपादित जमिनीचे मूल्य',
+        9: 'भूसंपादनासाठी उच्च अधिकार समिती यांनी निश्चित केलेला दर रु.\n(प्रति हेक्टरी)',
+        10: 'संपादित जमिनीचे मूल्य (रुपये)',
         11: 'गुणांक घटक', 12: 'जमिनीचे एकूण बाजारमूल्य',
         25: 'निगडीत घटकांचे एकूण मूल्यांकन', 26: 'निर्धारित मोबदला',
         27: '१००% दिलासा', 28: '१२% अतिरिक्त घटक', 29: 'एकूण मोबदला',
@@ -5160,7 +5201,7 @@ def _automatic_document_statement_workbook(source, district, taluka, village):
             item.get('total_area', ''),
             item.get('acquisition_area', ''),
             _automatic_document_decimal(item.get('rate')),
-            f'=I{row_number}*H{row_number}',
+            _automatic_document_decimal(item.get('acquired_land_value')) or f'=I{row_number}*H{row_number}',
             _automatic_document_decimal(item.get('coefficient')) or 1,
             _automatic_document_decimal(item.get('land_market_value')) or f'=J{row_number}*K{row_number}',
             item.get('construction_type', ''),
