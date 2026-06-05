@@ -4811,6 +4811,326 @@ def process_chart_form(request):
     return render(request, 'process_chart_form.html', {'active_tab': 'process-chart', 'case_id': case_id})
 
 
+def _automatic_document_location_value(district, taluka, village):
+    return json.dumps(
+        [clean_optional_char(district), clean_optional_char(taluka), clean_optional_char(village)],
+        ensure_ascii=False,
+        separators=(',', ':'),
+    )
+
+
+def _automatic_document_location_options(source):
+    if source == 'village_info':
+        locations = VillageData.objects.values_list('district', 'taluka', 'village').distinct()
+    else:
+        locations = ProcessChartCase.objects.values_list('district', 'taluka', 'village').distinct()
+
+    options = []
+    seen = set()
+    for district, taluka, village in locations:
+        key = (
+            normalize_match_text(district),
+            normalize_match_text(taluka),
+            normalize_match_text(village),
+        )
+        if not all(key) or key in seen:
+            continue
+        seen.add(key)
+        district_mr = get_marathi_name('district', district) or district
+        taluka_mr = get_marathi_name('taluka', district, taluka) or taluka
+        village_mr = get_marathi_name('village', district, taluka, village) or village
+        options.append({
+            'value': _automatic_document_location_value(district, taluka, village),
+            'label': f'{village_mr}, ता. {taluka_mr}, जि. {district_mr}',
+        })
+    return sorted(options, key=lambda item: normalize_match_text(item['label']))
+
+
+def _automatic_document_parse_location(raw_value):
+    try:
+        values = json.loads(raw_value or '')
+    except (TypeError, ValueError, json.JSONDecodeError):
+        return None
+    if not isinstance(values, list) or len(values) != 3:
+        return None
+    cleaned = tuple(clean_optional_char(value) for value in values)
+    return cleaned if all(cleaned) else None
+
+
+def _automatic_document_decimal(value):
+    text = clean_optional_char(value).replace(',', '')
+    if not text:
+        return 0
+    try:
+        return float(Decimal(text))
+    except (InvalidOperation, ValueError, TypeError):
+        return 0
+
+
+def _automatic_document_first_list_value(data, key, index=0):
+    value = data.get(key) if isinstance(data, dict) else None
+    if isinstance(value, list):
+        return value[index] if index < len(value) else ''
+    return value if index == 0 else ''
+
+
+def _automatic_document_process_rows(district, taluka, village):
+    cases = ProcessChartCase.objects.prefetch_related('step_data').filter(
+        district__iexact=district,
+        taluka__iexact=taluka,
+        village__iexact=village,
+    ).order_by('gut_number', 'id')
+    rows = []
+    for case in cases:
+        step_one = _process_chart_step_data(case, 1)
+        step_eight = _process_chart_step_data(case, 8)
+        names = split_holder_names(_process_chart_case_owner_names(case)) or ['']
+        khata_values = step_one.get('owner_info_khata_number') or []
+        total_values = step_one.get('owner_info_total_area') or []
+        class_values = step_one.get('land_tenure_class') or step_one.get('occupant_class') or []
+        rights_values = step_one.get('owner_info_other_rights') or []
+        if not isinstance(khata_values, list):
+            khata_values = [khata_values]
+        if not isinstance(total_values, list):
+            total_values = [total_values]
+        if not isinstance(class_values, list):
+            class_values = [class_values]
+        if not isinstance(rights_values, list):
+            rights_values = [rights_values]
+        for index, owner_name in enumerate(names):
+            rows.append({
+                'gut_number': case.gut_number,
+                'land_class': class_values[index] if index < len(class_values) else '',
+                'khata_number': khata_values[index] if index < len(khata_values) else '',
+                'owner_name': owner_name,
+                'other_rights': rights_values[index] if index < len(rights_values) else '',
+                'total_area': total_values[index] if index < len(total_values) else '',
+                'acquisition_area': _process_chart_case_acquisition_area(case),
+                'rate': _automatic_document_first_list_value(step_eight, 'pcHpcRate')
+                    or _automatic_document_first_list_value(step_eight, 'hpc_rate'),
+                'coefficient': _automatic_document_first_list_value(step_eight, 'pcCompensation2') or 1,
+                'land_market_value': _automatic_document_first_list_value(step_eight, 'pcCompensation3'),
+                'asset_total': _automatic_document_first_list_value(step_eight, 'pcCompensation4'),
+                'determined_compensation': _automatic_document_first_list_value(step_eight, 'pcCompensation5'),
+                'relief': _automatic_document_first_list_value(step_eight, 'pcCompensation6'),
+                'additional': _automatic_document_first_list_value(step_eight, 'pcCompensation7'),
+                'total_compensation': _automatic_document_first_list_value(step_eight, 'pcCompensation8'),
+                'class_two_deduction': _automatic_document_first_list_value(step_eight, 'pcCompensation9'),
+                'plot_return': _automatic_document_first_list_value(step_eight, 'pcCompensation10'),
+                'final_compensation': _automatic_document_first_list_value(step_eight, 'pcCompensation11'),
+            })
+    return rows
+
+
+def _automatic_document_village_rows(district, taluka, village):
+    records = LandRecord712.objects.prefetch_related('farmers').filter(
+        district__iexact=district,
+        taluka__iexact=taluka,
+        village__iexact=village,
+    ).order_by('gut_number', 'khata_number', 'id')
+    rows = []
+    for record in records:
+        farmers = list(record.farmers.all())
+        owner_names = [farmer.farmer_name for farmer in farmers if clean_optional_char(farmer.farmer_name)]
+        if not owner_names:
+            owner_names = split_holder_names(record.holder_name) or ['']
+        for index, owner_name in enumerate(owner_names):
+            farmer = farmers[index] if index < len(farmers) else None
+            rows.append({
+                'gut_number': record.gut_number,
+                'land_class': '',
+                'khata_number': record.khata_number or '',
+                'owner_name': owner_name,
+                'other_rights': record.kul_khand_other_rights or '',
+                'total_area': (farmer.total_area if farmer and farmer.total_area else record.total_area) or '',
+                'acquisition_area': '',
+                'rate': '',
+                'coefficient': 1,
+            })
+    return rows
+
+
+def _automatic_document_statement_workbook(source, district, taluka, village):
+    from openpyxl import Workbook
+    from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
+    from openpyxl.utils import get_column_letter
+
+    rows = (
+        _automatic_document_village_rows(district, taluka, village)
+        if source == 'village_info'
+        else _automatic_document_process_rows(district, taluka, village)
+    )
+    workbook = Workbook()
+    sheet = workbook.active
+    sheet.title = 'Statement'
+    sheet.sheet_view.showGridLines = False
+    sheet.freeze_panes = 'A15'
+
+    blue_fill = PatternFill('solid', fgColor='DCE6F1')
+    pale_fill = PatternFill('solid', fgColor='EAF2F8')
+    thin = Side(style='thin', color='7F8C8D')
+    border = Border(left=thin, right=thin, top=thin, bottom=thin)
+    center = Alignment(horizontal='center', vertical='center', wrap_text=True)
+    marathi_font = Font(name='Nirmala UI', size=10)
+    bold_font = Font(name='Nirmala UI', size=11, bold=True)
+
+    district_mr = get_marathi_name('district', district) or district
+    taluka_mr = get_marathi_name('taluka', district, taluka) or taluka
+    village_mr = get_marathi_name('village', district, taluka, village) or village
+    village_data = VillageData.objects.filter(
+        district__iexact=district,
+        taluka__iexact=taluka,
+        village__iexact=village,
+    ).order_by('-updated_at', '-id').first()
+
+    title_rows = {
+        2: 'उपजिल्हाधिकारी, भूसंपादन क्र. १, पुणे',
+        3: 'परिशिष्ठ - अ',
+        4: 'छत्रपती संभाजीराजे आंतरराष्ट्रीय विमानतळ, पुरंदर',
+        5: 'भूमी संपादन, पुनर्वसन व पुनर्वसाहत करताना उचित भरपाई मिळण्याचा आणि पारदर्शकतेचा हक्क अधिनियम २०१३',
+        6: 'महाराष्ट्र औद्योगिक विकास अधिनियम १९६१ चे कलम ३३ (२) अन्वये',
+        7: 'संमती दरानुसार मोबदला परिगणना तक्ता',
+        9: f'गावाचे नाव : मौजे {village_mr}, ता. {taluka_mr}, जि. {district_mr}',
+        10: f'निवाडा क्र : {(village_data.sec23_kramank if village_data else "") or "उपलब्ध नाही"}',
+        11: 'संपादन मंडळ : प्रादेशिक अधिकारी, महाराष्ट्र राज्य औद्योगिक विकास महामंडळ',
+    }
+    for row_number, text in title_rows.items():
+        end_column = 28 if row_number in {9, 10} else 32
+        sheet.merge_cells(start_row=row_number, start_column=1, end_row=row_number, end_column=end_column)
+        cell = sheet.cell(row_number, 1, text)
+        cell.font = Font(name='Nirmala UI', size=12 if row_number != 7 else 14, bold=True)
+        cell.alignment = center
+    if village_data:
+        notification_date = village_data.sec2_date or village_data.sec5_date
+        if notification_date:
+            sheet.merge_cells(start_row=9, start_column=29, end_row=9, end_column=32)
+            sheet['AC9'] = f'अधिसूचनेचा दिनांक : {notification_date.strftime("%d/%m/%Y")}'
+            sheet['AC9'].font = bold_font
+            sheet['AC9'].alignment = center
+
+    headers = [
+        'अ.क्र.', 'स.नं./ग.नं.', 'भुधारणा पद्धती', 'खाते क्रमांक', 'भोगवटदाराचे नाव',
+        'कुळ, खंड व इतर अधिकारातील तपशील', '७/१२ प्रमाणे एकूण क्षेत्र', 'संपादित क्षेत्र',
+        'उच्च अधिकार समितीने निश्चित केलेला दर', 'संपादित जमिनीचे मूल्य', 'गुणांक घटक',
+        'जमिनीचे एकूण बाजारमूल्य', 'बांधकाम प्रकार', 'संख्या', 'मूल्यांकन',
+        'विहीर/बोअरवेल/पाईपलाईन प्रकार', 'संख्या', 'मूल्यांकन', 'वन झाडाचा प्रकार',
+        'संख्या', 'मूल्यांकन', 'फळ झाडाचा प्रकार', 'संख्या', 'मूल्यांकन',
+        'निगडीत घटकांचे एकूण मूल्यांकन', 'निर्धारित मोबदला', '१००% दिलासा',
+        '१२% अतिरिक्त घटक', 'एकूण मोबदला', 'वर्ग-२ वजावट', '१०% भूखंड परतावा',
+        'एकूण देय मोबदला',
+    ]
+    for column, header in enumerate(headers, 1):
+        cell = sheet.cell(12, column, header)
+        cell.font = bold_font
+        cell.fill = blue_fill
+        cell.border = border
+        cell.alignment = center
+        sheet.cell(13, column).fill = blue_fill
+        sheet.cell(13, column).border = border
+        sheet.cell(13, column).alignment = center
+        number_cell = sheet.cell(14, column, column)
+        number_cell.font = bold_font
+        number_cell.fill = pale_fill
+        number_cell.border = border
+        number_cell.alignment = center
+
+    sheet['M13'], sheet['N13'], sheet['O13'] = 'मालमत्ता प्रकार', 'संख्या', 'रक्कम'
+    sheet['P13'], sheet['Q13'], sheet['R13'] = 'मालमत्ता प्रकार', 'संख्या', 'रक्कम'
+    sheet['S13'], sheet['T13'], sheet['U13'] = 'झाडाचा प्रकार', 'संख्या', 'रक्कम'
+    sheet['V13'], sheet['W13'], sheet['X13'] = 'फळझाड प्रकार', 'संख्या', 'रक्कम'
+
+    data_start = 15
+    if not rows:
+        rows = [{'owner_name': 'नोंद उपलब्ध नाही'}]
+    for offset, item in enumerate(rows):
+        row_number = data_start + offset
+        values = [
+            offset + 1,
+            item.get('gut_number', ''),
+            item.get('land_class', ''),
+            item.get('khata_number', ''),
+            item.get('owner_name', ''),
+            item.get('other_rights', ''),
+            item.get('total_area', ''),
+            item.get('acquisition_area', ''),
+            _automatic_document_decimal(item.get('rate')),
+            f'=I{row_number}*H{row_number}',
+            _automatic_document_decimal(item.get('coefficient')) or 1,
+            _automatic_document_decimal(item.get('land_market_value')) or f'=J{row_number}*K{row_number}',
+            '', '', '', '', '', '', '', '', '', '', '', '',
+            _automatic_document_decimal(item.get('asset_total')) or f'=O{row_number}+R{row_number}+U{row_number}+X{row_number}',
+            _automatic_document_decimal(item.get('determined_compensation')) or f'=L{row_number}+Y{row_number}',
+            _automatic_document_decimal(item.get('relief')) or f'=Z{row_number}',
+            _automatic_document_decimal(item.get('additional')) or f'=L{row_number}*12/100',
+            _automatic_document_decimal(item.get('total_compensation')) or f'=Z{row_number}+AA{row_number}+AB{row_number}',
+            _automatic_document_decimal(item.get('class_two_deduction')),
+            _automatic_document_decimal(item.get('plot_return')) or f'=L{row_number}*10/100',
+            _automatic_document_decimal(item.get('final_compensation')) or f'=AC{row_number}-AD{row_number}-AE{row_number}',
+        ]
+        for column, value in enumerate(values, 1):
+            cell = sheet.cell(row_number, column, value)
+            cell.font = marathi_font
+            cell.border = border
+            cell.alignment = center
+        sheet.row_dimensions[row_number].height = 34
+
+    widths = {
+        1: 7, 2: 15, 3: 16, 4: 13, 5: 28, 6: 28, 7: 17, 8: 17, 9: 18,
+        10: 17, 11: 12, 12: 18, 13: 18, 14: 9, 15: 15, 16: 20, 17: 9, 18: 15,
+        19: 18, 20: 9, 21: 15, 22: 18, 23: 9, 24: 15, 25: 18, 26: 18, 27: 16,
+        28: 16, 29: 18, 30: 16, 31: 18, 32: 18,
+    }
+    for column, width in widths.items():
+        sheet.column_dimensions[get_column_letter(column)].width = width
+    sheet.row_dimensions[12].height = 75
+    sheet.row_dimensions[13].height = 32
+    sheet.row_dimensions[14].height = 24
+    sheet.auto_filter.ref = f'A14:AF{data_start + len(rows) - 1}'
+    sheet.print_title_rows = '1:14'
+    sheet.page_setup.orientation = 'landscape'
+    sheet.page_setup.fitToWidth = 1
+    sheet.sheet_properties.pageSetUpPr.fitToPage = True
+    return workbook
+
+
+@login_required
+def automatic_document_generation(request):
+    source = clean_optional_char(request.POST.get('source') or request.GET.get('source')) or 'process_chart'
+    if source not in {'village_info', 'process_chart'}:
+        source = 'process_chart'
+    selected_location = clean_optional_char(request.POST.get('location'))
+
+    if request.method == 'POST':
+        location = _automatic_document_parse_location(selected_location)
+        if not location:
+            return render(request, 'automatic_document_generation.html', {
+                'active_tab': 'automatic-documents',
+                'selected_source': source,
+                'selected_location': selected_location,
+                'location_options': _automatic_document_location_options(source),
+                'error': 'कृपया गाव निवडा.',
+            })
+        district, taluka, village = location
+        workbook = _automatic_document_statement_workbook(source, district, taluka, village)
+        output = BytesIO()
+        workbook.save(output)
+        output.seek(0)
+        safe_village = re.sub(r'[^\w.-]+', '_', village, flags=re.UNICODE).strip('_') or 'village'
+        response = HttpResponse(
+            output.getvalue(),
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        )
+        response['Content-Disposition'] = f'attachment; filename="{safe_village}_A_Statement.xlsx"'
+        return response
+
+    return render(request, 'automatic_document_generation.html', {
+        'active_tab': 'automatic-documents',
+        'selected_source': source,
+        'selected_location': selected_location,
+        'location_options': _automatic_document_location_options(source),
+    })
+
+
 @login_required
 def delete_process_chart_case(request, id):
     # Allow any logged-in user to delete any case.

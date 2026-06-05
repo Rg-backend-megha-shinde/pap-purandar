@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    .tool-tabs-shell {
+        border: 1px solid #d8e4f2;
+        background: #f8fbff;
+        border-radius: 0.65rem;
+        padding: 0.4rem 0.55rem 0;
+    }
+    .tool-tabs {
+        display: flex;
+        align-items: flex-end;
+        gap: 0.4rem;
+        flex-wrap: wrap;
+    }
+    .tool-tab-link {
+        display: inline-block;
+        margin-bottom: -1px;
+        padding: 0.7rem 1.1rem;
+        border: 1px solid transparent;
+        border-radius: 0.5rem 0.5rem 0 0;
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: #6b7d99;
+        line-height: 1;
+        transition: all 120ms ease;
+    }
+    .tool-tab-link:hover { color: #213a63; }
+    .tool-tab-link.is-active {
+        background: #ffffff;
+        color: #125fcb;
+        border-color: #cad8ea;
+        box-shadow: 0 1px 3px rgba(18, 95, 203, 0.15);
+    }
+</style>
+
+<div class="w-full px-2 py-4 sm:px-3 md:px-4">
+    <div class="overflow-hidden rounded-lg border border-slate-300 bg-white shadow-sm">
+        <div class="px-3 py-4 md:px-5 lg:px-6">
+            <div class="tool-tabs-shell mb-6">
+                <nav class="tool-tabs" aria-label="Tool views">
+                    <a href="{% url 'land_record_712_list' %}" class="tool-tab-link">७/१२ उतारा नोंद</a>
+                    <a href="{% url 'ready_reckoner_list' %}" class="tool-tab-link">रेडी रेकनर दर</a>
+                    <a href="{% url 'village_info' %}" class="tool-tab-link">गावाची माहिती</a>
+                    <a href="{% url 'add_entry' %}" class="tool-tab-link">नुकसान भरपाई नोंद</a>
+                    <a href="{% url 'process_chart_form' %}" class="tool-tab-link">भूसंपादन प्रक्रिया</a>
+                    <a href="{% url 'automatic_document_generation' %}" class="tool-tab-link is-active">स्वयंचलित दस्तऐवज निर्मिती</a>
+                </nav>
+            </div>
+
+            <section class="rounded-xl border border-[#d7e5f6] bg-[#fbfdff] p-4 md:p-6">
+                <h2 class="mb-5 text-xl font-bold text-[#173d72]">स्वयंचलित दस्तऐवज निर्मिती</h2>
+
+                {% if error %}
+                <div class="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{{ error }}</div>
+                {% endif %}
+
+                <form method="post" class="grid grid-cols-1 gap-5 md:grid-cols-2">
+                    {% csrf_token %}
+                    <div>
+                        <label for="documentSource" class="mb-2 block text-sm font-semibold text-[#244271]">माहिती स्त्रोत</label>
+                        <select id="documentSource" name="source" class="w-full rounded-lg border border-[#cbd8ea] bg-white px-3 py-3 text-[#244271]">
+                            <option value="village_info" {% if selected_source == 'village_info' %}selected{% endif %}>गावाची माहिती</option>
+                            <option value="process_chart" {% if selected_source == 'process_chart' %}selected{% endif %}>भूसंपादन प्रक्रिया</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label for="documentVillage" class="mb-2 block text-sm font-semibold text-[#244271]">गाव निवडा</label>
+                        <select id="documentVillage" name="location" required class="w-full rounded-lg border border-[#cbd8ea] bg-white px-3 py-3 text-[#244271]">
+                            <option value="">गाव निवडा</option>
+                            {% for option in location_options %}
+                            <option value="{{ option.value }}" {% if selected_location == option.value %}selected{% endif %}>{{ option.label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="md:col-span-2 flex justify-end">
+                        <button type="submit" class="rounded-lg bg-[#1264cf] px-6 py-3 text-sm font-semibold text-white shadow-sm hover:bg-[#0f56b4]">
+                            Excel तयार करा
+                        </button>
+                    </div>
+                </form>
+            </section>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.getElementById('documentSource')?.addEventListener('change', function () {
+        const url = new URL(window.location.href);
+        url.searchParams.set('source', this.value);
+        window.location.href = url.toString();
+    });
+</script>
+{% endblock %}
