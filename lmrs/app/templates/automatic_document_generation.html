@@ -90,7 +90,7 @@
                     <div>
                         <label for="documentGutCase" class="mb-2 block text-sm font-semibold text-[#244271]">गट निवडा</label>
                         <select id="documentGutCase" class="w-full rounded-lg border border-[#cbd8ea] bg-white px-3 py-3 text-[#244271]">
-                            <option value="">गट निवडा</option>
+                            <option value="">सर्व गट (एकत्रित कागदपत्र)</option>
                             {% for option in process_case_options %}
                             <option value="{{ option.id }}" {% if option.selected %}selected{% endif %}>{{ option.label }}</option>
                             {% endfor %}
@@ -99,6 +99,8 @@
                         <p class="mt-2 text-xs text-[#6b7d99]">कागदपत्र निर्मितीसाठी माहिती स्त्रोत “भूसंपादन प्रक्रिया” निवडा.</p>
                         {% elif selected_location and not process_case_options %}
                         <p class="mt-2 text-xs text-[#b45309]">या गावासाठी भूसंपादन प्रक्रिया नोंद उपलब्ध नाही.</p>
+                        {% elif selected_location %}
+                        <p class="mt-2 text-xs text-[#6b7d99]">गट निवडला नाही तर गावातील सर्व गटांचे एकत्रित कागदपत्र तयार होईल.</p>
                         {% endif %}
                     </div>
 
@@ -230,42 +232,100 @@
         });
     }
 
+    async function generateDocumentForCase(caseId, docType) {
+        const loadPromise = waitForFrameLoad(generatorFrame);
+        generatorFrame.src = `/tools/process-chart-form/form/?case_id=${encodeURIComponent(caseId)}&embedded=1&_doc_ts=${Date.now()}`;
+        await loadPromise;
+
+        const win = generatorFrame.contentWindow;
+        if (win?.pcProcessChartLoadPromise) {
+            await win.pcProcessChartLoadPromise;
+        }
+        await new Promise((resolve) => window.setTimeout(resolve, 350));
+
+        if (typeof win?.pcGenerateAutomaticDocument !== 'function') {
+            throw new Error('कागदपत्र generator उपलब्ध नाही.');
+        }
+        const generated = win.pcGenerateAutomaticDocument(docType);
+        if (!generated?.html) {
+            throw new Error('कागदपत्र तयार झाले नाही.');
+        }
+        return generated;
+    }
+
+    function combineGeneratedDocuments(documents) {
+        const parser = new DOMParser();
+        const parsedDocuments = documents.map((documentData) => ({
+            ...documentData,
+            parsed: parser.parseFromString(documentData.html, 'text/html'),
+        }));
+        const firstDocument = parsedDocuments[0]?.parsed;
+        if (!firstDocument) {
+            throw new Error('एकत्रित कागदपत्र तयार झाले नाही.');
+        }
+
+        const sections = parsedDocuments.map(({ parsed }, index) => `
+            <section class="auto-document-case${index === parsedDocuments.length - 1 ? ' is-last' : ''}">
+                ${parsed.body.innerHTML}
+            </section>
+        `).join('');
+
+        return `
+            <!DOCTYPE html>
+            <html lang="${firstDocument.documentElement.lang || 'mr'}">
+            <head>
+                ${firstDocument.head.innerHTML}
+                <style>
+                    body { margin: 0 !important; padding: 0 !important; }
+                    .auto-document-case { padding: 30px 34px; box-sizing: border-box; }
+                    .auto-document-case:not(.is-last) { break-after: page; page-break-after: always; }
+                </style>
+            </head>
+            <body>${sections}</body>
+            </html>
+        `;
+    }
+
     async function generateSelectedDocument() {
         const caseId = documentGutCase?.value || '';
         const docType = documentType?.value || '';
-        if (!caseId) {
-            alert('कृपया गट निवडा.');
-            return;
-        }
         if (!docType) {
             alert('कृपया कागदपत्राचा प्रकार निवडा.');
             return;
         }
         if (!generatorFrame) return;
 
+        const allCaseIds = Array.from(documentGutCase?.options || [])
+            .map((option) => option.value)
+            .filter(Boolean);
+        const caseIds = caseId ? [caseId] : allCaseIds;
+        if (!caseIds.length) {
+            alert('या गावासाठी भूसंपादन प्रक्रिया नोंद उपलब्ध नाही.');
+            return;
+        }
+
         try {
             generateDocumentBtn.disabled = true;
             generateDocumentBtn.classList.add('opacity-60', 'cursor-wait');
-            if (statusEl) statusEl.textContent = 'कागदपत्र तयार होत आहे...';
-
-            const loadPromise = waitForFrameLoad(generatorFrame);
-            generatorFrame.src = `/tools/process-chart-form/form/?case_id=${encodeURIComponent(caseId)}&embedded=1&_doc_ts=${Date.now()}`;
-            await loadPromise;
-
-            const win = generatorFrame.contentWindow;
-            if (win?.pcProcessChartLoadPromise) {
-                await win.pcProcessChartLoadPromise;
+            const generatedDocuments = [];
+            for (let index = 0; index < caseIds.length; index += 1) {
+                if (statusEl) {
+                    statusEl.textContent = caseIds.length === 1
+                        ? 'कागदपत्र तयार होत आहे...'
+                        : `कागदपत्र तयार होत आहे... (${index + 1}/${caseIds.length})`;
+                }
+                generatedDocuments.push(await generateDocumentForCase(caseIds[index], docType));
             }
-            await new Promise((resolve) => window.setTimeout(resolve, 350));
 
-            if (typeof win?.pcGenerateAutomaticDocument !== 'function') {
-                throw new Error('कागदपत्र generator उपलब्ध नाही.');
-            }
-            const generated = win.pcGenerateAutomaticDocument(docType);
-            if (!generated?.html) {
-                throw new Error('कागदपत्र तयार झाले नाही.');
-            }
-            openAutoDocumentModal(generated.html, generated.title);
+            const firstDocument = generatedDocuments[0];
+            const isVillageDocument = generatedDocuments.length > 1;
+            const html = isVillageDocument
+                ? combineGeneratedDocuments(generatedDocuments)
+                : firstDocument.html;
+            const title = isVillageDocument
+                ? `${firstDocument.title} - सर्व गट`
+                : firstDocument.title;
+            openAutoDocumentModal(html, title);
             if (statusEl) statusEl.textContent = '';
         } catch (error) {
             console.error(error);
