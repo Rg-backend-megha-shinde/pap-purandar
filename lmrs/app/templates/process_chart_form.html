@@ -8314,6 +8314,11 @@
                 || villageData.sec3_upvibhag_name
                 || getFieldValue('#pcSec3UpvibhagName')
                 || '________';
+            const sec3OfficerPersonName = primarySec3Row.officer_name
+                || primarySec3Row.sec3_officer_name
+                || villageData.sec3_officer_name
+                || getFieldValue('#pcSec3Rows .pc-sec3-officer-name')
+                || '________';
             const noticeRefNumber = agreementNumberInput?.value?.trim() || getFieldValue('#pcSec3Kramank') || getFieldValue('#pcSec4LetterNumber') || '________';
             const noticeDate = agreementDateInput?.value?.trim() || todayIsoDate;
             const formatShortDate = (value) => {
@@ -8476,8 +8481,8 @@
                     <p class="paragraph">तरी आपण वरीलप्रमाणे आवश्यक कागदपत्रांसह संमतीपत्र सादर करून मोबदला वाटपाची कार्यवाही वेळेत पूर्ण होण्यासाठी सहकार्य करावे.</p>
 
                     <div class="signature">
-                        <p class="name">(${red(sec3OfficerName)})</p>
-                        <p class="designation">${red('उपजिल्हाधिकारी, भूसंपादन क्र. १, पुणे')}</p>
+                        <p class="name">(${red(sec3OfficerPersonName)})</p>
+                        <p class="designation">${red(sec3OfficerName)}</p>
                     </div>
                 </body>
                 </html>
