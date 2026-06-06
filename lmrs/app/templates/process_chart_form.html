@@ -3603,6 +3603,31 @@
             return escapeHtml(value || fallback);
         }
 
+        function formatNoticeAmount(value, fallback = '________') {
+            const rawValue = String(value ?? '').trim();
+            if (!rawValue || rawValue === fallback) return fallback;
+
+            const devanagariDigits = '०१२३४५६७८९';
+            const asciiValue = rawValue
+                .replace(/[०-९]/g, (digit) => String(devanagariDigits.indexOf(digit)))
+                .replace(/[,\s₹]/g, '');
+            const match = asciiValue.match(/^(-?)(\d+)(?:\.(\d+))?$/);
+            if (!match) return rawValue;
+
+            const [, sign, integerPartRaw, fractionRaw = ''] = match;
+            const integerPart = integerPartRaw.replace(/^0+(?=\d)/, '') || '0';
+            const lastThreeDigits = integerPart.slice(-3);
+            const leadingDigits = integerPart.slice(0, -3);
+            const groupedLeadingDigits = leadingDigits.replace(/\B(?=(\d{2})+(?!\d))/g, ',');
+            const groupedInteger = groupedLeadingDigits
+                ? `${groupedLeadingDigits},${lastThreeDigits}`
+                : lastThreeDigits;
+            const fraction = fractionRaw.replace(/0+$/, '');
+            const formattedValue = `${sign}${groupedInteger}${fraction ? `.${fraction}` : ''}`;
+
+            return formattedValue.replace(/\d/g, (digit) => devanagariDigits[Number(digit)]);
+        }
+
         function formatNoticeLongDate(value) {
             const raw = String(value || '').trim();
             if (!raw) return '';
@@ -3696,7 +3721,12 @@
             const relatedOwnerName = escapeHtml(ownerValue || values[`${prefix}_related_owner_name`] || '');
             const assetOwnerName = values[`${prefix}_owner_name`] || '';
             const componentDetail = escapeHtml(values[`${prefix}_component_detail`] || '');
-            const componentCount = escapeHtml(values[`${prefix}_component_count`] || '');
+            const savedComponentCount = values[`${prefix}_component_count`];
+            const componentCount = escapeHtml(
+                savedComponentCount === undefined || savedComponentCount === null || savedComponentCount === ''
+                    ? '1'
+                    : savedComponentCount
+            );
             const componentValuation = escapeHtml(values[`${prefix}_component_valuation`] || '');
             const hiddenOwnerValue = escapeHtml(ownerValue || values[`${prefix}_related_owner_name`] || '');
             const detailLabel = showLabels ? '<label class="pc-label">निगडीत घटक तपशील</label>' : '';
@@ -6080,13 +6110,18 @@
             }
         }
 
-	        function defaultAreaQuestionToYes(radioName, fetchedArea) {
-	            if (!fetchedArea || fetchedArea === 'गट आढळला नाही') return '';
-	            const checkedRadio = processChartForm?.querySelector(`input[name="${radioName}"]:checked`);
-	            if (checkedRadio) return checkedRadio.value || '';
-	            processChartForm?.querySelectorAll(`input[name="${radioName}"]`).forEach((radio) => {
-	                radio.checked = radio.value === 'yes';
-	            });
+        function hasFetchedQuestionArea(fetchedArea) {
+            const normalizedArea = String(fetchedArea || '').trim();
+            return Boolean(normalizedArea && normalizedArea !== 'गट आढळला नाही');
+        }
+
+        function defaultAreaQuestionToYes(radioName, fetchedArea) {
+            if (!hasFetchedQuestionArea(fetchedArea)) return '';
+            const checkedRadio = processChartForm?.querySelector(`input[name="${radioName}"]:checked`);
+            if (checkedRadio) return checkedRadio.value || '';
+            processChartForm?.querySelectorAll(`input[name="${radioName}"]`).forEach((radio) => {
+                radio.checked = radio.value === 'yes';
+            });
             return 'yes';
         }
 
@@ -6513,18 +6548,12 @@
             lockFieldsWithValues([kramankField, dateField, clauseAreaField], 'village-info');
 
             const clauseOneRadios = processChartForm?.querySelectorAll('input[name="group_in_clause_one_included"]') || [];
-            const hasClauseOneData = Boolean(
-                (matchedSec8Row.adhisuchana_kramank || '').trim()
-                || (matchedSec8Row.adhisuchana_date || '').trim()
-                || currentVillageFiles.sec8_files?.length
-                || matchedNotifiedArea
-            );
-            if (![...clauseOneRadios].some((radio) => radio.checked)) {
+            if (hasFetchedQuestionArea(matchedNotifiedArea) && ![...clauseOneRadios].some((radio) => radio.checked)) {
                 clauseOneRadios.forEach((radio) => {
-                    radio.checked = radio.value === (hasClauseOneData ? 'yes' : 'no');
+                    radio.checked = radio.value === 'yes';
                 });
             }
-            lockPrefilledControls(Array.from(clauseOneRadios), 'village-info');
+            toggleGroupClauseFields({ village_data: villageDataPayload });
         }
 
         function applyZoneInfoPrefill(villageDataPayload) {
@@ -7001,15 +7030,13 @@
             const reasonField = document.getElementById('pcGroupClauseReason');
             if (!areaWrap || !areaField || !reasonWrap || !reasonField) return;
 
-	            const { selectedGut, matchedNotifiedArea } = getNotifiedAreaMatchResult(prefill, 'clause_one');
-	            const hasVillageInfoPayload = hasVillageInfoPayloadForClauseOne(prefill);
-	            const rawArea = matchedNotifiedArea || ((selectedGut && hasVillageInfoPayload) ? 'गट आढळला नाही' : '');
-	            if (!selectedValue && rawArea) {
-	                processChartForm?.querySelectorAll('input[name="group_in_clause_one_included"]').forEach((radio) => {
-	                    radio.checked = radio.value === 'yes';
-	                });
-	                selectedValue = 'yes';
-	            }
+            const { selectedGut, matchedNotifiedArea } = getNotifiedAreaMatchResult(prefill, 'clause_one');
+            const hasVillageInfoPayload = hasVillageInfoPayloadForClauseOne(prefill);
+            const rawArea = matchedNotifiedArea || ((selectedGut && hasVillageInfoPayload) ? 'गट आढळला नाही' : '');
+            selectedValue = selectedValue || defaultAreaQuestionToYes(
+                'group_in_clause_one_included',
+                matchedNotifiedArea || areaField.value
+            );
 
             if (selectedValue === 'yes') {
                 setQuestionBlockVisible(areaWrap, true);
@@ -7984,11 +8011,11 @@
             const sec8Date = getFieldValue('#pcSec8Date');
             const sec8DateLong = formatNoticeLongDate(sec8Date) || sec8Date || '________';
             const sec3OfficerName = primarySec3Row.upvibhag_name || villageData.sec3_upvibhag_name || getFieldValue('#pcSec3UpvibhagName') || '________';
-            const compensationTotal = getFieldValue('#pcCompensation11') || '________';
-            const compensationBase = getFieldValue('#pcCompensation8') || '________';
-            const additionalPercent = getFieldValue('#pcCompensation7') || '________';
-            const assetsCompensation = getFieldValue('#pcCompensation4') || '________';
-            const class2Deduction = getFieldValue('#pcCompensation9') || '________';
+            const compensationTotal = formatNoticeAmount(getFieldValue('#pcCompensation11'));
+            const compensationBase = formatNoticeAmount(getFieldValue('#pcCompensation8'));
+            const additionalPercent = formatNoticeAmount(getFieldValue('#pcCompensation7'));
+            const assetsCompensation = formatNoticeAmount(getFieldValue('#pcCompensation4'));
+            const class2Deduction = formatNoticeAmount(getFieldValue('#pcCompensation9'));
             const committeeDate = getFieldValue('#pcSec14Date');
             const committeeDateLong = formatNoticeLongDate(committeeDate) || committeeDate || '________';
             const holderKhata = primaryOwnerRow.khata_number || landRecord.khata_number || '________';
@@ -7998,7 +8025,7 @@
             const panNumber = '________________';
 
             const firstApprovedRateField = document.querySelector('#pcSec15RateTableBody tr td:nth-child(6) input');
-            const approvedRate = firstApprovedRateField?.value?.trim() || '________';
+            const approvedRate = formatNoticeAmount(firstApprovedRateField?.value);
 
             const red = (value) => `<span class="dyn">${getDisplayValue(value)}</span>`;
             const agreementCurrentDateDisplay = (() => {
@@ -8222,7 +8249,9 @@
                 || tab4AcquisitionRows[0]?.acquisition_area
                 || '________';
             const consentDecision = getFieldValue('#pcConsentDecision') || 'स्वीकार';
-            const compensationTotal = getFieldValue('#pcCompensation11') || landRecord.final_compensation || '________';
+            const compensationTotal = formatNoticeAmount(
+                getFieldValue('#pcCompensation11') || landRecord.final_compensation
+            );
             const sec2NotificationNumber = getFieldValue('#pcSec2AdhisuchanaKramank') || '________';
             const sec2NotificationDate = getFieldValue('#pcSec2Date');
             const sec2NotificationDateLong = formatNoticeLongDate(sec2NotificationDate) || sec2NotificationDate || '________';
@@ -8302,7 +8331,7 @@
             const deadlineDateLong = formatNoticeLongDate(deadlineIso) || '________';
 
             const firstApprovedRateField = document.querySelector('#pcSec15RateTableBody tr td:nth-child(6) input');
-            const approvedRate = firstApprovedRateField?.value?.trim() || '________';
+            const approvedRate = formatNoticeAmount(firstApprovedRateField?.value);
 
             const red = (value) => `<span class="red">${getDisplayValue(value)}</span>`;
 
