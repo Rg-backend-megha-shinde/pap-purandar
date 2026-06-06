@@ -8533,8 +8533,8 @@
             const objectionDeadline = (() => {
                 const d = new Date(`${noticeDate}T00:00:00`);
                 if (Number.isNaN(d.getTime())) return '________';
-                d.setMonth(d.getMonth() + 1);
-                return formatNoticeLongDate(d.toISOString().split('T')[0]) || '________';
+                const deadlineDate = addWorkingDays(d, 15);
+                return formatNoticeLongDate(dateToInputValue(deadlineDate)) || '________';
             })();
             const hearingAddress = (Array.isArray(prefill.village_data?.sec3_rows) ? prefill.village_data.sec3_rows[0]?.address : '')
                 || villageData.collector_office_address
