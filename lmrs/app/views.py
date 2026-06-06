@@ -20,7 +20,7 @@ import requests
 from collections import Counter
 from io import BytesIO
 import unicodedata
-from urllib.parse import urlparse, parse_qs, urlencode
+from urllib.parse import urlparse, parse_qs, urlencode, quote
 from decimal import Decimal, InvalidOperation
 from PIL import Image, ImageDraw, ImageFont, ImageOps
 from django.views.decorators.csrf import csrf_exempt
@@ -4912,6 +4912,53 @@ def _automatic_document_join_unique(values):
     return ', '.join(unique_values)
 
 
+def _automatic_document_owner_partitions(step_one, fallback_names):
+    owner_values = step_one.get('owner_info_owner_name') or []
+    khata_values = step_one.get('owner_info_khata_number') or []
+    if not isinstance(owner_values, list):
+        owner_values = [owner_values]
+    if not isinstance(khata_values, list):
+        khata_values = [khata_values]
+
+    partitions = []
+    partition_indexes = {}
+    row_count = max(len(owner_values), len(khata_values))
+    for index in range(row_count):
+        khata_number = clean_optional_char(khata_values[index] if index < len(khata_values) else '')
+        owner_value = owner_values[index] if index < len(owner_values) else ''
+        partition_key = normalize_match_text(khata_number) or f'__blank_{index}'
+        if partition_key not in partition_indexes:
+            partition_indexes[partition_key] = len(partitions)
+            partitions.append({
+                'khata_number': khata_number,
+                'owner_names': [],
+                'seen_owner_names': set(),
+            })
+        partition = partitions[partition_indexes[partition_key]]
+        for owner_name in split_holder_names(owner_value):
+            owner_key = normalize_match_text(owner_name)
+            if owner_key and owner_key not in partition['seen_owner_names']:
+                partition['seen_owner_names'].add(owner_key)
+                partition['owner_names'].append(owner_name)
+
+    if not partitions:
+        partitions = [{
+            'khata_number': '',
+            'owner_names': split_holder_names(fallback_names),
+            'seen_owner_names': set(),
+        }]
+    elif not any(partition['owner_names'] for partition in partitions):
+        partitions[0]['owner_names'] = split_holder_names(fallback_names)
+
+    return [
+        {
+            'khata_number': partition['khata_number'],
+            'owner_name': '\n'.join(partition['owner_names']),
+        }
+        for partition in partitions
+    ]
+
+
 def _automatic_document_tab7_rows(step_seven, prefix):
     snapshot = step_seven.get('tab7_snapshot') if isinstance(step_seven, dict) else {}
     sections = snapshot.get('sections') if isinstance(snapshot, dict) else {}
@@ -5004,7 +5051,7 @@ def _automatic_document_process_rows(district, taluka, village):
         .first()
     )
     rows = []
-    for case in cases:
+    for case_number, case in enumerate(cases, 1):
         step_one = _process_chart_step_data(case, 1)
         step_six = _process_chart_step_data(case, 6)
         step_seven = _process_chart_step_data(case, 7)
@@ -5013,8 +5060,8 @@ def _automatic_document_process_rows(district, taluka, village):
         water_supply = _automatic_document_asset_group(step_seven, 'water_supply')
         forest = _automatic_document_asset_group(step_seven, 'forest')
         agriculture = _automatic_document_asset_group(step_seven, 'agriculture')
-        names = split_holder_names(_process_chart_case_owner_names(case)) or ['']
-        khata_values = step_one.get('owner_info_khata_number') or []
+        case_owner_names = _process_chart_case_owner_names(case)
+        owner_partitions = _automatic_document_owner_partitions(step_one, case_owner_names)
         total_values = step_one.get('owner_info_total_area') or []
         class_values = (
             step_one.get('occupancy_class')
@@ -5023,8 +5070,6 @@ def _automatic_document_process_rows(district, taluka, village):
             or []
         )
         rights_values = step_one.get('owner_info_other_rights') or []
-        if not isinstance(khata_values, list):
-            khata_values = [khata_values]
         if not isinstance(total_values, list):
             total_values = [total_values]
         if not isinstance(class_values, list):
@@ -5038,11 +5083,11 @@ def _automatic_document_process_rows(district, taluka, village):
             case.gut_number,
         )
         seven_twelve_total_area = clean_optional_char(getattr(land_record, 'total_area', '') or '')
-        rows.append({
+        base_row = {
+            'serial_number': case_number,
+            'case_group': case.id,
             'gut_number': case.gut_number,
             'land_class': _automatic_document_join_unique(class_values),
-            'khata_number': _automatic_document_join_unique(khata_values),
-            'owner_name': _automatic_document_join_unique(names),
             'other_rights': _automatic_document_join_unique(rights_values),
             'total_area': seven_twelve_total_area or next((value for value in total_values if clean_optional_char(value)), ''),
             'acquisition_area': _process_chart_case_acquisition_area(case),
@@ -5072,7 +5117,13 @@ def _automatic_document_process_rows(district, taluka, village):
             'class_two_deduction': _automatic_document_first_list_value(step_eight, 'pcCompensation9'),
             'plot_return': _automatic_document_first_list_value(step_eight, 'pcCompensation10'),
             'final_compensation': _automatic_document_first_list_value(step_eight, 'pcCompensation11'),
-        })
+        }
+        for partition in owner_partitions:
+            rows.append({
+                **base_row,
+                'khata_number': partition['khata_number'],
+                'owner_name': partition['owner_name'],
+            })
     return rows
 
 
@@ -5224,7 +5275,7 @@ def _automatic_document_statement_workbook(source, district, taluka, village):
     for offset, item in enumerate(rows):
         row_number = data_start + offset
         values = [
-            offset + 1,
+            item.get('serial_number', offset + 1),
             item.get('gut_number', ''),
             item.get('land_class', ''),
             item.get('khata_number', ''),
@@ -5262,7 +5313,29 @@ def _automatic_document_statement_workbook(source, district, taluka, village):
             cell.font = marathi_font
             cell.border = border
             cell.alignment = center
-        sheet.row_dimensions[row_number].height = 34
+        owner_line_count = max(len(str(item.get('owner_name') or '').splitlines()), 1)
+        sheet.row_dimensions[row_number].height = max(34, owner_line_count * 18)
+
+    group_start = data_start
+    while group_start < data_start + len(rows):
+        group_value = rows[group_start - data_start].get('case_group')
+        group_end = group_start
+        while (
+            group_value
+            and group_end + 1 < data_start + len(rows)
+            and rows[group_end + 1 - data_start].get('case_group') == group_value
+        ):
+            group_end += 1
+        if group_end > group_start:
+            for column in list(range(1, 4)) + list(range(6, 33)):
+                sheet.merge_cells(
+                    start_row=group_start,
+                    start_column=column,
+                    end_row=group_end,
+                    end_column=column,
+                )
+                sheet.cell(group_start, column).alignment = center
+        group_start = group_end + 1
 
     widths = {
         1: 7, 2: 15, 3: 16, 4: 13, 5: 28, 6: 28, 7: 17, 8: 17, 9: 18,
@@ -5319,12 +5392,17 @@ def automatic_document_generation(request):
         output = BytesIO()
         workbook.save(output)
         output.seek(0)
-        safe_village = re.sub(r'[^\w.-]+', '_', village, flags=re.UNICODE).strip('_') or 'village'
+        village_mr = get_marathi_name('village', district, taluka, village) or village
+        safe_village = re.sub(r'[^\w.-]+', '_', village_mr, flags=re.UNICODE).strip('_') or 'गाव'
+        marathi_filename = f'परिशिष्ट १_{safe_village}.xlsx'
         response = HttpResponse(
             output.getvalue(),
             content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         )
-        response['Content-Disposition'] = f'attachment; filename="{safe_village}_A_Statement.xlsx"'
+        response['Content-Disposition'] = (
+            f'attachment; filename="Parishisht_1.xlsx"; '
+            f"filename*=UTF-8''{quote(marathi_filename)}"
+        )
         return response
 
     return render(request, 'automatic_document_generation.html', {
