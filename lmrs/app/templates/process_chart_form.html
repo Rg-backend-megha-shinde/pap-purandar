@@ -265,6 +265,20 @@
         user-select: none;
     }
 
+    .pc-view-only .pc-step-panel button:not(.pc-eye-view):not(#pcAgreementDraftViewBtn) {
+        display: none !important;
+    }
+
+    .pc-view-only input:disabled,
+    .pc-view-only select:disabled,
+    .pc-view-only textarea:disabled {
+        cursor: default;
+        opacity: 1;
+        background: #f3f7fc;
+        color: #526784;
+        -webkit-text-fill-color: #526784;
+    }
+
     .pc-input:user-invalid {
         border-color: #dc2626;
         box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.12);
@@ -449,7 +463,7 @@
                 </nav>
             </div>
 
-            <form id="processChartForm" class="space-y-6">
+            <form id="processChartForm" class="space-y-6{% if view_only %} pc-view-only{% endif %}" data-view-only="{{ view_only|yesno:'true,false' }}">
                 <div class="mb-6 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                     <div>
                         <a href="{% url 'process_chart_form' %}"
@@ -459,7 +473,7 @@
                         <h1 class="text-2xl font-bold text-[#213a63]">खातेनिहाय तपशील</h1>
                         <p class="mt-1 text-sm text-[#6b7d99]">महाराष्ट्र महामार्ग अधिनियम प्रक्रियेसाठी पान 1 ते 16 प्रमाणे स्थिर नमुना फॉर्म.</p>
                     </div>
-                    <div class="flex gap-2">
+                    <div class="flex gap-2{% if view_only %} hidden{% endif %}">
                         <button type="button" id="pcSaveDraftBtn" class="rounded-xl border border-[#ccdbef] bg-white px-4 py-2 text-sm font-semibold text-[#4a6488]">Save Draft</button>
                         <button type="button" id="pcSubmitBtn" class="rounded-xl bg-[#125fcb] px-4 py-2 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(18,95,203,0.2)]">Submit</button>
                     </div>
@@ -1784,7 +1798,7 @@
                     </div>
                 </section>
 
-                <div class="flex flex-col gap-3 border-t border-[#d8e4f2] pt-5 sm:flex-row sm:items-center sm:justify-between">
+                <div class="flex flex-col gap-3 border-t border-[#d8e4f2] pt-5 sm:flex-row sm:items-center sm:justify-between{% if view_only %} hidden{% endif %}">
                     <button type="button" id="pcPrevBtn" class="rounded-xl border border-[#ccdbef] bg-white px-5 py-3 text-sm font-semibold text-[#4a6488]">Save & Previous</button>
                     <div class="flex gap-3">
                         <button type="button" id="pcSaveBtn" class="rounded-xl border border-[#ccdbef] bg-white px-5 py-3 text-sm font-semibold text-[#4a6488]">Save</button>
@@ -2148,6 +2162,7 @@
         const caseSummaryArea = document.getElementById('pcCaseSummaryArea');
         const initialCaseId = '{{ case_id|default:""|escapejs }}';
         const urlCaseId = new URLSearchParams(window.location.search).get('case_id') || '';
+        const isViewOnly = processChartForm?.dataset.viewOnly === 'true';
         let currentCaseId = initialCaseId || urlCaseId || '';
         let isSavingProcessChart = false;
         let tab7AutoSaveTimer = null;
@@ -9512,6 +9527,10 @@
         dots.forEach((dot) => dot.addEventListener('click', async () => {
             const targetStep = Number(dot.dataset.pcStep || 1);
             if (targetStep === currentStep) return;
+            if (isViewOnly) {
+                setStep(targetStep);
+                return;
+            }
             const result = await saveProcessChart('draft', targetStep);
             if (result.success) {
                 setStep(targetStep);
@@ -10162,6 +10181,32 @@
             updateProcessChartCaseSummary();
             window.dispatchEvent(new CustomEvent('pc-process-chart-loaded'));
         })();
+
+        if (isViewOnly && processChartForm) {
+            const lockViewOnlyFields = (root = processChartForm) => {
+                if (root.matches?.('input, select, textarea')) {
+                    if (!(root instanceof HTMLInputElement && root.type === 'hidden')) {
+                        root.disabled = true;
+                    }
+                }
+                root.querySelectorAll('input, select, textarea').forEach((field) => {
+                    if (field instanceof HTMLInputElement && field.type === 'hidden') return;
+                    field.disabled = true;
+                });
+            };
+            window.pcProcessChartLoadPromise.finally(() => {
+                lockViewOnlyFields();
+                new MutationObserver((mutations) => {
+                    mutations.forEach((mutation) => {
+                        mutation.addedNodes.forEach((node) => {
+                            if (node instanceof HTMLElement) {
+                                lockViewOnlyFields(node);
+                            }
+                        });
+                    });
+                }).observe(processChartForm, { childList: true, subtree: true });
+            });
+        }
     })();
 </script>
 {% endblock %}
