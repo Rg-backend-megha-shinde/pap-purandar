@@ -3648,6 +3648,28 @@
             return `${Number.parseInt(day, 10)} ${monthLabel} ${year}`;
         }
 
+        function addWorkingDays(startDate, workingDays) {
+            const result = new Date(startDate);
+            result.setHours(12, 0, 0, 0);
+            let addedDays = 0;
+            while (addedDays < workingDays) {
+                result.setDate(result.getDate() + 1);
+                const dayOfWeek = result.getDay();
+                if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+                    addedDays += 1;
+                }
+            }
+            return result;
+        }
+
+        function dateToInputValue(date) {
+            return [
+                date.getFullYear(),
+                String(date.getMonth() + 1).padStart(2, '0'),
+                String(date.getDate()).padStart(2, '0'),
+            ].join('-');
+        }
+
         function formatOwnerNamesForNotice(rawValue) {
             return String(rawValue || '')
                 .split(/\n|,|;|\||\u0964|\/+/)
@@ -8606,8 +8628,13 @@
             const sec3Rows = Array.isArray(prefill.village_data?.sec3_rows) ? prefill.village_data.sec3_rows : [];
             const primarySec3Row = sec3Rows[0] || {};
             const projectPurpose = getFieldValue('[name="project_purpose"]') || '________';
-            const hearingNoticeDate = getFieldValue('[name="section323_notice_date"]');
-            const hearingNoticeDateLong = formatNoticeLongDate(hearingNoticeDate) || '________';
+            const generatedAt = new Date();
+            const hearingNoticeDate = dateToInputValue(addWorkingDays(generatedAt, 15));
+            const hearingNoticeDateField = processChartForm?.querySelector('[name="section323_notice_date"]');
+            if (hearingNoticeDateField instanceof HTMLInputElement) {
+                hearingNoticeDateField.value = hearingNoticeDate;
+            }
+            const hearingNoticeDateLong = formatNoticeLongDate(hearingNoticeDate);
             const publicNoticeDate = getFieldValue(section32NoticeDateInput);
             const publicNoticeDateLong = formatNoticeLongDate(publicNoticeDate) || '________';
             const sec2NotificationNumber = getFieldValue('#pcSec2AdhisuchanaKramank');
@@ -8633,7 +8660,6 @@
             const hearingLocation = officeAddress;
             const signingOfficerName = sec3OfficerPersonName;
             const signingOfficerDesignation = sec3UpvibhagName;
-            const generatedAt = new Date();
             const generatedDate = [
                 String(generatedAt.getDate()).padStart(2, '0'),
                 String(generatedAt.getMonth() + 1).padStart(2, '0'),
@@ -9975,6 +10001,10 @@
                 section32_personal_notice: {
                     title: 'कलम 32(2) व्यक्तिगत नोटीस',
                     build: buildSection32NoticeHtml,
+                },
+                section323_hearing_notice: {
+                    title: 'कलम 32(3) सुनावणीची नोटीस',
+                    build: buildSection323NoticeHtml,
                 },
                 consent_option_notice: {
                     title: 'संमती विकल्प नोटीस',
