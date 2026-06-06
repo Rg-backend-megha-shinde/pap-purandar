@@ -4785,6 +4785,27 @@ def _process_chart_case_consent_compensation(case):
     return _process_chart_first_value(step_eight_data.get('pcCompensation11'))
 
 
+def _format_indian_amount(value):
+    text = clean_optional_char(value).replace(',', '')
+    if not text:
+        return ''
+    try:
+        amount = Decimal(text)
+    except (InvalidOperation, ValueError):
+        return clean_optional_char(value)
+
+    sign = '-' if amount < 0 else ''
+    integer_part, fraction_part = f'{abs(amount):.2f}'.split('.')
+    if len(integer_part) > 3:
+        leading = integer_part[:-3]
+        pairs = []
+        while leading:
+            pairs.append(leading[-2:])
+            leading = leading[:-2]
+        integer_part = ','.join(reversed(pairs)) + ',' + integer_part[-3:]
+    return f'{sign}{integer_part}.{fraction_part}'
+
+
 @login_required
 def process_chart_list(request):
     cases = ProcessChartCase.objects.select_related('user').prefetch_related('step_data').all().order_by('-updated_at', '-id')
@@ -4799,6 +4820,7 @@ def process_chart_list(request):
         case.owner_names_summary_mr = _process_chart_owner_names_summary(case.owner_names_mr)
         case.acquisition_area_from_joint_survey = _process_chart_case_acquisition_area(case)
         case.consent_compensation_amount = _process_chart_case_consent_compensation(case)
+        case.consent_compensation_amount_display = _format_indian_amount(case.consent_compensation_amount)
     return render(request, 'process_chart_list.html', {
         'active_tab': 'process-chart',
         'cases': cases,
@@ -4808,7 +4830,12 @@ def process_chart_list(request):
 @login_required
 def process_chart_form(request):
     case_id = request.GET.get('case_id')
-    return render(request, 'process_chart_form.html', {'active_tab': 'process-chart', 'case_id': case_id})
+    view_only = request.GET.get('view', '').lower() in {'1', 'true', 'yes'}
+    return render(request, 'process_chart_form.html', {
+        'active_tab': 'process-chart',
+        'case_id': case_id,
+        'view_only': view_only,
+    })
 
 
 def _automatic_document_location_value(district, taluka, village):

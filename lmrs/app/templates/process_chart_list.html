@@ -122,6 +122,11 @@
         background: #eff6ff;
         color: #2563eb;
     }
+    .pc-action-view {
+        border-color: #bbf7d0;
+        background: #f0fdf4;
+        color: #15803d;
+    }
     .pc-action-delete {
         border-color: #fecaca;
         background: #fef2f2;
@@ -201,8 +206,8 @@
                                 <td class="border border-[#d7e5f6] px-3 py-2 text-center" data-search="{{ item.acquisition_area_from_joint_survey|default:'' }}">
                                     {{ item.acquisition_area_from_joint_survey|default:"-" }}
                                 </td>
-                                <td class="border border-[#d7e5f6] px-3 py-2 text-center" data-search="{{ item.consent_compensation_amount|default:'' }}">
-                                    {{ item.consent_compensation_amount|default:"-" }}
+                                <td class="border border-[#d7e5f6] px-3 py-2 text-center" data-order="{{ item.consent_compensation_amount|default:'0' }}" data-search="{{ item.consent_compensation_amount|default:'' }} {{ item.consent_compensation_amount_display|default:'' }}">
+                                    {{ item.consent_compensation_amount_display|default:"-" }}
                                 </td>
                                 <td class="border border-[#d7e5f6] px-3 py-2 text-center" data-search="{{ item.status }} {% if item.status == 'draft' %}Draft मसुदा{% else %}Completed पूर्ण{% endif %}">
                                     <span class="pc-status-badge {% if item.status == 'submitted' %}pc-status-submitted{% elif item.status == 'approved' %}pc-status-approved{% else %}pc-status-draft{% endif %}">
@@ -219,8 +224,14 @@
                                     <div class="text-xs text-[#8091aa]">Updated by {{ item.user.username }}</div>
                                 </td>
 
-                                <td class="border border-[#d7e5f6] px-3 py-2 text-center whitespace-nowrap" data-search="Edit Delete संपादित करा हटवा">
+                                <td class="border border-[#d7e5f6] px-3 py-2 text-center whitespace-nowrap" data-search="View Edit Delete पहा संपादित करा हटवा">
 
+                                    <button type="button" data-view-url="{% url 'process_chart_form_entry' %}?case_id={{ item.id }}&amp;view=1" title="View full form" aria-label="View full form" class="pc-action-btn pc-action-view pc-view-form-btn mr-2">
+                                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.25 12s3.75-6.75 9.75-6.75S21.75 12 21.75 12 18 18.75 12 18.75 2.25 12 2.25 12z"></path>
+                                            <circle cx="12" cy="12" r="3" stroke-width="2"></circle>
+                                        </svg>
+                                    </button>
                                     <a href="{% url 'process_chart_form_entry' %}?case_id={{ item.id }}" title="Edit" aria-label="Edit" class="pc-action-btn pc-action-edit mr-2">
                                         <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16.862 4.487l1.651-1.651a1.875 1.875 0 112.652 2.652L9.75 16.903 5.25 18l1.097-4.5L16.862 4.487z"></path>
@@ -239,6 +250,18 @@
                     </table>
                 </div>
             </div>
+        </div>
+    </div>
+</div>
+
+<div id="pcFormViewModal" class="hidden fixed inset-0 z-50 bg-black bg-opacity-50 p-2 sm:p-4">
+    <div class="flex h-full w-full flex-col overflow-hidden rounded-xl bg-white shadow-2xl">
+        <div class="flex shrink-0 items-center justify-between border-b border-[#d7e5f6] px-4 py-3">
+            <h3 class="text-base font-semibold text-[#213a63]">भूसंपादन प्रक्रिया तपशील</h3>
+            <button type="button" id="pcCloseFormViewModalBtn" class="flex h-9 w-9 items-center justify-center rounded-lg text-2xl leading-none text-gray-500 hover:bg-gray-100 hover:text-gray-800" aria-label="Close">&times;</button>
+        </div>
+        <div class="min-h-0 flex-1 overflow-auto bg-[#f5f8fc]">
+            <iframe id="pcFormViewFrame" title="भूसंपादन प्रक्रिया तपशील" class="block h-full min-h-[700px] w-full border-0 bg-white"></iframe>
         </div>
     </div>
 </div>
@@ -291,6 +314,31 @@ $(document).ready(function () {
 
     const ownerInfoModal = document.getElementById('pcOwnerInfoModal');
     const ownerInfoContent = document.getElementById('pcOwnerInfoContent');
+    const formViewModal = document.getElementById('pcFormViewModal');
+    const formViewFrame = document.getElementById('pcFormViewFrame');
+
+    function openFormViewModal(url) {
+        if (!formViewModal || !formViewFrame || !url) return;
+        formViewFrame.src = url;
+        formViewModal.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeFormViewModal() {
+        if (!formViewModal || !formViewFrame) return;
+        formViewModal.classList.add('hidden');
+        formViewFrame.src = 'about:blank';
+        document.body.style.overflow = '';
+    }
+
+    $(document).on('click', '.pc-view-form-btn', function () {
+        openFormViewModal(this.dataset.viewUrl);
+    });
+
+    document.getElementById('pcCloseFormViewModalBtn')?.addEventListener('click', closeFormViewModal);
+    formViewModal?.addEventListener('click', function (event) {
+        if (event.target === formViewModal) closeFormViewModal();
+    });
 
     function decodeUnicodeEscapes(text) {
         if (!text) return '';
@@ -324,6 +372,10 @@ $(document).ready(function () {
         if (event.target === ownerInfoModal) closeOwnerInfoModal();
     });
     document.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape' && formViewModal && !formViewModal.classList.contains('hidden')) {
+            closeFormViewModal();
+            return;
+        }
         if (event.key === 'Escape' && ownerInfoModal && !ownerInfoModal.classList.contains('hidden')) {
             closeOwnerInfoModal();
         }
