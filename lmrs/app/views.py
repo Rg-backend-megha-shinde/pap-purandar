@@ -4831,10 +4831,12 @@ def process_chart_list(request):
 def process_chart_form(request):
     case_id = request.GET.get('case_id')
     view_only = request.GET.get('view', '').lower() in {'1', 'true', 'yes'}
+    embedded = request.GET.get('embedded', '').lower() in {'1', 'true', 'yes'}
     return render(request, 'process_chart_form.html', {
         'active_tab': 'process-chart',
         'case_id': case_id,
         'view_only': view_only,
+        'embedded': embedded,
     })
 
 
