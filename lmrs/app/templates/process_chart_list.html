@@ -226,7 +226,7 @@
 
                                 <td class="border border-[#d7e5f6] px-3 py-2 text-center whitespace-nowrap" data-search="View Edit Delete पहा संपादित करा हटवा">
 
-                                    <button type="button" data-view-url="{% url 'process_chart_form_entry' %}?case_id={{ item.id }}&amp;view=1" title="View full form" aria-label="View full form" class="pc-action-btn pc-action-view pc-view-form-btn mr-2">
+                                    <button type="button" data-view-url="{% url 'process_chart_form_entry' %}?case_id={{ item.id }}&amp;view=1&amp;embedded=1" title="View full form" aria-label="View full form" class="pc-action-btn pc-action-view pc-view-form-btn mr-2">
                                         <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.25 12s3.75-6.75 9.75-6.75S21.75 12 21.75 12 18 18.75 12 18.75 2.25 12 2.25 12z"></path>
                                             <circle cx="12" cy="12" r="3" stroke-width="2"></circle>
@@ -254,14 +254,14 @@
     </div>
 </div>
 
-<div id="pcFormViewModal" class="hidden fixed inset-0 z-50 bg-black bg-opacity-50 p-2 sm:p-4">
-    <div class="flex h-full w-full flex-col overflow-hidden rounded-xl bg-white shadow-2xl">
+<div id="pcFormViewModal" class="hidden fixed inset-0 z-50 items-center justify-center bg-black bg-opacity-50 p-3 sm:p-6">
+    <div class="flex h-[88vh] w-full max-w-6xl flex-col overflow-hidden rounded-xl bg-white shadow-2xl">
         <div class="flex shrink-0 items-center justify-between border-b border-[#d7e5f6] px-4 py-3">
             <h3 class="text-base font-semibold text-[#213a63]">भूसंपादन प्रक्रिया तपशील</h3>
             <button type="button" id="pcCloseFormViewModalBtn" class="flex h-9 w-9 items-center justify-center rounded-lg text-2xl leading-none text-gray-500 hover:bg-gray-100 hover:text-gray-800" aria-label="Close">&times;</button>
         </div>
-        <div class="min-h-0 flex-1 overflow-auto bg-[#f5f8fc]">
-            <iframe id="pcFormViewFrame" title="भूसंपादन प्रक्रिया तपशील" class="block h-full min-h-[700px] w-full border-0 bg-white"></iframe>
+        <div class="min-h-0 flex-1 overflow-hidden bg-[#f5f8fc]">
+            <iframe id="pcFormViewFrame" title="भूसंपादन प्रक्रिया तपशील" class="block h-full w-full border-0 bg-white"></iframe>
         </div>
     </div>
 </div>
@@ -321,12 +321,14 @@ $(document).ready(function () {
         if (!formViewModal || !formViewFrame || !url) return;
         formViewFrame.src = url;
         formViewModal.classList.remove('hidden');
+        formViewModal.classList.add('flex');
         document.body.style.overflow = 'hidden';
     }
 
     function closeFormViewModal() {
         if (!formViewModal || !formViewFrame) return;
         formViewModal.classList.add('hidden');
+        formViewModal.classList.remove('flex');
         formViewFrame.src = 'about:blank';
         document.body.style.overflow = '';
     }
