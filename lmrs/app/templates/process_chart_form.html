@@ -1548,7 +1548,7 @@
                                     </div>
                                     <div id="pcCompensationHouseWrap" class="hidden">
                                         <label class="pc-label">१०. 02.50 गुंठे पर्यायी जागेसाठी कपात करावयाच्या 02.50 गुंठे क्षेत्राची रक्कम रुपये</label>
-                                        <input class="pc-input" id="pcCompensationHouse" name="compensation_house_deduction" readonly>
+                                        <input class="pc-input" id="pcCompensationHouse" name="compensation_house_deduction">
                                     </div>
                                     <div class="md:col-span-2">
                                         <label class="pc-label">लिहून देणार (दुसरे पक्ष) हे म.औ.वि.म. यांचे पुनर्वसन व पुनर्बहाली धोरण, 2019 दि. 26/08/2019 नुसार 10% विकसित भूखंड घेणेस इच्छुक आहेत काय?</label>
@@ -1557,7 +1557,7 @@
                                             <label><input type="radio" name="interested_in_10_percent_plot" value="no"> नाही</label>
                                         </div>
                                     </div>
-                                    <div><label class="pc-label">११. म.औ.वि. मंडळाचे पुनर्वसन व पुनर्वसली धोरण 2019 प्रमाणे 10% भूखंड परतावा रक्कम </label><input class="pc-input" id="pcCompensation10" readonly></div>
+                                    <div><label class="pc-label">११. म.औ.वि. मंडळाचे पुनर्वसन व पुनर्वसली धोरण 2019 प्रमाणे 10% भूखंड परतावा रक्कम </label><input class="pc-input" id="pcCompensation10" name="compensation_bhukhand"></div>
                                     <div><label class="pc-label">१२. संमती निवाड्यासाठी एकूण मोबदला (८ - ९ - १० - ११)</label><input class="pc-input" id="pcCompensation11" readonly></div>
                                     <div><label class="pc-label">१३. अक्षरी एकूण रक्कम रुपये</label><input class="pc-input" id="pcCompensation12" readonly></div>
                                 </div>
@@ -5386,7 +5386,7 @@
                                             <tr>
                                                 ${index === 0 ? `<td class="border border-[#dbe8f8] px-3 py-2 align-top font-semibold text-[#244271]" rowspan="${section.rows.length + 1}">${escapeHtml(section.title)}</td>` : ''}
                                                 <td class="border border-[#dbe8f8] px-3 py-2">${escapeHtml(row.detail || '-')}</td>
-                                                <td class="border border-[#dbe8f8] px-3 py-2 text-right">${escapeHtml(row.count || '-')}</td>
+                                                <td class="border border-[#dbe8f8] px-3 py-2 text-right">${row.valuation > 0 ? escapeHtml(row.count || '-') : '-'}</td>
                                                 <td class="border border-[#dbe8f8] px-3 py-2 text-right">${escapeHtml(row.valuationText || '0')}</td>
                                             </tr>
                                         `).join('')
@@ -5718,6 +5718,24 @@
             const parts = rawValue.split(',').map((part) => part.trim()).filter(Boolean);
             if (!parts.length) return '';
             return parts.every((part) => part === parts[0]) ? parts[0] : rawValue;
+        }
+
+        function parseAcquisitionAreaToHectares(value = '') {
+            const normalizedValue = normalizeRepeatedSharedAreaValue(value)
+                .replace(/[०-९]/g, (digit) => String('०१२३४५६७८९'.indexOf(digit)))
+                .replace(/[^0-9.]/g, '');
+            if (!normalizedValue) return 0;
+
+            const parts = normalizedValue.split('.').filter((part) => part !== '');
+            if (parts.length >= 3) {
+                const hectare = Number(parts[0]) || 0;
+                const aar = Number(parts[1]) || 0;
+                const squareMetre = Number(parts.slice(2).join('')) || 0;
+                return hectare + (aar / 100) + (squareMetre / 10000);
+            }
+
+            const decimalHectares = Number(normalizedValue);
+            return Number.isFinite(decimalHectares) ? decimalHectares : 0;
         }
 
         function getMultiKhataCommonAreaValue() {
@@ -7314,7 +7332,7 @@
             return `${rupeesText} रुपये`;
         }
 
-        function updateCompensationFields(prefill = currentProcessChartPrefill) {
+        function updateCompensationFields(prefill = currentProcessChartPrefill, options = {}) {
             const compensation1Field = document.getElementById('pcCompensation1');
             const compensation2Field = document.getElementById('pcCompensation2');
             const compensation3Field = document.getElementById('pcCompensation3');
@@ -7329,6 +7347,8 @@
             const compensation12Field = document.getElementById('pcCompensation12');
             const compensationHouseField = document.getElementById('pcCompensationHouse');
             const compensationHouseWrap = document.getElementById('pcCompensationHouseWrap');
+            const resetHouseDeduction = Boolean(options?.resetHouseDeduction);
+            const resetPlotCompensation = Boolean(options?.resetPlotCompensation);
             if (!compensation1Field || !compensation2Field || !compensation3Field || !compensation4Field || !compensation5Field || !compensation6Field || !compensation7Field || !compensation8Field || !compensation9Field || !compensation10Field || !compensation11Field || !compensation12Field) {
                 return;
             }
@@ -7349,16 +7369,19 @@
                 ? tab6ApprovedRate * tab4AcquisitionArea
                 : (tab6ApprovedRate || Number(entry?.market_value_15a || 0)));
             const staticHouseRate = 40254814;
-            const houseDeduction = isResidenceAffected
-                ? Math.ceil((staticHouseRate / 100) * 100)
+            const houseDeductionAuto = isResidenceAffected
+                ? Math.ceil((staticHouseRate / 100) * 2.50)
                 : 0;
             if (compensationHouseWrap) {
                 compensationHouseWrap.classList.toggle('hidden', !isResidenceAffected);
             }
             if (compensationHouseField) {
-                compensationHouseField.value = isResidenceAffected
-                    ? formatCalculationNumber(houseDeduction)
-                    : '';
+                const shouldResetHouse = resetHouseDeduction || !String(compensationHouseField.value || '').trim();
+                if (shouldResetHouse) {
+                    compensationHouseField.value = isResidenceAffected
+                        ? formatCalculationNumber(houseDeductionAuto)
+                        : '';
+                }
             }
             const compensation2 = parseNumericFieldValue(compensation2Field);
             const compensation4 = Math.ceil(parseNumericFieldValue('#total-valuation-amount') || Number(entry?.total_assets_16e || 0));
@@ -7375,14 +7398,21 @@
                 || String(savedStep8Data.interested_in_10_percent_plot || '').trim()
                 || '';
             const isInterestedInPlot = plotReturnSelection === 'yes';
-            const compensation10 = isInterestedInPlot ? Math.ceil(compensation8 * 0.10) : 0;
-            const compensation10DisplayValue = isInterestedInPlot ? formatCalculationNumber(compensation10) : '';
+            const compensation10Auto = isInterestedInPlot ? Math.ceil(compensation8 * 0.10) : 0;
+            const shouldResetPlot = resetPlotCompensation || !String(compensation10Field.value || '').trim();
+            if (shouldResetPlot) {
+                compensation10Field.value = isInterestedInPlot
+                    ? formatCalculationNumber(compensation10Auto)
+                    : '';
+            }
 
-            compensation10Field.readOnly = true;
-            compensation10Field.classList.add('pc-readonly-lock');
-            compensation10Field.value = compensation10DisplayValue;
-
-            const compensation11 = Math.ceil(compensation8 - compensation9 - (isInterestedInPlot ? compensation10 : 0) - houseDeduction);
+            const houseDeduction = isResidenceAffected
+                ? (String(compensationHouseField.value || '').trim() ? parseNumericFieldValue(compensationHouseField) : houseDeductionAuto)
+                : 0;
+            const compensation10 = isInterestedInPlot
+                ? (String(compensation10Field.value || '').trim() ? parseNumericFieldValue(compensation10Field) : compensation10Auto)
+                : 0;
+            const compensation11 = Math.ceil(compensation8 - compensation9 - compensation10 - houseDeduction);
 
             compensation1Field.value = formatCalculationNumber(compensation1);
             compensation3Field.value = formatCalculationNumber(compensation3);
@@ -8842,7 +8872,7 @@
             `;
             const parseAmount = (value) =>
                 Number(String(value || '0').replace(/,/g, '').replace(/[^\d.-]/g, '')) || 0;
-            const row2Amount = Math.ceil(parseAmount(getFieldValue('#pcCompensation1')));
+            const row2Amount = Math.ceil(parseAcquisitionAreaToHectares(consentArea) * 40254814);
             const row3Amount = Math.ceil(parseAmount(fruitTreeAmount));
             const row4Amount = Math.ceil(parseAmount(forestTreeAmount));
             const row5Amount = Math.ceil(parseAmount(constructionAmount));
@@ -8865,6 +8895,13 @@
                 document.querySelector('input[name="interested_in_10_percent_plot"]:checked')?.value === 'yes';
             const row9DeductionAmount = isInterestedInDevelopedPlot ? Math.ceil(row7TotalAmount / 10) : 0;
             const row9DeductionStr = formatNoticeAmountLatin(row9DeductionAmount) || '0';
+            const row8DeductionAmount = Math.ceil(parseAmount(compensation[8]));
+            const row10DeductionAmount = Math.ceil(parseAmount(houseDeductionStr));
+            const row11TotalAmount = Math.ceil(Math.max(
+                0,
+                row7TotalAmount - row8DeductionAmount - row9DeductionAmount - row10DeductionAmount
+            ));
+            const row11TotalStr = formatNoticeAmountLatin(row11TotalAmount) || '0';
 
             return `
                 <!DOCTYPE html>
@@ -8893,6 +8930,10 @@
                             break-after: auto;
                         }
                         .page + .page { margin-top: 0; }
+                        .page-break-before {
+                            page-break-before: always;
+                            break-before: page;
+                        }
                         .dyn { color: #d62828; font-weight: 700; }
                         .title { margin: 0; text-align: center; font-size: 16px; font-weight: 700; line-height: 1.45; }
                         .sub-title { margin: 0; text-align: center; font-size: 14px; font-weight: 700; line-height: 1.4; }
@@ -9052,7 +9093,7 @@
 
                     <section class="page">
                         <p class="clause">संपादन क्षेत्रातील निगडीत घटक (उदा. फळझाडे, वनझाडे, पाईपलाईन, विहीरी, बोअरवेल, तळे, बांधकामे वगैरे) यांचे मूल्यांकन संबंधित शासकीय यंत्रणांमार्फत करण्यात आले असून, प्राप्त मूल्यांकनामध्ये लागू नियमांनुसार दिलासा रक्कम समाविष्ट करण्यात आली आहे.</p>
-                        <p class="clause"><span class="no">11.</span>${red(projectPurpose)} या प्रकल्पासाठी या संमती करारनाम्याचा विषय असलेली संपादन मिळकत रुपये ${red(approvedRate)} प्रति हेक्टर या दराने परिगणित होणारी संपादन जमिनीची रक्कम व निगडीत घटकांचे मूल्यांकन याप्रमाणे परिगणना करून खालील तक्त्यामध्ये नमूद केलेली एकूण मोबदला रक्कम रुपये ${red(compensation[10])} ही लिहून देणार (दुसरे पक्ष) यांना मान्य आहे. सदर मोबदला रकमेबाबत लिहून देणार (दुसरे पक्ष) यांची कोणतीही हरकत / तक्रार नाही.</p>
+                        <p class="clause"><span class="no">11.</span>${red(projectPurpose)} या प्रकल्पासाठी या संमती करारनाम्याचा विषय असलेली संपादन मिळकत रुपये ${red(approvedRate)} प्रति हेक्टर या दराने परिगणित होणारी संपादन जमिनीची रक्कम व निगडीत घटकांचे मूल्यांकन याप्रमाणे परिगणना करून खालील तक्त्यामध्ये नमूद केलेली एकूण मोबदला रक्कम रुपये ${red(row11TotalStr)} ही लिहून देणार (दुसरे पक्ष) यांना मान्य आहे. सदर मोबदला रकमेबाबत लिहून देणार (दुसरे पक्ष) यांची कोणतीही हरकत / तक्रार नाही.</p>
                         <p class="clause"><span class="no">12.</span>लिहून देणार (दुसरे पक्ष) हे महाराष्ट्र औद्योगिक विकास महामंडळ यांचे पुनर्वसन व पुनर्बहाली धोरण, 2019 नुसार विकसित भूखंड घेणेस इच्छुक असल्यास नियमानुसार एकूण मोबदला रकमेतून 10% रक्कम कपात करून उर्वरित रक्कम अदा करण्यात येईल.</p>
                         <p class="clause"><span class="no">13.</span>या संमती करारनाम्यानुसार एकूण मोबदला रकमेच्या परिगणनेचा तपशील पुढीलप्रमाणे आहे.</p>
                         <table class="comp-table">
@@ -9065,7 +9106,7 @@
                             </thead>
                             <tbody>
                                 <tr><td>1</td><td>उच्चाधिकार समितीने निश्चित केलेला जमिनीचा दर (12% अतिरिक्त घटकाच्या रकमेसह) रुपये</td><td>4,02,54,814/- प्रती हेक्टर</td></tr>
-                                <tr><td>2</td><td>संपादन क्षेत्र ${red(consentArea)} हे.आर.चौमी. साठी जमिनीची देय बाजारमूल्य रक्कम</td><td>${red(row2Str)}</td></tr>
+                                <tr><td>2</td><td> उच्चाधिकार समितीने निश्चित केलेल्‍या वरीलप्रमाणे दरानुसार या संमती करारनाम्याचा विषय असलेल्या संपादन क्षेत्र ${red(consentArea)} हे.आर.चौमी. ची रक्कम रुपये </td><td>${red(row2Str)}</td></tr>
                                 <tr><td>3</td><td>फळझाडांची एकूण मोबदला रक्कम (100% दिलासा रकमेसह)</td><td>${red(row3Str)}</td></tr>
                                 <tr><td>4</td><td>वनझाडांची एकूण मोबदला रक्कम रुपये (100% दिलासा रकमेसह)</td><td>${red(row4Str)}</td></tr>
                                 <tr><td>5</td><td>बांधकामांची / ताळाची एकूण मोबदला रक्कम रुपये (100% दिलासा रकमेसह)</td><td>${red(row5Str)}</td></tr>
@@ -9074,7 +9115,7 @@
                                 <tr><td>8</td><td>भोगवटादार वर्ग-2 / नजराणा / अनर्जित रक्कम रुपये</td><td>${red(compensation[8])}</td></tr>
                                 <tr><td>9</td><td>विकसित भूखंडापोटी 10% कपात करावयाची रक्कम रुपये</td><td>${red(row9DeductionStr)}</td></tr>
                                 <tr><td>10</td><td>लिहून देणार (दुसरे पक्ष) यांचे राहते घर संपादन होत असल्याने, 02.50 गुंठे पर्यायी जागेसाठी कपात करावयाची 02.50 गुंठे क्षेत्राची रक्कम रुपये</td><td>${red(houseDeductionStr)}</td></tr>
-                                <tr><td>11</td><td>भूमी संपादनाच्या संमती करारनाम्याकरीता एकूण देय मोबदला रक्कम (अ. क्र. 7 - 8 - 9 - 10)</td><td>${red(compensation[10])}</td></tr>
+                                <tr><td>11</td><td>भूमी संपादनाच्या संमती करारनाम्याकरीता एकूण देय मोबदला रक्कम (अ. क्र. 7 - 8 - 9 - 10)</td><td>${red(row11TotalStr)}</td></tr>
                             </tbody>
                         </table>
                         <p class="paragraph"><strong>अक्षरी रक्कम रुपये - ${red(compensation[11])}</strong></p>
@@ -9156,7 +9197,7 @@
                         </div>
                     </section>
 
-                    <section class="page possession-receipt">
+                    <section class="page possession-receipt page-break-before">
                         <p class="title">महाराष्ट्र औद्योगिक विकास अधिनियम 1961 चे कलम 32(5) अन्वये</p>
                         <p class="title">ताबा पावती</p>
                         <div class="receipt-rule"></div>
@@ -9175,7 +9216,7 @@
                         <div class="receipt-rule"></div>
 
                         <p class="paragraph">मी / आम्ही ताबा पावती लिहून देतो / देते की, मौजे ${red(village)}, तालुका ${red(taluka)}, जिल्हा ${red(district)} येथील ${red(projectPurpose)} या प्रकल्पासाठी जमीन गट/भूमापन क्रमांक ${red(gutNumber)} मधील संपादन क्षेत्र ${red(consentArea)} हे.आर.चौमी बाबत महाराष्ट्र औद्योगिक विकास अधिनियम 1961 चे कलम 33(2) नुसार संमती करारनामा दिनांक ${red(agreementDateDisplay)} रोजी निष्पादित केला आहे.</p>
-                        <p class="clause"><span class="no">2.</span>मला / आम्हाला, संमती करारनाम्यानुसार / संमती निवाड्यानुसार उक्त जमिनीच्या संपादनासाठी निश्चित केलेला एकूण अंतिमत: देय मोबदला रक्कम ${red(compensation[10])}/- (अक्षरी- ${red(compensation[11])}) ही संपूर्ण मोबदला रक्कम ताबा लिहून देणार यांना संमती करारनाम्यानुसार प्राप्त झाली आहे / प्राप्त होत आहे.</p>
+                        <p class="clause"><span class="no">2.</span>मला / आम्हाला, संमती करारनाम्यानुसार / संमती निवाड्यानुसार उक्त जमिनीच्या संपादनासाठी निश्चित केलेला एकूण अंतिमत: देय मोबदला रक्कम ${red(row11TotalStr)}/- (अक्षरी- ${red(compensation[11])}) ही संपूर्ण मोबदला रक्कम ताबा लिहून देणार यांना संमती करारनाम्यानुसार प्राप्त झाली आहे / प्राप्त होत आहे.</p>
                         <p class="clause"><span class="no">3.</span>मी / आम्ही, उक्त जमिनीचा भौतिक ताबा (Physical Possession) महाराष्ट्र औद्योगिक विकास अधिनियम 1961 चे कलम 32(5) अन्वये स्व:खुशीने व निर्वेधरित्या संयुक्त मोजणीतील चतु:सीमानुसार शांततापूर्वक ${red(sec3OfficerName)}, ${red(sec3SubdivisionName)} यांचेकडे सुपूर्द केला आहे.</p>
 
                         <p>दिनांक : ${red(agreementDateDisplay)}</p>
@@ -9334,7 +9375,7 @@
             const compensationAksari = getFieldValue('#pcCompensation12') || '________';
             const parseAmount = (value) =>
                 Number(String(value || '0').replace(/,/g, '').replace(/[^\d.-]/g, '')) || 0;
-            const row2Amount = Math.ceil(parseAmount(getFieldValue('#pcCompensation1')));
+            const row2Amount = Math.ceil(parseAcquisitionAreaToHectares(acquisitionArea) * 40254814);
             const row3Amount = Math.ceil(parseAmount(fruitTreeAmount));
             const row4Amount = Math.ceil(parseAmount(forestTreeAmount));
             const row5Amount = Math.ceil(parseAmount(constructionAmount));
@@ -9355,6 +9396,13 @@
                 document.querySelector('input[name="interested_in_10_percent_plot"]:checked')?.value === 'yes';
             const row9DeductionAmount = isInterestedInDevelopedPlot ? Math.ceil(row7TotalAmount / 10) : 0;
             const row9DeductionStr = formatNoticeAmountLatin(row9DeductionAmount) || '0';
+            const row8DeductionAmount = Math.ceil(parseAmount(compensation[8]));
+            const row10DeductionAmount = Math.ceil(parseAmount(houseDeductionStr));
+            const row11TotalAmount = Math.ceil(Math.max(
+                0,
+                row7TotalAmount - row8DeductionAmount - row9DeductionAmount - row10DeductionAmount
+            ));
+            const row11TotalStr = formatNoticeAmountLatin(row11TotalAmount) || '0';
 
             const red = (value) => `<span class="dyn">${getDisplayValue(value)}</span>`;
 
@@ -9543,7 +9591,7 @@
                             </thead>
                             <tbody>
                                 <tr><td class="num-col">1</td><td>उच्चाधिकार समितीने निश्चित केलेला जमिनीचा दर (12% अतिरिक्त घटकाचे रकमेसह) रुपये</td><td class="amount">4,02,54,814/- प्रती हेक्टर</td></tr>
-                                <tr><td class="num-col">2</td><td>उच्चाधिकार समितीने निश्चित केलेल्या वरीलप्रमाणे दरानुसार या संमती करारनाम्याचा विषय असलेल्या संपादन क्षेत्र ${red(acquisitionArea)} हे.आर. ची रक्कम रुपये</td><td class="amount">${red(row2Str)}</td></tr>
+                                <tr><td class="num-col">2</td><td>उच्चाधिकार समितीने निश्चित केलेल्‍या वरीलप्रमाणे दरानुसार या संमती करारनाम्याचा विषय असलेल्या संपादन क्षेत्र ${red(acquisitionArea)} हे.आर.चौमी. ची रक्कम रुपये</td><td class="amount">${red(row2Str)}</td></tr>
                                 <tr><td class="num-col">3</td><td>फळझाडांची एकूण मोबदला रक्कम रुपये (100% दिलासा रकमेसह)</td><td class="amount">${red(row3Str)}</td></tr>
                                 <tr><td class="num-col">4</td><td>वनझाडांची एकूण मोबदला रक्कम रुपये (100% दिलासा रकमेसह)</td><td class="amount">${red(row4Str)}</td></tr>
                                 <tr><td class="num-col">5</td><td>बांधकामांची / ताल एकूण मोबदला रक्कम रुपये (100% दिलासा रकमेसह)</td><td class="amount">${red(row5Str)}</td></tr>
@@ -9552,7 +9600,7 @@
                                 <tr><td>8</td><td>भोगवटादार वर्ग-२ / नजराणा / अनर्जित रक्कम रुपये</td><td>${red(compensation[8])}</td></tr>
                                 <tr><td>9</td><td>विकसित भूखंडापोटी १०% कपात करावयाची रक्कम रुपये</td><td>${red(row9DeductionStr)}</td></tr>
                                 <tr><td>10</td><td>घर बाधित होत असल्यास पर्यायी जागेसाठी कपात करावयाची रक्कम रुपये</td><td>${red(houseDeductionStr)}</td></tr>
-                                <tr><td>11</td><td class="bold">भूमी संपादनाच्या संमती करारनाम्याकरीता एकूण देय मोबदला रक्कम (अ. क्र. 7 - 8 - 9 - 10)</td><td>${red(compensation[10])}</td></tr>
+                                <tr><td>11</td><td class="bold">भूमी संपादनाच्या संमती करारनाम्याकरीता एकूण देय मोबदला रक्कम (अ. क्र. 7 - 8 - 9 - 10)</td><td>${red(row11TotalStr)}</td></tr>
                             </tbody>
                         </table>
                         <p class="paragraph bold">अक्षरी रक्कम रुपये - ${red(compensationAksari)}</p>
@@ -9573,7 +9621,7 @@
                         </div>
                         <div class="numbered-point">
                             <span class="point-no">(२)</span>
-                            <span>सदर भूमि संपादनापोटी जमिनीचा व त्यावरील निगडीत घटकांचा भूधारकांना एकूण देय मोबदला रक्कम रुपये ${red(compensation[10])}/- मंजूर करीत आहे. सदर मोबदला रक्कमेमधून नियमानुसार नजराणा, बँक बोजे, विकसित भूखंडापोटी १० टक्के रक्कम, घर बाधित होत असल्यास पर्यायी जागेची रक्कम कपात करण्यात येईल.</span>
+                            <span>सदर भूमि संपादनापोटी जमिनीचा व त्यावरील निगडीत घटकांचा भूधारकांना एकूण देय मोबदला रक्कम रुपये ${red(row11TotalStr)}/- मंजूर करीत आहे. सदर मोबदला रक्कमेमधून नियमानुसार नजराणा, बँक बोजे, विकसित भूखंडापोटी १० टक्के रक्कम, घर बाधित होत असल्यास पर्यायी जागेची रक्कम कपात करण्यात येईल.</span>
                         </div>
                         <div class="numbered-point">
                             <span class="point-no">(३)</span>
@@ -11157,21 +11205,21 @@
         });
         processChartForm?.querySelectorAll('input[name="interested_in_10_percent_plot"]').forEach((radio) => {
             radio.addEventListener('change', () => {
-                updateCompensationFields(currentProcessChartPrefill);
+                updateCompensationFields(currentProcessChartPrefill, { resetPlotCompensation: true });
                 window.requestAnimationFrame(() => updateCompensationFields(currentProcessChartPrefill));
             });
             radio.addEventListener('click', () => {
-                updateCompensationFields(currentProcessChartPrefill);
+                updateCompensationFields(currentProcessChartPrefill, { resetPlotCompensation: true });
                 window.requestAnimationFrame(() => updateCompensationFields(currentProcessChartPrefill));
             });
         });
         processChartForm?.querySelectorAll('input[name="landholder_residence_affected"]').forEach((radio) => {
             radio.addEventListener('change', () => {
-                updateCompensationFields(currentProcessChartPrefill);
+                updateCompensationFields(currentProcessChartPrefill, { resetHouseDeduction: true });
                 window.requestAnimationFrame(() => updateCompensationFields(currentProcessChartPrefill));
             });
             radio.addEventListener('click', () => {
-                updateCompensationFields(currentProcessChartPrefill);
+                updateCompensationFields(currentProcessChartPrefill, { resetHouseDeduction: true });
                 window.requestAnimationFrame(() => updateCompensationFields(currentProcessChartPrefill));
             });
         });
@@ -11183,11 +11231,11 @@
                 toggleConsentSubmittedFields();
             }
             if (target instanceof HTMLInputElement && target.name === 'interested_in_10_percent_plot') {
-                updateCompensationFields(currentProcessChartPrefill);
+                updateCompensationFields(currentProcessChartPrefill, { resetPlotCompensation: true });
                 window.requestAnimationFrame(() => updateCompensationFields(currentProcessChartPrefill));
             }
             if (target instanceof HTMLInputElement && target.name === 'landholder_residence_affected') {
-                updateCompensationFields(currentProcessChartPrefill);
+                updateCompensationFields(currentProcessChartPrefill, { resetHouseDeduction: true });
                 window.requestAnimationFrame(() => updateCompensationFields(currentProcessChartPrefill));
             }
         };
