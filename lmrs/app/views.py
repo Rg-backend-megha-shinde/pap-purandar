@@ -6219,6 +6219,18 @@ def _has_process_chart_tab7_data(data):
 
     ignored_keys = {'total_asset_valuation_amount', 'tab7_snapshot_json'}
 
+    # Frontend sometimes sends `section_data` as:
+    #  - direct keys (water_supply_owner_name, ...)
+    #  - AND also keeps a nested JSON string in `tab7_snapshot_json`.
+    # If `tab7_snapshot_json` exists, treat it as data present so we don't skip saving Tab 7.
+    if isinstance(data.get('tab7_snapshot_json'), str) and data['tab7_snapshot_json'].strip():
+        try:
+            parsed = json.loads(data['tab7_snapshot_json'])
+            if has_value(parsed) if 'has_value' in locals() else True:
+                return True
+        except Exception:
+            return True
+
     def has_value(value):
         if isinstance(value, dict):
             return any(
