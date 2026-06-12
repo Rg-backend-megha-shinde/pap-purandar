@@ -341,7 +341,14 @@
         // GeoServer configuration
         const GEOSERVER_URL = "https://purandar-airport.rottengrapes.tech/geoserver/wms";
         const WORKSPACE = "pune_rr";
+        const PURANDAR_WORKSPACE = "Purandar_New";
         const PURANDAR_IMG_LAYER = "Purandar_New:Purandar_img";
+        const PURANDAR_ASSET_LAYERS = {
+            'prj_ass_pt': ['tree'],
+            'prj_ass_pl': ['borewell', 'well'],
+            'prj_ass_poly': ['structures'],
+            'prj_farmer': ['purandar_farmers']
+        };
         const PROJECT_NAME = "Purandar Airport";
         const PROJECT_SCHEMA = "purandar_airport";
         const GEOSERVER_VIEWPARAMS = `a:${PROJECT_SCHEMA};project_name:${PROJECT_NAME}`;
@@ -832,7 +839,17 @@
                     loadVillageGutBoundaries(currentDistrict, currentTaluka, currentVillage, currentDistrictId, currentTalukaId, currentVillageId);
 
                     const gutFilter = `village_id=${Number(currentVillageId)} AND gut_no='${String(this.value).replace(/'/g, "''")}'`;
-                    fitLayerExtentFromWFS('prj_gut_bd', gutFilter, 18, [90, 90, 90, 90]);
+                    fitLayerExtentFromApi('prj_gut_bd', {
+                        district: currentDistrict,
+                        taluka: currentTaluka,
+                        village: currentVillage,
+                        district_id: currentDistrictId,
+                        taluka_id: currentTalukaId,
+                        village_id: currentVillageId,
+                        gut_number: this.value
+                    }, 19, [100, 100, 100, 100], () => {
+                        fitLayerExtentFromWFS('prj_gut_bd', gutFilter, 18, [90, 90, 90, 90]);
+                    });
 
                     // Fetch gut-wise statistics
                     fetchProjectStats(currentDistrict, currentTaluka, currentVillage, this.value);
@@ -905,7 +922,48 @@
             }
 
             function fitMapToProjectBoundary() {
-                fitLayerExtentFromWFS('prj_bd', null, 14, [80, 80, 80, 80]);
+                fitLayerExtentFromApi('prj_bd', {}, 15, [80, 80, 80, 80], () => {
+                    fitLayerExtentFromWFS('prj_bd', null, 14, [80, 80, 80, 80]);
+                });
+            }
+
+            function fitLayerExtentFromApi(layerName, filters = {}, maxZoom = 16, padding = [60, 60, 60, 60], fallback = null) {
+                const params = new URLSearchParams();
+                Object.entries(filters).forEach(([key, value]) => {
+                    if (value !== undefined && value !== null && value !== '') {
+                        params.set(key, value);
+                    }
+                });
+
+                const url = `/api/layer-bounds/${encodeURIComponent(layerName)}/${params.toString() ? `?${params.toString()}` : ''}`;
+
+                fetch(url)
+                    .then(response => response.ok ? response.json() : null)
+                    .then(data => {
+                        if (!data || !data.bounds) {
+                            if (typeof fallback === 'function') fallback();
+                            return;
+                        }
+
+                        const extent = ol.proj.transformExtent(
+                            [data.bounds.minLng, data.bounds.minLat, data.bounds.maxLng, data.bounds.maxLat],
+                            'EPSG:4326',
+                            'EPSG:3857'
+                        );
+
+                        if (!ol.extent.isEmpty(extent)) {
+                            map.getView().fit(extent, {
+                                padding: padding,
+                                duration: 700,
+                                maxZoom: maxZoom
+                            });
+                        } else if (typeof fallback === 'function') {
+                            fallback();
+                        }
+                    })
+                    .catch(() => {
+                        if (typeof fallback === 'function') fallback();
+                    });
             }
 
             function fitLayerExtentFromWFS(layerName, cqlFilter = null, maxZoom = 14, padding = [60, 60, 60, 60]) {
@@ -1210,12 +1268,14 @@
 
                 console.log(`✅ District layer loaded for: ${district} with CQL: ${cqlFilter}`);
 
-                // Zoom to show full district boundary
-                map.getView().animate({
-                    center: ol.proj.fromLonLat([73.8567, 18.5204]),
-                    zoom: 9,
-                    duration: 600
-                });
+                // Zoom to show full district boundary unless a deeper URL selection is being restored.
+                if (!currentTaluka && !currentVillage && !currentGutNumber && !initialUrlState.taluka && !initialUrlState.village && !initialUrlState.gut) {
+                    map.getView().animate({
+                        center: ol.proj.fromLonLat([73.8567, 18.5204]),
+                        zoom: 9,
+                        duration: 600
+                    });
+                }
 
             }
 
@@ -1255,13 +1315,15 @@
 
                 console.log(`✅ Taluka layer loaded for: ${taluka} in ${district}`);
 
-                // Zoom to show the taluka boundary
-                const view = map.getView();
-                view.animate({
-                    center: ol.proj.fromLonLat([73.8567, 18.5204]),
-                    zoom: 10,
-                    duration: 500
-                });
+                // Zoom to show the taluka boundary unless a deeper URL selection is being restored.
+                if (!currentVillage && !currentGutNumber && !initialUrlState.village && !initialUrlState.gut) {
+                    const view = map.getView();
+                    view.animate({
+                        center: ol.proj.fromLonLat([73.8567, 18.5204]),
+                        zoom: 10,
+                        duration: 500
+                    });
+                }
             }
 
             // Load Village Layer from WMS
@@ -1299,8 +1361,17 @@
                 });
                 map.addLayer(villagesBoundaryLayer);
 
-                // Zoom directly to selected village boundary from GeoServer.
-                fitLayerExtentFromWFS('prj_vlg_bd', cqlFilter, 16, [70, 70, 70, 70]);
+                // Zoom directly to the selected village boundary from project DB bounds.
+                fitLayerExtentFromApi('prj_vlg_bd', {
+                    district: district,
+                    taluka: taluka,
+                    village: village,
+                    district_id: districtId,
+                    taluka_id: talukaId,
+                    village_id: villageId
+                }, 16, [70, 70, 70, 70], () => {
+                    fitLayerExtentFromWFS('prj_vlg_bd', cqlFilter, 16, [70, 70, 70, 70]);
+                });
 
                 // Load gut boundaries for this village
                 loadVillageGutBoundaries(district, taluka, village, districtId, talukaId, villageId);
@@ -1365,7 +1436,17 @@
 
                     console.log(`✅ Selected gut boundary loaded: ${currentGutNumber}`);
 
-                    fitLayerExtentFromWFS('prj_gut_bd', gutCqlFilter, 18, [90, 90, 90, 90]);
+                    fitLayerExtentFromApi('prj_gut_bd', {
+                        district: district,
+                        taluka: taluka,
+                        village: village,
+                        district_id: districtId,
+                        taluka_id: talukaId,
+                        village_id: villageId,
+                        gut_number: currentGutNumber
+                    }, 19, [100, 100, 100, 100], () => {
+                        fitLayerExtentFromWFS('prj_gut_bd', gutCqlFilter, 18, [90, 90, 90, 90]);
+                    });
                 } else {
                     // No gut selected, show all gut boundaries in the village
                     const cqlFilter = baseVillageFilter;
@@ -1471,7 +1552,17 @@
                                     showNotification(`Selected Gut ${gutNumber} in ${currentVillage}`, 'success');
 
                                     const clickedGutFilter = `village_id=${Number(currentVillageId)} AND gut_no='${String(currentGutNumber).replace(/'/g, "''")}'`;
-                                    fitLayerExtentFromWFS('prj_gut_bd', clickedGutFilter, 18, [90, 90, 90, 90]);
+                                    fitLayerExtentFromApi('prj_gut_bd', {
+                                        district: currentDistrict,
+                                        taluka: currentTaluka,
+                                        village: currentVillage,
+                                        district_id: currentDistrictId,
+                                        taluka_id: currentTalukaId,
+                                        village_id: currentVillageId,
+                                        gut_number: currentGutNumber
+                                    }, 19, [100, 100, 100, 100], () => {
+                                        fitLayerExtentFromWFS('prj_gut_bd', clickedGutFilter, 18, [90, 90, 90, 90]);
+                                    });
                                 }
                             } else {
                                 console.log('🔍 No gut found at clicked location');
@@ -2305,6 +2396,14 @@
                     return;
                 }
 
+                const purandarLayerNames = PURANDAR_ASSET_LAYERS[assetName] || [];
+                const wmsLayerNames = assetName === 'purandar_img'
+                    ? [PURANDAR_IMG_LAYER]
+                    : purandarLayerNames.length
+                        ? purandarLayerNames.map(layerName => `${PURANDAR_WORKSPACE}:${layerName}`)
+                        : [`${WORKSPACE}:${assetName}`];
+                const wmsLayers = wmsLayerNames.join(',');
+
                 // Build CQL filter for asset layers (not for prj_bd)
                 let cqlFilter = null;
                 if (config.filterable) {
@@ -2342,13 +2441,13 @@
 
                     // Log the full WMS URL for debugging
                     if (cqlFilter) {
-                        const testUrl = `${GEOSERVER_URL}?SERVICE=WMS&VERSION=1.1.0&REQUEST=GetMap&LAYERS=${WORKSPACE}:${assetName}&CQL_FILTER=${encodeURIComponent(cqlFilter)}`;
+                        const testUrl = `${GEOSERVER_URL}?SERVICE=WMS&VERSION=1.1.0&REQUEST=GetMap&LAYERS=${encodeURIComponent(wmsLayers)}&CQL_FILTER=${encodeURIComponent(cqlFilter)}`;
                         console.log(`🔍 Test WMS URL: ${testUrl}`);
                     }
                 }
 
                 const wmsParams = {
-                    'LAYERS': assetName === 'purandar_img' ? PURANDAR_IMG_LAYER : `${WORKSPACE}:${assetName}`,
+                    'LAYERS': wmsLayers,
                     'FORMAT': 'image/png',
                     'TRANSPARENT': true,
                     'VERSION': '1.1.0',
@@ -2361,10 +2460,12 @@
 
                 // Add CQL filter if applicable
                 if (cqlFilter) {
-                    wmsParams['CQL_FILTER'] = cqlFilter;
+                    wmsParams['CQL_FILTER'] = wmsLayerNames.length > 1
+                        ? wmsLayerNames.map(() => cqlFilter).join(';')
+                        : cqlFilter;
                     console.log(`🔍 WMS Request for ${config.name}:`);
-                    console.log(`   Layer: ${WORKSPACE}:${assetName}`);
-                    console.log(`   CQL_FILTER: ${cqlFilter}`);
+                    console.log(`   Layer: ${wmsLayers}`);
+                    console.log(`   CQL_FILTER: ${wmsParams['CQL_FILTER']}`);
                 }
 
                 const isProjectImage = assetName === 'purandar_img';
