@@ -581,7 +581,7 @@
                                         <label class="pc-label">जमीन प्रकार</label>
                                         <select class="pc-input" id="pcLandOwnershipType" name="land_ownership_type">
                                             <option value="">जमीन प्रकार निवडा</option>
-                                            <option value="खाजगी">खाजगी</option>
+                                            <option value="खाजगी" selected>खाजगी</option>
                                             <option value="सरकारी">सरकारी</option>
                                             <option value="वनविभाग">वनविभाग</option>
                                             <option value="इतर विभाग">इतर विभाग</option>
@@ -591,7 +591,7 @@
                                         <label class="pc-label">भोगवटदार वर्ग</label>
                                         <select class="pc-input" id="pcOccupancyClass" name="occupancy_class">
                                             <option value="">भोगवटदार वर्ग निवडा</option>
-                                            <option value="वर्ग 1">वर्ग 1</option>
+                                            <option value="वर्ग 1" selected>वर्ग 1</option>
                                             <option value="वर्ग 2">वर्ग 2</option>
                                         </select>
                                     </div>
@@ -2066,6 +2066,7 @@
                 }
             });
             renderStep9PaymentRows(sectionData);
+            refreshStep9DistributionAfterRowChange();
         };
         window.pcStep10AddOwnerCard = () => {
             appendStep10OwnerCard();
@@ -2100,17 +2101,13 @@
             const distributionAmount = escapeHtml(values.step9_distribution_amount || '');
             const ifscCode = escapeHtml(values.step9_ifsc_code || '');
 
-            const equalRadio = document.querySelector('input[name="step9_distribution_equal"]:checked');
-            const is_equal = equalRadio?.value === 'yes';
-            const isReadonly = is_equal && index > 0 ? 'readonly' : '';
-
             return `
                 <div class="pc-section rounded-xl border border-[#d7e5f6] bg-[#f8fbff] p-5 pc-step9-payment-row">
                     <div class="mb-4 flex items-center justify-between gap-3">
                         <h4 class="text-base font-bold text-[#244271]">नोंद ${index + 1}</h4>
                         <div class="flex items-center gap-2">
                             ${index === 0 ? `<button type="button" class="rounded-md border border-[#d4deec] px-3 py-1 text-xs font-semibold text-[#125fcb]" onclick="window.pcStep9AddPaymentRow && window.pcStep9AddPaymentRow()">ओळ जोडा</button>` : ''}
-                            ${index === 0 ? '' : `<button type="button" class="pc-step9-remove-payment-row rounded-md border border-[#d4deec] px-3 py-1 text-xs text-[#5d7293]" onclick="window.pcStep9RemovePaymentRow && window.pcStep9RemovePaymentRow(${index})">काढा</button>`}
+                            ${index === 0 ? '' : `<button type="button" class="pc-step9-remove-payment-row rounded-md border border-[#d4deec] px-3 py-1 text-xs text-[#5d7293]" onclick="window.pcStep9RemovePaymentRow && window.pcStep9RemovePaymentRow(${index}); return false;">काढा</button>`}
                         </div>
                     </div>
                     <div class="grid gap-4 md:grid-cols-6 text-sm">
@@ -2132,7 +2129,7 @@
                         </div>
                         <div>
                             <label class="pc-label">वितरण करायचा मोबदला</label>
-                            <input class="pc-input pc-step9-distribution-amount" name="step9_distribution_amount" type="number" step="0.01" value="${distributionAmount}" placeholder="वितरण करायचा मोबदला" ${isReadonly}>
+                            <input class="pc-input pc-step9-distribution-amount" name="step9_distribution_amount" type="number" step="0.01" value="${distributionAmount}" placeholder="वितरण करायचा मोबदला">
                         </div>
                         <div>
                             <label class="pc-label">IFSC Code</label>
@@ -2222,6 +2219,37 @@
             step9PaymentRowsContainer.innerHTML = rows.map((values, index) => buildStep9PaymentRow(index, values)).join('');
         }
 
+        function applyStep9DistributionAmounts({ onlyBlank = false } = {}) {
+            if (!step9PaymentRowsContainer) return;
+            const distributionMode = document.querySelector('input[name="step9_distribution_equal"]:checked')?.value || '';
+            if (!distributionMode) return;
+
+            const rows = Array.from(step9PaymentRowsContainer.querySelectorAll('.pc-step9-payment-row'));
+            if (!rows.length) return;
+
+            const totalAmount = Number.parseFloat(String(getFieldValue('#pcCompensation11') || '0').replace(/,/g, ''));
+            const safeTotal = Number.isFinite(totalAmount) ? totalAmount : 0;
+            const calculatedAmount = distributionMode === 'yes'
+                ? safeTotal / rows.length
+                : safeTotal;
+            const displayAmount = Number.isInteger(calculatedAmount)
+                ? String(calculatedAmount)
+                : calculatedAmount.toFixed(2);
+
+            rows.forEach((row) => {
+                const amountInput = row.querySelector('input[name="step9_distribution_amount"]');
+                if (!(amountInput instanceof HTMLInputElement)) return;
+                if (onlyBlank && String(amountInput.value || '').trim()) return;
+                amountInput.readOnly = false;
+                amountInput.value = displayAmount;
+            });
+        }
+
+        function refreshStep9DistributionAfterRowChange() {
+            const distributionMode = document.querySelector('input[name="step9_distribution_equal"]:checked')?.value || '';
+            applyStep9DistributionAmounts({ onlyBlank: distributionMode !== 'yes' });
+        }
+
         function appendStep9PaymentRow(values = {}) {
             const existing = collectStep9PaymentSectionData();
             Object.keys(existing).forEach((key) => {
@@ -2235,6 +2263,7 @@
             existing.step9_payable_amount.push(values.step9_payable_amount || '');
             existing.step9_ifsc_code.push(values.step9_ifsc_code || '');
             renderStep9PaymentRows(existing);
+            refreshStep9DistributionAfterRowChange();
         }
 
         function getStep9PaymentOwnerNamesFromRows() {
@@ -2298,6 +2327,7 @@
             });
 
             renderStep9PaymentRows(sectionData);
+            refreshStep9DistributionAfterRowChange();
             closeJointSurveyNamesModal();
         }
 
@@ -8846,6 +8876,18 @@
                 const value = Number.parseFloat(String(row.distribution_amount || '').replace(/,/g, ''));
                 return sum + (Number.isFinite(value) ? value : 0);
             }, 0);
+            const compensationDistributionRowsHtml = paymentSource.map((row, index) => `
+                <tr>
+                    <td>${index + 1}</td>
+                    <td>${red(`${index + 1}) ${row.owner_name || '________'}`)}</td>
+                    <td>${red(formatNoticeAmountLatin(row.distribution_amount) || '________')}</td>
+                    <td>________________<br>________________</td>
+                    <td>________________<br>________________</td>
+                    <td class="distribution-signature-cell"></td>
+                </tr>
+            `).join('');
+            const compensationDistributionTotal =
+                formatNoticeAmountLatin(paymentTotal) || '0';
             const remainingOwnerSignatures = ownerNames.slice(1).map((name, index) => `
                 <div class="owner-signature">
                     <p>${index + 2}) ${red(name)}</p>
@@ -8960,10 +9002,27 @@
                         .payment-table { font-size: 11px; }
                         .benefits { margin: 3px 0 7px 23px; padding: 0; }
                         .benefits li { margin-bottom: 5px; text-align: justify; }
-                        .witness-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 10px; }
+                        .witness-table, .signature-table {
+                            width: 100%;
+                            border-collapse: collapse;
+                            table-layout: fixed;
+                            page-break-inside: avoid;
+                            break-inside: avoid;
+                        }
+                        .witness-table { margin-top: 10px; }
+                        .signature-table { margin-top: 16px; }
+                        .witness-table td, .signature-table td {
+                            width: 50%;
+                            border: 0;
+                            vertical-align: top;
+                            text-align: left;
+                        }
+                        .witness-table td:first-child { padding-right: 10px; }
+                        .witness-table td:last-child { padding-left: 10px; }
                         .witness-box p, .signature-block p { margin: 0 0 4px; }
-                        .signature-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 16px; align-items: end; }
-                        .signature-block { text-align: center; }
+                        .signature-table td:first-child { padding-right: 12px; }
+                        .signature-table td:last-child { padding-left: 12px; }
+                        .signature-block { text-align: center !important; vertical-align: bottom !important; }
                         .signature-block .big-name { margin-top: 8px; font-size: 15px; }
                         .foot-note { margin-top: 14px; }
                         .possession-receipt { margin-top: 12px; }
@@ -8998,6 +9057,51 @@
                             vertical-align: bottom;
                         }
                         .possession-receipt .receipt-signatures p { margin: 0 0 5px; }
+                        .compensation-distribution-sheet .sheet-title {
+                            margin: 0 0 4px;
+                            text-align: center;
+                            font-size: 17px;
+                            font-weight: 700;
+                            text-decoration: underline;
+                        }
+                        .compensation-distribution-sheet .sheet-rule {
+                            border-top: 1px solid #111;
+                            margin: 5px 0 10px;
+                        }
+                        .compensation-distribution-sheet .sheet-intro {
+                            margin: 0 0 12px;
+                            text-align: justify;
+                        }
+                        .compensation-distribution-table {
+                            font-size: 11px;
+                            page-break-inside: avoid;
+                            break-inside: avoid;
+                        }
+                        .compensation-distribution-table th,
+                        .compensation-distribution-table td {
+                            text-align: center;
+                            vertical-align: middle;
+                        }
+                        .compensation-distribution-table td:nth-child(2) {
+                            text-align: left;
+                        }
+                        .compensation-distribution-table .distribution-signature-cell {
+                            height: 54px;
+                        }
+                        .compensation-distribution-table .sheet-total-label {
+                            text-align: right;
+                            font-weight: 700;
+                        }
+                        .compensation-distribution-sheet .sheet-officer {
+                            width: 42%;
+                            margin: 34px 0 0 auto;
+                            text-align: center;
+                            page-break-inside: avoid;
+                            break-inside: avoid;
+                        }
+                        .compensation-distribution-sheet .sheet-officer p {
+                            margin: 0 0 4px;
+                        }
                         @media print {
                             body {
                                 background: #fff;
@@ -9174,23 +9278,27 @@
                     <section class="page">
                         <p class="center"><strong>साक्षीदार / मान्यता-संमती देणार यांचा तपशील व स्वाक्षरी</strong></p>
                         <p class="center"><strong>करारनामा लिहून देणार / घेणार यांचे</strong></p>
-                        <div class="witness-grid">
-                            ${witnessSignatureBlock('साक्षीदार 1) :')}
-                            ${witnessSignatureBlock('साक्षीदार 2) :')}
-                        </div>
-                        <div class="signature-grid">
-                            <div class="signature-block">
-                                ${secondPartyHtml}
-                                <p>स्वाक्षरी : ..........................................</p>
-                                <p>(करारनामा लिहून देणार - दुसरे पक्ष)</p>
-                            </div>
-                            <div class="signature-block">
-                                <p>स्वाक्षरी : ..........................................</p>
-                                <p>(करारनामा लिहून घेणार - एक पक्ष)</p>
-                                <p class="big-name">${red(sec3OfficerName)}</p>
-                                <p class="big-name">${red(sec3SubdivisionName)}</p>
-                            </div>
-                        </div>
+                        <table class="witness-table">
+                            <tr>
+                                <td>${witnessSignatureBlock('साक्षीदार 1) :')}</td>
+                                <td>${witnessSignatureBlock('साक्षीदार 2) :')}</td>
+                            </tr>
+                        </table>
+                        <table class="signature-table">
+                            <tr>
+                                <td class="signature-block">
+                                    ${secondPartyHtml}
+                                    <p>स्वाक्षरी : ..........................................</p>
+                                    <p>(करारनामा लिहून देणार - दुसरे पक्ष)</p>
+                                </td>
+                                <td class="signature-block">
+                                    <p>स्वाक्षरी : ..........................................</p>
+                                    <p>(करारनामा लिहून घेणार - एक पक्ष)</p>
+                                    <p class="big-name">${red(sec3OfficerName)}</p>
+                                    <p class="big-name">${red(sec3SubdivisionName)}</p>
+                                </td>
+                            </tr>
+                        </table>
                         <div class="center" style="margin-top: 16px;">
                             <p class="dyn" style="margin: 0 0 4px;">ठिकाण : ${getDisplayValue(taluka)}</p>
                             <p class="dyn" style="margin: 0 0 10px;">दिनांक : ${getDisplayValue(agreementDate)}</p>
@@ -9264,6 +9372,42 @@
                                 </tr>
                             </tbody>
                         </table>
+                    </section>
+
+                    <section class="page compensation-distribution-sheet page-break-before">
+                        <p class="sheet-title">मोबदला वाटप सीसी पत्रक</p>
+                        <div class="sheet-rule"></div>
+                        <p class="sheet-intro">
+                            मौजे ${red(village)}, तालुका - ${red(taluka)}, जिल्हा ${red(district)}
+                            येथील जमीन गट नं. ${red(gutNumber)} मधील ${red(projectPurpose)} करिता
+                            संपादन क्षेत्र ${red(consentArea)} हे.आर.चौमी. ची खालीलप्रमाणे मोबदला रक्कम प्राप्त झाली आहे.
+                        </p>
+
+                        <table class="compensation-distribution-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 6%;">अ.क्र.</th>
+                                    <th style="width: 22%;">मोबदला स्विकारणाऱ्याचे नाव</th>
+                                    <th style="width: 20%;">संमती करारनाम्यानुसार स्विकारलेली एकूण मोबदला रक्कम</th>
+                                    <th style="width: 16%;">धनादेश<br>क्रमांक व दिनांक</th>
+                                    <th style="width: 16%;">RTGS / UTR<br>क्रमांक व दिनांक</th>
+                                    <th style="width: 20%;">मोबदला स्विकारणाऱ्या व्यक्तीची दिनांकीत<br>सही / अंगठा</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${compensationDistributionRowsHtml}
+                                <tr>
+                                    <td colspan="2" class="sheet-total-label">एकूण</td>
+                                    <td>${red(compensationDistributionTotal)}</td>
+                                    <td colspan="3"></td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <div class="sheet-officer">
+                            <p>${red(sec3OfficerName)}</p>
+                            <p>${red(sec3SubdivisionName)}</p>
+                        </div>
                     </section>
                 </body>
                 </html>
@@ -9531,7 +9675,7 @@
                             महाराष्ट्र शासन उद्योग, उर्जा व कामगार विभाग यांचेकडील अधिसुचना दि. ०७/०३/२०२५ अन्वये महाराष्ट्र औद्योगिक विकास अधिनियम, १९६१ मधील तरतुदीनुसार भूसंपादन करण्यासाठी प्रकरण ६ लागू करण्याची अधिसूचना प्रसिद्ध करण्यात आली आहे.
                         </p>
                         <p class="paragraph">
-                            महाराष्ट्र शासन असाधारण राजपत्र भाग चार-ब च दि. २१ एप्रिल २०२५ रोजीचे अधिसूचनेनुसार मौजे वनपुरी, मौजे उदाचीवाडी व मौजे कुंभारवळण या गावातील भूसंपादन कार्यवाहीसाठी उपजिल्हाधिकारी भूसंपादन क्र.१ पुणे यांना प्राधिकृत करण्यात आले आहे.
+                            महाराष्ट्र शासन असाधारण राजपत्र भाग चार-ब च दि. २१ एप्रिल २०२५ रोजीचे अधिसूचनेनुसार मौजे वनपुरी, मौजे उदाचीवाडी व मौजे कुंभारवळण या गावातील भूसंपादन कार्यवाहीसाठी ${red(subdivisionName)} यांना प्राधिकृत करण्यात आले आहे.
                         </p>
 
                         <p class="section-title">२) कलम ३२ चे पोट-कलम (२) नुसार अधिसूचना :-</p>
@@ -10289,14 +10433,158 @@
             `;
         }
 
+        const noticeFontStack = '"DVOT Surekh", "Noto Serif Devanagari", "Mangal", serif';
+
+        function normalizeNoticeDocumentHtml(html, { forWord = false } = {}) {
+            if (!html) return '';
+
+            let normalizedHtml = String(html);
+            if (!normalizedHtml.includes('data-pc-notice-document-style')) {
+                const sharedNoticeStyle = `
+                    <style data-pc-notice-document-style>
+                        body, body :not(.party-brace) {
+                            font-family: ${noticeFontStack} !important;
+                        }
+                        .party-brace {
+                            font-family: serif !important;
+                        }
+                        table {
+                            border-collapse: collapse;
+                        }
+                    </style>
+                `;
+                normalizedHtml = /<\/head>/i.test(normalizedHtml)
+                    ? normalizedHtml.replace(/<\/head>/i, `${sharedNoticeStyle}</head>`)
+                    : `${sharedNoticeStyle}${normalizedHtml}`;
+            }
+
+            if (!forWord || normalizedHtml.includes('data-pc-word-document-style')) {
+                return normalizedHtml;
+            }
+
+            normalizedHtml = normalizedHtml.replace(/<html([^>]*)>/i, (match, attributes) => {
+                if (/\bxmlns:w=/i.test(match)) return match;
+                return `<html${attributes} xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word">`;
+            });
+
+            const wordDocumentStyle = `
+                <meta name="ProgId" content="Word.Document">
+                <meta name="Generator" content="Microsoft Word">
+                <style data-pc-word-document-style>
+                    @page WordSection1 {
+                        size: 595.3pt 841.9pt;
+                        margin: 36pt 42pt;
+                    }
+
+                    html,
+                    body {
+                        page: WordSection1;
+                        width: auto !important;
+                        margin: 0 !important;
+                        padding: 0 !important;
+                        background: #ffffff !important;
+                    }
+
+                    body,
+                    body p,
+                    body div,
+                    body span,
+                    body table,
+                    body th,
+                    body td,
+                    body h1,
+                    body h2,
+                    body h3 {
+                        font-family: "DVOT Surekh", "Noto Serif Devanagari", "Mangal", serif !important;
+                        mso-fareast-font-family: "DVOT Surekh";
+                    }
+
+                    .page {
+                        width: auto !important;
+                        min-height: 0 !important;
+                        margin: 0 !important;
+                        padding: 0 !important;
+                        box-shadow: none !important;
+                        background: #ffffff !important;
+                        page-break-after: always;
+                    }
+
+                    .page:last-child {
+                        page-break-after: auto;
+                    }
+
+                    /*
+                     * Word and LibreOffice split flex children into separate bordered
+                     * boxes. Use a normal document flow for the award cover while
+                     * preserving the browser/PDF flex layout.
+                     */
+                    .cover-page {
+                        display: block !important;
+                        width: 100% !important;
+                        height: 690pt !important;
+                        min-height: 690pt !important;
+                        margin: 0 !important;
+                        padding: 24pt !important;
+                        border: 1.5pt solid #000000 !important;
+                        text-align: center !important;
+                    }
+
+                    .cover-title {
+                        margin: 30pt 0 10pt !important;
+                    }
+
+                    .cover-page .divider {
+                        display: block !important;
+                        width: 70% !important;
+                        margin: 14pt auto !important;
+                        border: 0 !important;
+                    }
+
+                    .cover-page .purpose-box {
+                        display: block !important;
+                        width: 100% !important;
+                        margin: 26pt 0 !important;
+                        border: 0 !important;
+                    }
+
+                    .cover-page .details-box {
+                        display: block !important;
+                        width: 88% !important;
+                        margin: 28pt auto !important;
+                        border: 0 !important;
+                        text-align: left !important;
+                    }
+
+                    .cover-page .acquisition-board {
+                        display: block !important;
+                        width: 100% !important;
+                        margin: 72pt 0 20pt !important;
+                        border: 0 !important;
+                    }
+                </style>
+                <!--[if gte mso 9]>
+                <xml>
+                    <w:WordDocument>
+                        <w:View>Print</w:View>
+                        <w:Zoom>100</w:Zoom>
+                        <w:DoNotOptimizeForBrowser/>
+                    </w:WordDocument>
+                </xml>
+                <![endif]-->
+            `;
+            return /<\/head>/i.test(normalizedHtml)
+                ? normalizedHtml.replace(/<\/head>/i, `${wordDocumentStyle}</head>`)
+                : `${wordDocumentStyle}${normalizedHtml}`;
+        }
+
         function openAgreementDraft(html, title = 'करारनामा Draft') {
             if (!agreementDraftModal || !agreementDraftFrame) return;
-            currentAgreementDraftHtml = html;
+            currentAgreementDraftHtml = normalizeNoticeDocumentHtml(html);
             currentAgreementDraftTitle = title;
             if (agreementDraftModalTitle) {
                 agreementDraftModalTitle.textContent = title;
             }
-            agreementDraftFrame.srcdoc = html;
+            agreementDraftFrame.srcdoc = currentAgreementDraftHtml;
             agreementDraftModal.classList.remove('hidden');
             document.body.style.overflow = 'hidden';
         }
@@ -10317,7 +10605,8 @@
 
         function downloadCurrentDraftAsDoc() {
             if (!currentAgreementDraftHtml) return;
-            const blob = new Blob([currentAgreementDraftHtml], { type: 'application/msword;charset=utf-8' });
+            const wordHtml = normalizeNoticeDocumentHtml(currentAgreementDraftHtml, { forWord: true });
+            const blob = new Blob([wordHtml], { type: 'application/msword;charset=utf-8' });
             const link = document.createElement('a');
             const url = URL.createObjectURL(blob);
             link.href = url;
@@ -11806,43 +12095,8 @@
 
         document.querySelectorAll('input[name="step9_distribution_equal"]').forEach((radio) => {
             radio.addEventListener('change', () => {
-                const is_equal = document.querySelector('input[name="step9_distribution_equal"]:checked')?.value === 'yes';
-                const rows = Array.from(step9PaymentRowsContainer ? step9PaymentRowsContainer.querySelectorAll('.pc-step9-payment-row') : []);
-                if (!step9PaymentRowsContainer) return;
-                const totalAmount = Number.parseFloat(String(getFieldValue('#pcCompensation11') || '0').replace(/,/g, ''));
-                const count = rows.length;
-                const share = count > 0 ? (totalAmount / count).toFixed(2) : 0;
-
-                rows.forEach((row, index) => {
-                    const amountInput = row.querySelector('input[name="step9_distribution_amount"]');
-                    if (is_equal) {
-                        if (index > 0) amountInput.setAttribute('readonly', 'readonly');
-                        else amountInput.removeAttribute('readonly');
-                    } else {
-                        amountInput.removeAttribute('readonly');
-                    }
-                });
+                applyStep9DistributionAmounts();
             });
-        });
-
-        step9PaymentRowsContainer?.addEventListener('input', (event) => {
-            if (event.target instanceof HTMLInputElement && event.target.name === 'step9_distribution_amount') {
-                const is_equal = document.querySelector('input[name="step9_distribution_equal"]:checked')?.value === 'yes';
-                if (!is_equal) return;
-
-                const rows = Array.from(step9PaymentRowsContainer.querySelectorAll('.pc-step9-payment-row'));
-                const row = event.target.closest('.pc-step9-payment-row');
-                const index = rows.indexOf(row);
-                if (index === 0) {
-                    const val = event.target.value;
-                    rows.forEach((item, i) => {
-                        if (i > 0) {
-                            const input = item.querySelector('input[name="step9_distribution_amount"]');
-                            if (input) input.value = val;
-                        }
-                    });
-                }
-            }
         });
 
         setStep(1);
