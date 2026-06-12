@@ -3231,6 +3231,7 @@ def get_layer_bounds(request, layer_name):
 
     # Allowed layers (security)
     allowed_layers = [
+        'prj_bd',
         'prj_vlg_bd',
         'prj_gut_bd'
     ]
@@ -3243,18 +3244,62 @@ def get_layer_bounds(request, layer_name):
             conditions = []
             params = []
 
-            if layer_name == "prj_vlg_bd":
+            if not district_id and district:
+                cursor.execute("""
+                    SELECT district_id
+                    FROM purandar_airport.prj_district
+                    WHERE UPPER(TRIM(name)) = UPPER(TRIM(%s))
+                    LIMIT 1;
+                """, [district])
+                row = cursor.fetchone()
+                district_id = row[0] if row else district_id
+
+            if not taluka_id and taluka:
+                cursor.execute("""
+                    SELECT taluka_id
+                    FROM purandar_airport.prj_taluka
+                    WHERE UPPER(TRIM(taluka)) = UPPER(TRIM(%s))
+                    LIMIT 1;
+                """, [taluka])
+                row = cursor.fetchone()
+                taluka_id = row[0] if row else taluka_id
+
+            if not village_id and village:
+                cursor.execute("""
+                    SELECT village_id
+                    FROM purandar_airport.prj_village
+                    WHERE UPPER(TRIM(village)) = UPPER(TRIM(%s))
+                    LIMIT 1;
+                """, [village])
+                row = cursor.fetchone()
+                village_id = row[0] if row else village_id
+
+            if layer_name == "prj_bd":
+                cursor.execute("SELECT to_regclass(%s);", ['purandar_airport.prj_bd'])
+                project_boundary_table = 'purandar_airport.prj_bd' if cursor.fetchone()[0] else 'purandar_airport.prj_gut_bd'
+                query = f"""
+                    SELECT
+                        ST_XMin(extent),
+                        ST_YMin(extent),
+                        ST_XMax(extent),
+                        ST_YMax(extent)
+                    FROM (
+                        SELECT ST_Extent(ST_Transform(geom, 4326)) AS extent
+                        FROM {project_boundary_table}
+                    ) AS subquery;
+                """
+            elif layer_name == "prj_vlg_bd":
                 # Village boundary bounds: derive geometry from master villages,
                 # but restrict to villages present in project table.
-                if district:
-                    conditions.append("UPPER(TRIM(dm.district_name)) = UPPER(TRIM(%s))")
-                    params.append(district)
-                if taluka:
-                    conditions.append("UPPER(TRIM(tm.taluka_name)) = UPPER(TRIM(%s))")
-                    params.append(taluka)
-                if village:
-                    conditions.append("UPPER(TRIM(vm.village_name)) = UPPER(TRIM(%s))")
-                    params.append(village)
+                if district and not district_id:
+                    conditions.append("(UPPER(TRIM(dm.district_name)) = UPPER(TRIM(%s)) OR UPPER(TRIM(COALESCE(dm.district_name_m, ''))) = UPPER(TRIM(%s)))")
+                    params.extend([district, district])
+                if taluka and not taluka_id:
+                    conditions.append("(UPPER(TRIM(tm.taluka_name)) = UPPER(TRIM(%s)) OR UPPER(TRIM(COALESCE(tm.taluka_name_m, ''))) = UPPER(TRIM(%s)))")
+                    params.extend([taluka, taluka])
+                if village and not village_id:
+                    conditions.append("(UPPER(TRIM(vm.village_name)) = UPPER(TRIM(%s)) OR UPPER(TRIM(COALESCE(vm.village_name_m, ''))) = UPPER(TRIM(%s)))")
+                    params.extend([village, village])
                 if district_id:
                     conditions.append("pv.district_id = %s")
                     params.append(district_id)
@@ -3273,41 +3318,80 @@ def get_layer_bounds(request, layer_name):
                         ST_XMax(extent),
                         ST_YMax(extent)
                     FROM (
-                        SELECT ST_Extent(ST_Transform(vm.geom, 4326)) AS extent
-                        FROM public.village_master vm
-                        JOIN purandar_airport.prj_village pv
-                            ON pv.village_id = vm.id
-                        JOIN public.taluka_master tm
-                            ON tm.id = pv.taluka_id
-                        JOIN public.district_master dm
-                            ON dm.id = pv.district_id
-                        {where_clause}
+                        WITH p AS (
+                            SELECT ST_MakeValid(geom) AS geom
+                            FROM public.project_master
+                            WHERE geom IS NOT NULL
+                              AND COALESCE(NULLIF(schema_name, ''), 'purandar_airport') = 'purandar_airport'
+                            ORDER BY id
+                            LIMIT 1
+                        ),
+                        matched AS (
+                            SELECT
+                                CASE
+                                    WHEN p.geom IS NOT NULL
+                                         AND ST_Intersects(
+                                             p.geom,
+                                             CASE
+                                                 WHEN ST_SRID(vm.geom) = ST_SRID(p.geom) OR ST_SRID(vm.geom) = 0 OR ST_SRID(p.geom) = 0
+                                                     THEN ST_MakeValid(vm.geom)
+                                                 ELSE ST_Transform(ST_MakeValid(vm.geom), ST_SRID(p.geom))
+                                             END
+                                         )
+                                        THEN ST_Intersection(
+                                            p.geom,
+                                            CASE
+                                                WHEN ST_SRID(vm.geom) = ST_SRID(p.geom) OR ST_SRID(vm.geom) = 0 OR ST_SRID(p.geom) = 0
+                                                    THEN ST_MakeValid(vm.geom)
+                                                ELSE ST_Transform(ST_MakeValid(vm.geom), ST_SRID(p.geom))
+                                            END
+                                        )
+                                    ELSE vm.geom
+                                END AS geom
+                            FROM public.village_master vm
+                            JOIN purandar_airport.prj_village pv
+                                ON pv.village_id = vm.id
+                            JOIN public.taluka_master tm
+                                ON tm.id = pv.taluka_id
+                            JOIN public.district_master dm
+                                ON dm.id = pv.district_id
+                            LEFT JOIN p ON TRUE
+                            {where_clause}
+                        )
+                        SELECT ST_Extent(ST_Transform(geom, 4326)) AS extent
+                        FROM matched
+                        WHERE geom IS NOT NULL
                     ) AS subquery;
                 """
             else:
                 # Gut bounds: geometry is in project gut table; use master joins
                 # for name-based filters.
-                if district:
-                    conditions.append("UPPER(TRIM(dm.district_name)) = UPPER(TRIM(%s))")
-                    params.append(district)
-                if taluka:
-                    conditions.append("UPPER(TRIM(tm.taluka_name)) = UPPER(TRIM(%s))")
-                    params.append(taluka)
-                if village:
-                    conditions.append("UPPER(TRIM(vm.village_name)) = UPPER(TRIM(%s))")
-                    params.append(village)
+                if district and not district_id:
+                    conditions.append("(UPPER(TRIM(dm.district_name)) = UPPER(TRIM(%s)) OR UPPER(TRIM(COALESCE(dm.district_name_m, ''))) = UPPER(TRIM(%s)))")
+                    params.extend([district, district])
+                if taluka and not taluka_id:
+                    conditions.append("(UPPER(TRIM(tm.taluka_name)) = UPPER(TRIM(%s)) OR UPPER(TRIM(COALESCE(tm.taluka_name_m, ''))) = UPPER(TRIM(%s)))")
+                    params.extend([taluka, taluka])
+                if village and not village_id:
+                    conditions.append("(UPPER(TRIM(vm.village_name)) = UPPER(TRIM(%s)) OR UPPER(TRIM(COALESCE(vm.village_name_m, ''))) = UPPER(TRIM(%s)))")
+                    params.extend([village, village])
                 if district_id:
-                    conditions.append("pg.district_id = %s")
+                    conditions.append("tm.district_id = %s")
                     params.append(district_id)
                 if taluka_id:
-                    conditions.append("pg.taluka_id = %s")
+                    conditions.append("tm.id = %s")
                     params.append(taluka_id)
                 if village_id:
                     conditions.append("pg.village_id = %s")
                     params.append(village_id)
                 if gut_number:
-                    conditions.append("UPPER(TRIM(pg.gut_no::text)) = UPPER(TRIM(%s))")
-                    params.append(str(gut_number))
+                    conditions.append("""
+                        (
+                            UPPER(TRIM(pg.gut_no::text)) = UPPER(TRIM(%s))
+                            OR regexp_replace(pg.gut_no::text, '[^0-9]', '', 'g') = regexp_replace(%s, '[^0-9]', '', 'g')
+                        )
+                    """)
+                    params.extend([str(gut_number), str(gut_number)])
 
                 where_clause = f"WHERE {' AND '.join(conditions)}" if conditions else ""
                 query = f"""
@@ -3317,15 +3401,49 @@ def get_layer_bounds(request, layer_name):
                         ST_XMax(extent),
                         ST_YMax(extent)
                     FROM (
-                        SELECT ST_Extent(ST_Transform(pg.geom, 4326)) AS extent
-                        FROM purandar_airport.prj_gut_bd pg
-                        JOIN public.village_master vm
-                            ON vm.id = pg.village_id
-                        JOIN public.taluka_master tm
-                            ON tm.id = pg.taluka_id
-                        JOIN public.district_master dm
-                            ON dm.id = pg.district_id
-                        {where_clause}
+                        WITH p AS (
+                            SELECT ST_MakeValid(geom) AS geom
+                            FROM public.project_master
+                            WHERE geom IS NOT NULL
+                              AND COALESCE(NULLIF(schema_name, ''), 'purandar_airport') = 'purandar_airport'
+                            ORDER BY id
+                            LIMIT 1
+                        ),
+                        matched AS (
+                            SELECT
+                                CASE
+                                    WHEN p.geom IS NOT NULL
+                                         AND ST_Intersects(
+                                             p.geom,
+                                             CASE
+                                                 WHEN ST_SRID(pg.geom) = ST_SRID(p.geom) OR ST_SRID(pg.geom) = 0 OR ST_SRID(p.geom) = 0
+                                                     THEN ST_MakeValid(pg.geom)
+                                                 ELSE ST_Transform(ST_MakeValid(pg.geom), ST_SRID(p.geom))
+                                             END
+                                         )
+                                        THEN ST_Intersection(
+                                            p.geom,
+                                            CASE
+                                                WHEN ST_SRID(pg.geom) = ST_SRID(p.geom) OR ST_SRID(pg.geom) = 0 OR ST_SRID(p.geom) = 0
+                                                    THEN ST_MakeValid(pg.geom)
+                                                ELSE ST_Transform(ST_MakeValid(pg.geom), ST_SRID(p.geom))
+                                            END
+                                        )
+                                    ELSE pg.geom
+                                END AS geom
+                            FROM purandar_airport.prj_gut_bd pg
+                            JOIN public.village_master vm
+                                ON vm.id = pg.village_id
+                            JOIN public.taluka_master tm
+                                ON tm.id = vm.taluka_id
+                            JOIN public.district_master dm
+                                ON dm.id = tm.district_id
+                            LEFT JOIN p ON TRUE
+                            {where_clause}
+                        )
+                        SELECT ST_Extent(ST_Transform(geom, 4326)) AS extent
+                        FROM matched
+                        WHERE geom IS NOT NULL
                     ) AS subquery;
                 """
 
