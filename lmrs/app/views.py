@@ -4926,8 +4926,15 @@ def _format_indian_amount(value):
 
 @login_required
 def process_chart_list(request):
+    try:
+        per_page = int(request.GET.get('per_page', 10))
+    except (TypeError, ValueError):
+        per_page = 10
+    if per_page not in {10, 25, 50, 100}:
+        per_page = 10
+
     cases_qs = ProcessChartCase.objects.select_related('user').prefetch_related('step_data').all().order_by('-updated_at', '-id')
-    paginator = Paginator(cases_qs, 10)
+    paginator = Paginator(cases_qs, per_page)
     page_obj = paginator.get_page(request.GET.get('page', 1))
     cases = list(page_obj.object_list)
     for case in cases:
@@ -4952,6 +4959,7 @@ def process_chart_list(request):
         'cases': cases,
         'page_obj': page_obj,
         'page_links': page_links,
+        'per_page': per_page,
         'total_records': paginator.count,
         'start_index': page_obj.start_index() if paginator.count else 0,
         'end_index': page_obj.end_index() if paginator.count else 0,
