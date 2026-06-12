@@ -249,6 +249,30 @@
                         </tbody>
                     </table>
                 </div>
+                <div class="mt-4 flex flex-col gap-3 text-sm text-[#4a6178] sm:flex-row sm:items-center sm:justify-between">
+                    <div>{{ total_records }} पैकी {{ start_index }} ते {{ end_index }} नोंदी दर्शवत आहे</div>
+                    <div class="flex flex-wrap items-center gap-1">
+                        {% if page_obj.has_previous %}
+                            <a href="?page={{ page_obj.previous_page_number }}" class="rounded-md border border-slate-300 px-3 py-1.5">मागील</a>
+                        {% else %}
+                            <span class="rounded-md border border-slate-200 px-3 py-1.5 text-slate-400">मागील</span>
+                        {% endif %}
+                        {% for page_no in page_links %}
+                            {% if not page_no %}
+                                <span class="px-2 py-1.5">...</span>
+                            {% elif page_no == page_obj.number %}
+                                <span class="rounded-md bg-[#125fcb] px-3 py-1.5 font-semibold text-white">{{ page_no }}</span>
+                            {% else %}
+                                <a href="?page={{ page_no }}" class="rounded-md border border-slate-300 px-3 py-1.5">{{ page_no }}</a>
+                            {% endif %}
+                        {% endfor %}
+                        {% if page_obj.has_next %}
+                            <a href="?page={{ page_obj.next_page_number }}" class="rounded-md border border-slate-300 px-3 py-1.5">पुढील</a>
+                        {% else %}
+                            <span class="rounded-md border border-slate-200 px-3 py-1.5 text-slate-400">पुढील</span>
+                        {% endif %}
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -284,22 +308,15 @@
 <script>
 $(document).ready(function () {
     const processChartTable = $('#processChartListTable').DataTable({
-        pageLength: 10,
-        lengthMenu: [[5, 10, 25, 30, 50, -1], [5, 10, 25, 30, 50, "सर्व"]],
+        paging: false,
+        info: false,
         scrollX: true,
         columnDefs: [
             { targets: -1, orderable: false, searchable: true }
         ],
         language: {
-            lengthMenu: "_MENU_ नोंदी दाखवा",
             search: "शोध:",
-            info: "_TOTAL_ पैकी _START_ ते _END_ नोंदी",
-            infoEmpty: "0 नोंदी",
-            zeroRecords: "नोंदी आढळल्या नाहीत",
-            paginate: {
-                previous: "मागील",
-                next: "पुढील"
-            }
+            zeroRecords: "नोंदी आढळल्या नाहीत"
         }
     });
 

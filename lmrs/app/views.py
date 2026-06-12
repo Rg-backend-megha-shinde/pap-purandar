@@ -4808,7 +4808,10 @@ def _format_indian_amount(value):
 
 @login_required
 def process_chart_list(request):
-    cases = ProcessChartCase.objects.select_related('user').prefetch_related('step_data').all().order_by('-updated_at', '-id')
+    cases_qs = ProcessChartCase.objects.select_related('user').prefetch_related('step_data').all().order_by('-updated_at', '-id')
+    paginator = Paginator(cases_qs, 10)
+    page_obj = paginator.get_page(request.GET.get('page', 1))
+    cases = list(page_obj.object_list)
     for case in cases:
         district_mr = get_marathi_name('district', case.district) if case.district else ''
         taluka_mr = get_marathi_name('taluka', case.district, case.taluka) if case.district and case.taluka else ''
@@ -4821,9 +4824,19 @@ def process_chart_list(request):
         case.acquisition_area_from_joint_survey = _process_chart_case_acquisition_area(case)
         case.consent_compensation_amount = _process_chart_case_consent_compensation(case)
         case.consent_compensation_amount_display = _format_indian_amount(case.consent_compensation_amount)
+
+    page_links = []
+    for page_no in paginator.get_elided_page_range(page_obj.number, on_each_side=2, on_ends=1):
+        page_links.append(None if page_no == paginator.ELLIPSIS else page_no)
+
     return render(request, 'process_chart_list.html', {
         'active_tab': 'process-chart',
         'cases': cases,
+        'page_obj': page_obj,
+        'page_links': page_links,
+        'total_records': paginator.count,
+        'start_index': page_obj.start_index() if paginator.count else 0,
+        'end_index': page_obj.end_index() if paginator.count else 0,
     })
 
 
