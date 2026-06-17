@@ -6525,7 +6525,17 @@ def save_process_chart_form(request):
         owner_names = step_one_data.get('owner_info_owner_name')
         owner_names = owner_names if isinstance(owner_names, list) else ([owner_names] if owner_names else [])
         for field_prefix in ('owner_info_aadhaar_file', 'owner_info_pan_file'):
-            for index, _owner_name in enumerate(owner_names):
+            matching_file_keys = [
+                key for key in request.FILES
+                if key.startswith(f'{field_prefix}_') and str(key).rsplit('_', 1)[-1].isdigit()
+            ]
+            file_indexes = {
+                int(str(key).rsplit('_', 1)[-1])
+                for key in matching_file_keys
+            }
+            owner_indexes = set(range(len(owner_names)))
+            for index in sorted(owner_indexes | file_indexes):
+                _owner_name = owner_names[index] if index < len(owner_names) else ''
                 field_key = f'{field_prefix}_{index}'
                 uploaded_files = request.FILES.getlist(field_key)
                 if not uploaded_files:

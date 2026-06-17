@@ -736,67 +736,76 @@
 
                                 </div>
                             </div>
-                            <div class="pc-section">
-                                <div class="mb-4 flex items-center justify-between">
-                                    <h3 class="text-lg font-bold text-[#244271]">जमीन मालक / हितसंबंधी व्यक्ती माहिती
-                                    </h3>
-                                    <button type="button"
-                                        class="rounded-lg bg-[#125fcb] px-3 py-2 text-sm font-semibold text-white">+ Add
-                                        Row</button>
+                            <div class="pc-section w-full bg-white p-4 rounded-xl shadow-sm">
+                                <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                                    <div>
+                                        <h3 class="text-xl font-bold text-[#244271]">जमीन मालक / हितसंबंधी व्यक्ती माहिती</h3>
+                                        <p class="mt-1 text-sm font-medium text-[#60708a]" id="pcOwnerInfoStatus">7/12 मधून माहिती उपलब्ध झाल्यावर ही सारणी स्वयंरित्या भरेल.</p>
+                                        <p class="mt-1 text-sm font-bold text-[#4a6488]">आधार: 12 अंक | मोबाईल: 10 अंक | पॅन: 10 अक्षरे / अंक, विशेष चिन्हे वापरू नका.</p>
+                                    </div>
+                                    <button type="button" id="pcAddOwnerRow" class="shrink-0 inline-flex items-center justify-center rounded-lg bg-[#125fcb] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition duration-200 hover:bg-[#0f52b0] focus:outline-none focus:ring-2 focus:ring-[#125fcb] focus:ring-offset-2">
+                                        <svg class="mr-1.5 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path></svg>
+                                        Add Row
+                                    </button>
                                 </div>
-                                <p class="mb-2 text-sm text-[#6b7d99]" id="pcOwnerInfoStatus">7/12 मधून माहिती उपलब्ध
-                                    झाल्यावर ही सारणी स्वयंरित्या भरेल.</p>
-                                <p class="mb-3 pc-validation-hint">आधार: 12 अंक | मोबाईल: 10 अंक | पॅन: 10 अक्षरे / अंक,
-                                    विशेष चिन्हे वापरू नका.</p>
-                                <div class="overflow-x-auto">
-                                    <table class="pc-table">
-                                        <thead>
+                                <input type="hidden" id="pcOwnerCount" name="owner_count" value="1">
+                                <div class="overflow-x-auto w-full rounded-xl border border-gray-200 bg-gray-50/50">
+                                    <table class="w-full min-w-[1600px] border-collapse text-left text-sm text-gray-500">
+                                        <thead class="border-b border-gray-200 bg-[#f8fafc] text-center">
                                             <tr>
-                                                <th rowspan="2">भूधारकाचे नाव</th>
-                                                <th rowspan="2">खाते क्रमांक</th>
-                                                <th rowspan="2">आधार कार्ड क्रमांक</th>
-                                                <th rowspan="2">आधार कार्ड प्रत</th>
-                                                <th rowspan="2">पॅन कार्ड क्रमांक</th>
-                                                <th rowspan="2">पॅन कार्ड प्रत</th>
-                                                <th rowspan="2">मोबाईल नंबर</th>
-                                                <th rowspan="2">पत्ता</th>
-                                                <th colspan="2">क्षेत्र (हेक्टर / आर) 7/12 प्रमाणे</th>
-                                                <th rowspan="2">एकूण क्षेत्र</th>
-                                                <th rowspan="2">आकारणी</th>
-                                                <th rowspan="2">इतर अधिकार, कूळ व इतर</th>
+                                                <th rowspan="2" class="w-[240px] border-r border-gray-200 px-4 py-3.5 font-bold text-[#244271]">भूधारकाचे नाव</th>
+                                                <th rowspan="2" class="w-[110px] border-r border-gray-200 px-4 py-3.5 font-bold text-[#244271]">खाते क्रमांक</th>
+                                                <th rowspan="2" class="w-[160px] border-r border-gray-200 px-4 py-3.5 font-bold text-[#244271]">आधार कार्ड क्रमांक</th>
+                                                <th rowspan="2" class="w-[200px] border-r border-gray-200 px-4 py-3.5 font-bold text-[#244271]">आधार कार्ड प्रत</th>
+                                                <th rowspan="2" class="w-[160px] border-r border-gray-200 px-4 py-3.5 font-bold text-[#244271]">पॅन कार्ड क्रमांक</th>
+                                                <th rowspan="2" class="w-[200px] border-r border-gray-200 px-4 py-3.5 font-bold text-[#244271]">पॅन कार्ड प्रत</th>
+                                                <th rowspan="2" class="w-[150px] border-r border-gray-200 px-4 py-3.5 font-bold text-[#244271]">मोबाईल नंबर</th>
+                                                <th rowspan="2" class="w-[220px] border-r border-gray-200 px-4 py-3.5 font-bold text-[#244271]">पत्ता</th>
+                                                <th colspan="2" class="border-b border-r border-gray-200 px-4 py-2.5 font-bold text-[#244271]">क्षेत्र (हेक्टर / आर) 7/12 प्रमाणे</th>
+                                                <th rowspan="2" class="w-[110px] border-r border-gray-200 px-4 py-3.5 font-bold text-[#244271]">एकूण क्षेत्र</th>
+                                                <th rowspan="2" class="w-[110px] border-r border-gray-200 px-4 py-3.5 font-bold text-[#244271]">आकारणी</th>
+                                                <th rowspan="2" class="w-[130px] px-4 py-3.5 font-bold text-[#244271]">इतर अधिकार</th>
                                             </tr>
-                                            <tr>
-                                                <th>लागवडी योग्य</th>
-
-                                                <th>पोट खराब</th>
+                                            <tr class="bg-[#f1f5f9]">
+                                                <th class="w-[110px] border-r border-gray-200 px-4 py-2.5 font-semibold text-[#4a6488]">लागवडी योग्य</th>
+                                                <th class="w-[110px] border-r border-gray-200 px-4 py-2.5 font-semibold text-[#4a6488]">पोट खराब</th>
                                             </tr>
                                         </thead>
-                                        <tbody id="pcOwnerInfoBody">
-                                            <tr>
-                                                <td><input class="pc-input" type="text"></td>
-                                                <td><input class="pc-input" type="text"></td>
-                                                <td><input class="pc-input" name="owner_info_aadhaar_number" type="text"
-                                                        inputmode="numeric" maxlength="12" pattern="[0-9]{12}"
-                                                        placeholder="12 अंक" title="आधार कार्ड क्रमांक 12 अंकी असावा.">
+                                        <tbody id="pcOwnerInfoBody" class="divide-y divide-gray-200 bg-white">
+                                            <tr class="transition hover:bg-gray-50/70">
+                                                <td class="border-r border-gray-200 p-3"><input class="w-48 rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 outline-none transition placeholder-gray-400 focus:border-[#125fcb] focus:ring-2 focus:ring-[#125fcb]/20" name="owner_info_owner_name" type="text" placeholder="7/12 मधून भूधारकाचे नाव"></td>
+                                                <td class="border-r border-gray-200 p-3"><input class="w-48 rounded-lg border border-gray-300 px-3 py-2 text-center text-sm font-medium text-gray-700 outline-none transition focus:border-[#125fcb] focus:ring-2 focus:ring-[#125fcb]/20" name="owner_info_khata_number" type="text"></td>
+                                                <td class="border-r border-gray-200 p-3"><input class="w-48 rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 outline-none transition placeholder-gray-400 focus:border-[#125fcb] focus:ring-2 focus:ring-[#125fcb]/20" name="owner_info_aadhaar_number" type="text" inputmode="numeric" maxlength="12" pattern="[0-9]{12}" placeholder="12 अंक" title="आधार कार्ड क्रमांक 12 अंकी असावा."></td>
+                                                <td class="border-r border-gray-200 p-3">
+                                                    <div class="flex w-48 flex-col gap-1.5">
+                                                        <label class="flex w-full cursor-pointer items-center justify-center rounded-lg border border-dashed border-[#125fcb] bg-[#125fcb]/5 px-3 py-2 text-sm font-semibold text-[#125fcb] transition hover:bg-[#125fcb]/10">
+                                                            <span>Choose file</span>
+                                                            <input class="hidden" name="owner_info_aadhaar_file" data-file-field="owner_info_aadhaar_file" type="file" accept="application/pdf,image/*">
+                                                        </label>
+                                                        <span class="max-w-full truncate px-1 text-center text-[11px] font-medium text-gray-500" data-file-name>No file chosen</span>
+                                                        <button type="button" class="hidden rounded-lg border border-green-200 bg-green-50 px-3 py-1.5 text-xs font-semibold text-green-700 transition hover:bg-green-100" data-view-file>View</button>
+                                                    </div>
                                                 </td>
-                                                <td><input class="pc-upload" name="owner_info_aadhaar_file"
-                                                        data-file-field="owner_info_aadhaar_file" type="file"></td>
-                                                <td><input class="pc-input" name="owner_info_pan_number" type="text"
-                                                        maxlength="10" pattern="[A-Za-z0-9]{10}"
-                                                        placeholder="10 अक्षरे/अंक"
-                                                        title="पॅन कार्ड क्रमांक 10 अक्षरे / अंक असावा."></td>
-                                                <td><input class="pc-upload" name="owner_info_pan_file"
-                                                        data-file-field="owner_info_pan_file" type="file"></td>
-                                                <td><input class="pc-input" name="owner_info_mobile_number" type="tel"
-                                                        inputmode="numeric" maxlength="10" pattern="[0-9]{10}"
-                                                        placeholder="10 अंक" title="मोबाईल नंबर 10 अंकी असावा."></td>
-                                                <td><textarea class="pc-input" rows="2"></textarea></td>
-                                                <td><input class="pc-input" type="text" placeholder="हे.आर"></td>
-                                                <td><input class="pc-input" type="text" placeholder="हे.आर"></td>
-                                                <td><input class="pc-input" type="text" placeholder="हे.आर"></td>
-                                                <td><input class="pc-input" type="text"></td>
-                                                <td><button type="button" class="pc-table-view-btn pc-other-rights-btn"
-                                                        data-other-rights="">View</button></td>
+                                                <td class="border-r border-gray-200 p-3"><input class="w-48 rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 outline-none transition placeholder-gray-400 focus:border-[#125fcb] focus:ring-2 focus:ring-[#125fcb]/20" name="owner_info_pan_number" type="text" maxlength="10" pattern="[A-Za-z]{5}[0-9]{4}[A-Za-z]{1}" placeholder="ABCDE1234F" title="पॅन कार्ड क्रमांक 5 अक्षरे, 4 अंक आणि शेवटी 1 अक्षर असा असावा."></td>
+                                                <td class="border-r border-gray-200 p-3">
+                                                    <div class="flex w-48 flex-col gap-1.5">
+                                                        <label class="flex w-full cursor-pointer items-center justify-center rounded-lg border border-dashed border-[#125fcb] bg-[#125fcb]/5 px-3 py-2 text-sm font-semibold text-[#125fcb] transition hover:bg-[#125fcb]/10">
+                                                            <span>Choose file</span>
+                                                            <input class="hidden" name="owner_info_pan_file" data-file-field="owner_info_pan_file" type="file" accept="application/pdf,image/*">
+                                                        </label>
+                                                        <span class="max-w-full truncate px-1 text-center text-[11px] font-medium text-gray-500" data-file-name>No file chosen</span>
+                                                        <button type="button" class="hidden rounded-lg border border-green-200 bg-green-50 px-3 py-1.5 text-xs font-semibold text-green-700 transition hover:bg-green-100" data-view-file>View</button>
+                                                    </div>
+                                                </td>
+                                                <td class="border-r border-gray-200 p-3"><input class="w-48 rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 outline-none transition placeholder-gray-400 focus:border-[#125fcb] focus:ring-2 focus:ring-[#125fcb]/20" name="owner_info_mobile_number" type="tel" inputmode="numeric" maxlength="10" pattern="[0-9]{10}" placeholder="10 अंक" title="मोबाईल नंबर 10 अंकी असावा."></td>
+                                                <td class="border-r border-gray-200 p-3"><textarea class="min-h-[42px] w-48 resize-y rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 outline-none transition placeholder-gray-400 focus:border-[#125fcb] focus:ring-2 focus:ring-[#125fcb]/20" name="owner_info_address" rows="2" placeholder="पत्ता लिहा..."></textarea></td>
+                                                <td class="border-r border-gray-200 p-3"><input class="w-48 rounded-lg border border-gray-300 px-3 py-2 text-center text-sm text-gray-900 outline-none transition placeholder-gray-400 focus:border-[#125fcb] focus:ring-2 focus:ring-[#125fcb]/20" name="owner_info_cultivable_area" type="text" placeholder="हे.आर"></td>
+                                                <td class="border-r border-gray-200 p-3"><input class="w-48 rounded-lg border border-gray-300 px-3 py-2 text-center text-sm text-gray-900 outline-none transition placeholder-gray-400 focus:border-[#125fcb] focus:ring-2 focus:ring-[#125fcb]/20" name="owner_info_potkharaba" type="text" placeholder="हे.आर"></td>
+                                                <td class="border-r border-gray-200 p-3"><input class="w-48 rounded-lg border border-gray-300 px-3 py-2 text-center text-sm font-medium text-gray-700 outline-none transition placeholder-gray-400 focus:border-[#125fcb] focus:ring-2 focus:ring-[#125fcb]/20" name="owner_info_total_area" type="text" placeholder="हे.आर"></td>
+                                                <td class="border-r border-gray-200 p-3"><input class="w-48 rounded-lg border border-gray-300 px-3 py-2 text-center text-sm text-gray-900 outline-none transition focus:border-[#125fcb] focus:ring-2 focus:ring-[#125fcb]/20" name="owner_info_aakarni" type="text"></td>
+                                                <td class="p-3 text-center">
+                                                    <button type="button" class="pc-other-rights-btn inline-flex w-full items-center justify-center rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-sm font-bold text-green-700 shadow-sm transition hover:bg-green-100 focus:outline-none focus:ring-2 focus:ring-green-500/40" data-other-rights="">View</button>
+                                                </td>
                                             </tr>
                                         </tbody>
                                     </table>
@@ -2572,6 +2581,8 @@
         const gutSelect = document.getElementById('pcGutNumber');
         const gutHelp = document.getElementById('pcGutNumberHelp');
         const ownerInfoBody = document.getElementById('pcOwnerInfoBody');
+        const addOwnerRowBtn = document.getElementById('pcAddOwnerRow');
+        const ownerCountInput = document.getElementById('pcOwnerCount');
         const ownerInfoStatus = document.getElementById('pcOwnerInfoStatus');
         const otherRightsModal = document.getElementById('pcOtherRightsModal');
         const otherRightsContent = document.getElementById('pcOtherRightsContent');
@@ -2947,6 +2958,7 @@
 
         function getIdentityFieldType(field) {
             if (!(field instanceof HTMLInputElement)) return '';
+            if (field.type === 'file') return '';
             const key = `${field.name || ''} ${field.id || ''} ${field.className || ''}`.toLowerCase();
             if (key.includes('aadhaar') || key.includes('aadhar') || key.includes('adhar')) return 'aadhaar';
             if (key.includes('pan_number')) return 'pan';
@@ -4139,29 +4151,116 @@
             const aadhaarFileInfo = rowData.aadhaar_file_info || currentProcessChartDocuments[`owner_info_aadhaar_file_${rowIndex}`] || null;
             const panFileInfo = rowData.pan_file_info || currentProcessChartDocuments[`owner_info_pan_file_${rowIndex}`] || null;
             const lockedAttr = rowData.source_locked ? ' readonly data-pc-prefill-source="712"' : '';
+            const readonlyClass = rowData.source_locked ? ' bg-gray-50 font-medium text-gray-700' : ' text-gray-900';
             const totalAreaValue = rowData.total_area || '';
             const cultivableAreaValue = formatOwnerTableCultivableArea(totalAreaValue, rowData.potkharaba, rowData.cultivable_area);
+            const inputClass = 'w-48 rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none transition placeholder-gray-400 focus:border-[#125fcb] focus:ring-2 focus:ring-[#125fcb]/20';
+            const centeredClass = `${inputClass} text-center`;
+            const fileControl = (name, fileInfo) => `
+                <div class="flex w-48 flex-col gap-1.5">
+                    <label class="flex w-full cursor-pointer items-center justify-center rounded-lg border border-dashed border-[#125fcb] bg-[#125fcb]/5 px-3 py-2 text-sm font-semibold text-[#125fcb] transition hover:bg-[#125fcb]/10">
+                        <span>Choose file</span>
+                        <input class="hidden" name="${name}" data-file-field="${name}" type="file" accept="application/pdf,image/*">
+                    </label>
+                    <span class="max-w-full truncate px-1 text-center text-[11px] font-medium ${fileInfo?.name ? 'text-green-600 font-semibold' : 'text-gray-500'}" data-file-name>${escapeHtml(fileInfo?.name || 'No file chosen')}</span>
+                    <button type="button" class="${fileInfo?.url ? '' : 'hidden '}rounded-lg border border-green-200 bg-green-50 px-3 py-1.5 text-xs font-semibold text-green-700 transition hover:bg-green-100" data-view-file${fileInfo?.url ? ` data-file-url="${escapeHtml(fileInfo.url)}"` : ''}>View</button>
+                    ${fileInfo?.url ? `<a class="text-center text-xs font-semibold text-[#125fcb] underline" href="${escapeHtml(fileInfo.url)}" target="_blank" rel="noopener">अपलोड केलेली प्रत</a>` : ''}
+                </div>
+            `;
             return `
-                <tr>
-                    <td><input class="pc-input" name="owner_info_owner_name" type="text" value="${rowData.owner_name || ''}"${lockedAttr}></td>
-                    <td><input class="pc-input" name="owner_info_khata_number" type="text" value="${rowData.khata_number || ''}"></td>
-                    <td><input class="pc-input" name="owner_info_aadhaar_number" type="text" inputmode="numeric" maxlength="12" pattern="[0-9]{12}" placeholder="12 अंक" title="आधार कार्ड क्रमांक 12 अंकी असावा." value="${rowData.aadhaar_number || ''}"></td>
-                    <td><input class="pc-upload" name="owner_info_aadhaar_file" data-file-field="owner_info_aadhaar_file" type="file">${aadhaarFileInfo?.url ? `<a class="mt-2 inline-block text-xs font-semibold text-[#125fcb] underline" href="${escapeHtml(aadhaarFileInfo.url)}" target="_blank" rel="noopener">${escapeHtml(aadhaarFileInfo.name || 'अपलोड केलेली प्रत')}</a>` : ''}</td>
-                    <td><input class="pc-input" name="owner_info_pan_number" type="text" maxlength="10" pattern="[A-Za-z0-9]{10}" placeholder="10 अक्षरे/अंक" title="पॅन कार्ड क्रमांक 10 अक्षरे / अंक असावा." value="${rowData.pan_number || ''}"></td>
-                    <td><input class="pc-upload" name="owner_info_pan_file" data-file-field="owner_info_pan_file" type="file">${panFileInfo?.url ? `<a class="mt-2 inline-block text-xs font-semibold text-[#125fcb] underline" href="${escapeHtml(panFileInfo.url)}" target="_blank" rel="noopener">${escapeHtml(panFileInfo.name || 'अपलोड केलेली प्रत')}</a>` : ''}</td>
-                    <td><input class="pc-input" name="owner_info_mobile_number" type="tel" inputmode="numeric" maxlength="10" pattern="[0-9]{10}" placeholder="10 अंक" title="मोबाईल नंबर 10 अंकी असावा." value="${rowData.mobile_number || ''}"></td>
-                    <td><textarea class="pc-input" name="owner_info_address" rows="2">${rowData.address || ''}</textarea></td>
-                    <td><input class="pc-input" name="owner_info_cultivable_area" type="text" placeholder="हे.आर" value="${cultivableAreaValue}"${lockedAttr}></td>
-                    <td><input class="pc-input" name="owner_info_potkharaba" type="text" placeholder="हे.आर" value="${rowData.potkharaba || ''}"${lockedAttr}></td>
-                    <td><input class="pc-input" name="owner_info_total_area" type="text" placeholder="हे.आर" value="${totalAreaValue}"${lockedAttr}></td>
-                    <td><input class="pc-input" name="owner_info_aakarni" type="text" value="${rowData.aakarni || ''}"${lockedAttr}></td>
-                    <td>
-                        <button type="button" class="pc-table-view-btn pc-other-rights-btn" data-other-rights="${otherRights}">
-                            View
-                        </button>
+                <tr class="transition hover:bg-gray-50/70">
+                    <td class="border-r border-gray-200 p-3"><input class="${inputClass}${readonlyClass}" name="owner_info_owner_name" type="text" value="${escapeHtml(rowData.owner_name || '')}" placeholder="7/12 मधून भूधारकाचे नाव"${lockedAttr}></td>
+                    <td class="border-r border-gray-200 p-3"><input class="${centeredClass}${rowData.source_locked ? ' bg-gray-50 font-medium text-gray-700' : ' text-gray-900'}" name="owner_info_khata_number" type="text" value="${escapeHtml(rowData.khata_number || '')}"${lockedAttr}></td>
+                    <td class="border-r border-gray-200 p-3"><input class="${inputClass} text-gray-900" name="owner_info_aadhaar_number" type="text" inputmode="numeric" maxlength="12" pattern="[0-9]{12}" placeholder="12 अंक" title="आधार कार्ड क्रमांक 12 अंकी असावा." value="${escapeHtml(rowData.aadhaar_number || '')}"></td>
+                    <td class="border-r border-gray-200 p-3">${fileControl('owner_info_aadhaar_file', aadhaarFileInfo)}</td>
+                    <td class="border-r border-gray-200 p-3"><input class="${inputClass} text-gray-900" name="owner_info_pan_number" type="text" maxlength="10" pattern="[A-Za-z]{5}[0-9]{4}[A-Za-z]{1}" placeholder="ABCDE1234F" title="पॅन कार्ड क्रमांक 5 अक्षरे, 4 अंक आणि शेवटी 1 अक्षर असा असावा." value="${escapeHtml(rowData.pan_number || '')}"></td>
+                    <td class="border-r border-gray-200 p-3">${fileControl('owner_info_pan_file', panFileInfo)}</td>
+                    <td class="border-r border-gray-200 p-3"><input class="${inputClass} text-gray-900" name="owner_info_mobile_number" type="tel" inputmode="numeric" maxlength="10" pattern="[0-9]{10}" placeholder="10 अंक" title="मोबाईल नंबर 10 अंकी असावा." value="${escapeHtml(rowData.mobile_number || '')}"></td>
+                    <td class="border-r border-gray-200 p-3"><textarea class="min-h-[42px] w-48 resize-y rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 outline-none transition placeholder-gray-400 focus:border-[#125fcb] focus:ring-2 focus:ring-[#125fcb]/20" name="owner_info_address" rows="2" placeholder="पत्ता लिहा...">${escapeHtml(rowData.address || '')}</textarea></td>
+                    <td class="border-r border-gray-200 p-3"><input class="${centeredClass}${readonlyClass}" name="owner_info_cultivable_area" type="text" placeholder="हे.आर" value="${escapeHtml(cultivableAreaValue)}"${lockedAttr}></td>
+                    <td class="border-r border-gray-200 p-3"><input class="${centeredClass}${readonlyClass}" name="owner_info_potkharaba" type="text" placeholder="हे.आर" value="${escapeHtml(rowData.potkharaba || '')}"${lockedAttr}></td>
+                    <td class="border-r border-gray-200 p-3"><input class="${centeredClass}${readonlyClass}" name="owner_info_total_area" type="text" placeholder="हे.आर" value="${escapeHtml(totalAreaValue)}"${lockedAttr}></td>
+                    <td class="border-r border-gray-200 p-3"><input class="${centeredClass}${readonlyClass}" name="owner_info_aakarni" type="text" value="${escapeHtml(rowData.aakarni || '')}"${lockedAttr}></td>
+                    <td class="p-3 text-center">
+                        <button type="button" class="pc-other-rights-btn inline-flex w-full items-center justify-center rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-sm font-bold text-green-700 shadow-sm transition hover:bg-green-100 focus:outline-none focus:ring-2 focus:ring-green-500/40" data-other-rights="${otherRights}">View</button>
                     </td>
                 </tr>
             `;
+        }
+
+        function updateOwnerInfoRowCount() {
+            if (ownerCountInput && ownerInfoBody) {
+                ownerCountInput.value = String(ownerInfoBody.querySelectorAll('tr').length || 1);
+            }
+        }
+
+        function updateOwnerFileControl(input) {
+            const container = input.closest('div');
+            const fileNameLabel = container?.querySelector('[data-file-name]');
+            const viewButton = container?.querySelector('[data-view-file]');
+            const file = input.files?.[0] || null;
+            if (fileNameLabel) {
+                fileNameLabel.textContent = file ? file.name : 'No file chosen';
+                fileNameLabel.classList.toggle('text-green-600', Boolean(file));
+                fileNameLabel.classList.toggle('font-semibold', Boolean(file));
+                fileNameLabel.classList.toggle('text-gray-500', !file);
+            }
+            if (viewButton) {
+                viewButton.classList.toggle('hidden', !file && !viewButton.dataset.fileUrl);
+            }
+        }
+
+        function viewOwnerSelectedFile(button) {
+            const container = button.closest('div');
+            const input = container?.querySelector('input[type="file"]');
+            const file = input?.files?.[0] || null;
+            if (file) {
+                window.open(URL.createObjectURL(file), '_blank');
+                return;
+            }
+            if (button.dataset.fileUrl) {
+                window.open(button.dataset.fileUrl, '_blank', 'noopener');
+            }
+        }
+
+        function syncOwnerDocumentFileControls(documents = currentProcessChartDocuments) {
+            if (!ownerInfoBody) return;
+            ownerInfoBody.querySelectorAll('tr').forEach((row, index) => {
+                [
+                    ['owner_info_aadhaar_file', `owner_info_aadhaar_file_${index}`],
+                    ['owner_info_pan_file', `owner_info_pan_file_${index}`],
+                ].forEach(([fieldName, documentKey]) => {
+                    const input = row.querySelector(`input[data-file-field="${fieldName}"]`);
+                    if (!(input instanceof HTMLInputElement)) return;
+                    const container = input.closest('div');
+                    const fileNameLabel = container?.querySelector('[data-file-name]');
+                    const viewButton = container?.querySelector('[data-view-file]');
+                    const doc = documents?.[documentKey] || null;
+
+                    if (!doc?.url) {
+                        if (fileNameLabel && !input.files?.length) {
+                            fileNameLabel.textContent = 'No file chosen';
+                            fileNameLabel.classList.remove('text-green-600', 'font-semibold');
+                            fileNameLabel.classList.add('text-gray-500');
+                        }
+                        if (viewButton && !input.files?.length) {
+                            viewButton.classList.add('hidden');
+                            delete viewButton.dataset.fileUrl;
+                        }
+                        return;
+                    }
+
+                    if (fileNameLabel) {
+                        fileNameLabel.textContent = doc.name || 'अपलोड केलेली प्रत';
+                        fileNameLabel.classList.remove('text-gray-500');
+                        fileNameLabel.classList.add('text-green-600', 'font-semibold');
+                    }
+                    if (viewButton) {
+                        viewButton.dataset.fileUrl = doc.url;
+                        viewButton.classList.remove('hidden');
+                    }
+                });
+            });
         }
 
         function toAreaNumber(value) {
@@ -4412,6 +4511,7 @@
             applyLegacyStep10Doc('step10_compensation_file', 'step10_compensation_file_0');
             applyLegacyStep10Doc('arbitration_passbook_file', 'arbitration_passbook_file_0');
             applyLegacyStep10Doc('arbitration_letter_file', 'arbitration_letter_file_0');
+            syncOwnerDocumentFileControls(documents);
             updateSec3RowDocumentLinks(documents);
             updateSec21RowDocumentLinks(documents);
         }
@@ -8501,6 +8601,8 @@
             ownerInfoBody.innerHTML = rows.length
                 ? rows.map((row, index) => buildOwnerInfoRow(row, index)).join('')
                 : buildOwnerInfoRow({}, 0);
+            updateOwnerInfoRowCount();
+            syncOwnerDocumentFileControls();
 
             renderStep10OwnerCards(payload || currentProcessChartPrefill, {});
             updateStep10AadhaarFromOwner(payload || currentProcessChartPrefill);
@@ -11466,6 +11568,8 @@
                 const nextIndex = ownerInfoBody.querySelectorAll('tr').length;
                 ownerInfoBody.insertAdjacentHTML('beforeend', buildOwnerInfoRow({}, nextIndex));
             }
+            updateOwnerInfoRowCount();
+            syncOwnerDocumentFileControls();
         }
 
         function getStep4RowCount(sectionData = {}, keys = []) {
@@ -11561,6 +11665,7 @@
                 }
 
                 applySectionDataFields(withoutBlankSec21Values(sectionData));
+                syncOwnerDocumentFileControls();
 
                 updateTotalAssetValuation();
                 updateAcquisitionDetailRowTotals();
@@ -12287,6 +12392,11 @@
         });
 
         ownerInfoBody?.addEventListener('click', (event) => {
+            const viewFileButton = event.target.closest('[data-view-file]');
+            if (viewFileButton) {
+                viewOwnerSelectedFile(viewFileButton);
+                return;
+            }
             const trigger = event.target.closest('.pc-other-rights-btn');
             if (!trigger) return;
             const rawContent = trigger.dataset.otherRights || '';
@@ -12296,6 +12406,18 @@
                 .replace(/&gt;/g, '>')
                 .replace(/&amp;/g, '&');
             openOtherRightsModal(parsed);
+        });
+        ownerInfoBody?.addEventListener('change', (event) => {
+            const target = event.target;
+            if (target instanceof HTMLInputElement && target.type === 'file') {
+                updateOwnerFileControl(target);
+            }
+        });
+        addOwnerRowBtn?.addEventListener('click', () => {
+            if (!ownerInfoBody) return;
+            const nextIndex = ownerInfoBody.querySelectorAll('tr').length;
+            ownerInfoBody.insertAdjacentHTML('beforeend', buildOwnerInfoRow({}, nextIndex));
+            updateOwnerInfoRowCount();
         });
 
         step10OwnerCardsContainer?.addEventListener('click', (event) => {
