@@ -2501,6 +2501,25 @@
     </div>
 </div>
 
+<div id="pcOwnerDocumentModal"
+    class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 p-4">
+    <div class="bg-white w-full max-w-5xl rounded-lg shadow-xl">
+        <div class="flex items-center justify-between border-b px-4 py-3">
+            <h3 id="pcOwnerDocumentModalTitle" class="text-base font-semibold">दस्तऐवज</h3>
+            <button type="button" id="closePcOwnerDocumentModalBtn"
+                class="text-gray-500 hover:text-gray-700 text-lg leading-none">&times;</button>
+        </div>
+        <div class="px-4 py-4">
+            <div id="pcOwnerDocumentPreview"
+                class="flex h-[70vh] items-center justify-center rounded border border-[#dbe8f8] bg-gray-50"></div>
+        </div>
+        <div class="border-t px-4 py-3 flex justify-end">
+            <button type="button" id="closePcOwnerDocumentModalFooterBtn"
+                class="px-3 py-1.5 bg-gray-700 hover:bg-gray-800 text-white rounded text-sm">बंद करा</button>
+        </div>
+    </div>
+</div>
+
 <div id="pcAssetValuationSummaryModal"
     class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 p-4">
     <div class="bg-white w-full max-w-4xl rounded-lg shadow-xl">
@@ -2590,6 +2609,11 @@
         const closeOtherRightsModalFooterBtn = document.getElementById('closePcOtherRightsModalFooterBtn');
         const filesModal = document.getElementById('pcFilesModal');
         const filesModalContent = document.getElementById('pcFilesModalContent');
+        const ownerDocumentModal = document.getElementById('pcOwnerDocumentModal');
+        const ownerDocumentModalTitle = document.getElementById('pcOwnerDocumentModalTitle');
+        const ownerDocumentPreview = document.getElementById('pcOwnerDocumentPreview');
+        const closeOwnerDocumentModalBtn = document.getElementById('closePcOwnerDocumentModalBtn');
+        const closeOwnerDocumentModalFooterBtn = document.getElementById('closePcOwnerDocumentModalFooterBtn');
         const assetValuationSummaryModal = document.getElementById('pcAssetValuationSummaryModal');
         const assetValuationSummaryContent = document.getElementById('pcAssetValuationSummaryContent');
         const closeAssetValuationSummaryModalBtn = document.getElementById('closePcAssetValuationSummaryModalBtn');
@@ -4191,8 +4215,7 @@
                         <input class="hidden" name="${name}" data-file-field="${name}" type="file" accept="application/pdf,image/*">
                     </label>
                     <span class="max-w-full truncate px-1 text-center text-[11px] font-medium ${fileInfo?.name ? 'text-green-600 font-semibold' : 'text-gray-500'}" data-file-name>${escapeHtml(fileInfo?.name || 'No file chosen')}</span>
-                    <button type="button" class="${fileInfo?.url ? '' : 'hidden '}rounded-lg border border-green-200 bg-green-50 px-3 py-1.5 text-xs font-semibold text-green-700 transition hover:bg-green-100" data-view-file${fileInfo?.url ? ` data-file-url="${escapeHtml(fileInfo.url)}"` : ''}>View</button>
-                    ${fileInfo?.url ? `<a class="text-center text-xs font-semibold text-[#125fcb] underline" href="${escapeHtml(fileInfo.url)}" target="_blank" rel="noopener">अपलोड केलेली प्रत</a>` : ''}
+                    <button type="button" class="${fileInfo?.url ? '' : 'hidden '}rounded-lg border border-green-200 bg-green-50 px-3 py-1.5 text-xs font-semibold text-green-700 transition hover:bg-green-100" data-view-file${fileInfo?.url ? ` data-file-url="${escapeHtml(fileInfo.url)}" data-file-name="${escapeHtml(fileInfo.name || 'अपलोड केलेली प्रत')}"` : ''}>View</button>
                 </div>
             `;
             return `
@@ -4238,16 +4261,44 @@
             }
         }
 
+        let ownerDocumentObjectUrl = '';
+
+        function closeOwnerDocumentModal() {
+            if (!ownerDocumentModal) return;
+            ownerDocumentModal.classList.add('hidden');
+            document.body.style.overflow = '';
+            if (ownerDocumentPreview) ownerDocumentPreview.innerHTML = '';
+            if (ownerDocumentObjectUrl) {
+                URL.revokeObjectURL(ownerDocumentObjectUrl);
+                ownerDocumentObjectUrl = '';
+            }
+        }
+
+        function openOwnerDocumentModal(url, name = 'दस्तऐवज', mimeType = '') {
+            if (!ownerDocumentModal || !ownerDocumentPreview || !url) return;
+            closeOwnerDocumentModal();
+            if (ownerDocumentModalTitle) ownerDocumentModalTitle.textContent = name || 'दस्तऐवज';
+            const normalizedUrl = String(url || '').split('?')[0].toLowerCase();
+            const isImage = String(mimeType || '').startsWith('image/') || /\.(png|jpe?g|gif|webp|bmp)$/i.test(normalizedUrl);
+            ownerDocumentPreview.innerHTML = isImage
+                ? `<img src="${escapeHtml(url)}" alt="${escapeHtml(name || 'दस्तऐवज')}" class="max-h-full max-w-full object-contain">`
+                : `<iframe src="${escapeHtml(url)}" title="${escapeHtml(name || 'दस्तऐवज')}" class="h-full w-full rounded bg-white"></iframe>`;
+            ownerDocumentModal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+
         function viewOwnerSelectedFile(button) {
             const container = button.closest('div');
             const input = container?.querySelector('input[type="file"]');
             const file = input?.files?.[0] || null;
             if (file) {
-                window.open(URL.createObjectURL(file), '_blank');
+                const objectUrl = URL.createObjectURL(file);
+                openOwnerDocumentModal(objectUrl, file.name || 'दस्तऐवज', file.type || '');
+                ownerDocumentObjectUrl = objectUrl;
                 return;
             }
             if (button.dataset.fileUrl) {
-                window.open(button.dataset.fileUrl, '_blank', 'noopener');
+                openOwnerDocumentModal(button.dataset.fileUrl, button.dataset.fileName || 'अपलोड केलेली प्रत');
             }
         }
 
@@ -4274,6 +4325,7 @@
                         if (viewButton && !input.files?.length) {
                             viewButton.classList.add('hidden');
                             delete viewButton.dataset.fileUrl;
+                            delete viewButton.dataset.fileName;
                         }
                         return;
                     }
@@ -4285,6 +4337,7 @@
                     }
                     if (viewButton) {
                         viewButton.dataset.fileUrl = doc.url;
+                        viewButton.dataset.fileName = doc.name || 'अपलोड केलेली प्रत';
                         viewButton.classList.remove('hidden');
                     }
                 });
@@ -12733,6 +12786,13 @@
         otherRightsModal?.addEventListener('click', (event) => {
             if (event.target === otherRightsModal) {
                 closeOtherRightsModal();
+            }
+        });
+        closeOwnerDocumentModalBtn?.addEventListener('click', closeOwnerDocumentModal);
+        closeOwnerDocumentModalFooterBtn?.addEventListener('click', closeOwnerDocumentModal);
+        ownerDocumentModal?.addEventListener('click', (event) => {
+            if (event.target === ownerDocumentModal) {
+                closeOwnerDocumentModal();
             }
         });
 
