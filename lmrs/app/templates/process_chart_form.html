@@ -741,7 +741,7 @@
                                     <div>
                                         <h3 class="text-xl font-bold text-[#244271]">जमीन मालक / हितसंबंधी व्यक्ती माहिती</h3>
                                         <p class="mt-1 text-sm font-medium text-[#60708a]" id="pcOwnerInfoStatus">7/12 मधून माहिती उपलब्ध झाल्यावर ही सारणी स्वयंरित्या भरेल.</p>
-                                        <p class="mt-1 text-sm font-bold text-[#4a6488]">आधार: 12 अंक | मोबाईल: 10 अंक | पॅन: 10 अक्षरे / अंक, विशेष चिन्हे वापरू नका.</p>
+                                        <p class="mt-1 text-sm font-bold text-[#4a6488]">आधार: 12 अंक | मोबाईल: 10 अंक | पॅन: 5 अक्षरे + 4 अंक + 1 अक्षर.</p>
                                     </div>
                                     <button type="button" id="pcAddOwnerRow" class="shrink-0 inline-flex items-center justify-center rounded-lg bg-[#125fcb] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition duration-200 hover:bg-[#0f52b0] focus:outline-none focus:ring-2 focus:ring-[#125fcb] focus:ring-offset-2">
                                         <svg class="mr-1.5 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path></svg>
@@ -797,7 +797,7 @@
                                                         <button type="button" class="hidden rounded-lg border border-green-200 bg-green-50 px-3 py-1.5 text-xs font-semibold text-green-700 transition hover:bg-green-100" data-view-file>View</button>
                                                     </div>
                                                 </td>
-                                                <td class="border-r border-gray-200 p-3"><input class="w-48 rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 outline-none transition placeholder-gray-400 focus:border-[#125fcb] focus:ring-2 focus:ring-[#125fcb]/20" name="owner_info_mobile_number" type="tel" inputmode="numeric" maxlength="10" pattern="[0-9]{10}" placeholder="10 अंक" title="मोबाईल नंबर 10 अंकी असावा."></td>
+                                                <td class="border-r border-gray-200 p-3"><input class="w-48 rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 outline-none transition placeholder-gray-400 focus:border-[#125fcb] focus:ring-2 focus:ring-[#125fcb]/20" name="owner_info_mobile_number" type="tel" inputmode="numeric" maxlength="10" pattern="[6-9][0-9]{9}" placeholder="10 अंक" title="मोबाईल नंबर 6, 7, 8 किंवा 9 ने सुरू होणारा 10 अंकी असावा."></td>
                                                 <td class="border-r border-gray-200 p-3"><textarea class="min-h-[42px] w-48 resize-y rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 outline-none transition placeholder-gray-400 focus:border-[#125fcb] focus:ring-2 focus:ring-[#125fcb]/20" name="owner_info_address" rows="2" placeholder="पत्ता लिहा..."></textarea></td>
                                                 <td class="border-r border-gray-200 p-3"><input class="w-48 rounded-lg border border-gray-300 px-3 py-2 text-center text-sm text-gray-900 outline-none transition placeholder-gray-400 focus:border-[#125fcb] focus:ring-2 focus:ring-[#125fcb]/20" name="owner_info_cultivable_area" type="text" placeholder="हे.आर"></td>
                                                 <td class="border-r border-gray-200 p-3"><input class="w-48 rounded-lg border border-gray-300 px-3 py-2 text-center text-sm text-gray-900 outline-none transition placeholder-gray-400 focus:border-[#125fcb] focus:ring-2 focus:ring-[#125fcb]/20" name="owner_info_potkharaba" type="text" placeholder="हे.आर"></td>
@@ -3005,11 +3005,11 @@
                     isValid = /^[0-9]{12}$/.test(value);
                     message = 'आधार कार्ड क्रमांक फक्त 12 अंकांचा असावा.';
                 } else if (fieldType === 'mobile') {
-                    isValid = /^[0-9]{10}$/.test(value);
-                    message = 'मोबाईल नंबर फक्त 10 अंकांचा असावा.';
+                    isValid = /^[6-9][0-9]{9}$/.test(value);
+                    message = 'मोबाईल नंबर 6, 7, 8 किंवा 9 ने सुरू होणारा 10 अंकांचा असावा.';
                 } else if (fieldType === 'pan') {
-                    isValid = /^[A-Z0-9]{10}$/.test(value);
-                    message = 'पॅन कार्ड क्रमांक फक्त 10 अक्षरे / अंकांचा असावा.';
+                    isValid = /^[A-Z]{5}[0-9]{4}[A-Z]$/.test(value);
+                    message = 'पॅन कार्ड क्रमांक 5 अक्षरे, 4 अंक आणि शेवटी 1 अक्षर असा असावा. उदा. ABCDE1234F';
                 } else if (fieldType === 'bank_account') {
                     isValid = /^[0-9]{9,18}$/.test(value);
                     message = 'बँक खाते क्रमांक 9 ते 18 अंकांचा असावा.';
@@ -3029,11 +3029,38 @@
             return isValid;
         }
 
+        function shouldReportIdentityFieldImmediately(field, eventType = '') {
+            const fieldType = getIdentityFieldType(field);
+            const value = String(field?.value || '').trim();
+            if (!fieldType || !value) return false;
+            if (eventType === 'blur' || eventType === 'change') return true;
+            if (fieldType === 'aadhaar') return value.length >= 12;
+            if (fieldType === 'mobile') return value.length >= 10;
+            if (fieldType === 'pan') return value.length >= 10;
+            if (fieldType === 'bank_account') return value.length >= 18;
+            if (fieldType === 'ifsc') return value.length >= 11;
+            if (fieldType === 'bank_name' || fieldType === 'bank_branch') return value.length >= 2;
+            return false;
+        }
+
+        function validateIdentityFieldImmediately(field, eventType = '') {
+            if (!(field instanceof HTMLInputElement)) return true;
+            if (!getIdentityFieldType(field)) return true;
+            sanitizeIdentityField(field);
+            const isValid = setIdentityFieldValidity(field);
+            field.classList.toggle('border-red-500', !isValid);
+            field.classList.toggle('focus:border-red-500', !isValid);
+            field.classList.toggle('focus:ring-red-500/20', !isValid);
+            if (!isValid && shouldReportIdentityFieldImmediately(field, eventType)) {
+                field.reportValidity();
+            }
+            return isValid;
+        }
+
         function validateIdentityFields(panel = processChartForm) {
             const fields = Array.from(panel?.querySelectorAll('input') || []);
             for (const field of fields) {
-                sanitizeIdentityField(field);
-                if (!setIdentityFieldValidity(field)) {
+                if (!validateIdentityFieldImmediately(field, 'submit')) {
                     field.reportValidity();
                     field.focus();
                     return false;
@@ -3126,6 +3153,7 @@
         let currentStep10SelectedOwnerKeys = [];
         let currentSec21FileBuckets = {};
         let latestProcessChartStepData = {};
+        const assetCategories = JSON.parse('{{ asset_categories_json|default:"[]"|escapejs }}');
         const todayIsoDate = new Date().toISOString().split('T')[0];
 
         function getSummaryStepData(stepNo) {
@@ -4175,7 +4203,7 @@
                     <td class="border-r border-gray-200 p-3">${fileControl('owner_info_aadhaar_file', aadhaarFileInfo)}</td>
                     <td class="border-r border-gray-200 p-3"><input class="${inputClass} text-gray-900" name="owner_info_pan_number" type="text" maxlength="10" pattern="[A-Za-z]{5}[0-9]{4}[A-Za-z]{1}" placeholder="ABCDE1234F" title="पॅन कार्ड क्रमांक 5 अक्षरे, 4 अंक आणि शेवटी 1 अक्षर असा असावा." value="${escapeHtml(rowData.pan_number || '')}"></td>
                     <td class="border-r border-gray-200 p-3">${fileControl('owner_info_pan_file', panFileInfo)}</td>
-                    <td class="border-r border-gray-200 p-3"><input class="${inputClass} text-gray-900" name="owner_info_mobile_number" type="tel" inputmode="numeric" maxlength="10" pattern="[0-9]{10}" placeholder="10 अंक" title="मोबाईल नंबर 10 अंकी असावा." value="${escapeHtml(rowData.mobile_number || '')}"></td>
+                    <td class="border-r border-gray-200 p-3"><input class="${inputClass} text-gray-900" name="owner_info_mobile_number" type="tel" inputmode="numeric" maxlength="10" pattern="[6-9][0-9]{9}" placeholder="10 अंक" title="मोबाईल नंबर 6, 7, 8 किंवा 9 ने सुरू होणारा 10 अंकी असावा." value="${escapeHtml(rowData.mobile_number || '')}"></td>
                     <td class="border-r border-gray-200 p-3"><textarea class="min-h-[42px] w-48 resize-y rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 outline-none transition placeholder-gray-400 focus:border-[#125fcb] focus:ring-2 focus:ring-[#125fcb]/20" name="owner_info_address" rows="2" placeholder="पत्ता लिहा...">${escapeHtml(rowData.address || '')}</textarea></td>
                     <td class="border-r border-gray-200 p-3"><input class="${centeredClass}${readonlyClass}" name="owner_info_cultivable_area" type="text" placeholder="हे.आर" value="${escapeHtml(cultivableAreaValue)}"${lockedAttr}></td>
                     <td class="border-r border-gray-200 p-3"><input class="${centeredClass}${readonlyClass}" name="owner_info_potkharaba" type="text" placeholder="हे.आर" value="${escapeHtml(rowData.potkharaba || '')}"${lockedAttr}></td>
@@ -4793,7 +4821,7 @@
             return `
                 <tr>
                     <td><input class="pc-input" name="single_khata_owner_name" type="text" value="${escapeHtml(row.owner_name || '')}"${sourceLockedAttr}></td>
-                    <td><input class="pc-input" name="single_khata_mobile_number" type="tel" inputmode="numeric" maxlength="10" pattern="[0-9]{10}" title="मोबाईल नंबर 10 अंकी असावा." value="${escapeHtml(row.mobile_number || '')}"${sourceLockedAttr}></td>
+                    <td><input class="pc-input" name="single_khata_mobile_number" type="tel" inputmode="numeric" maxlength="10" pattern="[6-9][0-9]{9}" title="मोबाईल नंबर 6, 7, 8 किंवा 9 ने सुरू होणारा 10 अंकी असावा." value="${escapeHtml(row.mobile_number || '')}"${sourceLockedAttr}></td>
                     <td><input class="pc-input" name="single_khata_address" type="text" value="${escapeHtml(row.address || '')}"${sourceLockedAttr}></td>
                     <td>
                         <div class="space-y-2">
@@ -4815,10 +4843,58 @@
             syncSingleKhataOwnerRowButtons();
         }
 
+        function assetCategoryForPrefix(prefix = '') {
+            return (Array.isArray(assetCategories) ? assetCategories : [])
+                .find((category) => String(category?.code || '') === String(prefix || '')) || null;
+        }
+
+        function assetCategoryItemOptions(prefix = '', selectedValue = '') {
+            const category = assetCategoryForPrefix(prefix);
+            const items = Array.isArray(category?.items) ? category.items : [];
+            const selected = String(selectedValue || '');
+            const options = ['<option value="">घटकाचा प्रकार निवडा</option>'];
+            let hasSelectedOption = !selected;
+            items.forEach((item) => {
+                const value = String(item?.code || item?.name_marathi || '');
+                if (!value) return;
+                if (value === selected) hasSelectedOption = true;
+                options.push(`<option value="${escapeHtml(value)}"${value === selected ? ' selected' : ''}>${escapeHtml(item?.name_marathi || value)}</option>`);
+            });
+            if (selected && !hasSelectedOption) {
+                options.push(`<option value="${escapeHtml(selected)}" selected>${escapeHtml(selected)}</option>`);
+            }
+            return options.join('');
+        }
+
+        function assetCategoryItemLabel(prefix = '', selectedValue = '') {
+            const selected = String(selectedValue || '');
+            if (!selected) return '';
+            const category = assetCategoryForPrefix(prefix);
+            const item = (Array.isArray(category?.items) ? category.items : [])
+                .find((entry) => String(entry?.code || entry?.name_marathi || '') === selected);
+            return item?.name_marathi || selected;
+        }
+
+        function assetCategoryItemValueByLabel(prefix = '', label = '') {
+            const normalizedLabel = String(label || '').trim().toLowerCase();
+            if (!normalizedLabel) return '';
+            const category = assetCategoryForPrefix(prefix);
+            const item = (Array.isArray(category?.items) ? category.items : [])
+                .find((entry) => String(entry?.name_marathi || '').trim().toLowerCase() === normalizedLabel);
+            return item ? String(item.code || item.name_marathi || '') : '';
+        }
+
         function buildRepeatableAssetComponentRow(prefix, values = {}, ownerValue = '', showLabels = true, showOwnerControls = false) {
             const relatedOwnerName = escapeHtml(ownerValue || values[`${prefix}_related_owner_name`] || '');
             const assetOwnerName = values[`${prefix}_owner_name`] || '';
-            const componentDetail = escapeHtml(values[`${prefix}_component_detail`] || '');
+            let componentItem = values[`${prefix}_component_item`] || '';
+            let rawComponentDetail = values[`${prefix}_component_detail`] || '';
+            if (!componentItem && rawComponentDetail) {
+                const matchedItem = assetCategoryItemValueByLabel(prefix, rawComponentDetail);
+                componentItem = matchedItem || rawComponentDetail;
+                rawComponentDetail = '';
+            }
+            const componentDetail = escapeHtml(rawComponentDetail);
             const savedComponentCount = values[`${prefix}_component_count`];
             const componentCount = escapeHtml(
                 savedComponentCount === undefined || savedComponentCount === null || savedComponentCount === ''
@@ -4827,6 +4903,7 @@
             );
             const componentValuation = escapeHtml(values[`${prefix}_component_valuation`] || '');
             const hiddenOwnerValue = escapeHtml(ownerValue || values[`${prefix}_related_owner_name`] || '');
+            const itemLabel = showLabels ? '<label class="pc-label">घटकाचा प्रकार</label>' : '';
             const detailLabel = showLabels ? '<label class="pc-label">निगडीत घटक तपशील</label>' : '';
             const countLabel = showLabels ? '<label class="pc-label">संख्या</label>' : '';
             const valuationLabel = showLabels ? '<label class="pc-label">निगडीत घटकांचे मूल्यांकन</label>' : '';
@@ -4834,11 +4911,11 @@
             return `
                 <div class="pc-repeatable-asset-component-row grid gap-4 md:grid-cols-12 md:items-end">
                     ${showOwnerControls ? `
-                        <div class="md:col-span-3">
+                        <div class="md:col-span-2">
                             <label class="pc-label">भूधारकाचे नाव</label>
                             <input class="pc-input pc-repeatable-asset-owner-input" name="${prefix}_related_owner_name" type="text" list="pcAssetOwnerSuggestions" value="${relatedOwnerName}" placeholder="भूधारकाचे नाव">
                         </div>
-                        <div class="md:col-span-3">
+                        <div class="md:col-span-2">
                             <label class="pc-label">इतर</label>
                             <div class="owner-name-dropdown" data-owner-input-name="${prefix}_owner_name">
                                 ${buildAssetOwnerNameInput(`${prefix}_owner_name`, assetOwnerName)}
@@ -4846,8 +4923,14 @@
                         </div>
                     ` : `
                         <input type="hidden" name="${prefix}_related_owner_name" value="${hiddenOwnerValue}">
-                        <div class="hidden md:block md:col-span-6"></div>
+                        <div class="hidden md:block md:col-span-4"></div>
                     `}
+                    <div class="md:col-span-2">
+                        ${itemLabel}
+                        <select class="pc-input" name="${prefix}_component_item">
+                            ${assetCategoryItemOptions(prefix, componentItem)}
+                        </select>
+                    </div>
                     <div class="md:col-span-2">
                         ${detailLabel}
                         <input class="pc-input" name="${prefix}_component_detail" type="text" value="${componentDetail}" placeholder="निगडीत घटक तपशील">
@@ -4955,21 +5038,24 @@
             return names.join(', ');
         }
 
-        function addRepeatableAssetComponentToGroupedRow(groupedRow, prefix, componentDetail = '', componentCount = '', componentValuation = '') {
+        function addRepeatableAssetComponentToGroupedRow(groupedRow, prefix, componentItem = '', componentDetail = '', componentCount = '', componentValuation = '') {
             if (!groupedRow || !prefix) return;
             if (!Array.isArray(groupedRow.component_rows)) {
                 groupedRow.component_rows = [];
             }
+            const item = componentItem || '';
             const detail = componentDetail || '';
             const count = componentCount || '';
             const valuation = componentValuation || '';
             const alreadyExists = groupedRow.component_rows.some((row) => (
-                String(row?.[`${prefix}_component_detail`] || '') === String(detail)
+                String(row?.[`${prefix}_component_item`] || '') === String(item)
+                && String(row?.[`${prefix}_component_detail`] || '') === String(detail)
                 && String(row?.[`${prefix}_component_count`] || '') === String(count)
                 && String(row?.[`${prefix}_component_valuation`] || '') === String(valuation)
             ));
             if (!alreadyExists || !groupedRow.component_rows.length) {
                 groupedRow.component_rows.push({
+                    [`${prefix}_component_item`]: item,
                     [`${prefix}_component_detail`]: detail,
                     [`${prefix}_component_count`]: count,
                     [`${prefix}_component_valuation`]: valuation,
@@ -4985,11 +5071,12 @@
                 const prefix = container.dataset.namePrefix || '';
                 const ownerName = row?.[`${prefix}_related_owner_name`] || '';
                 const assetOwnerName = row?.[`${prefix}_owner_name`] || '';
+                const componentItem = row?.[`${prefix}_component_item`] || '';
                 const componentDetail = row?.[`${prefix}_component_detail`] || '';
                 const componentCount = row?.[`${prefix}_component_count`] || '';
                 const componentValuation = row?.[`${prefix}_component_valuation`] || '';
                 const ownerKey = normalizeOwnerName(`${ownerName}||${assetOwnerName}`);
-                const componentKey = row?._asset_group || (ownerKey ? `owner:${ownerKey}` : `${componentDetail}||${componentCount}||${componentValuation}`);
+                const componentKey = row?._asset_group || (ownerKey ? `owner:${ownerKey}` : `${componentItem}||${componentDetail}||${componentCount}||${componentValuation}`);
                 if (!groupedRows.has(componentKey)) {
                     groupedRows.set(componentKey, {
                         _asset_group: row?._asset_group || '',
@@ -4999,7 +5086,7 @@
                     });
                 }
                 const groupedRow = groupedRows.get(componentKey);
-                addRepeatableAssetComponentToGroupedRow(groupedRow, prefix, componentDetail, componentCount, componentValuation);
+                addRepeatableAssetComponentToGroupedRow(groupedRow, prefix, componentItem, componentDetail, componentCount, componentValuation);
                 groupedRow[`${prefix}_related_owner_name`] = mergeCommaSeparatedNames(
                     groupedRow[`${prefix}_related_owner_name`],
                     ownerName
@@ -5022,10 +5109,11 @@
             rows.forEach((row) => {
                 const ownerName = row?.[`${prefix}_related_owner_name`] || '';
                 const assetOwnerName = row?.[`${prefix}_owner_name`] || '';
+                const componentItem = row?.[`${prefix}_component_item`] || '';
                 const componentDetail = row?.[`${prefix}_component_detail`] || '';
                 const componentCount = row?.[`${prefix}_component_count`] || '';
                 const componentValuation = row?.[`${prefix}_component_valuation`] || '';
-                const componentKey = row?._asset_group || `${componentDetail}||${componentCount}||${componentValuation}`;
+                const componentKey = row?._asset_group || `${componentItem}||${componentDetail}||${componentCount}||${componentValuation}`;
                 if (!groupedRows.has(componentKey)) {
                     groupedRows.set(componentKey, {
                         _asset_group: row?._asset_group || '',
@@ -5035,7 +5123,7 @@
                     });
                 }
                 const groupedRow = groupedRows.get(componentKey);
-                addRepeatableAssetComponentToGroupedRow(groupedRow, prefix, componentDetail, componentCount, componentValuation);
+                addRepeatableAssetComponentToGroupedRow(groupedRow, prefix, componentItem, componentDetail, componentCount, componentValuation);
                 groupedRow[`${prefix}_related_owner_name`] = mergeCommaSeparatedNames(
                     groupedRow[`${prefix}_related_owner_name`],
                     ownerName
@@ -5054,6 +5142,7 @@
             const prefix = container.dataset.namePrefix || '';
             if (!prefix) return [];
             const rows = [];
+            let inheritedComponentItem = '';
             let inheritedComponentDetail = '';
             let inheritedComponentCount = '';
             let inheritedComponentValuation = '';
@@ -5067,6 +5156,7 @@
                         _asset_group: assetGroup,
                         [`${prefix}_related_owner_name`]: ownerName,
                         [`${prefix}_owner_name`]: assetOwnerName,
+                        [`${prefix}_component_item`]: inheritedComponentItem,
                         [`${prefix}_component_detail`]: inheritedComponentDetail,
                         [`${prefix}_component_count`]: inheritedComponentCount,
                         [`${prefix}_component_valuation`]: inheritedComponentValuation,
@@ -5074,9 +5164,11 @@
                     return;
                 }
                 componentRows.forEach((componentRow) => {
+                    const componentItem = componentRow.querySelector(`[name="${prefix}_component_item"]`)?.value || '';
                     const componentDetail = componentRow.querySelector(`[name="${prefix}_component_detail"]`)?.value || '';
                     const componentCount = componentRow.querySelector(`[name="${prefix}_component_count"]`)?.value || '';
                     const componentValuation = componentRow.querySelector(`[name="${prefix}_component_valuation"]`)?.value || '';
+                    inheritedComponentItem = componentItem;
                     inheritedComponentDetail = componentDetail;
                     inheritedComponentCount = componentCount;
                     inheritedComponentValuation = componentValuation;
@@ -5084,6 +5176,7 @@
                         _asset_group: assetGroup,
                         [`${prefix}_related_owner_name`]: ownerName,
                         [`${prefix}_owner_name`]: assetOwnerName,
+                        [`${prefix}_component_item`]: componentItem,
                         [`${prefix}_component_detail`]: componentDetail,
                         [`${prefix}_component_count`]: componentCount,
                         [`${prefix}_component_valuation`]: componentValuation,
@@ -5111,9 +5204,11 @@
             values.push(wrapper.querySelector(`.pc-repeatable-asset-owner-input[name="${prefix}_related_owner_name"]`)?.value || '');
             values.push(wrapper.querySelector(`.owner-name-dropdown[data-owner-input-name="${prefix}_owner_name"] input`)?.value || '');
             wrapper.querySelectorAll('.pc-repeatable-asset-component-row').forEach((componentRow) => {
+                const item = componentRow.querySelector(`[name="${prefix}_component_item"]`)?.value || '';
                 const detail = componentRow.querySelector(`[name="${prefix}_component_detail"]`)?.value || '';
                 const count = componentRow.querySelector(`[name="${prefix}_component_count"]`)?.value || '';
                 const valuation = componentRow.querySelector(`[name="${prefix}_component_valuation"]`)?.value || '';
+                values.push(item);
                 values.push(detail);
                 values.push(valuation);
                 if (String(count || '').trim() && String(count || '').trim() !== '1') {
@@ -5129,29 +5224,31 @@
         }
 
         function collectCurrentAssetComponentTemplates(container, prefix) {
-            if (!container || !prefix) return [{ detail: '', count: '', valuation: '' }];
+            if (!container || !prefix) return [{ item: '', detail: '', count: '', valuation: '' }];
             const wrappers = Array.from(container.querySelectorAll('.pc-repeatable-asset-row')).reverse();
             for (const wrapper of wrappers) {
                 const componentRows = Array.from(wrapper.querySelectorAll('.pc-repeatable-asset-component-row'));
                 const templates = componentRows.map((componentRow) => ({
+                    item: componentRow.querySelector(`[name="${prefix}_component_item"]`)?.value || '',
                     detail: componentRow.querySelector(`[name="${prefix}_component_detail"]`)?.value || '',
                     count: componentRow.querySelector(`[name="${prefix}_component_count"]`)?.value || '',
                     valuation: componentRow.querySelector(`[name="${prefix}_component_valuation"]`)?.value || '',
                 }));
                 if (wrapper === wrappers[0] && isRepeatableAssetWrapperBlank(wrapper, prefix)) {
-                    return templates.length ? templates : [{ detail: '', count: '', valuation: '' }];
+                    return templates.length ? templates : [{ item: '', detail: '', count: '', valuation: '' }];
                 }
-                if (templates.some((row) => String(row.detail || '').trim() || String(row.count || '').trim() || String(row.valuation || '').trim())) {
-                    return templates.length ? templates : [{ detail: '', count: '', valuation: '' }];
+                if (templates.some((row) => String(row.item || '').trim() || String(row.detail || '').trim() || String(row.count || '').trim() || String(row.valuation || '').trim())) {
+                    return templates.length ? templates : [{ item: '', detail: '', count: '', valuation: '' }];
                 }
             }
-            return [{ detail: '', count: '', valuation: '' }];
+            return [{ item: '', detail: '', count: '', valuation: '' }];
         }
 
         function buildRepeatableAssetRowKey(prefix, row = {}) {
             return [
                 row._asset_group || '',
                 normalizeOwnerName(row[`${prefix}_related_owner_name`] || ''),
+                String(row[`${prefix}_component_item`] || '').trim().toLowerCase(),
                 String(row[`${prefix}_component_detail`] || '').trim().toLowerCase(),
                 String(row[`${prefix}_component_count`] || '').trim(),
                 String(row[`${prefix}_component_valuation`] || '').trim(),
@@ -5180,7 +5277,7 @@
         }
 
         function getRepeatableAssetRowCount(sectionData = {}, prefix) {
-            const suffixes = ['related_owner_name', 'owner_name', 'component_detail', 'component_count', 'component_valuation'];
+            const suffixes = ['related_owner_name', 'owner_name', 'component_item', 'component_detail', 'component_count', 'component_valuation'];
             return suffixes.reduce((maxCount, suffix) => {
                 const value = sectionData[`${prefix}_${suffix}`];
                 return Array.isArray(value) ? Math.max(maxCount, value.length) : maxCount;
@@ -5195,6 +5292,9 @@
             const assetOwnerValues = Array.isArray(sectionData[`${prefix}_owner_name`])
                 ? sectionData[`${prefix}_owner_name`]
                 : (sectionData[`${prefix}_owner_name`] ? [sectionData[`${prefix}_owner_name`]] : []);
+            const itemValues = Array.isArray(sectionData[`${prefix}_component_item`])
+                ? sectionData[`${prefix}_component_item`]
+                : (sectionData[`${prefix}_component_item`] ? [sectionData[`${prefix}_component_item`]] : []);
             const detailValues = Array.isArray(sectionData[`${prefix}_component_detail`])
                 ? sectionData[`${prefix}_component_detail`]
                 : (sectionData[`${prefix}_component_detail`] ? [sectionData[`${prefix}_component_detail`]] : []);
@@ -5204,10 +5304,11 @@
             const valuationValues = Array.isArray(sectionData[`${prefix}_component_valuation`])
                 ? sectionData[`${prefix}_component_valuation`]
                 : (sectionData[`${prefix}_component_valuation`] ? [sectionData[`${prefix}_component_valuation`]] : []);
-            const rowCount = Math.max(ownerValues.length, assetOwnerValues.length, detailValues.length, countValues.length, valuationValues.length);
+            const rowCount = Math.max(ownerValues.length, assetOwnerValues.length, itemValues.length, detailValues.length, countValues.length, valuationValues.length);
             return Array.from({ length: rowCount }, (_item, index) => ({
                 [`${prefix}_related_owner_name`]: ownerValues[index] || '',
                 [`${prefix}_owner_name`]: assetOwnerValues[index] || '',
+                [`${prefix}_component_item`]: itemValues[index] || '',
                 [`${prefix}_component_detail`]: detailValues[index] || '',
                 [`${prefix}_component_count`]: countValues[index] || '',
                 [`${prefix}_component_valuation`]: valuationValues[index] || '',
@@ -5312,11 +5413,13 @@
                 if (!prefix || !Array.isArray(rows)) return;
                 const ownerKey = `${prefix}_related_owner_name`;
                 const assetOwnerKey = `${prefix}_owner_name`;
+                const itemKey = `${prefix}_component_item`;
                 const detailKey = `${prefix}_component_detail`;
                 const countKey = `${prefix}_component_count`;
                 const valuationKey = `${prefix}_component_valuation`;
                 data[ownerKey] = rows.map((row) => row?.[ownerKey] || '');
                 data[assetOwnerKey] = rows.map((row) => row?.[assetOwnerKey] || '');
+                data[itemKey] = rows.map((row) => row?.[itemKey] || '');
                 data[detailKey] = rows.map((row) => row?.[detailKey] || '');
                 data[countKey] = rows.map((row) => row?.[countKey] || '');
                 data[valuationKey] = rows.map((row) => row?.[valuationKey] || '');
@@ -5361,6 +5464,9 @@
                 const assetOwnerValues = Array.isArray(data[`${prefix}_owner_name`])
                     ? data[`${prefix}_owner_name`]
                     : (data[`${prefix}_owner_name`] ? [data[`${prefix}_owner_name`]] : []);
+                const itemValues = Array.isArray(data[`${prefix}_component_item`])
+                    ? data[`${prefix}_component_item`]
+                    : (data[`${prefix}_component_item`] ? [data[`${prefix}_component_item`]] : []);
                 const detailValues = Array.isArray(data[`${prefix}_component_detail`])
                     ? data[`${prefix}_component_detail`]
                     : (data[`${prefix}_component_detail`] ? [data[`${prefix}_component_detail`]] : []);
@@ -5370,11 +5476,12 @@
                 const valuationValues = Array.isArray(data[`${prefix}_component_valuation`])
                     ? data[`${prefix}_component_valuation`]
                     : (data[`${prefix}_component_valuation`] ? [data[`${prefix}_component_valuation`]] : []);
-                const rowCount = Math.max(ownerValues.length, assetOwnerValues.length, detailValues.length, countValues.length, valuationValues.length);
+                const rowCount = Math.max(ownerValues.length, assetOwnerValues.length, itemValues.length, detailValues.length, countValues.length, valuationValues.length);
                 if (!rowCount) return;
                 snapshot.sections[prefix] = Array.from({ length: rowCount }, (_item, index) => ({
                     [`${prefix}_related_owner_name`]: ownerValues[index] || '',
                     [`${prefix}_owner_name`]: assetOwnerValues[index] || '',
+                    [`${prefix}_component_item`]: itemValues[index] || '',
                     [`${prefix}_component_detail`]: detailValues[index] || '',
                     [`${prefix}_component_count`]: countValues[index] || '',
                     [`${prefix}_component_valuation`]: valuationValues[index] || '',
@@ -5421,6 +5528,9 @@
                 const assetOwnerValues = Array.isArray(data[`${prefix}_owner_name`])
                     ? data[`${prefix}_owner_name`]
                     : (data[`${prefix}_owner_name`] ? [data[`${prefix}_owner_name`]] : []);
+                const itemValues = Array.isArray(data[`${prefix}_component_item`])
+                    ? data[`${prefix}_component_item`]
+                    : (data[`${prefix}_component_item`] ? [data[`${prefix}_component_item`]] : []);
                 const detailValues = Array.isArray(data[`${prefix}_component_detail`])
                     ? data[`${prefix}_component_detail`]
                     : (data[`${prefix}_component_detail`] ? [data[`${prefix}_component_detail`]] : []);
@@ -5430,12 +5540,13 @@
                 const valuationValues = Array.isArray(data[`${prefix}_component_valuation`])
                     ? data[`${prefix}_component_valuation`]
                     : (data[`${prefix}_component_valuation`] ? [data[`${prefix}_component_valuation`]] : []);
-                const rowCount = Math.max(ownerValues.length, assetOwnerValues.length, detailValues.length, countValues.length, valuationValues.length);
+                const rowCount = Math.max(ownerValues.length, assetOwnerValues.length, itemValues.length, detailValues.length, countValues.length, valuationValues.length);
                 const container = tab7Panel.querySelector(`[data-repeatable-asset-rows][data-name-prefix="${CSS.escape(prefix)}"]`);
                 if (!container || !rowCount) return;
                 renderRepeatableAssetRows(container, Array.from({ length: rowCount }, (_item, index) => ({
                     [`${prefix}_related_owner_name`]: ownerValues[index] || '',
                     [`${prefix}_owner_name`]: assetOwnerValues[index] || '',
+                    [`${prefix}_component_item`]: itemValues[index] || '',
                     [`${prefix}_component_detail`]: detailValues[index] || '',
                     [`${prefix}_component_count`]: countValues[index] || '',
                     [`${prefix}_component_valuation`]: valuationValues[index] || '',
@@ -5444,7 +5555,7 @@
             });
 
             Object.entries(data).forEach(([key, value]) => {
-                if (key.includes('_related_owner_name') || key.includes('_component_detail') || key.includes('_component_count') || key.includes('_component_valuation')) return;
+                if (key.includes('_related_owner_name') || key.includes('_component_item') || key.includes('_component_detail') || key.includes('_component_count') || key.includes('_component_valuation')) return;
                 const fields = Array.from(tab7Panel.querySelectorAll(`[name="${CSS.escape(key)}"]`) || []);
                 if (!fields.length) return;
                 if (Array.isArray(value) && fields.length > 1) {
@@ -5471,21 +5582,24 @@
             ['water_supply', 'agriculture', 'construction', 'forest', 'other_department'].forEach((prefix) => {
                 const ownerValue = data[`${prefix}_related_owner_name`];
                 const assetOwnerValue = data[`${prefix}_owner_name`];
+                const itemValue = data[`${prefix}_component_item`];
                 const detailValue = data[`${prefix}_component_detail`];
                 const countValue = data[`${prefix}_component_count`];
                 const valuationValue = data[`${prefix}_component_valuation`];
                 const ownerValues = Array.isArray(ownerValue) ? ownerValue : (ownerValue ? [ownerValue] : []);
                 const assetOwnerValues = Array.isArray(assetOwnerValue) ? assetOwnerValue : (assetOwnerValue ? [assetOwnerValue] : []);
+                const itemValues = Array.isArray(itemValue) ? itemValue : (itemValue ? [itemValue] : []);
                 const detailValues = Array.isArray(detailValue) ? detailValue : (detailValue ? [detailValue] : []);
                 const countValues = Array.isArray(countValue) ? countValue : (countValue ? [countValue] : []);
                 const valuationValues = Array.isArray(valuationValue) ? valuationValue : (valuationValue ? [valuationValue] : []);
-                const rowCount = Math.max(ownerValues.length, assetOwnerValues.length, detailValues.length, countValues.length, valuationValues.length);
+                const rowCount = Math.max(ownerValues.length, assetOwnerValues.length, itemValues.length, detailValues.length, countValues.length, valuationValues.length);
                 const container = tab7Panel.querySelector(`[data-repeatable-asset-rows][data-name-prefix="${prefix}"]`);
                 if (!container || !rowCount) return;
 
                 renderRepeatableAssetRows(container, Array.from({ length: rowCount }, (_item, index) => ({
                     [`${prefix}_related_owner_name`]: ownerValues[index] || '',
                     [`${prefix}_owner_name`]: assetOwnerValues[index] || '',
+                    [`${prefix}_component_item`]: itemValues[index] || '',
                     [`${prefix}_component_detail`]: detailValues[index] || '',
                     [`${prefix}_component_count`]: countValues[index] || '',
                     [`${prefix}_component_valuation`]: valuationValues[index] || '',
@@ -5621,7 +5735,8 @@
         }
 
         function handleTab7FieldChanged(event) {
-            if (!(event.target instanceof HTMLInputElement) || !event.target.closest('[data-pc-panel="7"]')) return;
+            if (!(event.target instanceof HTMLElement) || !event.target.closest('[data-pc-panel="7"]')) return;
+            if (!(event.target instanceof HTMLInputElement) && !(event.target instanceof HTMLSelectElement) && !(event.target instanceof HTMLTextAreaElement)) return;
             saveTab7LocalDraft();
             scheduleTab7AutoSave();
         }
@@ -6085,17 +6200,19 @@
             const container = document.getElementById(section.containerId);
             if (!container) return [];
             return Array.from(container.querySelectorAll('.pc-repeatable-asset-component-row')).map((row) => {
+                const item = row.querySelector(`[name="${section.prefix}_component_item"]`)?.value || '';
                 const detail = row.querySelector(`[name="${section.prefix}_component_detail"]`)?.value || '';
                 const count = row.querySelector(`[name="${section.prefix}_component_count"]`)?.value || '';
                 const valuationRaw = row.querySelector(`[name="${section.prefix}_component_valuation"]`)?.value || '';
                 const valuation = Number.parseFloat(String(valuationRaw).replace(/,/g, '').trim());
                 return {
+                    item: assetCategoryItemLabel(section.prefix, item).trim(),
                     detail: detail.trim(),
                     count: count.trim(),
                     valuationText: valuationRaw.trim(),
                     valuation: Number.isFinite(valuation) ? valuation : 0,
                 };
-            }).filter((row) => row.detail || row.count || row.valuationText);
+            }).filter((row) => row.item || row.detail || row.count || row.valuationText);
         }
 
         function openAssetValuationSummaryModal() {
@@ -6118,6 +6235,7 @@
                             <thead class="bg-[#edf5ff] text-[#244271]">
                                 <tr>
                                     <th class="border border-[#dbe8f8] px-3 py-2 text-left">शीर्षक</th>
+                                    <th class="border border-[#dbe8f8] px-3 py-2 text-left">घटकाचा प्रकार</th>
                                     <th class="border border-[#dbe8f8] px-3 py-2 text-left">निगडीत घटक तपशील</th>
                                     <th class="border border-[#dbe8f8] px-3 py-2 text-right">संख्या</th>
                                     <th class="border border-[#dbe8f8] px-3 py-2 text-right">निगडीत घटकांचे मूल्यांकन</th>
@@ -6129,6 +6247,7 @@
                         ? section.rows.map((row, index) => `
                                             <tr>
                                                 ${index === 0 ? `<td class="border border-[#dbe8f8] px-3 py-2 align-top font-semibold text-[#244271]" rowspan="${section.rows.length + 1}">${escapeHtml(section.title)}</td>` : ''}
+                                                <td class="border border-[#dbe8f8] px-3 py-2">${escapeHtml(row.item || '-')}</td>
                                                 <td class="border border-[#dbe8f8] px-3 py-2">${escapeHtml(row.detail || '-')}</td>
                                                 <td class="border border-[#dbe8f8] px-3 py-2 text-right">${row.valuation > 0 ? escapeHtml(row.count || '-') : '-'}</td>
                                                 <td class="border border-[#dbe8f8] px-3 py-2 text-right">${escapeHtml(row.valuationText || '0')}</td>
@@ -6138,6 +6257,7 @@
                                             <tr>
                                                 <td class="border border-[#dbe8f8] px-3 py-2 align-top font-semibold text-[#244271]" rowspan="2">${escapeHtml(section.title)}</td>
                                                 <td class="border border-[#dbe8f8] px-3 py-2 text-[#6b7d99]">उपलब्ध नाही</td>
+                                                <td class="border border-[#dbe8f8] px-3 py-2 text-[#6b7d99]">-</td>
                                                 <td class="border border-[#dbe8f8] px-3 py-2 text-right">-</td>
                                                 <td class="border border-[#dbe8f8] px-3 py-2 text-right">0</td>
                                             </tr>
@@ -6145,7 +6265,7 @@
                     return `
                                         ${rowsHtml}
                                         <tr class="bg-[#f8fbff] font-semibold">
-                                            <td class="border border-[#dbe8f8] px-3 py-2 text-right" colspan="2">एकूण</td>
+                                            <td class="border border-[#dbe8f8] px-3 py-2 text-right" colspan="3">एकूण</td>
                                             <td class="border border-[#dbe8f8] px-3 py-2 text-right">${section.total.toFixed(2)}</td>
                                         </tr>
                                     `;
@@ -6153,7 +6273,7 @@
                             </tbody>
                             <tfoot class="bg-[#edf5ff] font-bold text-[#244271]">
                                 <tr>
-                                    <td class="border border-[#dbe8f8] px-3 py-2 text-right" colspan="3">एकूण मूल्यांकन</td>
+                                    <td class="border border-[#dbe8f8] px-3 py-2 text-right" colspan="4">एकूण मूल्यांकन</td>
                                     <td class="border border-[#dbe8f8] px-3 py-2 text-right">${grandTotal.toFixed(2)}</td>
                                 </tr>
                             </tfoot>
@@ -6179,7 +6299,7 @@
                 return `
                 <tr>
                     <td><input class="pc-input" name="multi_khata_owner_name" type="text" value="${escapeHtml(row.owner_name || '')}"${sourceLockedAttr}></td>
-                    <td><input class="pc-input" name="multi_khata_mobile_number" type="tel" inputmode="numeric" maxlength="10" pattern="[0-9]{10}" title="मोबाईल नंबर 10 अंकी असावा." value="${escapeHtml(row.mobile_number || '')}"${sourceLockedAttr}></td>
+                    <td><input class="pc-input" name="multi_khata_mobile_number" type="tel" inputmode="numeric" maxlength="10" pattern="[6-9][0-9]{9}" title="मोबाईल नंबर 6, 7, 8 किंवा 9 ने सुरू होणारा 10 अंकी असावा." value="${escapeHtml(row.mobile_number || '')}"${sourceLockedAttr}></td>
                     <td><input class="pc-input" name="multi_khata_address" type="text" value="${escapeHtml(row.address || '')}"${sourceLockedAttr}></td>
                     ${index === 0 ? `
                         <td rowspan="${rows.length}" class="align-top">
@@ -6912,6 +7032,7 @@
                     const selectedRow = {
                         _asset_group: selectedAssetGroup,
                         [`${prefix}_related_owner_name`]: selectedOwnerValue,
+                        [`${prefix}_component_item`]: component.item || '',
                         [`${prefix}_component_detail`]: component.detail || '',
                         [`${prefix}_component_count`]: component.count || '',
                         [`${prefix}_component_valuation`]: component.valuation || '',
@@ -12136,6 +12257,14 @@
                 setStep(currentStep);
             }
         });
+
+        processChartForm?.addEventListener('input', (event) => {
+            validateIdentityFieldImmediately(event.target, 'input');
+        });
+
+        processChartForm?.addEventListener('blur', (event) => {
+            validateIdentityFieldImmediately(event.target, 'blur');
+        }, true);
 
         if (districtSelect && talukaSelect && villageSelect && gutSelect) {
             districtSelect.addEventListener('change', async () => {

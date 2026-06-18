@@ -1,12 +1,12 @@
 ﻿from django.shortcuts import render, redirect
 from django.http import JsonResponse, HttpResponse
 from django.urls import reverse
-from django.db import connection, transaction
+from django.db import connection, transaction, ProgrammingError, OperationalError
 from django.db.models import Q
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.sessions.models import Session
-from .models import Inspection, ReadyReckonerInfo, ReadyReckonerRate, LandRecord712, FarmerNames,TreeMaster, Asset, AssetMeasurement, AssetTypeMaster, AssetFieldMaster, AssetFormulaMaster, Document, ToolMaster, DocumentMaster, DocumentAttachment, Entry, VillageData, VillageData8ARecord, VillageDataSec15Rate, VillageDataFile, VillageData8AFile, VillageData32_2Row, VillageData32_2RowFile, VillageData32_1Row, VillageData32_1RowFile, ActiveUserSession, AssetDetail, ProcessChartCase, ProcessChartStepData, ProcessChartDocument, ProcessChartOwnerNotice, ProcessChartDepartmentRow, ProcessChartValuationRow
+from .models import Inspection, ReadyReckonerInfo, ReadyReckonerRate, LandRecord712, FarmerNames,TreeMaster, Asset, AssetMeasurement, AssetTypeMaster, AssetFieldMaster, AssetFormulaMaster, AssetCategory, Document, ToolMaster, DocumentMaster, DocumentAttachment, Entry, VillageData, VillageData8ARecord, VillageDataSec15Rate, VillageDataFile, VillageData8AFile, VillageData32_2Row, VillageData32_2RowFile, VillageData32_1Row, VillageData32_1RowFile, ActiveUserSession, AssetDetail, ProcessChartCase, ProcessChartStepData, ProcessChartDocument, ProcessChartOwnerNotice, ProcessChartDepartmentRow, ProcessChartValuationRow
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponseForbidden
 from django.db import connection
@@ -296,7 +296,7 @@ def stamp_location_on_photo(uploaded_file, latitude, longitude):
         output.seek(0)
 
         return ContentFile(output.read(), name=filename)
-    except Exception:
+    except (ProgrammingError, OperationalError):
         uploaded_file.seek(0)
         return uploaded_file
 
@@ -4971,11 +4971,42 @@ def process_chart_form(request):
     case_id = request.GET.get('case_id')
     view_only = request.GET.get('view', '').lower() in {'1', 'true', 'yes'}
     embedded = request.GET.get('embedded', '').lower() in {'1', 'true', 'yes'}
+    try:
+        asset_categories = [
+            {
+                'code': category.code,
+                'name_marathi': category.name_marathi,
+                'items': [
+                    {
+                        'code': item.code,
+                        'name_marathi': item.name_marathi,
+                    }
+                    for item in category.asset_list.filter(is_active=True).order_by('display_order', 'name_marathi')
+                ],
+            }
+            for category in AssetCategory.objects.filter(is_active=True).prefetch_related('asset_list').order_by('display_order', 'name_marathi')
+        ]
+    except Exception:
+        asset_items = [
+            {
+                'code': asset_type.asset_code,
+                'name_marathi': asset_type.asset_name_marathi,
+            }
+            for asset_type in AssetTypeMaster.objects.filter(is_active=True).order_by('display_order', 'asset_name_marathi')
+        ]
+        asset_categories = [
+            {'code': 'water_supply', 'name_marathi': 'पाणीपुरवठा', 'items': asset_items},
+            {'code': 'agriculture', 'name_marathi': 'कृषी विभाग', 'items': asset_items},
+            {'code': 'construction', 'name_marathi': 'बांधकाम विभाग', 'items': asset_items},
+            {'code': 'forest', 'name_marathi': 'वन विभाग', 'items': asset_items},
+            {'code': 'other_department', 'name_marathi': 'इतर विभाग', 'items': asset_items},
+        ]
     return render(request, 'process_chart_form.html', {
         'active_tab': 'process-chart',
         'case_id': case_id,
         'view_only': view_only,
         'embedded': embedded,
+        'asset_categories_json': json.dumps(asset_categories, ensure_ascii=False),
     })
 
 

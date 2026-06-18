@@ -175,14 +175,59 @@
             </div>
 
             <div class="pc-list-shell rounded-2xl border border-[#d7e5f6] bg-[#fbfdff] p-3 sm:p-4 md:p-5">
-                <div class="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                    <h2 class="text-xl font-bold">भूसंपादन प्रक्रिया नोंदी</h2>
-                    <a href="{% url 'process_chart_form_entry' %}" class="rounded-xl bg-[#125fcb] px-4 py-2 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(18,95,203,0.2)]">
-                        Add New
-                    </a>
-                </div>
+                    <div class="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                        <h2 class="text-xl font-bold">भूसंपादन प्रक्रिया नोंदी</h2>
+                        <a href="{% url 'process_chart_form_entry' %}" class="rounded-xl bg-[#125fcb] px-4 py-2 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(18,95,203,0.2)]">
+                            Add New
+                        </a>
+                    </div>
 
-                <form id="processChartPageSizeForm" method="get" class="pc-page-size-form">
+                    <div class="mb-4 grid gap-3 md:grid-cols-[190px_210px_210px_210px_210px_auto] md:items-end">
+                        <div>
+                            <label for="pcListFilterType" class="mb-1 block text-sm font-semibold text-[#244271]">गाळणी प्रकार निवडा</label>
+                            <select id="pcListFilterType" class="w-full rounded border border-[#cbd5e1] bg-white px-3 py-2 text-sm text-[#2a3f62] focus:border-[#125fcb] focus:outline-none">
+                                <option value="">गाळणी प्रकार निवडा</option>
+                                <option value="status">Status</option>
+                                <option value="step">टप्पा</option>
+                                <option value="gut">गट क्रमांक</option>
+                                <option value="village">गाव</option>
+                                <option value="owner">भूधारकाचे नाव</option>
+                            </select>
+                        </div>
+                        <div data-pc-list-simple-filter>
+                            <label for="pcListFilterValue" class="mb-1 block text-sm font-semibold text-[#244271]">मूल्य निवडा</label>
+                            <select id="pcListFilterValue" class="w-full rounded border border-[#cbd5e1] bg-white px-3 py-2 text-sm text-[#2a3f62] focus:border-[#125fcb] focus:outline-none" disabled>
+                                <option value="">प्रथम गाळणी प्रकार निवडा</option>
+                            </select>
+                        </div>
+                        <div class="hidden" data-pc-list-location-filter="district">
+                            <label for="pcListDistrictFilter" class="mb-1 block text-sm font-semibold text-[#244271]">जिल्हा</label>
+                            <select id="pcListDistrictFilter" class="w-full rounded border border-[#cbd5e1] bg-white px-3 py-2 text-sm text-[#2a3f62] focus:border-[#125fcb] focus:outline-none">
+                                <option value="">जिल्हा निवडा</option>
+                            </select>
+                        </div>
+                        <div class="hidden" data-pc-list-location-filter="taluka">
+                            <label for="pcListTalukaFilter" class="mb-1 block text-sm font-semibold text-[#244271]">तालुका</label>
+                            <select id="pcListTalukaFilter" class="w-full rounded border border-[#cbd5e1] bg-white px-3 py-2 text-sm text-[#2a3f62] focus:border-[#125fcb] focus:outline-none" disabled>
+                                <option value="">प्रथम जिल्हा निवडा</option>
+                            </select>
+                        </div>
+                        <div class="hidden" data-pc-list-location-filter="village">
+                            <label for="pcListVillageFilter" class="mb-1 block text-sm font-semibold text-[#244271]">गाव</label>
+                            <select id="pcListVillageFilter" class="w-full rounded border border-[#cbd5e1] bg-white px-3 py-2 text-sm text-[#2a3f62] focus:border-[#125fcb] focus:outline-none" disabled>
+                                <option value="">प्रथम तालुका निवडा</option>
+                            </select>
+                        </div>
+                        <div class="hidden" data-pc-list-location-filter="gut">
+                            <label for="pcListGutFilter" class="mb-1 block text-sm font-semibold text-[#244271]">गट क्रमांक</label>
+                            <select id="pcListGutFilter" class="w-full rounded border border-[#cbd5e1] bg-white px-3 py-2 text-sm text-[#2a3f62] focus:border-[#125fcb] focus:outline-none" disabled>
+                                <option value="">प्रथम गाव निवडा</option>
+                            </select>
+                        </div>
+                        <button type="button" id="pcListFilterClear" class="w-fit rounded border border-[#125fcb] bg-[#125fcb] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#0f52b0]">गाळणी काढा</button>
+                    </div>
+
+                    <form id="processChartPageSizeForm" method="get" class="pc-page-size-form">
                     <span>Show</span>
                     <select name="per_page" onchange="this.form.submit()">
                         <option value="10" {% if per_page == 10 %}selected{% endif %}>10</option>
@@ -222,14 +267,15 @@
                                 <td class="border border-[#d7e5f6] px-3 py-2 text-center min-w-[120px]" data-search="{{ item.owner_names_mr|default:'' }} {{ item.owner_names_summary_mr|default:'' }}">
 
                             
-                                    {% if item.owner_names_mr %}
-                                        <button
-                                            type="button"
-                                            class="pc-owner-info-btn inline-flex items-center px-2 py-1 text-xs font-semibold bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
-                                            data-owner-name="{{ item.owner_names_mr|escapejs }}">
-                                            {{ item.owner_names_summary_mr|default:"Info" }}
-                                        </button>
-                                    {% else %}
+                                        {% if item.owner_names_mr %}
+                                            <button
+                                                type="button"
+                                                class="pc-owner-info-btn inline-flex items-center px-2 py-1 text-xs font-semibold bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
+                                                data-owner-name="{{ item.owner_names_mr|escapejs }}">
+                                                {{ item.owner_names_summary_mr|default:"Info" }}
+                                            </button>
+                                            <span class="hidden">{{ item.owner_names_mr }}</span>
+                                        {% else %}
                                         -
                                     {% endif %}
                                 </td>
@@ -362,14 +408,238 @@ $(document).ready(function () {
     const dataTableWrapper = document.getElementById('processChartListTable_wrapper');
     const dataTableFilter = document.getElementById('processChartListTable_filter');
     const pageSizeForm = document.getElementById('processChartPageSizeForm');
-    if (dataTableWrapper && dataTableFilter && pageSizeForm) {
-        const controls = document.createElement('div');
-        controls.className = 'pc-list-controls';
-        dataTableWrapper.insertBefore(controls, dataTableWrapper.firstChild);
-        controls.append(pageSizeForm, dataTableFilter);
-    }
+        if (dataTableWrapper && dataTableFilter && pageSizeForm) {
+            const controls = document.createElement('div');
+            controls.className = 'pc-list-controls';
+            dataTableWrapper.insertBefore(controls, dataTableWrapper.firstChild);
+            controls.append(pageSizeForm, dataTableFilter);
+        }
 
-    const ownerInfoModal = document.getElementById('pcOwnerInfoModal');
+        const filterType = document.getElementById('pcListFilterType');
+        const filterValue = document.getElementById('pcListFilterValue');
+        const filterClear = document.getElementById('pcListFilterClear');
+        const simpleFilterWrap = document.querySelector('[data-pc-list-simple-filter]');
+        const locationFilterWraps = document.querySelectorAll('[data-pc-list-location-filter]');
+        const districtFilter = document.getElementById('pcListDistrictFilter');
+        const talukaFilter = document.getElementById('pcListTalukaFilter');
+        const villageFilter = document.getElementById('pcListVillageFilter');
+        const gutFilter = document.getElementById('pcListGutFilter');
+        const filterColumns = {
+            district: 1,
+            taluka: 2,
+            village: 3,
+            gut: 4,
+            owner: 5,
+            status: 8,
+            step: 9,
+        };
+        const escapeRegex = (value) => $.fn.dataTable.util.escapeRegex(String(value || ''));
+        const optionLabel = (value) => String(value || '').trim() || '-';
+        const uniqueColumnValues = (columnIndex) => {
+            const values = new Set();
+            processChartTable.column(columnIndex).nodes().each((cell) => {
+                const text = optionLabel(cell.textContent);
+                if (text && text !== '-') values.add(text);
+            });
+            return Array.from(values).sort((a, b) => a.localeCompare(b, 'mr'));
+        };
+        const uniqueOwnerValues = () => {
+            const values = new Set();
+            processChartTable.column(filterColumns.owner).nodes().each((cell) => {
+                const searchText = cell.getAttribute('data-search') || cell.textContent || '';
+                String(searchText).split(/[,;\n]+/).forEach((name) => {
+                    const cleaned = optionLabel(name);
+                    if (cleaned && cleaned !== '-' && !/आणि इतर/i.test(cleaned)) values.add(cleaned);
+                });
+            });
+            return Array.from(values).sort((a, b) => a.localeCompare(b, 'mr'));
+        };
+        const locationApiUrl = (params = {}) => {
+            const url = new URL('/api/locations/', window.location.origin);
+            url.searchParams.set('lang', 'mr');
+            Object.entries(params).forEach(([key, value]) => {
+                if (value) url.searchParams.set(key, value);
+            });
+            return url.toString();
+        };
+        const loadLocationOptions = async (params = {}) => {
+            try {
+                const response = await fetch(locationApiUrl(params));
+                if (!response.ok) throw new Error('Location request failed');
+                const payload = await response.json();
+                return Array.isArray(payload.data) ? payload.data : [];
+            } catch (error) {
+                console.error('List location filter load failed:', error);
+                return [];
+            }
+        };
+        const selectedOptionApiValue = (selectEl) => selectEl?.selectedOptions?.[0]?.dataset?.apiValue || selectEl?.value || '';
+        const fillSelect = (selectEl, placeholder, values = [], selectedValue = '') => {
+            if (!selectEl) return;
+            selectEl.innerHTML = '';
+            selectEl.add(new Option(placeholder, ''));
+            values.forEach((item) => {
+                const isObject = item && typeof item === 'object';
+                const label = String(isObject ? (item.label || item.value || '') : item || '').trim();
+                const value = String(isObject ? (item.label || item.value || '') : item || '').trim();
+                if (!label || !value) return;
+                const option = new Option(label, value);
+                option.dataset.apiValue = String(isObject ? (item.value || item.label || '') : item || '').trim();
+                option.dataset.id = String(isObject ? (item.id || '') : '');
+                selectEl.add(option);
+            });
+            if (selectedValue && Array.from(selectEl.options).some((option) => option.value === selectedValue)) {
+                selectEl.value = selectedValue;
+            }
+            selectEl.disabled = values.length === 0;
+        };
+        const isLocationFilter = (type) => ['village', 'gut'].includes(type);
+        const updateFilterVisibility = (type) => {
+            simpleFilterWrap?.classList.toggle('hidden', isLocationFilter(type));
+            locationFilterWraps.forEach((wrap) => {
+                const key = wrap.dataset.pcListLocationFilter;
+                wrap.classList.toggle(
+                    'hidden',
+                    !(type === 'village' && ['district', 'taluka', 'village'].includes(key))
+                        && !(type === 'gut' && ['district', 'taluka', 'village', 'gut'].includes(key))
+                );
+            });
+        };
+        const updateTalukaOptions = async () => {
+            const district = selectedOptionApiValue(districtFilter);
+            const selectedTaluka = talukaFilter?.value || '';
+            const options = district ? await loadLocationOptions({ district }) : [];
+            fillSelect(talukaFilter, district ? 'तालुका निवडा' : 'प्रथम जिल्हा निवडा', options, selectedTaluka);
+            if (talukaFilter && !district) talukaFilter.disabled = true;
+        };
+        const updateVillageOptions = async () => {
+            const district = selectedOptionApiValue(districtFilter);
+            const taluka = selectedOptionApiValue(talukaFilter);
+            const selectedVillage = villageFilter?.value || '';
+            const options = district && taluka ? await loadLocationOptions({ district, taluka }) : [];
+            fillSelect(villageFilter, taluka ? 'गाव निवडा' : 'प्रथम तालुका निवडा', options, selectedVillage);
+            if (villageFilter && !taluka) villageFilter.disabled = true;
+        };
+        const updateGutOptions = async () => {
+            const district = selectedOptionApiValue(districtFilter);
+            const taluka = selectedOptionApiValue(talukaFilter);
+            const village = selectedOptionApiValue(villageFilter);
+            const selectedGut = gutFilter?.value || '';
+            const options = district && taluka && village ? await loadLocationOptions({ district, taluka, village }) : [];
+            fillSelect(gutFilter, village ? 'गट क्रमांक निवडा' : 'प्रथम गाव निवडा', options, selectedGut);
+            if (gutFilter && !village) gutFilter.disabled = true;
+        };
+        const updateLocationOptions = async () => {
+            const selectedDistrict = districtFilter?.value || '';
+            fillSelect(districtFilter, 'जिल्हा निवडा', await loadLocationOptions(), selectedDistrict);
+            await updateTalukaOptions();
+            await updateVillageOptions();
+            await updateGutOptions();
+        };
+        const setFilterOptions = (type) => {
+            updateFilterVisibility(type);
+            if (!filterValue) return;
+            filterValue.innerHTML = '';
+            filterValue.disabled = !type || isLocationFilter(type);
+            if (!type || isLocationFilter(type)) {
+                filterValue.add(new Option('प्रथम गाळणी प्रकार निवडा', ''));
+                return;
+            }
+            filterValue.add(new Option('सर्व', ''));
+            if (type === 'status') {
+                filterValue.add(new Option('Draft', 'Draft'));
+                filterValue.add(new Option('Completed', 'Completed'));
+                return;
+            }
+            if (type === 'step') {
+                Array.from({ length: 12 }, (_, index) => String(index + 1))
+                    .forEach((step) => filterValue.add(new Option(step, step)));
+                return;
+            }
+            if (type === 'owner') {
+                uniqueOwnerValues().forEach((value) => filterValue.add(new Option(value, value)));
+                return;
+            }
+            uniqueColumnValues(filterColumns[type] ?? -1)
+                .forEach((value) => filterValue.add(new Option(value, value)));
+        };
+        const applyListFilter = () => {
+            Object.values(filterColumns).forEach((columnIndex) => {
+                processChartTable.column(columnIndex).search('');
+            });
+            const type = filterType?.value || '';
+            if (isLocationFilter(type)) {
+                const district = districtFilter?.value || '';
+                const taluka = talukaFilter?.value || '';
+                const village = villageFilter?.value || '';
+                const gut = gutFilter?.value || '';
+                if (district) processChartTable.column(filterColumns.district).search(escapeRegex(district), true, false);
+                if (taluka) processChartTable.column(filterColumns.taluka).search(escapeRegex(taluka), true, false);
+                if (village) processChartTable.column(filterColumns.village).search(escapeRegex(village), true, false);
+                if (type === 'gut' && gut) processChartTable.column(filterColumns.gut).search(escapeRegex(gut), true, false);
+                processChartTable.draw();
+                return;
+            }
+            const value = filterValue?.value || '';
+            if (!type || !value) {
+                processChartTable.draw();
+                return;
+            }
+            if (type === 'status' && value === 'Completed') {
+                processChartTable.column(filterColumns.status).search('Submitted|Completed|पूर्ण', true, false).draw();
+                return;
+            }
+            if (type === 'status' && value === 'Draft') {
+                processChartTable.column(filterColumns.status).search('Draft|मसुदा', true, false).draw();
+                return;
+            }
+            if (type === 'owner') {
+                processChartTable.column(filterColumns.owner).search(escapeRegex(value), true, false).draw();
+                return;
+            }
+            processChartTable.column(filterColumns[type]).search(`^${escapeRegex(value)}$`, true, false).draw();
+        };
+        filterType?.addEventListener('change', async () => {
+            setFilterOptions(filterType.value);
+            await updateLocationOptions();
+            applyListFilter();
+        });
+        filterValue?.addEventListener('change', applyListFilter);
+        districtFilter?.addEventListener('change', async () => {
+            if (talukaFilter) talukaFilter.value = '';
+            if (villageFilter) villageFilter.value = '';
+            if (gutFilter) gutFilter.value = '';
+            await updateTalukaOptions();
+            await updateVillageOptions();
+            await updateGutOptions();
+            applyListFilter();
+        });
+        talukaFilter?.addEventListener('change', async () => {
+            if (villageFilter) villageFilter.value = '';
+            if (gutFilter) gutFilter.value = '';
+            await updateVillageOptions();
+            await updateGutOptions();
+            applyListFilter();
+        });
+        villageFilter?.addEventListener('change', async () => {
+            if (gutFilter) gutFilter.value = '';
+            await updateGutOptions();
+            applyListFilter();
+        });
+        gutFilter?.addEventListener('change', applyListFilter);
+        filterClear?.addEventListener('click', async () => {
+            if (filterType) filterType.value = '';
+            [districtFilter, talukaFilter, villageFilter, gutFilter].forEach((selectEl) => {
+                if (selectEl) selectEl.value = '';
+            });
+            setFilterOptions('');
+            await updateLocationOptions();
+            applyListFilter();
+        });
+        setFilterOptions(filterType?.value || '');
+        updateLocationOptions();
+
+        const ownerInfoModal = document.getElementById('pcOwnerInfoModal');
     const ownerInfoContent = document.getElementById('pcOwnerInfoContent');
     const formViewModal = document.getElementById('pcFormViewModal');
     const formViewFrame = document.getElementById('pcFormViewFrame');
