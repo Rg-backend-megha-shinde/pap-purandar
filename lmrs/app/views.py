@@ -6,7 +6,7 @@ from django.db.models import Q
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.sessions.models import Session
-from .models import Inspection, ReadyReckonerInfo, ReadyReckonerRate, LandRecord712, FarmerNames,TreeMaster, Asset, AssetMeasurement, AssetTypeMaster, AssetFieldMaster, AssetFormulaMaster, AssetCategory, Document, ToolMaster, DocumentMaster, DocumentAttachment, Entry, VillageData, VillageData8ARecord, VillageDataSec15Rate, VillageDataFile, VillageData8AFile, VillageData32_2Row, VillageData32_2RowFile, VillageData32_1Row, VillageData32_1RowFile, ActiveUserSession, AssetDetail, ProcessChartCase, ProcessChartStepData, ProcessChartDocument, ProcessChartOwnerNotice, ProcessChartDepartmentRow, ProcessChartValuationRow
+from .models import Inspection, ReadyReckonerInfo, ReadyReckonerRate, LandRecord712, FarmerNames,TreeMaster, Asset, AssetMeasurement, AssetTypeMaster, AssetFieldMaster, AssetFormulaMaster, AssetCategory, Document, ToolMaster, DocumentMaster, DocumentAttachment, Entry, VillageData, VillageData8ARecord, VillageDataSec15Rate, VillageDataFile, VillageData8AFile, VillageData32_2Row, VillageData32_2RowFile, VillageData32_1Row, VillageData32_1RowFile, ActiveUserSession, AssetDetail, ProcessChartCase, ProcessChartStepData, ProcessChartAuditLog, ProcessChartDocument, ProcessChartOwnerNotice, ProcessChartDepartmentRow, ProcessChartValuationRow
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponseForbidden
 from django.db import connection
@@ -5660,6 +5660,346 @@ def _serialize_process_chart_documents(case):
     return documents
 
 
+_PROCESS_CHART_TAB7_PREFIX_LABELS = {
+    'water_supply': 'पाणीपुरवठा',
+    'agriculture': 'कृषी विभाग',
+    'construction': 'बांधकाम विभाग',
+    'forest': 'वन विभाग',
+    'other_department': 'इतर विभाग',
+}
+
+_PROCESS_CHART_TAB7_FIELD_LABELS = {
+    'valuation_letter_detail': 'मूल्यांकन पत्र तपशील',
+    'valuation_date': 'मूल्यांकन दिनांक',
+    'related_owner_name': 'भूधारकाचे नाव',
+    'owner_name': 'इतर',
+    'component_item': 'घटकाचा प्रकार',
+    'component_detail': 'निगडीत घटक तपशील',
+    'component_count': 'संख्या',
+    'component_valuation': 'मूल्यांकन रक्कम',
+}
+
+_PROCESS_CHART_STEP10_BANK_FIELD_LABELS = {
+    'step10_bank_name': 'बँकेचे नाव',
+    'step10_bank_account_number': 'बँक खाते क्रमांक',
+    'step10_bank_branch': 'बँकेची शाखा',
+    'step10_ifsc_code': 'IFSC Code',
+}
+
+_PROCESS_CHART_STEP9_BANK_FIELD_LABELS = {
+    'step9_owner_name': 'खातेदाराचे नाव',
+    'step9_bank_name': 'बँकेचे नाव',
+    'step9_bank_branch': 'बँकेची शाखा',
+    'step9_bank_account_number': 'बँक खाते क्रमांक',
+    'step9_distribution_amount': 'वितरण करायचा मोबदला',
+    'step9_payable_amount': 'देय मोबदला',
+    'step9_ifsc_code': 'IFSC Code',
+}
+
+
+def _process_chart_value_to_text(value):
+    if value is None:
+        return ''
+    if isinstance(value, (list, dict)):
+        return json.dumps(value, ensure_ascii=False, sort_keys=True)
+    return str(value).strip()
+
+
+def _process_chart_tab7_field_label(prefix, field_key, row_number=None):
+    department = _PROCESS_CHART_TAB7_PREFIX_LABELS.get(prefix, prefix.replace('_', ' ').strip())
+    field_label = _PROCESS_CHART_TAB7_FIELD_LABELS.get(field_key, field_key.replace('_', ' ').strip())
+    label = f"{department} - {field_label}".strip(' -')
+    if row_number:
+        label = f"{label} (ओळ {row_number})"
+    return label
+
+
+def _flatten_process_chart_tab7_data(data):
+    if not isinstance(data, dict):
+        return {}
+
+    snapshot = data.get('tab7_snapshot')
+    if not isinstance(snapshot, dict):
+        raw_snapshot = data.get('tab7_snapshot_json')
+        if isinstance(raw_snapshot, str) and raw_snapshot.strip():
+            try:
+                snapshot = json.loads(raw_snapshot)
+            except (TypeError, ValueError, json.JSONDecodeError):
+                snapshot = {}
+    if not isinstance(snapshot, dict):
+        snapshot = {}
+
+    flattened = {}
+    snapshot_fields = snapshot.get('fields') if isinstance(snapshot.get('fields'), dict) else {}
+    for field_name, value in snapshot_fields.items():
+        if not isinstance(field_name, str):
+            continue
+        matched = False
+        for prefix in _PROCESS_CHART_TAB7_PREFIX_LABELS:
+            prefix_token = f'{prefix}_'
+            if field_name.startswith(prefix_token):
+                field_key = field_name[len(prefix_token):]
+                flattened[f'fields.{field_name}'] = {
+                    'label': _process_chart_tab7_field_label(prefix, field_key),
+                    'value': _process_chart_value_to_text(value),
+                }
+                matched = True
+                break
+        if not matched and field_name == 'total_asset_valuation_amount':
+            continue
+
+    sections = snapshot.get('sections') if isinstance(snapshot.get('sections'), dict) else {}
+    for prefix, rows in sections.items():
+        if prefix not in _PROCESS_CHART_TAB7_PREFIX_LABELS or not isinstance(rows, list):
+            continue
+        for row_index, row in enumerate(rows, start=1):
+            if not isinstance(row, dict):
+                continue
+            for key, value in row.items():
+                if key == '_asset_group' or not isinstance(key, str):
+                    continue
+                prefix_token = f'{prefix}_'
+                field_key = key[len(prefix_token):] if key.startswith(prefix_token) else key
+                flattened[f'sections.{prefix}.{row_index}.{field_key}'] = {
+                    'label': _process_chart_tab7_field_label(prefix, field_key, row_index),
+                    'value': _process_chart_value_to_text(value),
+                }
+
+    if flattened:
+        return flattened
+
+    for key, value in data.items():
+        if key in {'tab7_snapshot', 'tab7_snapshot_json'} or not isinstance(key, str):
+            continue
+        for prefix in _PROCESS_CHART_TAB7_PREFIX_LABELS:
+            prefix_token = f'{prefix}_'
+            if not key.startswith(prefix_token):
+                continue
+            field_key = key[len(prefix_token):]
+            values = value if isinstance(value, list) else [value]
+            for index, item in enumerate(values, start=1):
+                flattened[f'fields.{key}.{index}'] = {
+                    'label': _process_chart_tab7_field_label(prefix, field_key, index if isinstance(value, list) else None),
+                    'value': _process_chart_value_to_text(item),
+                }
+            break
+
+    return flattened
+
+
+def _record_process_chart_tab7_audit(case, old_data, new_data, user, section_code='step_7'):
+    old_flat = _flatten_process_chart_tab7_data(old_data)
+    new_flat = _flatten_process_chart_tab7_data(new_data)
+    if not old_flat:
+        return []
+
+    changed_logs = []
+    for field_path in sorted(set(old_flat) | set(new_flat)):
+        old_item = old_flat.get(field_path, {})
+        new_item = new_flat.get(field_path, {})
+        old_value = old_item.get('value', '')
+        new_value = new_item.get('value', '')
+        if old_value == new_value:
+            continue
+        label = new_item.get('label') or old_item.get('label') or field_path
+        changed_logs.append(ProcessChartAuditLog(
+            case=case,
+            step_no=7,
+            section_code=section_code or 'step_7',
+            field_path=field_path,
+            field_label=label,
+            old_value=old_value,
+            new_value=new_value,
+            changed_by=user if getattr(user, 'is_authenticated', False) else None,
+        ))
+    if changed_logs:
+        try:
+            ProcessChartAuditLog.objects.bulk_create(changed_logs)
+        except (ProgrammingError, OperationalError):
+            return []
+    return changed_logs
+
+
+def _process_chart_list_value(data, key, index):
+    values = data.get(key) if isinstance(data, dict) else None
+    if isinstance(values, list):
+        return values[index] if index < len(values) else ''
+    return values if index == 0 else ''
+
+
+def _flatten_process_chart_step10_bank_data(data):
+    if not isinstance(data, dict):
+        return {}
+
+    max_rows = 0
+    for key in ('step10_owner_name', *tuple(_PROCESS_CHART_STEP10_BANK_FIELD_LABELS)):
+        value = data.get(key)
+        if isinstance(value, list):
+            max_rows = max(max_rows, len(value))
+        elif value not in (None, ''):
+            max_rows = max(max_rows, 1)
+
+    flattened = {}
+    for index in range(max_rows):
+        owner_name = _process_chart_value_to_text(_process_chart_list_value(data, 'step10_owner_name', index)) or f'भूधारक {index + 1}'
+        for key, field_label in _PROCESS_CHART_STEP10_BANK_FIELD_LABELS.items():
+            value = _process_chart_value_to_text(_process_chart_list_value(data, key, index))
+            flattened[f'step10.bank.{index + 1}.{key}'] = {
+                'label': f'{owner_name} - {field_label}',
+                'value': value,
+            }
+    return flattened
+
+
+def _flatten_process_chart_step9_bank_data(data):
+    if not isinstance(data, dict):
+        return {}
+
+    max_rows = 0
+    for key in _PROCESS_CHART_STEP9_BANK_FIELD_LABELS:
+        value = data.get(key)
+        if isinstance(value, list):
+            max_rows = max(max_rows, len(value))
+        elif value not in (None, ''):
+            max_rows = max(max_rows, 1)
+
+    flattened = {}
+    for index in range(max_rows):
+        owner_name = _process_chart_value_to_text(_process_chart_list_value(data, 'step9_owner_name', index)) or f'खातेदार {index + 1}'
+        for key, field_label in _PROCESS_CHART_STEP9_BANK_FIELD_LABELS.items():
+            value = _process_chart_value_to_text(_process_chart_list_value(data, key, index))
+            flattened[f'step9.bank.{index + 1}.{key}'] = {
+                'label': f'{owner_name} - {field_label}',
+                'value': value,
+            }
+    return flattened
+
+
+def _record_process_chart_step9_bank_audit(case, old_data, new_data, user, section_code='step_9'):
+    old_flat = _flatten_process_chart_step9_bank_data(old_data)
+    new_flat = _flatten_process_chart_step9_bank_data(new_data)
+    if not old_flat:
+        return []
+
+    changed_logs = []
+    for field_path in sorted(set(old_flat) | set(new_flat)):
+        old_item = old_flat.get(field_path, {})
+        new_item = new_flat.get(field_path, {})
+        old_value = old_item.get('value', '')
+        new_value = new_item.get('value', '')
+        if old_value == new_value:
+            continue
+        label = new_item.get('label') or old_item.get('label') or field_path
+        changed_logs.append(ProcessChartAuditLog(
+            case=case,
+            step_no=9,
+            section_code=section_code or 'step_9',
+            field_path=field_path,
+            field_label=label,
+            old_value=old_value,
+            new_value=new_value,
+            changed_by=user if getattr(user, 'is_authenticated', False) else None,
+        ))
+    if changed_logs:
+        try:
+            ProcessChartAuditLog.objects.bulk_create(changed_logs)
+        except (ProgrammingError, OperationalError):
+            return []
+    return changed_logs
+
+
+def _record_process_chart_step10_bank_audit(case, old_data, new_data, user, section_code='step_10'):
+    old_flat = _flatten_process_chart_step10_bank_data(old_data)
+    new_flat = _flatten_process_chart_step10_bank_data(new_data)
+    if not old_flat:
+        return []
+
+    changed_logs = []
+    for field_path in sorted(set(old_flat) | set(new_flat)):
+        old_item = old_flat.get(field_path, {})
+        new_item = new_flat.get(field_path, {})
+        old_value = old_item.get('value', '')
+        new_value = new_item.get('value', '')
+        if old_value == new_value:
+            continue
+        label = new_item.get('label') or old_item.get('label') or field_path
+        changed_logs.append(ProcessChartAuditLog(
+            case=case,
+            step_no=10,
+            section_code=section_code or 'step_10',
+            field_path=field_path,
+            field_label=label,
+            old_value=old_value,
+            new_value=new_value,
+            changed_by=user if getattr(user, 'is_authenticated', False) else None,
+        ))
+    if changed_logs:
+        try:
+            ProcessChartAuditLog.objects.bulk_create(changed_logs)
+        except (ProgrammingError, OperationalError):
+            return []
+    return changed_logs
+
+
+def _serialize_process_chart_audit_logs(case, step_no=None, limit=100):
+    if not case:
+        return []
+    try:
+        logs = case.audit_logs.select_related('changed_by').all()
+        if step_no:
+            logs = logs.filter(step_no=step_no)
+        logs = logs.exclude(field_path__icontains='total_asset_valuation_amount')
+        serialized_logs = []
+        for log in logs.order_by('-changed_at', '-id')[:limit]:
+            changed_at = timezone.localtime(log.changed_at).strftime('%d/%m/%Y %H:%M') if log.changed_at else ''
+            changed_by = log.changed_by.get_full_name() or log.changed_by.username if log.changed_by else ''
+            serialized_logs.append({
+                'id': log.id,
+                'step_no': log.step_no,
+                'section_code': log.section_code or '',
+                'field_path': log.field_path,
+                'field_label': log.field_label,
+                'old_value': log.old_value,
+                'new_value': log.new_value,
+                'changed_by': changed_by,
+                'changed_at': changed_at,
+            })
+
+        merged_logs = []
+        pending_pairs = {}
+        for item in serialized_logs:
+            old_value = str(item.get('old_value') or '').strip()
+            new_value = str(item.get('new_value') or '').strip()
+            pair_key = (
+                item.get('field_label') or '',
+                item.get('changed_by') or '',
+                item.get('changed_at') or '',
+                item.get('section_code') or '',
+            )
+            if old_value and not new_value:
+                opposite = pending_pairs.pop((pair_key, 'added'), None)
+                if opposite:
+                    opposite['old_value'] = old_value
+                    merged_logs.append(opposite)
+                else:
+                    pending_pairs[(pair_key, 'removed')] = item
+                continue
+            if new_value and not old_value:
+                opposite = pending_pairs.pop((pair_key, 'removed'), None)
+                if opposite:
+                    item['old_value'] = opposite.get('old_value') or ''
+                    merged_logs.append(item)
+                else:
+                    pending_pairs[(pair_key, 'added')] = item
+                continue
+            merged_logs.append(item)
+
+        merged_logs.extend(pending_pairs.values())
+        return merged_logs[:limit]
+    except (ProgrammingError, OperationalError):
+        return []
+
+
 def _serialize_land_record_for_process_chart(land_record):
     if not land_record:
         return None
@@ -6372,6 +6712,9 @@ def get_process_chart_form_data(request):
         'documents': _serialize_process_chart_documents(case),
         'prefill': prefill,
         'step_data': step_data,
+        'audit_logs': _serialize_process_chart_audit_logs(case, step_no=7),
+        'tab9_audit_logs': _serialize_process_chart_audit_logs(case, step_no=9),
+        'tab10_audit_logs': _serialize_process_chart_audit_logs(case, step_no=10),
     })
 
 
@@ -6520,6 +6863,35 @@ def save_process_chart_form(request):
     if step_no and section_code and isinstance(section_data, dict):
         normalized_step_no = int(step_no)
         if normalized_step_no != 7 or _has_process_chart_tab7_data(section_data):
+            existing_step_row = ProcessChartStepData.objects.filter(
+                case=case,
+                step_no=normalized_step_no,
+                section_code=section_code,
+            ).first()
+            if normalized_step_no == 7:
+                _record_process_chart_tab7_audit(
+                    case,
+                    existing_step_row.data if existing_step_row else {},
+                    section_data,
+                    request.user,
+                    section_code,
+                )
+            elif normalized_step_no == 9:
+                _record_process_chart_step9_bank_audit(
+                    case,
+                    existing_step_row.data if existing_step_row else {},
+                    section_data,
+                    request.user,
+                    section_code,
+                )
+            elif normalized_step_no == 10:
+                _record_process_chart_step10_bank_audit(
+                    case,
+                    existing_step_row.data if existing_step_row else {},
+                    section_data,
+                    request.user,
+                    section_code,
+                )
             ProcessChartStepData.objects.update_or_create(
                 case=case,
                 step_no=normalized_step_no,
@@ -6615,6 +6987,9 @@ def save_process_chart_form(request):
         'documents': _serialize_process_chart_documents(case),
         'prefill': prefill,
         'step_data': saved_step_data,
+        'audit_logs': _serialize_process_chart_audit_logs(case, step_no=7),
+        'tab9_audit_logs': _serialize_process_chart_audit_logs(case, step_no=9),
+        'tab10_audit_logs': _serialize_process_chart_audit_logs(case, step_no=10),
         'save_debug': save_debug,
     })
 
