@@ -75,4 +75,5 @@ urlpatterns = [
     path('api/village-info/delete-sec8-row-file/<int:file_id>/', views.delete_village_sec8_row_file, name='delete_village_sec8_row_file'),
     path('api/village-info/delete-8a-file/<int:file_id>/', views.delete_village_8a_file, name='delete_village_8a_file'),
     path('api/village-info/delete/<int:record_id>/', views.delete_village_info_record, name='delete_village_info_record'),
+    path('analytics/', views.analytics, name='analytics')
 ]

@@ -1,0 +1,2091 @@
+{% extends "base.html" %}
+
+{% block content %}
+<!-- Highcharts Dependencies -->
+<script src="https://unpkg.com/highcharts@11.4.0/highcharts.js"></script>
+<script src="https://unpkg.com/highcharts@11.4.0/modules/exporting.js"></script>
+<script src="https://unpkg.com/highcharts@11.4.0/modules/export-data.js"></script>
+<script src="https://unpkg.com/highcharts@11.4.0/modules/accessibility.js"></script>
+
+<div class="min-h-screen overflow-x-hidden bg-slate-50 py-6 px-3 sm:px-4 lg:px-5 xl:px-6">
+    <div class="mx-auto w-full max-w-[1680px]">
+        
+        <!-- Header Section -->
+        <div class="mb-6 rounded-lg border border-slate-200 bg-white p-5 shadow-sm sm:flex sm:items-center sm:justify-between">
+            <div>
+                <h1 class="text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl flex items-center gap-3">
+                    <span class="material-symbols-outlined text-blue-600 text-3xl sm:text-4xl">monitoring</span>
+                    Project Analytics
+                </h1>
+                <p class="mt-2 text-sm text-slate-500 font-medium">
+                    Comprehensive overview, progress tracking, and asset valuations for Pune Ring Road.
+                </p>
+            </div>
+        </div>
+
+
+
+        <!-- Direct Analytics Section (Always Visible) -->
+        <div class="mb-8 grid grid-cols-1 gap-5 xl:grid-cols-2 2xl:grid-cols-3">
+            
+            <!-- Card 1: Ready Reckoner Village Status -->
+            <div class="flex min-h-[430px] flex-col overflow-hidden rounded-lg border border-slate-200 bg-white p-4 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md">
+                <div class="mb-4 flex items-start justify-between gap-3">
+                    <div>
+                        <h3 class="text-lg font-extrabold text-slate-900">रेडी रेकनर स्थिती</h3>
+                        <p class="mt-1.5 flex items-center gap-1 text-xs font-semibold text-slate-500">
+                            <span class="material-symbols-outlined text-[16px] text-blue-600">location_on</span>
+                            एकूण {{ rr_total_villages }} गावे - {{ rr_completed_villages }} नोंदी, {{ rr_pending_villages }} प्रलंबित
+                        </p>
+                    </div>
+                    <div class="inline-flex shrink-0 items-center gap-1 rounded-md border border-emerald-200 bg-emerald-50 px-2.5 py-1.5 text-[11px] font-extrabold text-emerald-700">
+                        <span class="material-symbols-outlined text-[14px]">trending_up</span>
+                        +2 या आठवड्यात
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-3 gap-2.5">
+                    <div class="rounded-md border border-blue-100 bg-blue-50/40 p-3">
+                        <p class="text-[11px] font-extrabold text-blue-700">एकूण गावे</p>
+                        <div class="mt-1.5 flex items-center justify-between gap-2">
+                            <p class="text-xl font-black leading-none text-slate-900">{{ rr_total_villages }}</p>
+                            <span class="material-symbols-outlined text-xl text-blue-600">groups</span>
+                        </div>
+                    </div>
+                    <div class="rounded-md border border-emerald-100 bg-emerald-50/70 p-3">
+                        <p class="text-[11px] font-extrabold text-emerald-700">नोंदी झाल्या</p>
+                        <div class="mt-1.5 flex items-center justify-between gap-2">
+                            <p class="text-xl font-black leading-none text-emerald-700">{{ rr_completed_villages }}</p>
+                            <span class="material-symbols-outlined text-xl text-emerald-600">check_circle</span>
+                        </div>
+                    </div>
+                    <div class="rounded-md border border-orange-100 bg-orange-50/70 p-3">
+                        <p class="text-[11px] font-extrabold text-orange-700">प्रलंबित</p>
+                        <div class="mt-1.5 flex items-center justify-between gap-2">
+                            <p class="text-xl font-black leading-none text-orange-700">{{ rr_pending_villages }}</p>
+                            <span class="material-symbols-outlined text-xl text-orange-600">schedule</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="my-4 border-t border-slate-100"></div>
+
+                <div class="flex flex-1 items-center justify-center">
+                    <div class="js-progress-ring grid h-36 w-36 place-items-center rounded-full p-2.5" data-progress="{{ rr_completion_percent|default:0 }}" style="background: conic-gradient(#16a34a 0%, #e8edf5 0); box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);">
+                        <div class="grid h-full w-full place-items-center rounded-full bg-white text-center ring-1 ring-slate-100">
+                            <div>
+                                <p class="text-3xl font-black leading-none text-emerald-600">{{ rr_completion_percent|default:0 }}%</p>
+                                <p class="mt-1.5 text-xs font-extrabold text-slate-500">पूर्णता दर</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-4 flex items-center justify-between gap-3 text-xs font-bold text-slate-500">
+                    <span class="flex items-center gap-1.5"><span class="material-symbols-outlined text-[16px]">calendar_month</span>शेवटचे अद्यतन: {{ rr_last_updated }}</span>
+                    <a href="/tools/ready-reckoner/list/" class="inline-flex items-center gap-1 text-blue-600 hover:text-blue-700">सविस्तर पहा <span class="material-symbols-outlined text-[16px]">arrow_forward</span></a>
+                </div>
+            </div>
+
+            <!-- Card 2: Village Info Status -->
+            <div class="flex min-h-[430px] flex-col overflow-hidden rounded-lg border border-slate-200 bg-white p-4 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md">
+                <div class="mb-4 flex items-start justify-between gap-3">
+                    <div>
+                        <h3 class="text-lg font-extrabold text-slate-900">गावाची माहिती प्रगती</h3>
+                        <p class="mt-1.5 flex items-center gap-1 text-xs font-semibold text-slate-500">
+                            <span class="material-symbols-outlined text-[16px] text-blue-600">location_on</span>
+                            एकूण {{ village_info_total_villages }} गावे - {{ village_info_completed_villages }} पूर्ण, {{ village_info_draft_villages }} ड्राफ्ट, {{ village_info_pending_villages }} प्रलंबित
+                        </p>
+                    </div>
+                    <div class="inline-flex shrink-0 items-center gap-1 rounded-md border border-emerald-200 bg-emerald-50 px-2.5 py-1.5 text-[11px] font-extrabold text-emerald-700">
+                        <span class="material-symbols-outlined text-[14px]">trending_up</span>
+                        +1 या आठवड्यात
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+                    <div class="rounded-md border border-blue-100 bg-blue-50/40 p-3">
+                        <p class="text-[11px] font-extrabold text-blue-700">एकूण गावे</p>
+                        <div class="mt-1.5 flex items-center justify-between gap-2">
+                            <p class="text-xl font-black leading-none text-slate-900">{{ village_info_total_villages }}</p>
+                            <span class="material-symbols-outlined text-xl text-blue-600">groups</span>
+                        </div>
+                    </div>
+                    <div class="rounded-md border border-emerald-100 bg-emerald-50/70 p-3">
+                        <p class="text-[11px] font-extrabold text-emerald-700">पूर्ण</p>
+                        <div class="mt-1.5 flex items-center justify-between gap-2">
+                            <p class="text-xl font-black leading-none text-emerald-700">{{ village_info_completed_villages }}</p>
+                            <span class="material-symbols-outlined text-xl text-emerald-600">check_circle</span>
+                        </div>
+                    </div>
+                    <div class="rounded-md border border-amber-100 bg-amber-50/70 p-3">
+                        <p class="text-[11px] font-extrabold text-amber-700">ड्राफ्ट</p>
+                        <div class="mt-1.5 flex items-center justify-between gap-2">
+                            <p class="text-xl font-black leading-none text-amber-700">{{ village_info_draft_villages }}</p>
+                            <span class="material-symbols-outlined text-xl text-amber-600">article</span>
+                        </div>
+                    </div>
+                    <div class="rounded-md border border-orange-100 bg-orange-50/70 p-3">
+                        <p class="text-[11px] font-extrabold text-orange-700">प्रलंबित</p>
+                        <div class="mt-1.5 flex items-center justify-between gap-2">
+                            <p class="text-xl font-black leading-none text-orange-700">{{ village_info_pending_villages }}</p>
+                            <span class="material-symbols-outlined text-xl text-orange-600">schedule</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="my-4 border-t border-slate-100"></div>
+
+                <div class="flex flex-1 items-center justify-center">
+                    <div class="js-progress-ring grid h-36 w-36 place-items-center rounded-full p-2.5" data-progress="{{ village_info_completion_percent|default:0 }}" style="background: conic-gradient(#16a34a 0%, #e8edf5 0); box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);">
+                        <div class="grid h-full w-full place-items-center rounded-full bg-white text-center ring-1 ring-slate-100">
+                            <div>
+                                <p class="text-3xl font-black leading-none text-emerald-600">{{ village_info_completion_percent|default:0 }}%</p>
+                                <p class="mt-1.5 text-xs font-extrabold text-slate-500">पूर्णता दर</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-4 flex items-center justify-between gap-3 text-xs font-bold text-slate-500">
+                    <span class="flex items-center gap-1.5"><span class="material-symbols-outlined text-[16px]">calendar_month</span>शेवटचे अद्यतन: {{ village_info_last_updated }}</span>
+                    <a href="/tools/village-info/" class="inline-flex items-center gap-1 text-blue-600 hover:text-blue-700">सविस्तर पहा <span class="material-symbols-outlined text-[16px]">arrow_forward</span></a>
+                </div>
+            </div>
+
+            <!-- Card 3: Document Management Charts -->
+            <div class="flex min-h-[430px] flex-col overflow-hidden rounded-lg border border-slate-200 bg-white p-4 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md">
+                <div class="mb-4 flex items-start justify-between gap-3">
+                    <div>
+                        <h3 class="text-lg font-extrabold text-slate-900">कागदपत्रे व्यवस्थापन</h3>
+                        <p class="mt-1.5 flex items-center gap-1 text-xs font-semibold text-slate-500">
+                            <span class="material-symbols-outlined text-[16px] text-blue-600">description</span>
+                            एकूण अपलोड केलेले दस्तावेज
+                        </p>
+                    </div>
+                    <div class="inline-flex shrink-0 items-center gap-1 rounded-md border border-emerald-200 bg-emerald-50 px-2.5 py-1.5 text-[11px] font-extrabold text-emerald-700">
+                        <span class="material-symbols-outlined text-[14px]">trending_up</span>
+                        +1 या आठवड्यात
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-4 gap-2.5">
+                    <div class="rounded-md border border-blue-100 bg-blue-50/40 p-3">
+                        <p class="truncate text-[11px] font-extrabold text-blue-700">सामान्य दस्तावेज</p>
+                        <div class="mt-1.5 flex items-center justify-between gap-2">
+                            <p class="text-xl font-black leading-none text-slate-900">1,405</p>
+                            <span class="material-symbols-outlined text-xl text-blue-600">description</span>
+                        </div>
+                    </div>
+                    <div class="rounded-md border border-red-100 bg-red-50/70 p-3">
+                        <p class="truncate text-[11px] font-extrabold text-red-700">न्यायालयीन दस्तावेज</p>
+                        <div class="mt-1.5 flex items-center justify-between gap-2">
+                            <p class="text-xl font-black leading-none text-slate-900">45</p>
+                            <span class="material-symbols-outlined text-xl text-red-600">article</span>
+                        </div>
+                    </div>
+                    <div class="rounded-md border border-rose-100 bg-rose-50/70 p-3">
+                        <p class="truncate text-[11px] font-extrabold text-rose-700">मागील दिनांक</p>
+                        <div class="mt-1.5 flex items-center justify-between gap-2">
+                            <p class="text-xl font-black leading-none text-slate-900">28</p>
+                            <span class="material-symbols-outlined text-xl text-rose-600">schedule</span>
+                        </div>
+                    </div>
+                    <div class="rounded-md border border-emerald-100 bg-emerald-50/70 p-3">
+                        <p class="truncate text-[11px] font-extrabold text-emerald-700">पुढील दिनांक</p>
+                        <div class="mt-1.5 flex items-center justify-between gap-2">
+                            <p class="text-xl font-black leading-none text-slate-900">17</p>
+                            <span class="material-symbols-outlined text-xl text-emerald-600">schedule</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="my-4 border-t border-slate-100"></div>
+
+                <div class="flex flex-1 items-center justify-center">
+                    <div class="js-progress-ring grid h-36 w-36 place-items-center rounded-full p-2.5" data-progress="100" style="background: conic-gradient(#16a34a 0%, #e8edf5 0); box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);">
+                        <div class="grid h-full w-full place-items-center rounded-full bg-white text-center ring-1 ring-slate-100">
+                            <div>
+                                <p class="text-3xl font-black leading-none text-blue-600">1,450</p>
+                                <p class="mt-1.5 text-xs font-extrabold text-slate-500">एकूण दस्तावेज</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-4 flex items-center justify-between gap-3 text-xs font-bold text-slate-500">
+                    <span class="flex items-center gap-1.5"><span class="material-symbols-outlined text-[16px]">calendar_month</span>शेवटचे अद्यतन: {{ documents_last_updated }}</span>
+                    <a href="/tools/documents/" class="inline-flex items-center gap-1 text-blue-600 hover:text-blue-700">सविस्तर पहा <span class="material-symbols-outlined text-[16px]">arrow_forward</span></a>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Filtered Accordions Section -->
+        <div class="space-y-4">
+            
+            <!-- Accordion 1: तपासणी नोंदी -->
+            <div class="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm transition-all duration-200">
+                <button class="accordion-toggle w-full flex items-center justify-between p-5 text-left hover:bg-slate-50/80 transition-colors duration-150" data-target="accordion-inspections">
+                    <div class="flex items-center gap-4">
+                        <div class="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+                            <span class="material-symbols-outlined text-xl font-bold">construction</span>
+                        </div>
+                        <div>
+                            <h3 class="text-base font-extrabold text-slate-800 sm:text-lg">तपासणी साधन</h3>
+                            <p class="text-xs text-slate-400 font-medium">तपासणी आणि सर्वेक्षण मासिक विश्लेषण</p>
+                        </div>
+                    </div>
+                    <span class="material-symbols-outlined text-slate-400 transition-transform duration-200 rotate-icon">expand_more</span>
+                </button>
+                <div id="accordion-inspections" class="accordion-content hidden border-t border-slate-100">
+                    <div class="border-b border-slate-100 p-4">
+                        <div class="mb-4 flex flex-wrap justify-end gap-3">
+                            <button id="resetFiltersBtn" type="button" class="inline-flex h-8 items-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 text-xs font-bold text-slate-600 shadow-sm transition hover:bg-slate-50">
+                                <span class="material-symbols-outlined text-[16px]">refresh</span>
+                                रीसेट करा
+                            </button>
+                            <button id="applyFiltersBtn" type="button" class="inline-flex h-8 items-center gap-1.5 rounded-md bg-blue-600 px-3 text-xs font-bold text-white shadow-sm transition hover:bg-blue-700">
+                                <span class="material-symbols-outlined text-[16px]">filter_alt</span>
+                                फिल्टर लागू करा
+                            </button>
+                        </div>
+
+                        <div class="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-5">
+                            <label class="block">
+                                <span class="mb-1 block text-xs font-bold text-slate-500">जिल्हा</span>
+                                <select id="filterDistrict" class="h-9 w-full rounded-md border-slate-200 bg-white px-3 text-sm font-semibold text-slate-800 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                                    <option value="Pune" selected>पुणे</option>
+                                </select>
+                            </label>
+                            <label class="block">
+                                <span class="mb-1 block text-xs font-bold text-slate-500">तालुका</span>
+                                <select id="filterTaluka" class="h-9 w-full rounded-md border-slate-200 bg-white px-3 text-sm font-semibold text-slate-800 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                                    <option value="Purandar" selected>भोर</option>
+                                    <option value="Haveli">हवेली</option>
+                                </select>
+                            </label>
+                            <label class="block">
+                                <span class="mb-1 block text-xs font-bold text-slate-500">गाव</span>
+                                <select id="filterVillage" class="h-9 w-full rounded-md border-slate-200 bg-white px-3 text-sm font-semibold text-slate-800 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                                    <option value="All" selected>सर्व</option>
+                                    <option value="Uruli Devachi">उरळी देवाची</option>
+                                    <option value="Phursungi">फुरसुंगी</option>
+                                    <option value="Wadki">वडकी</option>
+                                    <option value="Loni Kalbhor">लोणी काळभोर</option>
+                                    <option value="Manjari Budruk">मांजरी बुद्रुक</option>
+                                </select>
+                            </label>
+                            <label class="block">
+                                <span class="mb-1 block text-xs font-bold text-slate-500">गट क्रमांक</span>
+                                <select id="filterGutNumber" class="h-9 w-full rounded-md border-slate-200 bg-white px-3 text-sm font-semibold text-slate-800 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                                    <option value="All" selected>सर्व</option>
+                                    <option value="42">42</option>
+                                    <option value="86">86</option>
+                                    <option value="128">128</option>
+                                </select>
+                            </label>
+                            <label class="block">
+                                <span class="mb-1 block text-xs font-bold text-slate-500">मालमत्ता प्रकार</span>
+                                <select id="inspectionAssetSelector" class="h-9 w-full rounded-md border-slate-200 bg-white px-3 text-sm font-semibold text-slate-800 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                                    <option value="All" selected>सर्व</option>
+                                    <option value="Structure">कालवा</option>
+                                    <option value="Well">रस्ता</option>
+                                    <option value="Tree">इमारत</option>
+                                    <option value="Pipeline">विहीर</option>
+                                    <option value="Fencing">शेती</option>
+                                </select>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="p-4">
+                        <div class="mb-4 grid grid-cols-1 gap-3 lg:grid-cols-2">
+                            <div class="rounded-lg border border-blue-100 bg-blue-50/30 p-4">
+                                <div class="flex items-center gap-4">
+                                    <div class="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-blue-100 text-blue-600">
+                                        <span class="material-symbols-outlined text-3xl">content_paste</span>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm font-bold text-blue-700">एकूण तपासणी नोंदी</p>
+                                        <p id="inspectionTotalCount" class="mt-1 text-3xl font-black leading-none text-blue-600">0</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="rounded-lg border border-emerald-100 bg-emerald-50/40 p-4">
+                                <div class="flex items-center gap-4">
+                                    <div class="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-emerald-100 text-emerald-600">
+                                        <span class="material-symbols-outlined text-3xl">business</span>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm font-bold text-emerald-700">एकूण मालमत्ता प्रकार</p>
+                                        <p id="inspectionAssetTypeCount" class="mt-1 text-3xl font-black leading-none text-emerald-600">0</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 gap-4 xl:grid-cols-2">
+                            <div class="rounded-lg border border-slate-200 bg-white p-4">
+                                <div class="mb-3 flex items-center gap-2">
+                                    <span class="material-symbols-outlined rounded-md bg-blue-50 p-1 text-[18px] text-blue-600">insert_chart</span>
+                                    <h4 class="text-sm font-extrabold text-slate-900">गावनिहाय तपासणी नोंदी</h4>
+                                </div>
+                                <div id="inspectionVillageChart" class="w-full h-[330px]"></div>
+                            </div>
+                            <div class="rounded-lg border border-slate-200 bg-white p-4">
+                                <div class="mb-3 flex items-center gap-2">
+                                    <span class="material-symbols-outlined rounded-md bg-blue-50 p-1 text-[18px] text-blue-600">donut_large</span>
+                                    <h4 class="text-sm font-extrabold text-slate-900">मालमत्ता प्रकारानुसार वितरण</h4>
+                                </div>
+                                <div id="inspectionAssetDistributionChart" class="w-full h-[330px]"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 px-4 py-3 text-xs font-bold text-slate-500">
+                        <span class="inline-flex items-center gap-1.5">
+                            <span class="material-symbols-outlined text-[16px]">calendar_month</span>
+                            शेवटचे अपडेट: <span id="inspectionLastUpdated">माहिती उपलब्ध नाही</span>
+                        </span>
+                        <a href="/inspections/" class="inline-flex items-center gap-1 text-blue-600 hover:text-blue-700">
+                            सविस्तर पहा
+                            <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Accordion 2: ७/१२ उतारा नोंदी -->
+            <div class="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm transition-all duration-200">
+                <button class="accordion-toggle w-full flex items-center justify-between p-5 text-left hover:bg-slate-50/80 transition-colors duration-150" data-target="accordion-landrecords">
+                    <div class="flex items-center gap-4">
+                        <div class="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
+                            <span class="material-symbols-outlined text-xl font-bold">description</span>
+                        </div>
+                        <div>
+                            <h3 class="text-base font-extrabold text-slate-800 sm:text-lg">७/१२ उतारा नोंदी</h3>
+                            <p class="text-xs text-slate-400 font-medium">जिरायत, बागायत आणि पोटखराब क्षेत्रांचे वर्गीकरण</p>
+                        </div>
+                    </div>
+                    <span class="material-symbols-outlined text-slate-400 transition-transform duration-200 rotate-icon">expand_more</span>
+                </button>
+                <div id="accordion-landrecords" class="accordion-content hidden border-t border-slate-100">
+                    <div class="border-b border-slate-100 p-4">
+                        <div class="mb-4 flex flex-wrap justify-end gap-4">
+                            <button id="resetLandRecordsFiltersBtn" type="button" class="inline-flex h-9 items-center gap-1.5 rounded-md border border-slate-200 bg-white px-4 text-xs font-bold text-blue-600 shadow-sm transition hover:bg-blue-50">
+                                <span class="material-symbols-outlined text-[16px]">refresh</span>
+                                रीसेट करा
+                            </button>
+                            <button id="applyLandRecordsFiltersBtn" type="button" class="inline-flex h-9 items-center gap-1.5 rounded-md bg-blue-600 px-4 text-xs font-bold text-white shadow-sm transition hover:bg-blue-700">
+                                <span class="material-symbols-outlined text-[16px]">filter_alt</span>
+                                फिल्टर लागू करा
+                            </button>
+                        </div>
+
+                        <div class="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+                            <label class="block">
+                                <span class="mb-1 block text-xs font-bold text-slate-500">जिल्हा</span>
+                                <select id="landFilterDistrict" class="h-9 w-full rounded-md border-slate-200 bg-white px-3 text-sm font-semibold text-slate-800 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                                    <option value="Pune" selected>पुणे</option>
+                                </select>
+                            </label>
+                            <label class="block">
+                                <span class="mb-1 block text-xs font-bold text-slate-500">तालुका</span>
+                                <select id="landFilterTaluka" class="h-9 w-full rounded-md border-slate-200 bg-white px-3 text-sm font-semibold text-slate-800 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                                    <option value="Purandar" selected>भोर</option>
+                                    <option value="Haveli">हवेली</option>
+                                </select>
+                            </label>
+                            <label class="block">
+                                <span class="mb-1 block text-xs font-bold text-slate-500">गाव</span>
+                                <select id="landFilterVillage" class="h-9 w-full rounded-md border-slate-200 bg-white px-3 text-sm font-semibold text-slate-800 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                                    <option value="Khopi" selected>खोपी</option>
+                                    <option value="All">सर्व</option>
+                                    <option value="Uruli Devachi">उरळी देवाची</option>
+                                    <option value="Loni Kalbhor">लोणी काळभोर</option>
+                                </select>
+                            </label>
+                            <label class="block">
+                                <span class="mb-1 block text-xs font-bold text-slate-500">गट क्रमांक</span>
+                                <select id="landFilterGutNumber" class="h-9 w-full rounded-md border-slate-200 bg-white px-3 text-sm font-semibold text-slate-800 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                                    <option value="16" selected>गट नं. 16</option>
+                                    <option value="All">सर्व</option>
+                                    <option value="42">गट नं. 42</option>
+                                    <option value="86">गट नं. 86</option>
+                                </select>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="p-4">
+                        <div class="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                            <div class="rounded-lg border border-blue-100 bg-blue-50/30 p-4">
+                                <div class="flex items-center gap-4">
+                                    <div class="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-blue-100 text-blue-600">
+                                        <span class="material-symbols-outlined text-3xl">description</span>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm font-bold text-blue-700">एकूण ७/१२ नोंदी</p>
+                                        <p id="landRecordTotalCount" class="mt-1 text-3xl font-black leading-none text-blue-600">0</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="rounded-lg border border-emerald-100 bg-emerald-50/40 p-4">
+                                <div class="flex items-center gap-4">
+                                    <div class="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-emerald-100 text-emerald-600">
+                                        <span class="material-symbols-outlined text-3xl">domain</span>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm font-bold text-emerald-700">एकूण गावे</p>
+                                        <p id="landRecordVillageCount" class="mt-1 text-3xl font-black leading-none text-emerald-600">0</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="rounded-lg border border-orange-100 bg-orange-50/40 p-4">
+                                <div class="flex items-center gap-4">
+                                    <div class="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-orange-100 text-orange-600">
+                                        <span class="material-symbols-outlined text-3xl">grid_on</span>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm font-bold text-orange-700">एकूण गट क्रमांक</p>
+                                        <p id="landRecordGutCount" class="mt-1 text-3xl font-black leading-none text-orange-600">0</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 gap-4 xl:grid-cols-2">
+                            <div class="rounded-lg border border-slate-200 bg-white p-4">
+                                <div class="mb-3 flex items-center gap-2">
+                                    <span class="material-symbols-outlined rounded-md bg-blue-50 p-1 text-[18px] text-slate-600">bar_chart</span>
+                                    <h4 class="text-sm font-extrabold text-slate-900">गावनिहाय ७/१२ नोंदी</h4>
+                                </div>
+                                <div id="landRecordVillageChart" class="w-full h-[330px]"></div>
+                            </div>
+                            <div class="rounded-lg border border-slate-200 bg-white p-4">
+                                <div class="mb-3 flex items-center gap-2">
+                                    <span class="material-symbols-outlined rounded-md bg-blue-50 p-1 text-[18px] text-slate-600">donut_large</span>
+                                    <h4 class="text-sm font-extrabold text-slate-900">जमीन प्रकार वितरण</h4>
+                                </div>
+                                <div id="landRecordsChart" class="w-full h-[330px]"></div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <div class="flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 px-4 py-3 text-xs font-bold text-slate-500">
+                        <span class="inline-flex items-center gap-1.5">
+                            <span class="material-symbols-outlined text-[16px]">calendar_month</span>
+                            शेवटचे अपडेट: <span id="landRecordLastUpdated">{{ land_record_712_last_updated }}</span>
+                        </span>
+                        <a href="/tools/712/list/" class="inline-flex items-center gap-1 text-blue-600 hover:text-blue-700">
+                            सविस्तर पहा
+                            <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Accordion 3: भूसंपादन प्रक्रिया नोंदी -->
+            <div class="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm transition-all duration-200">
+                <button class="accordion-toggle w-full flex items-center justify-between p-5 text-left hover:bg-slate-50/80 transition-colors duration-150" data-target="accordion-stages">
+                    <div class="flex items-center gap-4">
+                        <div class="flex h-11 w-11 items-center justify-center rounded-xl bg-rose-50 text-rose-600">
+                            <span class="material-symbols-outlined text-xl font-bold">history_edu</span>
+                        </div>
+                        <div>
+                            <h3 class="text-base font-extrabold text-slate-800 sm:text-lg">भूसंपादन प्रक्रिया नोंदी</h3>
+                            <p class="text-xs text-slate-400 font-medium">भूसंपादन टप्पे आणि प्रगती अहवाल</p>
+                        </div>
+                    </div>
+                    <span class="material-symbols-outlined text-slate-400 transition-transform duration-200 rotate-icon">expand_more</span>
+                </button>
+                <div id="accordion-stages" class="accordion-content hidden border-t border-slate-100 bg-white">
+                    <div class="border-b border-slate-100 px-5 py-4">
+                        <div class="mb-5 flex justify-end">
+                            <button id="resetBhusampadanFiltersBtn" type="button" class="inline-flex h-9 items-center gap-1.5 rounded-md border border-slate-200 bg-white px-4 text-xs font-bold text-blue-600 shadow-sm transition hover:bg-blue-50">
+                                <span class="material-symbols-outlined text-[17px]">refresh</span>
+                                रिसेट करा
+                            </button>
+                        </div>
+
+                        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                            <label class="block">
+                                <span class="mb-1.5 block text-xs font-bold text-slate-500">जिल्हा</span>
+                                <select id="bhusampadanFilterDistrict" class="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 shadow-sm outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100">
+                                    <option value="Pune" selected>पुणे</option>
+                                </select>
+                            </label>
+                            <label class="block">
+                                <span class="mb-1.5 block text-xs font-bold text-slate-500">तालुका</span>
+                                <select id="bhusampadanFilterTaluka" class="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 shadow-sm outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100">
+                                    <option value="Bhor" selected>भोर</option>
+                                    <option value="Purandar">पुरंदर</option>
+                                    <option value="Haveli">हवेली</option>
+                                </select>
+                            </label>
+                            <label class="block">
+                                <span class="mb-1.5 block text-xs font-bold text-slate-500">गाव</span>
+                                <select id="bhusampadanFilterVillage" class="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 shadow-sm outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100">
+                                    <option value="Khopi" selected>खोपी</option>
+                                    <option value="Uruli Devachi">उरळी देवाची</option>
+                                    <option value="Loni Kalbhor">लोणी काळभोर</option>
+                                </select>
+                            </label>
+                            <label class="block">
+                                <span class="mb-1.5 block text-xs font-bold text-slate-500">गट क्रमांक</span>
+                                <select id="bhusampadanFilterGutNumber" class="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 shadow-sm outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100">
+                                    <option value="50" selected>50</option>
+                                    <option value="16">16</option>
+                                    <option value="All">सर्व</option>
+                                </select>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 divide-y divide-slate-100 lg:grid-cols-2 lg:divide-x lg:divide-y-0">
+                        <div class="px-5 py-5">
+                            <div class="mb-3 flex items-center gap-2">
+                                <span class="material-symbols-outlined text-[19px] text-blue-600">article</span>
+                                <h4 class="text-sm font-extrabold text-slate-800">कलम निहाय स्थिती</h4>
+                            </div>
+                            <div class="mb-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
+                                <div class="rounded-md border border-emerald-100 bg-emerald-50/70 px-3 py-2">
+                                    <p class="text-[11px] font-extrabold text-emerald-700">होय</p>
+                                    <p id="bhusampadanKalamYesCount" class="mt-1 text-lg font-black text-slate-900">4</p>
+                                </div>
+                                <div class="rounded-md border border-red-100 bg-red-50/70 px-3 py-2">
+                                    <p class="text-[11px] font-extrabold text-red-700">नाही</p>
+                                    <p id="bhusampadanKalamNoCount" class="mt-1 text-lg font-black text-slate-900">1</p>
+                                </div>
+                                <div class="rounded-md border border-slate-200 bg-slate-50 px-3 py-2">
+                                    <p class="text-[11px] font-extrabold text-slate-600">None</p>
+                                    <p id="bhusampadanKalamNoneCount" class="mt-1 text-lg font-black text-slate-900">1</p>
+                                </div>
+                            </div>
+                            <div class="grid min-h-[320px] grid-cols-1 items-center gap-4 xl:grid-cols-[280px_minmax(0,1fr)]">
+                                <div id="stagesSectionStatusChart" class="h-80 w-full"></div>
+                                <div id="bhusampadanKalamStatusList" class="space-y-2 self-center"></div>
+                            </div>
+                        </div>
+                        <div class="px-5 py-5">
+                            <div class="mb-3 flex flex-wrap items-center justify-between gap-3">
+                                <div class="flex items-center gap-2">
+                                    <span class="material-symbols-outlined text-[19px] text-blue-600">corporate_fare</span>
+                                    <h4 class="text-sm font-extrabold text-slate-800">निगडीत घटकांचे मूल्यांकन</h4>
+                                </div>
+                                <label class="inline-flex items-center gap-2 text-xs font-bold text-slate-500">
+                                    घटक
+                                    <select id="bhusampadanValuationComponent" class="h-8 rounded-md border border-slate-200 bg-white px-2 text-xs font-bold text-slate-700 shadow-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100">
+                                        <option value="all" selected>सर्व घटक</option>
+                                        <option value="water">पाणीपुरवठा</option>
+                                        <option value="agri">कृषी विभाग</option>
+                                        <option value="construction">बांधकाम विभाग</option>
+                                        <option value="forest">वन विभाग</option>
+                                        <option value="other">इतर विभाग</option>
+                                    </select>
+                                </label>
+                            </div>
+                            <div class="mb-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                                <div class="rounded-md border border-blue-100 bg-blue-50/50 px-3 py-2">
+                                    <p class="text-[11px] font-extrabold text-blue-700">मूल्यांकन संख्या</p>
+                                    <p id="bhusampadanValuationCount" class="mt-1 text-lg font-black text-slate-900">21</p>
+                                </div>
+                                <div class="rounded-md border border-emerald-100 bg-emerald-50/70 px-3 py-2">
+                                    <p class="text-[11px] font-extrabold text-emerald-700">एकूण मूल्यांकन</p>
+                                    <p id="bhusampadanValuationAmount" class="mt-1 text-lg font-black text-slate-900">₹ 2.20 कोटी</p>
+                                </div>
+                            </div>
+                            <div id="stagesAwardStatusChart" class="h-80 w-full"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<div
+    id="analyticsMetrics"
+    class="hidden"
+    data-rr-completed="{{ rr_completed_villages|default:0 }}"
+    data-rr-pending="{{ rr_pending_villages|default:0 }}"
+    data-village-info-completed="{{ village_info_completed_villages|default:0 }}"
+    data-village-info-draft="{{ village_info_draft_villages|default:0 }}"
+    data-village-info-pending="{{ village_info_pending_villages|default:0 }}"
+></div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const analyticsMetrics = document.getElementById('analyticsMetrics');
+        const metricValue = (key) => {
+            const value = Number.parseInt(analyticsMetrics?.dataset[key] || '0', 10);
+            return Number.isNaN(value) ? 0 : value;
+        };
+        const analyticsCounts = {
+            rrCompleted: metricValue('rrCompleted'),
+            rrPending: metricValue('rrPending'),
+            villageInfoCompleted: metricValue('villageInfoCompleted'),
+            villageInfoDraft: metricValue('villageInfoDraft'),
+            villageInfoPending: metricValue('villageInfoPending')
+        };
+
+        document.querySelectorAll('.js-progress-bar[data-progress]').forEach((bar) => {
+            const value = Number.parseFloat(bar.dataset.progress || '0');
+            const boundedValue = Number.isNaN(value) ? 0 : Math.min(Math.max(value, 0), 100);
+            bar.style.width = `${boundedValue}%`;
+        });
+
+        document.querySelectorAll('.js-progress-ring[data-progress]').forEach((ring) => {
+            const value = Number.parseFloat(ring.dataset.progress || '0');
+            const boundedValue = Number.isNaN(value) ? 0 : Math.min(Math.max(value, 0), 100);
+            ring.style.background = `conic-gradient(#16a34a ${boundedValue}%, #e8edf5 0)`;
+        });
+
+        
+        // Define Custom Highcharts Theme
+        Highcharts.setOptions({
+            chart: {
+                style: {
+                    fontFamily: '"Public Sans", "Inter", sans-serif'
+                },
+                backgroundColor: 'transparent'
+            },
+            colors: ['#10b981', '#f59e0b', '#f43f5e', '#3b82f6', '#8b5cf6', '#ec4899', '#06b6d4'],
+            credits: {
+                enabled: false
+            },
+            exporting: {
+                enabled: false
+            },
+            title: {
+                text: null
+            },
+            subtitle: {
+                text: null
+            },
+            xAxis: {
+                gridLineColor: '#f1f5f9',
+                lineColor: '#e2e8f0',
+                tickColor: '#e2e8f0',
+                labels: {
+                    style: {
+                        color: '#64748b',
+                        fontWeight: '500',
+                        fontSize: '11px'
+                    }
+                }
+            },
+            yAxis: {
+                gridLineColor: '#f1f5f9',
+                lineColor: '#e2e8f0',
+                labels: {
+                    style: {
+                        color: '#64748b',
+                        fontWeight: '500',
+                        fontSize: '11px'
+                    }
+                }
+            },
+            legend: {
+                itemStyle: {
+                    color: '#334155',
+                    fontSize: '11px',
+                    fontWeight: '600'
+                }
+            }
+        });
+
+        // -------------------------------------------------------------
+        // DIRECT WIDGETS CHARTS (ALWAYS SHOWN)
+        // -------------------------------------------------------------
+
+        // 1. Documents Overview Chart (Horizontal Bar Chart)
+        if (document.getElementById('documentsOverviewChart')) {
+        window.documentsOverviewChartInstance = Highcharts.chart('documentsOverviewChart', {
+            chart: {
+                type: 'bar',
+                height: 130,
+                spacing: [5, 8, 5, 5],
+                backgroundColor: 'transparent'
+            },
+            xAxis: {
+                categories: ['सामान्य दस्तावेज', 'न्यायालयीन दस्तावेज'],
+                lineWidth: 0,
+                tickWidth: 0,
+                labels: {
+                    style: {
+                        color: '#334155',
+                        fontSize: '10px',
+                        fontWeight: '700'
+                    }
+                }
+            },
+            yAxis: {
+                min: 0,
+                max: 1450,
+                visible: false,
+                title: {
+                    text: null
+                }
+            },
+            tooltip: {
+                pointFormat: '<b>{point.y}</b> दस्तावेज',
+                hideDelay: 100
+            },
+            plotOptions: {
+                bar: {
+                    borderRadius: 4,
+                    colorByPoint: true,
+                    groupPadding: 0.26,
+                    pointPadding: 0.16,
+                    dataLabels: {
+                        enabled: true,
+                        format: '{point.y}',
+                        align: 'right',
+                        inside: false,
+                        style: {
+                            fontSize: '11px',
+                            fontWeight: 'bold',
+                            color: '#0f172a',
+                            textOutline: 'none'
+                        }
+                    }
+                }
+            },
+            legend: {
+                enabled: false
+            },
+            series: [{
+                name: 'Documents',
+                data: [
+                    { y: 1405, color: '#3b82f6' },
+                    { y: 45, color: '#dc2626' }
+                ]
+            }]
+        });
+        }
+
+        // 2. Ready Reckoner Village Status (legacy chart container, if present)
+        if (document.getElementById('rrCoverageChart')) {
+        window.rrCoverageChartInstance = Highcharts.chart('rrCoverageChart', {
+            chart: {
+                type: 'pie',
+                height: 210,
+                spacing: [5, 5, 5, 5],
+                backgroundColor: 'transparent'
+            },
+            tooltip: {
+                pointFormat: '<b>{point.name}</b><br/>{point.y} villages ({point.percentage:.0f}%)',
+                hideDelay: 100
+            },
+            plotOptions: {
+                pie: {
+                    allowPointSelect: false,
+                    cursor: 'pointer',
+                    innerSize: '60%',
+                    size: '78%',
+                    center: ['50%', '50%'],
+                    dataLabels: {
+                        enabled: true,
+                        distance: -20,
+                        format: '<b>{point.percentage:.0f}%</b>',
+                        style: {
+                            fontSize: '12px',
+                            fontWeight: 'bold',
+                            color: 'white',
+                            textOutline: '2px contrast'
+                        }
+                    },
+                    showInLegend: false,
+                    borderWidth: 0,
+                    states: {
+                        hover: {
+                            halo: {
+                                size: 0
+                            },
+                            brightness: 0.1
+                        }
+                    }
+                }
+            },
+            series: [{
+                name: 'Village Status',
+                colorByPoint: true,
+                data: [
+                    { name: 'नोंदी झाल्या', y: analyticsCounts.rrCompleted, color: '#10b981' },
+                    { name: 'प्रलंबित', y: analyticsCounts.rrPending, color: '#f97316' }
+                ]
+            }]
+        });
+        }
+
+        // 3. Village Info Status (legacy chart container, if present)
+        if (document.getElementById('villageProgressChart')) {
+        window.villageProgressChartInstance = Highcharts.chart('villageProgressChart', {
+            chart: {
+                type: 'pie',
+                height: 210,
+                spacing: [5, 5, 5, 5],
+                backgroundColor: 'transparent'
+            },
+            tooltip: {
+                pointFormat: '<b>{point.name}</b><br/>{point.y} villages ({point.percentage:.0f}%)',
+                hideDelay: 100
+            },
+            plotOptions: {
+                pie: {
+                    allowPointSelect: false,
+                    cursor: 'pointer',
+                    innerSize: '60%',
+                    size: '78%',
+                    center: ['50%', '50%'],
+                    dataLabels: {
+                        enabled: true,
+                        distance: -20,
+                        format: '<b>{point.percentage:.0f}%</b>',
+                        style: {
+                            fontSize: '12px',
+                            fontWeight: 'bold',
+                            color: 'white',
+                            textOutline: '2px contrast'
+                        }
+                    },
+                    showInLegend: false,
+                    borderWidth: 0,
+                    states: {
+                        hover: {
+                            halo: {
+                                size: 0
+                            },
+                            brightness: 0.1
+                        }
+                    }
+                }
+            },
+            series: [{
+                name: 'Completion Status',
+                colorByPoint: true,
+                data: [
+                    { name: 'पूर्ण', y: analyticsCounts.villageInfoCompleted, color: '#10b981' },
+                    { name: 'ड्राफ्ट', y: analyticsCounts.villageInfoDraft, color: '#f59e0b' },
+                    { name: 'प्रलंबित', y: analyticsCounts.villageInfoPending, color: '#f97316' }
+                ]
+            }]
+        });
+        }
+
+        // -------------------------------------------------------------
+        // FILTER-BASED DATA MODELLING (STATIC MOCK DATASETS)
+        // -------------------------------------------------------------
+        const filterDataMap = {
+            All: {
+                inspections: {
+                    categories: ['06-10', '06-11', '06-12', '06-13', '06-14', '06-15', '06-16'],
+                    All: [45, 52, 60, 48, 65, 78, 85],
+                    Structure: [15, 18, 20, 14, 22, 25, 24],
+                    Well: [10, 12, 15, 11, 14, 18, 20],
+                    Tree: [12, 14, 16, 15, 18, 22, 25],
+                    Pipeline: [5, 6, 7, 5, 8, 10, 12],
+                    Fencing: [3, 2, 2, 3, 3, 3, 4],
+                    villageTop: [
+                        ['खोपी', 220],
+                        ['नरसापूर', 180],
+                        ['माळवडी', 150],
+                        ['बोरगाव', 120],
+                        ['पानशेत', 90],
+                        ['वाकी', 75],
+                        ['उरळी कांचन', 60],
+                        ['यवत', 45],
+                        ['शिक्रापूर', 35],
+                        ['लोणी काळभोर', 25]
+                    ],
+                    distribution: [
+                        { name: 'कालवा', y: 350, color: '#2563eb' },
+                        { name: 'रस्ता', y: 280, color: '#16a34a' },
+                        { name: 'इमारत', y: 200, color: '#f59e0b' },
+                        { name: 'विहीर', y: 150, color: '#8b5cf6' },
+                        { name: 'शेती', y: 180, color: '#f43f5e' },
+                        { name: 'इतर', y: 85, color: '#94a3b8' }
+                    ]
+                },
+                landrecords: {
+                    totalRecords: 1245,
+                    totalVillages: 90,
+                    totalGuts: 450,
+                    totalArea: '245.35 हे.',
+                    averageArea: '3.41 हे.',
+                    topVillage: 'खोपी',
+                    commonType: 'जिरायत',
+                    villageTop: [
+                        ['खोपी', 222],
+                        ['नरसापूर', 180],
+                        ['माळवडी', 153],
+                        ['बोरगाव', 121],
+                        ['पानशेत', 94],
+                        ['वाकी', 76],
+                        ['उरळी कांचन', 61],
+                        ['यवत', 45],
+                        ['शिक्रापूर', 33],
+                        ['लोणी काळभोर', 25]
+                    ],
+                    distribution: [
+                        { name: 'जिरायत', y: 650, color: '#2563eb' },
+                        { name: 'बागायत', y: 320, color: '#16a34a' },
+                        { name: 'पोटखराब', y: 180, color: '#f59e0b' },
+                        { name: 'इतर', y: 95, color: '#6366f1' }
+                    ]
+                },
+                villageinfo: {
+                    Sec6: [
+                        { name: 'माहिती उपलब्ध (Guts With Info)', y: 150, color: '#10b981' },
+                        { name: 'माहिती शिल्लक (Guts Missing Info)', y: 50, color: '#f43f5e' }
+                    ],
+                    Proposal: [
+                        { name: 'माहिती उपलब्ध (Guts With Info)', y: 120, color: '#10b981' },
+                        { name: 'माहिती शिल्लक (Guts Missing Info)', y: 80, color: '#f43f5e' }
+                    ],
+                    Notice32: [
+                        { name: 'माहिती उपलब्ध (Guts With Info)', y: 160, color: '#10b981' },
+                        { name: 'माहिती शिल्लक (Guts Missing Info)', y: 40, color: '#f43f5e' }
+                    ],
+                    Declare32: [
+                        { name: 'माहिती उपलब्ध (Guts With Info)', y: 90, color: '#10b981' },
+                        { name: 'माहिती शिल्लक (Guts Missing Info)', y: 110, color: '#f43f5e' }
+                    ]
+                },
+                stages: {
+                    pie: [
+                        { name: 'होय (Yes)', y: 580, color: '#10b981' },
+                        { name: 'नाही (No)', y: 240, color: '#f43f5e' },
+                        { name: 'None', y: 110, color: '#94a3b8' }
+                    ],
+                    line: {
+                        categories: ['06-10', '06-11', '06-12', '06-13', '06-14', '06-15', '06-16'],
+                        data: [25, 30, 28, 35, 45, 52, 60]
+                    }
+                }
+            },
+            Purandar: {
+                inspections: {
+                    categories: ['06-10', '06-11', '06-12', '06-13', '06-14', '06-15', '06-16'],
+                    All: [25, 30, 35, 28, 38, 42, 48],
+                    Structure: [8, 10, 12, 9, 13, 14, 15],
+                    Well: [5, 6, 8, 6, 9, 10, 12],
+                    Tree: [8, 9, 10, 9, 11, 13, 15],
+                    Pipeline: [3, 4, 4, 3, 4, 4, 5],
+                    Fencing: [1, 1, 1, 1, 1, 1, 1],
+                    villageTop: [
+                        ['उरळी देवाची', 110],
+                        ['फुरसुंगी', 95],
+                        ['वडकी', 80],
+                        ['दिवे', 64],
+                        ['सासवड', 52],
+                        ['माळशिरस', 44],
+                        ['भिवरी', 35],
+                        ['कुंभारवळण', 28],
+                        ['पिंपळे', 20],
+                        ['पारगाव', 16]
+                    ],
+                    distribution: [
+                        { name: 'कालवा', y: 140, color: '#2563eb' },
+                        { name: 'रस्ता', y: 95, color: '#16a34a' },
+                        { name: 'इमारत', y: 120, color: '#f59e0b' },
+                        { name: 'विहीर', y: 42, color: '#8b5cf6' },
+                        { name: 'शेती', y: 28, color: '#f43f5e' },
+                        { name: 'इतर', y: 25, color: '#94a3b8' }
+                    ]
+                },
+                landrecords: {
+                    totalRecords: 730,
+                    totalVillages: 48,
+                    totalGuts: 265,
+                    totalArea: '138.60 हे.',
+                    averageArea: '2.89 हे.',
+                    topVillage: 'उरळी देवाची',
+                    commonType: 'जिरायत',
+                    villageTop: [
+                        ['उरळी देवाची', 128],
+                        ['फुरसुंगी', 116],
+                        ['वडकी', 92],
+                        ['दिवे', 78],
+                        ['सासवड', 66],
+                        ['माळशिरस', 54],
+                        ['भिवरी', 46],
+                        ['कुंभारवळण', 38],
+                        ['पिंपळे', 30],
+                        ['पारगाव', 22]
+                    ],
+                    distribution: [
+                        { name: 'जिरायत', y: 380, color: '#2563eb' },
+                        { name: 'बागायत', y: 190, color: '#16a34a' },
+                        { name: 'पोटखराब', y: 105, color: '#f59e0b' },
+                        { name: 'इतर', y: 55, color: '#6366f1' }
+                    ]
+                },
+                villageinfo: {
+                    Sec6: [
+                        { name: 'माहिती उपलब्ध (Guts With Info)', y: 90, color: '#10b981' },
+                        { name: 'माहिती शिल्लक (Guts Missing Info)', y: 30, color: '#f43f5e' }
+                    ],
+                    Proposal: [
+                        { name: 'माहिती उपलब्ध (Guts With Info)', y: 70, color: '#10b981' },
+                        { name: 'माहिती शिल्लक (Guts Missing Info)', y: 50, color: '#f43f5e' }
+                    ],
+                    Notice32: [
+                        { name: 'माहिती उपलब्ध (Guts With Info)', y: 100, color: '#10b981' },
+                        { name: 'माहिती शिल्लक (Guts Missing Info)', y: 20, color: '#f43f5e' }
+                    ],
+                    Declare32: [
+                        { name: 'माहिती उपलब्ध (Guts With Info)', y: 55, color: '#10b981' },
+                        { name: 'माहिती शिल्लक (Guts Missing Info)', y: 65, color: '#f43f5e' }
+                    ]
+                },
+                stages: {
+                    pie: [
+                        { name: 'होय (Yes)', y: 340, color: '#10b981' },
+                        { name: 'नाही (No)', y: 130, color: '#f43f5e' },
+                        { name: 'None', y: 60, color: '#94a3b8' }
+                    ],
+                    line: {
+                        categories: ['06-10', '06-11', '06-12', '06-13', '06-14', '06-15', '06-16'],
+                        data: [12, 18, 15, 20, 24, 28, 35]
+                    }
+                }
+            },
+            Haveli: {
+                inspections: {
+                    categories: ['06-10', '06-11', '06-12', '06-13', '06-14', '06-15', '06-16'],
+                    All: [20, 22, 25, 20, 27, 36, 37],
+                    Structure: [7, 8, 8, 5, 9, 11, 9],
+                    Well: [5, 6, 7, 5, 5, 8, 8],
+                    Tree: [4, 5, 6, 6, 7, 9, 10],
+                    Pipeline: [2, 2, 3, 2, 4, 6, 7],
+                    Fencing: [2, 1, 1, 2, 2, 2, 3],
+                    villageTop: [
+                        ['लोणी काळभोर', 92],
+                        ['मांजरी बुद्रुक', 74],
+                        ['शेवाळेवाडी', 62],
+                        ['कदमवाकवस्ती', 48],
+                        ['वाघोली', 40],
+                        ['कोरेगाव मूळ', 34],
+                        ['हडपसर', 29],
+                        ['फुरसुंगी', 24],
+                        ['उरळी कांचन', 18],
+                        ['थेऊर', 14]
+                    ],
+                    distribution: [
+                        { name: 'कालवा', y: 115, color: '#2563eb' },
+                        { name: 'रस्ता', y: 75, color: '#16a34a' },
+                        { name: 'इमारत', y: 82, color: '#f59e0b' },
+                        { name: 'विहीर', y: 45, color: '#8b5cf6' },
+                        { name: 'शेती', y: 38, color: '#f43f5e' },
+                        { name: 'इतर', y: 20, color: '#94a3b8' }
+                    ]
+                },
+                landrecords: {
+                    totalRecords: 515,
+                    totalVillages: 42,
+                    totalGuts: 185,
+                    totalArea: '106.75 हे.',
+                    averageArea: '2.54 हे.',
+                    topVillage: 'लोणी काळभोर',
+                    commonType: 'जिरायत',
+                    villageTop: [
+                        ['लोणी काळभोर', 94],
+                        ['मांजरी बुद्रुक', 78],
+                        ['शेवाळेवाडी', 63],
+                        ['कदमवाकवस्ती', 52],
+                        ['वाघोली', 45],
+                        ['कोरेगाव मूळ', 39],
+                        ['हडपसर', 34],
+                        ['फुरसुंगी', 27],
+                        ['उरळी कांचन', 23],
+                        ['थेऊर', 18]
+                    ],
+                    distribution: [
+                        { name: 'जिरायत', y: 270, color: '#2563eb' },
+                        { name: 'बागायत', y: 135, color: '#16a34a' },
+                        { name: 'पोटखराब', y: 75, color: '#f59e0b' },
+                        { name: 'इतर', y: 35, color: '#6366f1' }
+                    ]
+                },
+                villageinfo: {
+                    Sec6: [
+                        { name: 'माहिती उपलब्ध (Guts With Info)', y: 60, color: '#10b981' },
+                        { name: 'माहिती शिल्लक (Guts Missing Info)', y: 20, color: '#f43f5e' }
+                    ],
+                    Proposal: [
+                        { name: 'माहिती उपलब्ध (Guts With Info)', y: 50, color: '#10b981' },
+                        { name: 'माहिती शिल्लक (Guts Missing Info)', y: 30, color: '#f43f5e' }
+                    ],
+                    Notice32: [
+                        { name: 'माहिती उपलब्ध (Guts With Info)', y: 60, color: '#10b981' },
+                        { name: 'माहिती शिल्लक (Guts Missing Info)', y: 20, color: '#f43f5e' }
+                    ],
+                    Declare32: [
+                        { name: 'माहिती उपलब्ध (Guts With Info)', y: 35, color: '#10b981' },
+                        { name: 'माहिती शिल्लक (Guts Missing Info)', y: 45, color: '#f43f5e' }
+                    ]
+                },
+                stages: {
+                    pie: [
+                        { name: 'होय (Yes)', y: 240, color: '#10b981' },
+                        { name: 'नाही (No)', y: 110, color: '#f43f5e' },
+                        { name: 'None', y: 50, color: '#94a3b8' }
+                    ],
+                    line: {
+                        categories: ['06-10', '06-11', '06-12', '06-13', '06-14', '06-15', '06-16'],
+                        data: [13, 12, 13, 15, 21, 24, 25]
+                    }
+                }
+            }
+        };
+
+        // Current active state of filters
+        let currentFilter = 'All';
+
+        function inspectionTotal(data) {
+            return data.inspections.distribution.reduce((sum, item) => sum + item.y, 0);
+        }
+
+        function updateInspectionDashboard(targetData) {
+            const total = inspectionTotal(targetData);
+            const totalEl = document.getElementById('inspectionTotalCount');
+            const typeCountEl = document.getElementById('inspectionAssetTypeCount');
+
+            if (totalEl) totalEl.textContent = total.toLocaleString('en-IN');
+            if (typeCountEl) typeCountEl.textContent = '8';
+
+            if (window.inspectionVillageChartInstance) {
+                window.inspectionVillageChartInstance.series[0].setData(
+                    targetData.inspections.villageTop.map(item => ({ name: item[0], y: item[1] })),
+                    true
+                );
+            }
+
+            if (window.inspectionAssetDistributionChartInstance) {
+                window.inspectionAssetDistributionChartInstance.series[0].setData(targetData.inspections.distribution, false);
+                window.inspectionAssetDistributionChartInstance.redraw();
+            }
+        }
+
+        function reflowInspectionCharts() {
+            if (window.inspectionVillageChartInstance) window.inspectionVillageChartInstance.reflow();
+            if (window.inspectionAssetDistributionChartInstance) window.inspectionAssetDistributionChartInstance.reflow();
+        }
+
+        function setSelectOptions(selectEl, items, allLabel = 'सर्व', selectedValue = '') {
+            if (!selectEl) return;
+            const normalizedItems = Array.isArray(items) ? items : [];
+            selectEl.innerHTML = '';
+            if (allLabel) {
+                selectEl.add(new Option(allLabel, 'All'));
+            }
+            normalizedItems.forEach((item) => {
+                if (item && typeof item === 'object') {
+                    selectEl.add(new Option(item.label || item.value || item.id, item.value || item.label || item.id));
+                } else if (item !== null && item !== undefined && `${item}`.trim() !== '') {
+                    selectEl.add(new Option(item, item));
+                }
+            });
+            if (selectedValue && Array.from(selectEl.options).some(option => option.value === selectedValue)) {
+                selectEl.value = selectedValue;
+            } else if (allLabel) {
+                selectEl.value = 'All';
+            }
+        }
+
+        async function fetchJSON(url) {
+            const response = await fetch(url, { headers: { 'Accept': 'application/json' } });
+            if (!response.ok) throw new Error(`Request failed: ${response.status}`);
+            return response.json();
+        }
+
+        async function loadInspectionDistricts(selectedValue = 'Pune') {
+            const data = await fetchJSON('/api/locations/?lang=mr');
+            setSelectOptions(filterDistrict, data.data || [], null, selectedValue);
+        }
+
+        async function loadInspectionTalukas(selectedValue = '') {
+            if (!filterDistrict?.value || filterDistrict.value === 'All') {
+                setSelectOptions(filterTaluka, [], 'सर्व');
+                return;
+            }
+            const data = await fetchJSON(`/api/locations/?district=${encodeURIComponent(filterDistrict.value)}&lang=mr`);
+            setSelectOptions(filterTaluka, data.data || [], 'सर्व', selectedValue);
+        }
+
+        async function loadInspectionVillages(selectedValue = '') {
+            if (!filterDistrict?.value || !filterTaluka?.value || filterTaluka.value === 'All') {
+                setSelectOptions(filterVillage, [], 'सर्व');
+                return;
+            }
+            const data = await fetchJSON(`/api/locations/?district=${encodeURIComponent(filterDistrict.value)}&taluka=${encodeURIComponent(filterTaluka.value)}&lang=mr`);
+            setSelectOptions(filterVillage, data.data || [], 'सर्व', selectedValue);
+        }
+
+        async function loadInspectionGuts(selectedValue = '') {
+            if (!filterDistrict?.value || !filterTaluka?.value || !filterVillage?.value || filterVillage.value === 'All') {
+                setSelectOptions(filterGutNumber, [], 'सर्व');
+                return;
+            }
+            const data = await fetchJSON(`/api/locations/?district=${encodeURIComponent(filterDistrict.value)}&taluka=${encodeURIComponent(filterTaluka.value)}&village=${encodeURIComponent(filterVillage.value)}`);
+            setSelectOptions(filterGutNumber, data.data || [], 'सर्व', selectedValue);
+        }
+
+        function inspectionAnalyticsQueryParams() {
+            const params = new URLSearchParams();
+            if (filterDistrict?.value && filterDistrict.value !== 'All') params.set('district', filterDistrict.value);
+            if (filterTaluka?.value && filterTaluka.value !== 'All') params.set('taluka', filterTaluka.value);
+            if (filterVillage?.value && filterVillage.value !== 'All') params.set('village', filterVillage.value);
+            if (filterGutNumber?.value && filterGutNumber.value !== 'All') params.set('gut_number', filterGutNumber.value);
+            if (inspectionAssetSelector?.value && inspectionAssetSelector.value !== 'All') params.set('asset_type', inspectionAssetSelector.value);
+            return params;
+        }
+
+        function updateInspectionDashboardFromApi(data) {
+            const summary = data?.summary || {};
+            const charts = data?.charts || {};
+            const totalEl = document.getElementById('inspectionTotalCount');
+            const typeCountEl = document.getElementById('inspectionAssetTypeCount');
+            const lastUpdatedEl = document.getElementById('inspectionLastUpdated');
+            const villageTop = charts.village_top || [];
+            const distribution = charts.asset_distribution || [];
+
+            if (totalEl) totalEl.textContent = (summary.total_records || 0).toLocaleString('en-IN');
+            if (typeCountEl) typeCountEl.textContent = (summary.asset_type_count || 0).toLocaleString('en-IN');
+            if (lastUpdatedEl) lastUpdatedEl.textContent = summary.last_updated || 'माहिती उपलब्ध नाही';
+
+            if (window.inspectionVillageChartInstance) {
+                window.inspectionVillageChartInstance.series[0].setData(
+                    villageTop.map(item => ({ name: item[0], y: item[1] })),
+                    false
+                );
+                window.inspectionVillageChartInstance.redraw();
+            }
+
+            if (window.inspectionAssetDistributionChartInstance) {
+                window.inspectionAssetDistributionChartInstance.series[0].setData(distribution, false);
+                window.inspectionAssetDistributionChartInstance.redraw();
+            }
+        }
+
+        async function fetchInspectionAnalytics() {
+            const params = inspectionAnalyticsQueryParams();
+            const suffix = params.toString() ? `?${params.toString()}` : '';
+            const data = await fetchJSON(`/api/analytics/inspections/${suffix}`);
+            updateInspectionDashboardFromApi(data);
+            return data;
+        }
+
+        async function loadInspectionAssetTypes() {
+            const data = await fetchJSON('/api/analytics/inspections/');
+            setSelectOptions(inspectionAssetSelector, data.filters?.asset_types || [], 'सर्व', inspectionAssetSelector?.value || 'All');
+        }
+
+        function updateLandRecordsDashboardFromApi(data) {
+            const summary = data?.summary || {};
+            const charts = data?.charts || {};
+            const villageTop = charts.village_top || [];
+            const distribution = charts.land_type_distribution || [];
+            const setText = (id, value) => {
+                const el = document.getElementById(id);
+                if (el) el.textContent = value;
+            };
+
+            setText('landRecordTotalCount', (summary.total_records || 0).toLocaleString('en-IN'));
+            setText('landRecordVillageCount', (summary.total_villages || 0).toLocaleString('en-IN'));
+            setText('landRecordGutCount', (summary.total_guts || 0).toLocaleString('en-IN'));
+            setText('landRecordLastUpdated', summary.last_updated || 'माहिती उपलब्ध नाही');
+
+            if (window.landRecordVillageChartInstance) {
+                window.landRecordVillageChartInstance.series[0].setData(
+                    villageTop.map(item => ({ name: item[0], y: item[1] })),
+                    true
+                );
+            }
+
+            if (window.landRecordsChartInstance) {
+                window.landRecordsChartInstance.series[0].setData(distribution, true);
+            }
+        }
+
+        async function loadLandRecordDistricts(selectedValue = 'Pune') {
+            const data = await fetchJSON('/api/locations/?lang=mr');
+            setSelectOptions(landFilterDistrict, data.data || [], null, selectedValue);
+        }
+
+        async function loadLandRecordTalukas(selectedValue = '') {
+            if (!landFilterDistrict?.value || landFilterDistrict.value === 'All') {
+                setSelectOptions(landFilterTaluka, [], 'सर्व');
+                return;
+            }
+            const data = await fetchJSON(`/api/locations/?district=${encodeURIComponent(landFilterDistrict.value)}&lang=mr`);
+            setSelectOptions(landFilterTaluka, data.data || [], 'सर्व', selectedValue);
+        }
+
+        async function loadLandRecordVillages(selectedValue = '') {
+            if (!landFilterDistrict?.value || !landFilterTaluka?.value || landFilterTaluka.value === 'All') {
+                setSelectOptions(landFilterVillage, [], 'सर्व');
+                return;
+            }
+            const data = await fetchJSON(`/api/locations/?district=${encodeURIComponent(landFilterDistrict.value)}&taluka=${encodeURIComponent(landFilterTaluka.value)}&lang=mr`);
+            setSelectOptions(landFilterVillage, data.data || [], 'सर्व', selectedValue);
+        }
+
+        async function loadLandRecordGuts(selectedValue = '') {
+            if (!landFilterDistrict?.value || !landFilterTaluka?.value || !landFilterVillage?.value || landFilterVillage.value === 'All') {
+                setSelectOptions(landFilterGutNumber, [], 'सर्व');
+                return;
+            }
+            const data = await fetchJSON(`/api/locations/?district=${encodeURIComponent(landFilterDistrict.value)}&taluka=${encodeURIComponent(landFilterTaluka.value)}&village=${encodeURIComponent(landFilterVillage.value)}`);
+            setSelectOptions(landFilterGutNumber, data.data || [], 'सर्व', selectedValue);
+        }
+
+        function landRecordAnalyticsQueryParams() {
+            const params = new URLSearchParams();
+            if (landFilterDistrict?.value && landFilterDistrict.value !== 'All') params.set('district', landFilterDistrict.value);
+            if (landFilterTaluka?.value && landFilterTaluka.value !== 'All') params.set('taluka', landFilterTaluka.value);
+            if (landFilterVillage?.value && landFilterVillage.value !== 'All') params.set('village', landFilterVillage.value);
+            if (landFilterGutNumber?.value && landFilterGutNumber.value !== 'All') params.set('gut_number', landFilterGutNumber.value);
+            return params;
+        }
+
+        async function fetchLandRecordAnalytics() {
+            const params = landRecordAnalyticsQueryParams();
+            const suffix = params.toString() ? `?${params.toString()}` : '';
+            const data = await fetchJSON(`/api/analytics/land-record-712/${suffix}`);
+            updateLandRecordsDashboardFromApi(data);
+            return data;
+        }
+
+        function reflowLandRecordsCharts() {
+            if (window.landRecordVillageChartInstance) window.landRecordVillageChartInstance.reflow();
+            if (window.landRecordsChartInstance) window.landRecordsChartInstance.reflow();
+        }
+
+        // -------------------------------------------------------------
+        // INITIALIZING FILTERED ACCORDIONS CHARTS
+        // -------------------------------------------------------------
+
+        window.inspectionVillageChartInstance = Highcharts.chart('inspectionVillageChart', {
+            chart: {
+                type: 'pie',
+                spacing: [4, 4, 4, 4],
+                events: {
+                    render: function () {
+                        const center = this.series[0]?.center;
+                        if (!center) return;
+
+                        const total = this.series[0].data.reduce((sum, point) => sum + point.y, 0).toLocaleString('en-IN');
+                        const x = this.plotLeft + center[0];
+                        const y = this.plotTop + center[1];
+
+                        if (this.inspectionVillageCenterTotal) this.inspectionVillageCenterTotal.destroy();
+                        if (this.inspectionVillageCenterSubtitle) this.inspectionVillageCenterSubtitle.destroy();
+
+                        this.inspectionVillageCenterTotal = this.renderer
+                            .text(total, x, y - 4)
+                            .attr({ align: 'center', zIndex: 5 })
+                            .css({ color: '#0f172a', fontSize: '21px', fontWeight: '800' })
+                            .add();
+
+                        this.inspectionVillageCenterSubtitle = this.renderer
+                            .text('एकूण नोंदी', x, y + 18)
+                            .attr({ align: 'center', zIndex: 5 })
+                            .css({ color: '#475569', fontSize: '11px', fontWeight: '700' })
+                            .add();
+                    }
+                }
+            },
+            title: { text: null },
+            credits: { enabled: false },
+            tooltip: {
+                pointFormat: '<b>{point.y}</b> नोंदी ({point.percentage:.1f}%)'
+            },
+            plotOptions: {
+                pie: {
+                    size: '72%',
+                    center: ['50%', '45%'],
+                    innerSize: '58%',
+                    borderWidth: 2,
+                    dataLabels: {
+                        enabled: true,
+                        distance: -28,
+                        format: '{point.percentage:.1f}%',
+                        style: { fontSize: '12px', fontWeight: '800', color: '#ffffff', textOutline: 'none' }
+                    },
+                    showInLegend: true
+                }
+            },
+            legend: {
+                align: 'center',
+                verticalAlign: 'bottom',
+                layout: 'horizontal',
+                itemMarginTop: 6,
+                itemMarginBottom: 4,
+                labelFormatter: function () {
+                    return `${this.name} <b>${this.y}</b>`;
+                },
+                itemStyle: { fontSize: '11px', fontWeight: '700', color: '#334155' },
+                symbolHeight: 9,
+                symbolWidth: 9
+            },
+            series: [{
+                name: 'नोंदी',
+                colorByPoint: true,
+                data: [],
+                color: '#2563eb'
+            }]
+        });
+
+        window.inspectionAssetDistributionChartInstance = Highcharts.chart('inspectionAssetDistributionChart', {
+            chart: {
+                type: 'pie',
+                spacing: [4, 4, 4, 4],
+                events: {
+                    render: function () {
+                        const center = this.series[0]?.center;
+                        if (!center) return;
+
+                        const total = this.series[0].data.reduce((sum, point) => sum + point.y, 0).toLocaleString('en-IN');
+                        const x = this.plotLeft + center[0];
+                        const y = this.plotTop + center[1];
+
+                        if (this.inspectionCenterTotal) this.inspectionCenterTotal.destroy();
+                        if (this.inspectionCenterSubtitle) this.inspectionCenterSubtitle.destroy();
+
+                        this.inspectionCenterTotal = this.renderer
+                            .text(total, x, y - 4)
+                            .attr({ align: 'center', zIndex: 5 })
+                            .css({ color: '#0f172a', fontSize: '21px', fontWeight: '800' })
+                            .add();
+
+                        this.inspectionCenterSubtitle = this.renderer
+                            .text('एकूण नोंदी', x, y + 18)
+                            .attr({ align: 'center', zIndex: 5 })
+                            .css({ color: '#475569', fontSize: '11px', fontWeight: '700' })
+                            .add();
+                    }
+                }
+            },
+            title: { text: null },
+            subtitle: { text: null },
+            credits: { enabled: false },
+            tooltip: {
+                pointFormat: '<b>{point.y}</b> नोंदी ({point.percentage:.1f}%)'
+            },
+            plotOptions: {
+                pie: {
+                    size: '72%',
+                    center: ['50%', '45%'],
+                    innerSize: '58%',
+                    borderWidth: 2,
+                    dataLabels: {
+                        enabled: true,
+                        distance: -30,
+                        format: '{point.percentage:.1f}%',
+                        style: { fontSize: '12px', fontWeight: '800', color: '#ffffff', textOutline: 'none' }
+                    },
+                    showInLegend: true
+                }
+            },
+            legend: {
+                align: 'center',
+                verticalAlign: 'bottom',
+                layout: 'horizontal',
+                itemMarginTop: 6,
+                itemMarginBottom: 4,
+                labelFormatter: function () {
+                    return `${this.name} <b>${this.y} (${this.percentage.toFixed(1)}%)</b>`;
+                },
+                itemStyle: { fontSize: '11px', fontWeight: '700', color: '#334155' },
+                symbolHeight: 9,
+                symbolWidth: 9
+            },
+            series: [{
+                name: 'मालमत्ता',
+                colorByPoint: true,
+                data: []
+            }]
+        });
+
+        window.landRecordVillageChartInstance = Highcharts.chart('landRecordVillageChart', {
+            chart: {
+                type: 'pie',
+                spacing: [4, 4, 4, 4],
+                events: {
+                    render: function () {
+                        const center = this.series[0]?.center;
+                        if (!center) return;
+
+                        const total = this.series[0].data.reduce((sum, point) => sum + point.y, 0).toLocaleString('en-IN');
+                        const x = this.plotLeft + center[0];
+                        const y = this.plotTop + center[1];
+
+                        if (this.landVillageCenterTotal) this.landVillageCenterTotal.destroy();
+                        if (this.landVillageCenterSubtitle) this.landVillageCenterSubtitle.destroy();
+
+                        this.landVillageCenterTotal = this.renderer
+                            .text(total, x, y - 4)
+                            .attr({ align: 'center', zIndex: 5 })
+                            .css({ color: '#0f172a', fontSize: '21px', fontWeight: '800' })
+                            .add();
+
+                        this.landVillageCenterSubtitle = this.renderer
+                            .text('एकूण नोंदी', x, y + 18)
+                            .attr({ align: 'center', zIndex: 5 })
+                            .css({ color: '#475569', fontSize: '11px', fontWeight: '700' })
+                            .add();
+                    }
+                }
+            },
+            title: { text: null },
+            credits: { enabled: false },
+            tooltip: {
+                pointFormat: '<b>{point.y}</b> नोंदी ({point.percentage:.1f}%)'
+            },
+            plotOptions: {
+                pie: {
+                    size: '72%',
+                    center: ['50%', '45%'],
+                    innerSize: '58%',
+                    borderWidth: 2,
+                    dataLabels: {
+                        enabled: true,
+                        distance: -28,
+                        format: '{point.percentage:.1f}%',
+                        style: { fontSize: '12px', fontWeight: '800', color: '#ffffff', textOutline: 'none' }
+                    },
+                    showInLegend: true
+                }
+            },
+            legend: {
+                align: 'center',
+                verticalAlign: 'bottom',
+                layout: 'horizontal',
+                itemMarginTop: 6,
+                itemMarginBottom: 4,
+                labelFormatter: function () {
+                    return `${this.name} <b>${this.y}</b>`;
+                },
+                itemStyle: { fontSize: '11px', fontWeight: '700', color: '#334155' },
+                symbolHeight: 9,
+                symbolWidth: 9
+            },
+            series: [{
+                name: 'नोंदी',
+                colorByPoint: true,
+                data: []
+            }]
+        });
+
+        // Accordion 2: 7/12 entries dashboard donut
+        window.landRecordsChartInstance = Highcharts.chart('landRecordsChart', {
+            chart: {
+                type: 'pie',
+                spacing: [4, 4, 4, 4],
+                events: {
+                    render: function () {
+                        const center = this.series[0]?.center;
+                        if (!center) return;
+
+                        const total = this.series[0].data.reduce((sum, point) => sum + point.y, 0).toLocaleString('en-IN');
+                        const x = this.plotLeft + center[0];
+                        const y = this.plotTop + center[1];
+
+                        if (this.landCenterTotal) this.landCenterTotal.destroy();
+                        if (this.landCenterSubtitle) this.landCenterSubtitle.destroy();
+
+                        this.landCenterTotal = this.renderer
+                            .text(total, x, y - 4)
+                            .attr({ align: 'center', zIndex: 5 })
+                            .css({ color: '#0f172a', fontSize: '21px', fontWeight: '800' })
+                            .add();
+
+                        this.landCenterSubtitle = this.renderer
+                            .text('एकूण नोंदी', x, y + 18)
+                            .attr({ align: 'center', zIndex: 5 })
+                            .css({ color: '#475569', fontSize: '11px', fontWeight: '700' })
+                            .add();
+                    }
+                }
+            },
+            title: { text: null },
+            subtitle: { text: null },
+            tooltip: {
+                pointFormat: '<b>{point.y}</b> नोंदी ({point.percentage:.1f}%)'
+            },
+            plotOptions: {
+                pie: {
+                    allowPointSelect: true,
+                    cursor: 'pointer',
+                    size: '82%',
+                    center: ['36%', '50%'],
+                    innerSize: '58%',
+                    borderWidth: 2,
+                    dataLabels: {
+                        enabled: true,
+                        distance: -30,
+                        format: '{point.percentage:.1f}%',
+                        style: { fontSize: '12px', fontWeight: '800', color: '#ffffff', textOutline: 'none' }
+                    },
+                    showInLegend: true
+                }
+            },
+            legend: {
+                align: 'right',
+                verticalAlign: 'middle',
+                layout: 'vertical',
+                itemMarginTop: 8,
+                itemMarginBottom: 8,
+                labelFormatter: function () {
+                    return `${this.name} <b>${this.y} (${this.percentage.toFixed(1)}%)</b>`;
+                },
+                itemStyle: { fontSize: '11px', fontWeight: '700', color: '#334155' },
+                symbolHeight: 9,
+                symbolWidth: 9
+            },
+            series: [{
+                name: 'जमीन प्रकार',
+                colorByPoint: true,
+                data: []
+            }]
+        });
+
+        const bhusampadanKalamBaseItems = [
+            'कलम 3 अधिसूचना तपशील',
+            'कलम १५(२) नुसार संपादनाचा उद्देश घोषित करण्याबाबत अधिसूचना',
+            'भूसंपादन प्रस्ताव तपशील',
+            'संयुक्त मोजणी तपशील',
+            'कलम 18/1 अंतिम अधिसूचना',
+            'कलम १९(ब) २ अन्वये दाखल संमतीपत्राचा तपशील (विकल्प)'
+        ];
+        const bhusampadanKalamStatusSets = {
+            All: ['होय', 'होय', 'होय', 'नाही', 'None', 'होय'],
+            Purandar: ['होय', 'होय', 'नाही', 'नाही', 'None', 'होय'],
+            Haveli: ['होय', 'None', 'होय', 'होय', 'नाही', 'None']
+        };
+        const bhusampadanStatusMeta = {
+            'होय': { color: '#55c365', bgColor: '#ecfdf5', textColor: '#047857' },
+            'नाही': { color: '#ef4444', bgColor: '#fef2f2', textColor: '#b91c1c' },
+            None: { color: '#aeb4bf', bgColor: '#f1f5f9', textColor: '#334155' }
+        };
+
+        function bhusampadanKalamDataForKey(filterKey) {
+            const statuses = bhusampadanKalamStatusSets[filterKey] || bhusampadanKalamStatusSets.All;
+            return bhusampadanKalamBaseItems.map((name, index) => {
+                const status = statuses[index] || 'None';
+                return {
+                    name,
+                    status,
+                    y: 1,
+                    color: bhusampadanStatusMeta[status]?.color || '#aeb4bf'
+                };
+            });
+        }
+
+        function bhusampadanKalamPieData(items) {
+            return ['होय', 'नाही', 'None'].map((status) => ({
+                name: status,
+                y: items.filter(item => item.status === status).length,
+                color: bhusampadanStatusMeta[status].color
+            }));
+        }
+
+        function renderBhusampadanKalamStatusList(items) {
+            const listEl = document.getElementById('bhusampadanKalamStatusList');
+            if (!listEl) return;
+
+            const yesCountEl = document.getElementById('bhusampadanKalamYesCount');
+            const noCountEl = document.getElementById('bhusampadanKalamNoCount');
+            const noneCountEl = document.getElementById('bhusampadanKalamNoneCount');
+            const counts = {
+                'होय': items.filter(item => item.status === 'होय').length,
+                'नाही': items.filter(item => item.status === 'नाही').length,
+                None: items.filter(item => item.status === 'None').length
+            };
+
+            if (yesCountEl) yesCountEl.textContent = counts['होय'].toLocaleString('en-IN');
+            if (noCountEl) noCountEl.textContent = counts['नाही'].toLocaleString('en-IN');
+            if (noneCountEl) noneCountEl.textContent = counts.None.toLocaleString('en-IN');
+
+            listEl.innerHTML = items.map((item) => {
+                const meta = bhusampadanStatusMeta[item.status] || bhusampadanStatusMeta.None;
+                return `
+                    <div class="grid grid-cols-[minmax(0,1fr)_72px] items-center gap-3 rounded-md border border-slate-100 bg-white px-3 py-2 shadow-sm">
+                        <span class="text-xs font-bold leading-snug text-slate-700">${item.name}</span>
+                        <span class="rounded px-2 py-1 text-center text-xs font-extrabold" style="background:${meta.bgColor};color:${meta.textColor};">${item.status}</span>
+                    </div>
+                `;
+            }).join('');
+        }
+        const bhusampadanValuationDataMap = {
+            all: {
+                label: 'सर्व घटक',
+                values: [
+                    { name: 'पाणीपुरवठा', y: 4, amount: 4200000, color: '#2563eb' },
+                    { name: 'कृषी विभाग', y: 7, amount: 7600000, color: '#16a34a' },
+                    { name: 'बांधकाम विभाग', y: 5, amount: 5500000, color: '#f59e0b' },
+                    { name: 'वन विभाग', y: 2, amount: 1800000, color: '#10b981' },
+                    { name: 'इतर विभाग', y: 3, amount: 2900000, color: '#64748b' }
+                ]
+            },
+            water: { label: 'पाणीपुरवठा', values: [{ name: 'पाणीपुरवठा', y: 4, amount: 4200000, color: '#2563eb' }] },
+            agri: { label: 'कृषी विभाग', values: [{ name: 'कृषी विभाग', y: 7, amount: 7600000, color: '#16a34a' }] },
+            construction: { label: 'बांधकाम विभाग', values: [{ name: 'बांधकाम विभाग', y: 5, amount: 5500000, color: '#f59e0b' }] },
+            forest: { label: 'वन विभाग', values: [{ name: 'वन विभाग', y: 2, amount: 1800000, color: '#10b981' }] },
+            other: { label: 'इतर विभाग', values: [{ name: 'इतर विभाग', y: 3, amount: 2900000, color: '#64748b' }] }
+        };
+
+        function formatIndianCurrencyShort(value) {
+            if (value >= 10000000) return `₹ ${(value / 10000000).toFixed(2)} कोटी`;
+            if (value >= 100000) return `₹ ${(value / 100000).toFixed(2)} लाख`;
+            return `₹ ${value.toLocaleString('en-IN')}`;
+        }
+
+        const initialBhusampadanKalamItems = bhusampadanKalamDataForKey('All');
+        renderBhusampadanKalamStatusList(initialBhusampadanKalamItems);
+
+        // Accordion 3: भूसंपादन प्रक्रिया analytics
+        window.stagesSectionStatusChartInstance = Highcharts.chart('stagesSectionStatusChart', {
+            chart: {
+                type: 'pie',
+                spacing: [4, 4, 4, 4],
+                events: {
+                    render: function () {
+                        const center = this.series[0]?.center;
+                        if (!center) return;
+
+                        const total = this.series[0].data.reduce((sum, point) => sum + point.y, 0);
+                        const x = this.plotLeft + center[0];
+                        const y = this.plotTop + center[1];
+
+                        if (this.bhusampadanKalamTotal) this.bhusampadanKalamTotal.destroy();
+                        if (this.bhusampadanKalamLabel) this.bhusampadanKalamLabel.destroy();
+
+                        this.bhusampadanKalamTotal = this.renderer
+                            .text(total.toLocaleString('en-IN'), x, y - 2)
+                            .attr({ align: 'center', zIndex: 5 })
+                            .css({ color: '#0f172a', fontSize: '24px', fontWeight: '900' })
+                            .add();
+
+                        this.bhusampadanKalamLabel = this.renderer
+                            .text('कलमे', x, y + 20)
+                            .attr({ align: 'center', zIndex: 5 })
+                            .css({ color: '#475569', fontSize: '12px', fontWeight: '800' })
+                            .add();
+                    }
+                }
+            },
+            title: { text: null },
+            credits: { enabled: false },
+            tooltip: {
+                useHTML: true,
+                pointFormatter: function () {
+                    return `<b>${this.name}</b><br><b>${this.y}</b> कलमे (${this.percentage.toFixed(0)}%)`;
+                }
+            },
+            plotOptions: {
+                pie: {
+                    innerSize: '58%',
+                    size: '82%',
+                    borderWidth: 2,
+                    showInLegend: true,
+                    dataLabels: {
+                        enabled: true,
+                        distance: -28,
+                        format: '{point.percentage:.0f}%',
+                        style: { fontSize: '12px', fontWeight: '800', color: '#ffffff', textOutline: 'none' }
+                    }
+                }
+            },
+            legend: {
+                align: 'center',
+                verticalAlign: 'bottom',
+                layout: 'horizontal',
+                itemStyle: { fontSize: '11px', fontWeight: '800', color: '#334155' },
+                labelFormatter: function () {
+                    return `${this.name}: ${this.y}`;
+                },
+                symbolHeight: 9,
+                symbolWidth: 9,
+                symbolRadius: 5
+            },
+            series: [{
+                name: 'कलम स्थिती',
+                colorByPoint: true,
+                data: bhusampadanKalamPieData(initialBhusampadanKalamItems)
+            }]
+        });
+
+        window.stagesAwardStatusChartInstance = Highcharts.chart('stagesAwardStatusChart', {
+            chart: {
+                type: 'column',
+                spacing: [8, 8, 16, 8]
+            },
+            title: { text: null },
+            credits: { enabled: false },
+            legend: { enabled: false },
+            xAxis: {
+                categories: bhusampadanValuationDataMap.all.values.map(item => item.name),
+                labels: {
+                    style: { fontSize: '11px', color: '#334155', fontWeight: '700' }
+                }
+            },
+            yAxis: {
+                min: 0,
+                allowDecimals: false,
+                title: {
+                    text: 'मूल्यांकन संख्या',
+                    style: { fontSize: '11px', color: '#64748b', fontWeight: '700' }
+                },
+                gridLineColor: '#eef2f7'
+            },
+            tooltip: {
+                useHTML: true,
+                pointFormatter: function () {
+                    return `<b>${this.category}</b><br>मूल्यांकन संख्या: <b>${this.y}</b><br>मूल्यांकन: <b>${formatIndianCurrencyShort(this.options.amount || 0)}</b>`;
+                }
+            },
+            plotOptions: {
+                column: {
+                    borderRadius: 5,
+                    colorByPoint: true,
+                    pointPadding: 0.14,
+                    groupPadding: 0.12,
+                    dataLabels: {
+                        enabled: true,
+                        formatter: function () {
+                            return `${this.y}<br><span style="font-size:10px;color:#475569">${formatIndianCurrencyShort(this.point.options.amount || 0)}</span>`;
+                        },
+                        style: { fontSize: '12px', fontWeight: '800', color: '#0f172a', textOutline: 'none' }
+                    }
+                }
+            },
+            series: [{
+                name: 'मूल्यांकन',
+                data: bhusampadanValuationDataMap.all.values
+            }]
+        });
+
+        // -------------------------------------------------------------
+        // TOGGLE ACCORDIONS FUNCTIONALITY
+        // -------------------------------------------------------------
+        const toggles = document.querySelectorAll('.accordion-toggle');
+        toggles.forEach(toggle => {
+            toggle.addEventListener('click', function () {
+                const targetId = this.getAttribute('data-target');
+                const content = document.getElementById(targetId);
+                const icon = this.querySelector('.rotate-icon');
+                const isHidden = content.classList.contains('hidden');
+
+                if (isHidden) {
+                    content.classList.remove('hidden');
+                    icon.classList.add('rotate-180');
+                    
+                    // Reflow charts when expanded so they fit the container width properly
+                    setTimeout(() => {
+                        if (targetId === 'accordion-inspections') {
+                            reflowInspectionCharts();
+                        } else if (targetId === 'accordion-landrecords') {
+                            reflowLandRecordsCharts();
+                        } else if (targetId === 'accordion-stages') {
+                            if (window.stagesSectionStatusChartInstance) window.stagesSectionStatusChartInstance.reflow();
+                            if (window.stagesAwardStatusChartInstance) window.stagesAwardStatusChartInstance.reflow();
+                        }
+                    }, 50);
+                } else {
+                    content.classList.add('hidden');
+                    icon.classList.remove('rotate-180');
+                }
+            });
+        });
+
+        // Reflow charts after initial render so hidden accordions size correctly when opened
+        setTimeout(() => {
+            reflowInspectionCharts();
+            reflowLandRecordsCharts();
+        }, 100);
+
+        // -------------------------------------------------------------
+        // INTERACTIVE FILTER SELECTION UPDATES
+        // -------------------------------------------------------------
+        const filterDistrict = document.getElementById('filterDistrict');
+        const filterTaluka = document.getElementById('filterTaluka');
+        const filterVillage = document.getElementById('filterVillage');
+        const filterUser = document.getElementById('filterUser');
+        const filterStartDate = document.getElementById('filterStartDate');
+        const filterEndDate = document.getElementById('filterEndDate');
+        const filterGutNumber = document.getElementById('filterGutNumber');
+        const inspectionAssetSelector = document.getElementById('inspectionAssetSelector');
+        const resetFiltersBtn = document.getElementById('resetFiltersBtn');
+        const applyFiltersBtn = document.getElementById('applyFiltersBtn');
+        const landFilterDistrict = document.getElementById('landFilterDistrict');
+        const landFilterTaluka = document.getElementById('landFilterTaluka');
+        const landFilterVillage = document.getElementById('landFilterVillage');
+        const landFilterGutNumber = document.getElementById('landFilterGutNumber');
+        const resetLandRecordsFiltersBtn = document.getElementById('resetLandRecordsFiltersBtn');
+        const applyLandRecordsFiltersBtn = document.getElementById('applyLandRecordsFiltersBtn');
+        const bhusampadanFilterDistrict = document.getElementById('bhusampadanFilterDistrict');
+        const bhusampadanFilterTaluka = document.getElementById('bhusampadanFilterTaluka');
+        const bhusampadanFilterVillage = document.getElementById('bhusampadanFilterVillage');
+        const bhusampadanFilterGutNumber = document.getElementById('bhusampadanFilterGutNumber');
+        const bhusampadanValuationComponent = document.getElementById('bhusampadanValuationComponent');
+        const resetBhusampadanFiltersBtn = document.getElementById('resetBhusampadanFiltersBtn');
+
+        function resolveFilterKey(talukaValue, villageValue) {
+            let chosenKey = 'All';
+            if (villageValue === 'Khopi' && talukaValue !== 'Haveli') {
+                chosenKey = 'All';
+            } else if (talukaValue === 'Purandar' || villageValue === 'Uruli Devachi' || villageValue === 'Phursungi' || villageValue === 'Wadki') {
+                chosenKey = 'Purandar';
+            } else if (talukaValue === 'Haveli' || villageValue === 'Loni Kalbhor' || villageValue === 'Manjari Budruk') {
+                chosenKey = 'Haveli';
+            }
+            return chosenKey;
+        }
+
+        function updateFilteredCharts() {
+            // Read active parameters to select mock dataset
+            let chosenKey = resolveFilterKey(filterTaluka?.value, filterVillage?.value);
+            
+            currentFilter = chosenKey;
+            const targetData = filterDataMap[currentFilter];
+
+            // 1. Update Inspection Record Dashboard (A1)
+            updateInspectionDashboard(targetData);
+
+            // 2. Keep Land Acquisition Process status charts refreshed
+            if (window.stagesSectionStatusChartInstance) window.stagesSectionStatusChartInstance.redraw();
+            if (window.stagesAwardStatusChartInstance) window.stagesAwardStatusChartInstance.redraw();
+        }
+
+        function updateBhusampadanValuationChart() {
+            const selectedKey = bhusampadanValuationComponent?.value || 'all';
+            const selectedData = bhusampadanValuationDataMap[selectedKey] || bhusampadanValuationDataMap.all;
+            const totalCount = selectedData.values.reduce((sum, item) => sum + item.y, 0);
+            const totalAmount = selectedData.values.reduce((sum, item) => sum + (item.amount || 0), 0);
+            const countEl = document.getElementById('bhusampadanValuationCount');
+            const amountEl = document.getElementById('bhusampadanValuationAmount');
+
+            if (countEl) countEl.textContent = totalCount.toLocaleString('en-IN');
+            if (amountEl) amountEl.textContent = formatIndianCurrencyShort(totalAmount);
+
+            if (!window.stagesAwardStatusChartInstance) return;
+            window.stagesAwardStatusChartInstance.xAxis[0].setCategories(selectedData.values.map(item => item.name), false);
+            window.stagesAwardStatusChartInstance.series[0].setData(selectedData.values, true);
+        }
+
+        function updateBhusampadanKalamChart() {
+            const selectedKey = resolveFilterKey(bhusampadanFilterTaluka?.value, bhusampadanFilterVillage?.value);
+            const items = bhusampadanKalamDataForKey(selectedKey);
+
+            renderBhusampadanKalamStatusList(items);
+            if (window.stagesSectionStatusChartInstance) {
+                window.stagesSectionStatusChartInstance.series[0].setData(bhusampadanKalamPieData(items), true);
+            }
+        }
+
+        filterDistrict?.addEventListener('change', async () => {
+            await loadInspectionTalukas();
+            await loadInspectionVillages();
+            await loadInspectionGuts();
+        });
+
+        filterTaluka?.addEventListener('change', async () => {
+            await loadInspectionVillages();
+            await loadInspectionGuts();
+        });
+
+        filterVillage?.addEventListener('change', async () => {
+            await loadInspectionGuts();
+        });
+
+        landFilterDistrict?.addEventListener('change', async () => {
+            await loadLandRecordTalukas();
+            await loadLandRecordVillages();
+            await loadLandRecordGuts();
+        });
+
+        landFilterTaluka?.addEventListener('change', async () => {
+            await loadLandRecordVillages();
+            await loadLandRecordGuts();
+        });
+
+        landFilterVillage?.addEventListener('change', async () => {
+            await loadLandRecordGuts();
+        });
+
+        [bhusampadanFilterDistrict, bhusampadanFilterTaluka, bhusampadanFilterVillage, bhusampadanFilterGutNumber].filter(Boolean).forEach(el => {
+            el.addEventListener('change', () => {
+                updateBhusampadanKalamChart();
+                if (window.stagesAwardStatusChartInstance) window.stagesAwardStatusChartInstance.redraw();
+            });
+        });
+
+        bhusampadanValuationComponent?.addEventListener('change', updateBhusampadanValuationChart);
+
+        // Reset Filters Button
+        resetFiltersBtn?.addEventListener('click', async function () {
+            await loadInspectionDistricts('Pune');
+            await loadInspectionTalukas();
+            await loadInspectionVillages();
+            await loadInspectionGuts();
+            if (inspectionAssetSelector) inspectionAssetSelector.value = 'All';
+            await fetchInspectionAnalytics();
+        });
+
+        applyFiltersBtn?.addEventListener('click', fetchInspectionAnalytics);
+
+        (async () => {
+            try {
+                await loadInspectionDistricts('Pune');
+                await loadInspectionTalukas();
+                await loadInspectionVillages();
+                await loadInspectionGuts();
+                await loadInspectionAssetTypes();
+                await fetchInspectionAnalytics();
+            } catch (error) {
+                console.error('Failed to load inspection analytics', error);
+            }
+        })();
+
+        applyLandRecordsFiltersBtn?.addEventListener('click', fetchLandRecordAnalytics);
+
+        (async () => {
+            try {
+                await loadLandRecordDistricts('Pune');
+                await loadLandRecordTalukas();
+                await loadLandRecordVillages();
+                await loadLandRecordGuts();
+                await fetchLandRecordAnalytics();
+            } catch (error) {
+                console.error('Failed to load 7/12 analytics', error);
+            }
+        })();
+
+        resetLandRecordsFiltersBtn?.addEventListener('click', async function () {
+            await loadLandRecordDistricts('Pune');
+            await loadLandRecordTalukas();
+            await loadLandRecordVillages();
+            await loadLandRecordGuts();
+            await fetchLandRecordAnalytics();
+        });
+
+        resetBhusampadanFiltersBtn?.addEventListener('click', function () {
+            if (bhusampadanFilterDistrict) bhusampadanFilterDistrict.value = 'Pune';
+            if (bhusampadanFilterTaluka) bhusampadanFilterTaluka.value = 'Bhor';
+            if (bhusampadanFilterVillage) bhusampadanFilterVillage.value = 'Khopi';
+            if (bhusampadanFilterGutNumber) bhusampadanFilterGutNumber.value = '50';
+            if (bhusampadanValuationComponent) bhusampadanValuationComponent.value = 'all';
+            updateBhusampadanKalamChart();
+            updateBhusampadanValuationChart();
+        });
+
+    });
+</script>
+{% endblock %}
