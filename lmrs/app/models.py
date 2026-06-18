@@ -347,6 +347,40 @@ class AssetTypeMaster(models.Model):
         return self.asset_name_marathi
 
 
+class AssetCategory(models.Model):
+    code = models.CharField(max_length=50, unique=True)
+    name_marathi = models.CharField(max_length=100)
+    display_order = models.PositiveIntegerField(default=0)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        db_table = "asset_categories"
+        ordering = ["display_order", "name_marathi"]
+
+    def __str__(self):
+        return self.name_marathi
+
+
+class AssetList(models.Model):
+    category = models.ForeignKey(
+        AssetCategory,
+        on_delete=models.CASCADE,
+        related_name="asset_list"
+    )
+    code = models.CharField(max_length=100)
+    name_marathi = models.CharField(max_length=200)
+    display_order = models.PositiveIntegerField(default=0)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        db_table = "asset_list"
+        ordering = ["category__display_order", "display_order", "name_marathi"]
+        unique_together = ("category", "code")
+
+    def __str__(self):
+        return f"{self.category.name_marathi} - {self.name_marathi}"
+
+
 class AssetFieldMaster(models.Model):
     FIELD_TYPE_CHOICES = [
         ("number", "Number"),
