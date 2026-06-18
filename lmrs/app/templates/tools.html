@@ -12,7 +12,7 @@
             <p class="text-gray-500 text-sm">Select a tool to get started</p>
         </div>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-8">
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3">
             <!-- Card 1 -->
             <div onclick="goToInspection()" class="group cursor-pointer bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-200 p-5 sm:p-7 border border-gray-200 flex flex-col transform hover:-translate-y-1 hover:scale-[1.03]">
                 <div class="flex items-center gap-3 mb-4">
@@ -46,22 +46,6 @@
             </div>
 
             <!-- Card 3 -->
-            <div onclick="goToAssetCreation()" class="group cursor-pointer bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-200 p-5 sm:p-7 border border-gray-200 flex flex-col transform hover:-translate-y-1 hover:scale-[1.03]">
-                <div class="flex items-center gap-3 mb-4">
-                    <div class="bg-purple-100 text-purple-600 p-4 rounded-full text-2xl shadow">🏗️</div>
-                    <h3 class="text-lg sm:text-xl font-bold">मालमत्ता निर्मिती साधन</h3>
-                </div>
-                <p class="text-sm sm:text-base text-gray-600 leading-relaxed mb-2">मालमत्ता नोंद, रचना तपशील आणि मोजमाप नोंदणी.</p>
-                <ul class="mt-2 text-xs sm:text-sm text-gray-500 space-y-1 flex-1">
-                    <li>✔ मालमत्ता नोंद</li>
-                    <li>✔ संरचना तपशील</li>
-                    <li>✔ मोजमाप नोंद</li>
-                    <li>✔ अधिकारी वापरासाठी</li>
-                </ul>
-                <button class="mt-6 w-full bg-purple-600 text-white py-2 rounded-lg font-semibold shadow hover:bg-purple-700 transition">उघडा →</button>
-            </div>
-
-            <!-- Card 4 -->
             <div onclick="goToRateCalculator()" class="group cursor-pointer bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-200 p-5 sm:p-7 border border-gray-200 flex flex-col transform hover:-translate-y-1 hover:scale-[1.03]">
                 <div class="flex items-center gap-3 mb-4">
                     <div class="bg-teal-100 text-teal-600 p-4 rounded-full text-2xl shadow">🧮</div>
@@ -83,7 +67,6 @@
 <script>
     function goToInspection() { window.location.href = "/inspections/"; }
     function goToDocuments() { window.location.href = "/tools/documents/"; }
-    function goToAssetCreation() { window.location.href = "/tools/asset-list/"; }
     function goToRateCalculator() { window.location.href = "/tools/712/list/"; }
 </script>
 
