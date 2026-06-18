@@ -660,8 +660,8 @@
                                     <div>
                                         <label class="pc-label">प्रयोजन निवडा</label>
                                         <select class="pc-input" name="project_purpose">
-                                            <option>विमानतळ बांधकाम करणे</option>
                                             <option value="">प्रयोजन निवडा</option>
+                                            <option selected>विमानतळ बांधकाम करणे</option>
                                             <option>महामार्गाचे बांधकाम करणे</option>
                                             <option>नवनगराचा विकास करणे</option>
                                         </select>
@@ -1673,6 +1673,20 @@
                                 placeholder="एकूण मूल्यांकन" readonly>
                         </div>
                     </div>
+
+                    <div class="pc-section">
+                        <div class="flex flex-wrap items-center gap-3">
+                            <h3 class="text-lg font-bold text-[#244271]">बदल तपशील</h3>
+                            <button type="button" id="pcTab7AuditSummaryBtn" class="pc-eye-view"
+                                aria-label="View Change Details" title="View Change Details">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                    aria-hidden="true">
+                                    <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"></path>
+                                    <circle cx="12" cy="12" r="3"></circle>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </section>
@@ -2119,6 +2133,17 @@
                         <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
                             <h3 class="text-lg font-bold text-[#244271]">खातेदार / बँक तपशील</h3>
                             <div class="flex items-center gap-2">
+                                <div class="flex items-center gap-2">
+                                    <span class="text-sm font-semibold text-[#244271]">बदल तपशील</span>
+                                    <button type="button" id="pcTab9AuditSummaryBtn" class="pc-eye-view"
+                                        aria-label="View Bank Change Details" title="View Bank Change Details">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                            aria-hidden="true">
+                                            <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"></path>
+                                            <circle cx="12" cy="12" r="3"></circle>
+                                        </svg>
+                                    </button>
+                                </div>
                                 <button type="button" id="pcStep9FetchOwnersBtn"
                                     class="rounded-lg bg-[#0f766e] px-4 py-2 text-sm font-semibold text-white"
                                     onclick="window.pcOpenStep9OwnerPicker && window.pcOpenStep9OwnerPicker()">भूधारक
@@ -2185,10 +2210,21 @@
                     <p class="mt-1 text-sm text-[#5c78a5]">PDF पान 17 नुसार भूधारक, बँक आणि मोबदला प्रदान माहिती.</p>
                 </div>
                 <div class="space-y-6 px-6 py-7 md:px-8">
-                    <div class="flex items-center justify-between gap-3 ">
+                    <div class="flex flex-wrap items-center justify-between gap-3 ">
                         <p class="text-sm font-semibold text-[#2a3f62]">टॅब 4 मधील नावांमधून भूधारक निवडा. निवडलेल्या
                             नावांइतकीच खाली तपशील कार्ड तयार होतील.</p>
                         <div class="flex items-center gap-3">
+                            <div class="flex items-center gap-2">
+                                <span class="text-sm font-semibold text-[#244271]">बदल तपशील</span>
+                                <button type="button" id="pcTab10AuditSummaryBtn" class="pc-eye-view"
+                                    aria-label="View Bank Change Details" title="View Bank Change Details">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                        aria-hidden="true">
+                                        <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"></path>
+                                        <circle cx="12" cy="12" r="3"></circle>
+                                    </svg>
+                                </button>
+                            </div>
                             <button type="button" id="pcStep10FetchOwnersBtn"
                                 class="rounded-lg bg-[#0f766e] px-4 py-2 text-sm font-semibold text-white"
                                 onclick="window.pcOpenStep10OwnerPicker && window.pcOpenStep10OwnerPicker()">भूधारक नावे
@@ -2529,6 +2565,24 @@
     </div>
 </div>
 
+<div id="pcTab7AuditSummaryModal"
+    class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 p-4">
+    <div class="bg-white w-full max-w-5xl rounded-lg shadow-xl">
+        <div class="flex items-center justify-between border-b px-4 py-3">
+            <h3 class="text-base font-semibold">बदल तपशील</h3>
+            <button type="button" id="closePcTab7AuditSummaryModalBtn"
+                class="text-gray-500 hover:text-gray-700 text-lg leading-none">&times;</button>
+        </div>
+        <div class="px-4 py-4">
+            <div id="pcTab7AuditSummaryContent" class="max-h-[60vh] overflow-y-auto"></div>
+        </div>
+        <div class="border-t px-4 py-3 flex justify-end">
+            <button type="button" id="closePcTab7AuditSummaryModalFooterBtn"
+                class="px-3 py-1.5 bg-gray-700 hover:bg-gray-800 text-white rounded text-sm">बंद करा</button>
+        </div>
+    </div>
+</div>
+
 <div id="pcAgreementDraftModal"
     class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 p-4">
     <div class="bg-white w-full max-w-4xl rounded-lg shadow-xl">
@@ -2610,6 +2664,13 @@
         const closeAssetValuationSummaryModalBtn = document.getElementById('closePcAssetValuationSummaryModalBtn');
         const closeAssetValuationSummaryModalFooterBtn = document.getElementById('closePcAssetValuationSummaryModalFooterBtn');
         const assetValuationSummaryBtn = document.getElementById('pcAssetValuationSummaryBtn');
+        const tab7AuditSummaryModal = document.getElementById('pcTab7AuditSummaryModal');
+        const tab7AuditSummaryContent = document.getElementById('pcTab7AuditSummaryContent');
+        const closeTab7AuditSummaryModalBtn = document.getElementById('closePcTab7AuditSummaryModalBtn');
+        const closeTab7AuditSummaryModalFooterBtn = document.getElementById('closePcTab7AuditSummaryModalFooterBtn');
+        const tab7AuditSummaryBtn = document.getElementById('pcTab7AuditSummaryBtn');
+        const tab9AuditSummaryBtn = document.getElementById('pcTab9AuditSummaryBtn');
+        const tab10AuditSummaryBtn = document.getElementById('pcTab10AuditSummaryBtn');
         const closeFilesModalBtn = document.getElementById('closePcFilesModalBtn');
         const closeFilesModalFooterBtn = document.getElementById('closePcFilesModalFooterBtn');
         const jointSurveyNamesModal = document.getElementById('pcJointSurveyNamesModal');
@@ -2739,7 +2800,7 @@
             const bankBranch = escapeHtml(values.step9_bank_branch || matchedStep10.bank_branch || '');
             const accountNumber = escapeHtml(values.step9_bank_account_number || '');
             const distributionAmount = escapeHtml(values.step9_distribution_amount || '');
-            const ifscCode = escapeHtml(values.step9_ifsc_code || '');
+            const ifscCode = escapeHtml(String(values.step9_ifsc_code || '').toUpperCase());
 
             return `
                 <div class="pc-section pc-step9-payment-row">
@@ -3167,6 +3228,10 @@
         let currentAssetOwnerTargetId = '';
         let currentStep10SelectedOwnerKeys = [];
         let currentSec21FileBuckets = {};
+        let currentTab7AuditLogs = [];
+        let currentTab9AuditLogs = [];
+        let currentTab10AuditLogs = [];
+        let lastSavedTab7SnapshotSignature = '';
         let latestProcessChartStepData = {};
         const assetCategories = JSON.parse('{{ asset_categories_json|default:"[]"|escapejs }}');
         const todayIsoDate = new Date().toISOString().split('T')[0];
@@ -3549,7 +3614,7 @@
             const bankName = escapeHtml(values.step10_bank_name || matchedStep9.bank_name || '');
             const bankAccount = escapeHtml(values.step10_bank_account_number || matchedStep9.bank_account_number || '');
             const bankBranch = escapeHtml(values.step10_bank_branch || matchedStep9.bank_branch || '');
-            const ifsc = escapeHtml(values.step10_ifsc_code || matchedStep9.ifsc_code || '');
+            const ifsc = escapeHtml(String(values.step10_ifsc_code || matchedStep9.ifsc_code || '').toUpperCase());
             const acquisitionArea = escapeHtml(values.step10_acquisition_area || '');
             const compensationAmount = escapeHtml(values.step10_compensation_amount || matchedStep9.distribution_amount || '');
             const compensationDate = escapeHtml(values.step10_compensation_date || '');
@@ -3675,18 +3740,18 @@
             const rows = [];
 
             ownerInfoBody?.querySelectorAll('tr').forEach((row) => {
-                const fields = row.querySelectorAll('input, textarea');
+                const getFieldValue = (name) => row.querySelector(`[name="${name}"]`)?.value || '';
                 const ownerRow = {
-                    owner_name: String(fields[0]?.value || '').trim(),
-                    khata_number: String(fields[1]?.value || '').trim(),
-                    aadhaar_number: String(fields[2]?.value || '').trim(),
-                    pan_number: String(fields[4]?.value || '').trim(),
-                    mobile_number: String(fields[6]?.value || '').trim(),
-                    address: String(fields[7]?.value || '').trim(),
-                    cultivable_area: String(fields[8]?.value || '').trim(),
-                    potkharaba: String(fields[9]?.value || '').trim(),
-                    total_area: String(fields[10]?.value || '').trim(),
-                    aakarni: String(fields[11]?.value || '').trim(),
+                    owner_name: String(getFieldValue('owner_info_owner_name')).trim(),
+                    khata_number: String(getFieldValue('owner_info_khata_number')).trim(),
+                    aadhaar_number: String(getFieldValue('owner_info_aadhaar_number')).trim(),
+                    pan_number: String(getFieldValue('owner_info_pan_number')).trim(),
+                    mobile_number: String(getFieldValue('owner_info_mobile_number')).trim(),
+                    address: String(getFieldValue('owner_info_address')).trim(),
+                    cultivable_area: String(getFieldValue('owner_info_cultivable_area')).trim(),
+                    potkharaba: String(getFieldValue('owner_info_potkharaba')).trim(),
+                    total_area: String(getFieldValue('owner_info_total_area')).trim(),
+                    aakarni: String(getFieldValue('owner_info_aakarni')).trim(),
                 };
                 const hasMeaningfulValue = Object.values(ownerRow).some((value) => String(value || '').trim());
                 if (hasMeaningfulValue) rows.push(ownerRow);
@@ -3777,6 +3842,38 @@
             });
 
             return aadhaarMap;
+        }
+
+        function collectStep1OwnerIdentityMap(prefill = currentProcessChartPrefill) {
+            const identityMap = new Map();
+            const setIdentity = (ownerNameRaw, aadhaarRaw, panRaw) => {
+                const ownerName = normalizeOwnerLookupName(ownerNameRaw || '');
+                if (!ownerName) return;
+                const existing = identityMap.get(ownerName) || {};
+                identityMap.set(ownerName, {
+                    aadhaar_number: existing.aadhaar_number || String(aadhaarRaw || '').trim(),
+                    pan_number: existing.pan_number || String(panRaw || '').trim().toUpperCase(),
+                });
+            };
+
+            collectStep1OwnerRows(prefill).forEach((row) => {
+                setIdentity(
+                    row.owner_name || '',
+                    row.aadhaar_number || row.aadhar_number || '',
+                    row.pan_number || ''
+                );
+            });
+
+            const farmers = Array.isArray(prefill?.farmers) ? prefill.farmers : [];
+            farmers.forEach((farmer) => {
+                setIdentity(
+                    farmer.farmer_name || farmer.owner_name || '',
+                    farmer.aadhaar_number || farmer.aadhar_number || '',
+                    farmer.pan_number || ''
+                );
+            });
+
+            return identityMap;
         }
 
         function updateStep10AadhaarFromOwner(prefill = currentProcessChartPrefill) {
@@ -4476,6 +4573,54 @@
                 .replace(/>/g, '&gt;')
                 .replace(/"/g, '&quot;')
                 .replace(/'/g, '&#39;');
+        }
+
+        function renderTab7AuditLogs(logs = currentTab7AuditLogs) {
+            const rows = Array.isArray(logs) ? logs : [];
+            currentTab7AuditLogs = rows;
+        }
+
+        function renderTab9AuditLogs(logs = currentTab9AuditLogs) {
+            const rows = Array.isArray(logs) ? logs : [];
+            currentTab9AuditLogs = rows;
+        }
+
+        function renderTab10AuditLogs(logs = currentTab10AuditLogs) {
+            const rows = Array.isArray(logs) ? logs : [];
+            currentTab10AuditLogs = rows;
+        }
+
+        function buildTab7AuditSummaryHtml(logs = currentTab7AuditLogs) {
+            const rows = Array.isArray(logs) ? logs : [];
+            if (!rows.length) {
+                return '<div class="rounded border border-[#dbe8f8] bg-[#f8fbff] px-4 py-4 text-center text-sm font-semibold text-[#5c78a5]">बदल तपशील उपलब्ध नाही.</div>';
+            }
+            return `
+                <div class="overflow-x-auto">
+                    <table class="min-w-full border border-[#dbe8f8] text-sm">
+                        <thead class="bg-[#edf5ff] text-[#244271]">
+                            <tr>
+                                <th class="border border-[#dbe8f8] px-3 py-2 text-center">फील्ड</th>
+                                <th class="border border-[#dbe8f8] px-3 py-2 text-center">पूर्वीची किंमत</th>
+                                <th class="border border-[#dbe8f8] px-3 py-2 text-center">नवीन किंमत</th>
+                                <th class="border border-[#dbe8f8] px-3 py-2 text-center">बदल करणारा</th>
+                                <th class="border border-[#dbe8f8] px-3 py-2 text-center">वेळ</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${rows.map((log) => `
+                                <tr>
+                                    <td class="border border-[#dbe8f8] px-3 py-2 text-center">${escapeHtml(log.field_label || log.field_path || '-')}</td>
+                                    <td class="border border-[#dbe8f8] px-3 py-2 text-center">${escapeHtml(log.old_value || '-')}</td>
+                                    <td class="border border-[#dbe8f8] px-3 py-2 text-center">${escapeHtml(log.new_value || '-')}</td>
+                                    <td class="border border-[#dbe8f8] px-3 py-2 text-center">${escapeHtml(log.changed_by || '-')}</td>
+                                    <td class="border border-[#dbe8f8] px-3 py-2 text-center">${escapeHtml(log.changed_at || '-')}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
         }
 
         function lockPrefilledControl(field, source = 'prefill') {
@@ -5418,6 +5563,27 @@
             return nextSnapshot;
         }
 
+        function getTab7SnapshotSignature(snapshot = {}) {
+            try {
+                return JSON.stringify(snapshot || {});
+            } catch (error) {
+                return '';
+            }
+        }
+
+        function setLastSavedTab7SnapshotSignature(stepData = latestProcessChartStepData) {
+            const savedTab7Data = stepData?.step_7 || stepData?.['7:step_7'] || {};
+            const savedSnapshot = savedTab7Data?.tab7_snapshot || parseTab7SnapshotJson(savedTab7Data?.tab7_snapshot_json || '');
+            lastSavedTab7SnapshotSignature = getTab7SnapshotSignature(savedSnapshot || {});
+        }
+
+        function hasUnsavedTab7SnapshotChange(snapshot = null) {
+            const nextSnapshot = snapshot || collectTab7Snapshot();
+            if (!hasTab7SnapshotData(nextSnapshot)) return false;
+            if (!lastSavedTab7SnapshotSignature) return true;
+            return getTab7SnapshotSignature(nextSnapshot) !== lastSavedTab7SnapshotSignature;
+        }
+
         function parseTab7SnapshotJson(rawValue = '') {
             if (!rawValue || typeof rawValue !== 'string') return null;
             try {
@@ -5702,6 +5868,8 @@
                 if (!response.ok || !result.success) return false;
                 latestProcessChartStepData = result.step_data || {};
                 window.pcLatestStepData = latestProcessChartStepData;
+                setLastSavedTab7SnapshotSignature(latestProcessChartStepData);
+                renderTab7AuditLogs(result.audit_logs || currentTab7AuditLogs);
                 return forceRestoreTab7FlatData(latestProcessChartStepData);
             } catch (error) {
                 console.error('Tab 7 fresh restore failed:', error);
@@ -5774,6 +5942,8 @@
                 if (currentStep !== 7 || isSavingProcessChart) return;
                 const hasLocation = Boolean(districtSelect?.value && talukaSelect?.value && villageSelect?.value && gutSelect?.value);
                 if (!hasLocation) return;
+                const snapshot = syncTab7SnapshotField() || collectTab7Snapshot();
+                if (!hasUnsavedTab7SnapshotChange(snapshot)) return;
                 await saveProcessChart('draft', currentStep);
             }, 900);
         }
@@ -6333,6 +6503,33 @@
         function closeAssetValuationSummaryModal() {
             if (!assetValuationSummaryModal) return;
             assetValuationSummaryModal.classList.add('hidden');
+            document.body.style.overflow = '';
+        }
+
+        function openTab7AuditSummaryModal() {
+            if (!tab7AuditSummaryModal || !tab7AuditSummaryContent) return;
+            tab7AuditSummaryContent.innerHTML = buildTab7AuditSummaryHtml(currentTab7AuditLogs);
+            tab7AuditSummaryModal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function openTab9AuditSummaryModal() {
+            if (!tab7AuditSummaryModal || !tab7AuditSummaryContent) return;
+            tab7AuditSummaryContent.innerHTML = buildTab7AuditSummaryHtml(currentTab9AuditLogs);
+            tab7AuditSummaryModal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function openTab10AuditSummaryModal() {
+            if (!tab7AuditSummaryModal || !tab7AuditSummaryContent) return;
+            tab7AuditSummaryContent.innerHTML = buildTab7AuditSummaryHtml(currentTab10AuditLogs);
+            tab7AuditSummaryModal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeTab7AuditSummaryModal() {
+            if (!tab7AuditSummaryModal) return;
+            tab7AuditSummaryModal.classList.add('hidden');
             document.body.style.overflow = '';
         }
 
@@ -7151,12 +7348,14 @@
                 step10_utr_number: [],
                 step10_file_key: [],
             };
+            const aadhaarMap = collectStep1OwnerAadhaarMap(prefill);
 
             selectedRows.forEach((row) => {
                 const ownerName = String(row?.owner_name || '').trim();
+                const ownerKey = normalizeOwnerLookupName(ownerName);
                 const existing = existingByOwner.get(normalizeOwnerLookupName(ownerName)) || {};
                 sectionData.step10_owner_name.push(ownerName);
-                sectionData.step10_aadhaar_number.push(existing.aadhaar_number || '');
+                sectionData.step10_aadhaar_number.push(aadhaarMap.get(ownerKey) || existing.aadhaar_number || '');
                 sectionData.step10_bank_name.push(existing.bank_name || '');
                 sectionData.step10_bank_account_number.push(existing.bank_account_number || '');
                 sectionData.step10_bank_branch.push(existing.bank_branch || '');
@@ -8510,7 +8709,7 @@
             const bankName = escapeHtml(values.bank_name || getArrayValue(sectionData, 'arbitration_bank_name', index));
             const bankAccount = escapeHtml(values.bank_account_number || getArrayValue(sectionData, 'arbitration_bank_account_number', index));
             const bankBranch = escapeHtml(values.bank_branch || getArrayValue(sectionData, 'arbitration_bank_branch', index));
-            const ifsc = escapeHtml(values.ifsc_code || getArrayValue(sectionData, 'arbitration_ifsc_code', index));
+            const ifsc = escapeHtml(String(values.ifsc_code || getArrayValue(sectionData, 'arbitration_ifsc_code', index) || '').toUpperCase());
             const area = escapeHtml(values.acquisition_area || getArrayValue(sectionData, 'arbitration_area', index));
             const step10FileKey = String(values.file_key || '').trim();
             const step10PassbookDocKey = step10FileKey ? `step10_passbook_file_${step10FileKey}` : '';
@@ -9392,12 +9591,21 @@
             const holderKhata = primaryOwnerRow.khata_number || landRecord.khata_number || '________';
             const officeName = villageData.collector_office_name || 'जिल्हाधिकारी कार्यालय';
             const officeAddress = primarySec3Row.address || getFieldValue('.pc-sec3-address') || villageData.collector_office_address || '________';
-            const aadharNumber = '________________';
-            const panNumber = '________________';
+            const ownerIdentityMap = collectStep1OwnerIdentityMap(prefill);
+            const getOwnerIdentity = (name) => ownerIdentityMap.get(normalizeOwnerLookupName(name)) || {};
+            const agreementSecondPartyDetailsHtml = agreementSignerNames
+                .map((name, index) => {
+                    const identity = getOwnerIdentity(name);
+                    return `
+                        <div class="party-owner">
+                            <p class="dyn"><strong>${index + 1}) ${getDisplayValue(name)}</strong></p>
+                            <p class="dyn">आधार क्र. ${getDisplayValue(identity.aadhaar_number || '________________')}</p>
+                            <p class="dyn">पॅन क्र. ${getDisplayValue(identity.pan_number || '________________')}</p>
+                        </div>
+                    `;
+                })
+                .join('');
             const paymentRows = getStep9PaymentRows();
-            const paymentLookup = new Map(
-                paymentRows.map((row) => [normalizeOwnerLookupName(row.owner_name), row])
-            );
             const step10Lookup = getStep10OwnerLookup();
             const paymentSource = paymentRows.length
                 ? paymentRows
@@ -9510,9 +9718,7 @@
                             </tr>
                             <tr>
                                 <td class="party-details">
-                                    ${agreementSecondPartyNamesHtml}
-                                    <p class="dyn">आधार क्र. ${getDisplayValue(aadharNumber)}</p>
-                                    <p class="dyn">पॅन क्र. ${getDisplayValue(panNumber)}</p>
+                                    ${agreementSecondPartyDetailsHtml || agreementSecondPartyNamesHtml}
                                     <p class="dyn">पत्ता ${getDisplayValue(applicantAddress)}</p>
                                 </td>
                                 <td class="party-brace-cell"><span class="party-brace">}</span></td>
@@ -9703,10 +9909,9 @@
             const otherAssetAmount = (sectionTotal('water_supply') + sectionTotal('other_department')) * 2;
             const houseDeductionStr = formatNoticeAmountLatin(getFieldValue('#pcCompensationHouse')) || '0';
             const paymentRows = getStep9PaymentRows();
-            const paymentLookup = new Map(
-                paymentRows.map((row) => [normalizeOwnerLookupName(row.owner_name), row])
-            );
             const step10Lookup = getStep10OwnerLookup();
+            const ownerIdentityMap = collectStep1OwnerIdentityMap(prefill);
+            const getOwnerIdentity = (name) => ownerIdentityMap.get(normalizeOwnerLookupName(name)) || {};
 
             const red = (value) => `<span class="dyn">${getDisplayValue(value)}</span>`;
             const today = new Date();
@@ -9721,12 +9926,12 @@
                 <p>${index + 1}) ${red(name)}</p>
             `).join('');
             const ownerIdentityHtml = ownerNames.map((name, index) => {
-                const payment = paymentLookup.get(normalizeOwnerLookupName(name)) || {};
+                const identity = getOwnerIdentity(name);
                 return `
                     <div class="owner-id">
                         <p>${index + 1}) ${red(name)}</p>
-                        <p>आधार क्र. ${red(payment.aadhaar_number || '________________')}</p>
-                        <p>पॅन क्र. ${red('________________')}</p>
+                        <p>आधार क्र. ${red(identity.aadhaar_number || '________________')}</p>
+                        <p>पॅन क्र. ${red(identity.pan_number || '________________')}</p>
                     </div>
                 `;
             }).join('');
@@ -9776,14 +9981,17 @@
                 </div>
             `).join('');
 
-            const secondPartyHtml = ownerNames.map((name, index) => `
-                <div class="party-owner">
-                    <p class="dyn"><strong>${index + 1}) ${getDisplayValue(name)}</strong></p>
-                    <p class="dyn">आधार क्र. ${paymentLookup.get(normalizeOwnerLookupName(name))?.aadhaar_number || '________________'}</p>
-                    <p class="dyn">पॅन क्र. ____________________</p>
-                    <p class="dyn">पत्ता ${getDisplayValue(applicantAddress)}</p>
-                </div>
-            `).join('');
+            const secondPartyHtml = ownerNames.map((name, index) => {
+                const identity = getOwnerIdentity(name);
+                return `
+                    <div class="party-owner">
+                        <p class="dyn"><strong>${index + 1}) ${getDisplayValue(name)}</strong></p>
+                        <p class="dyn">आधार क्र. ${getDisplayValue(identity.aadhaar_number || '________________')}</p>
+                        <p class="dyn">पॅन क्र. ${getDisplayValue(identity.pan_number || '________________')}</p>
+                        <p class="dyn">पत्ता ${getDisplayValue(applicantAddress)}</p>
+                    </div>
+                `;
+            }).join('');
             const witnessSignatureBlock = (label) => `
                 <div class="witness-box">
                     <p><strong>${label}</strong></p>
@@ -11703,6 +11911,11 @@
                 return;
             }
 
+            if (getIdentityFieldType(field) === 'ifsc') {
+                field.value = String(value || '').replace(/[^A-Za-z0-9]/g, '').toUpperCase().slice(0, 11);
+                return;
+            }
+
             field.value = value;
         }
 
@@ -11887,6 +12100,10 @@
                 currentProcessChartLocation = { ...locationSeed };
                 latestProcessChartStepData = result.step_data || {};
                 window.pcLatestStepData = latestProcessChartStepData;
+                setLastSavedTab7SnapshotSignature(latestProcessChartStepData);
+                renderTab7AuditLogs(result.audit_logs || []);
+                renderTab9AuditLogs(result.tab9_audit_logs || []);
+                renderTab10AuditLogs(result.tab10_audit_logs || []);
                 // Debug: on reopen, quickly inspect whether step_9 data is arriving from server.
                 // Use in console: `window.pcLoadedStep9`
                 window.pcLoadedStep9 = latestProcessChartStepData.step_9 || latestProcessChartStepData['9:step_9'] || null;
@@ -12179,6 +12396,16 @@
                     latestProcessChartStepData = result.step_data;
                     window.pcLatestStepData = latestProcessChartStepData;
                     window.pcRestoreTab7Draft = () => restoreTab7DataWithFallback(latestProcessChartStepData);
+                    setLastSavedTab7SnapshotSignature(latestProcessChartStepData);
+                }
+                if (Array.isArray(result.audit_logs)) {
+                    renderTab7AuditLogs(result.audit_logs);
+                }
+                if (Array.isArray(result.tab9_audit_logs)) {
+                    renderTab9AuditLogs(result.tab9_audit_logs);
+                }
+                if (Array.isArray(result.tab10_audit_logs)) {
+                    renderTab10AuditLogs(result.tab10_audit_logs);
                 }
                 updateProcessChartCaseSummary();
                 const nextUrl = new URL(window.location.href);
@@ -12807,6 +13034,11 @@
         assetValuationSummaryBtn?.addEventListener('click', openAssetValuationSummaryModal);
         closeAssetValuationSummaryModalBtn?.addEventListener('click', closeAssetValuationSummaryModal);
         closeAssetValuationSummaryModalFooterBtn?.addEventListener('click', closeAssetValuationSummaryModal);
+        tab7AuditSummaryBtn?.addEventListener('click', openTab7AuditSummaryModal);
+        tab9AuditSummaryBtn?.addEventListener('click', openTab9AuditSummaryModal);
+        tab10AuditSummaryBtn?.addEventListener('click', openTab10AuditSummaryModal);
+        closeTab7AuditSummaryModalBtn?.addEventListener('click', closeTab7AuditSummaryModal);
+        closeTab7AuditSummaryModalFooterBtn?.addEventListener('click', closeTab7AuditSummaryModal);
         agreementDraftGenerateBtn?.addEventListener('click', () => {
             try {
                 currentAgreementDraftHtml = buildAgreementDraftHtml();
@@ -12902,6 +13134,11 @@
         assetValuationSummaryModal?.addEventListener('click', (event) => {
             if (event.target === assetValuationSummaryModal) {
                 closeAssetValuationSummaryModal();
+            }
+        });
+        tab7AuditSummaryModal?.addEventListener('click', (event) => {
+            if (event.target === tab7AuditSummaryModal) {
+                closeTab7AuditSummaryModal();
             }
         });
         jointSurveyNamesModal?.addEventListener('click', (event) => {

@@ -1288,6 +1288,34 @@ class ProcessChartStepData(models.Model):
         return f"{self.case} | Step {self.step_no} | {self.section_code}"
 
 
+class ProcessChartAuditLog(models.Model):
+    case = models.ForeignKey(
+        ProcessChartCase,
+        on_delete=models.CASCADE,
+        related_name="audit_logs",
+    )
+    step_no = models.PositiveSmallIntegerField()
+    section_code = models.CharField(max_length=100, blank=True, default="")
+    field_path = models.CharField(max_length=255)
+    field_label = models.CharField(max_length=255)
+    old_value = models.TextField(blank=True, default="")
+    new_value = models.TextField(blank=True, default="")
+    changed_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="process_chart_audit_logs",
+    )
+    changed_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ("-changed_at", "-id")
+
+    def __str__(self):
+        return f"{self.case} | Step {self.step_no} | {self.field_label}"
+
+
 class ProcessChartDocument(models.Model):
     case = models.ForeignKey(
         ProcessChartCase,
