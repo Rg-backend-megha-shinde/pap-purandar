@@ -2,7 +2,8 @@
 from django.http import JsonResponse, HttpResponse
 from django.urls import reverse
 from django.db import connection, transaction, ProgrammingError, OperationalError
-from django.db.models import Q
+from django.db.models import Q, Count
+from django.db.models.functions import TruncDate
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.sessions.models import Session
@@ -27,7 +28,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from django.utils.dateparse import parse_date
 from django.utils.http import url_has_allowed_host_and_scheme
-from datetime import date as datetime_date
+from datetime import date as datetime_date, timedelta
 from django.utils import timezone
 from django.db.utils import OperationalError
 from django.core.paginator import Paginator
@@ -4228,6 +4229,18 @@ def doc_edit(request, id):
     return JsonResponse({'error': 'Method not allowed'}, status=405)
 
 
+def _document_location_display(doc):
+    district = doc.district or ''
+    taluka = doc.taluka or ''
+    village = doc.village or ''
+    return {
+        'district_display': get_marathi_name('district', district) if district else '',
+        'taluka_display': get_marathi_name('taluka', district, taluka) if district and taluka else taluka,
+        'village_display': get_marathi_name('village', district, taluka, village) if district and taluka and village else village,
+        'gut_display': doc.gut_number or '',
+    }
+
+
 @login_required
 def doc_list_api(request):
     doc_type = request.GET.get('type', 'general')
@@ -4265,13 +4278,14 @@ def doc_list_api(request):
             'taluka': d.taluka or '',
             'village': d.village or '',
             'gut_number': d.gut_number or '',
+            **_document_location_display(d),
             'description': d.description or '',
             'document_date': d.document_date.strftime('%d/%m/%Y') if d.document_date else '',
             'court_date': d.court_date.strftime('%d/%m/%Y') if d.court_date else '',
             'owner_name': d.owner_name or '',
             'matter_type': d.matter_type or '',
             'matter_type_display': matter_labels.get(d.matter_type, '') if d.matter_type else '',
-            'uploaded_at': d.uploaded_at.strftime('%d/%m/%Y'),
+            'uploaded_at': timezone.localtime(d.uploaded_at).strftime('%d/%m/%Y') if d.uploaded_at else '',
             'file_url': file_url,
             'ext': ext,
         })
@@ -4355,13 +4369,14 @@ def get_filtered_documents(request):
             'taluka': d.taluka or '',
             'village': d.village or '',
             'gut_number': d.gut_number or '',
+            **_document_location_display(d),
             'description': d.description or '',
             'document_date': d.document_date.strftime('%d/%m/%Y') if d.document_date else '',
             'court_date': d.court_date.strftime('%d/%m/%Y') if d.court_date else '',
             'owner_name': d.owner_name or '',
             'matter_type': d.matter_type or '',
             'matter_type_display': matter_labels.get(d.matter_type, '') if d.matter_type else '',
-            'uploaded_at': d.uploaded_at.strftime('%d/%m/%Y'),
+            'uploaded_at': timezone.localtime(d.uploaded_at).strftime('%d/%m/%Y') if d.uploaded_at else '',
             'file_url': first_attachment.file.url,
             'ext': first_attachment.file.name.rsplit('.', 1)[-1].lower() if '.' in first_attachment.file.name else '',
         })
@@ -8273,12 +8288,490 @@ def get_village_sec15_rates(request):
         'message': '' if rates_payload else 'No ready reckoner rates found for selected village'
     })
 
-@login_required
-def analytics(request):
+def _format_analytics_last_updated(record):
+    if not record:
+        return "माहिती उपलब्ध नाही"
+
+    value = None
+    for field_name in ("updated_at", "uploaded_at", "created_at"):
+        value = getattr(record, field_name, None)
+        if value:
+            break
+
+    if not value:
+        return "माहिती उपलब्ध नाही"
+
+    if hasattr(value, "hour"):
+        value = timezone.localtime(value) if timezone.is_aware(value) else value
+        hour = value.strftime("%I").lstrip("0") or "0"
+        time_text = f"{hour}:{value.strftime('%M %p')}"
+    else:
+        time_text = ""
+
+    marathi_months = {
+        1: "जानेवारी", 2: "फेब्रुवारी", 3: "मार्च", 4: "एप्रिल",
+        5: "मे", 6: "जून", 7: "जुलै", 8: "ऑगस्ट",
+        9: "सप्टेंबर", 10: "ऑक्टोबर", 11: "नोव्हेंबर", 12: "डिसेंबर",
+    }
+    date_text = f"{value.day} {marathi_months.get(value.month, value.strftime('%b'))} {value.year}"
+    return f"{date_text} {time_text}".strip()
+
+
+def _analytics_project_scope(request=None):
+    class EmptyGet:
+        def get(self, key, default=None):
+            return default
+
+    class ScopeRequest:
+        GET = EmptyGet()
+
     try:
-        pass
-       
+        scope_rows, village_keys, gut_keys = _resolve_dashboard_scope(request or ScopeRequest())
+    except Exception:
+        return [], set(), set()
+    return scope_rows, village_keys, gut_keys
+
+
+def _analytics_project_village_keys(request=None):
+    return _analytics_project_scope(request)[1]
+
+
+def _analytics_location_variants(level, selected_value):
+    values = {selected_value}
+    if not selected_value or str(selected_value).lower() == "all":
+        return values
+
+    table_by_level = {
+        "district": ("prj_district", "district_id", "name", "public.district_master", "id", "district_name_m"),
+        "taluka": ("prj_taluka", "taluka_id", "taluka", "public.taluka_master", "id", "taluka_name_m"),
+        "village": ("prj_village", "village_id", "village", "public.village_master", "id", "village_name_m"),
+    }
+    config = table_by_level.get(level)
+    if not config:
+        return values
+
+    table, key_field, name_field, master_table, master_key, marathi_field = config
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute(f"""
+                SELECT DISTINCT src.{name_field}, master.{marathi_field}
+                FROM purandar_airport.{table} src
+                LEFT JOIN {master_table} master ON src.{key_field} = master.{master_key}
+                WHERE UPPER(TRIM(src.{name_field})) = UPPER(TRIM(%s))
+                   OR UPPER(TRIM(COALESCE(master.{marathi_field}, ''))) = UPPER(TRIM(%s))
+            """, [selected_value, selected_value])
+            for row in cursor.fetchall():
+                values.update(clean_optional_char(item) for item in row if clean_optional_char(item))
     except Exception:
         pass
+    return values
 
-    return render(request, 'analytics.html')
+
+def _apply_analytics_location_filter(queryset, field_name, selected_value, level):
+    if not selected_value or str(selected_value).lower() == "all":
+        return queryset
+    query = Q()
+    for value in _analytics_location_variants(level, selected_value):
+        query |= Q(**{f"{field_name}__iexact": value})
+    return queryset.filter(query)
+
+
+def _readyrecnor_analytics_data(project_village_keys=None):
+    if project_village_keys is None:
+        project_village_keys = _analytics_project_village_keys()
+
+    rr_village_keys = set()
+    rr_matching_ids = []
+    for row in ReadyReckonerInfo.objects.exclude(village__isnull=True).exclude(village__exact="").values("id", "district", "taluka", "village"):
+        key = (normalize_match_text(row["district"]), normalize_match_text(row["taluka"]), normalize_match_text(row["village"]))
+        if project_village_keys and key not in project_village_keys:
+            continue
+        rr_village_keys.add(key)
+        rr_matching_ids.append(row["id"])
+
+    total_villages = len(project_village_keys) if project_village_keys else len(rr_village_keys)
+    completed = len(project_village_keys.intersection(rr_village_keys)) if project_village_keys else len(rr_village_keys)
+    pending = max(total_villages - completed, 0)
+    last_record = ReadyReckonerInfo.objects.filter(id__in=rr_matching_ids).order_by("-updated_at", "-id").first()
+    return {
+        "rr_total_villages": total_villages,
+        "rr_completed_villages": completed,
+        "rr_pending_villages": pending,
+        "rr_completion_percent": round((completed / total_villages) * 100) if total_villages else 0,
+        "rr_last_updated": _format_analytics_last_updated(last_record),
+    }
+
+
+@login_required
+def readyrecnor_analytics(request):
+    return JsonResponse(_readyrecnor_analytics_data(_analytics_project_village_keys(request)))
+
+
+def _villageinfo_analytics_data(project_village_keys=None):
+    if project_village_keys is None:
+        project_village_keys = _analytics_project_village_keys()
+
+    status_by_key = {}
+    matching_ids = []
+    for record in VillageData.objects.exclude(village__isnull=True).exclude(village__exact="").order_by("is_final_submitted", "updated_at", "id"):
+        key = (normalize_match_text(record.district), normalize_match_text(record.taluka), normalize_match_text(record.village))
+        if project_village_keys and key not in project_village_keys:
+            continue
+        matching_ids.append(record.id)
+        status = "completed" if record.is_final_submitted else "draft"
+        if status_by_key.get(key) != "completed":
+            status_by_key[key] = status
+
+    completed = sum(1 for status in status_by_key.values() if status == "completed")
+    draft = sum(1 for status in status_by_key.values() if status == "draft")
+    total = len(project_village_keys) if project_village_keys else len(status_by_key)
+    pending = max(total - completed - draft, 0)
+    last_record = VillageData.objects.filter(id__in=matching_ids).order_by("-updated_at", "-id").first()
+    return {
+        "village_info_total_villages": total,
+        "village_info_completed_villages": completed,
+        "village_info_draft_villages": draft,
+        "village_info_pending_villages": pending,
+        "village_info_completion_percent": round((completed / total) * 100) if total else 0,
+        "village_info_last_updated": _format_analytics_last_updated(last_record),
+    }
+
+
+@login_required
+def villageinfo_analytics(request):
+    return JsonResponse(_villageinfo_analytics_data(_analytics_project_village_keys(request)))
+
+
+def _documents_analytics_data(request=None):
+    qs = Document.objects.all()
+    if request is not None:
+        qs = _apply_analytics_location_filter(qs, "district", clean_optional_char(request.GET.get("district")), "district")
+        qs = _apply_analytics_location_filter(qs, "taluka", clean_optional_char(request.GET.get("taluka")), "taluka")
+        qs = _apply_analytics_location_filter(qs, "village", clean_optional_char(request.GET.get("village")), "village")
+        gut_number = clean_optional_char(request.GET.get("gut_number") or request.GET.get("gut"))
+        if gut_number:
+            gut_norm = normalize_gut_value(gut_number)
+            qs = qs.filter(id__in=[record.id for record in qs if normalize_gut_value(record.gut_number) == gut_norm])
+
+    today = timezone.localdate()
+    week_start = today - timedelta(days=today.weekday())
+    general = qs.filter(document_type="general").count()
+    court = qs.filter(document_type="court").count()
+    return {
+        "documents_total": general + court,
+        "documents_general": general,
+        "documents_court": court,
+        "documents_past_dates": qs.filter(document_type="court", court_date__lt=today).count(),
+        "documents_upcoming_dates": qs.filter(document_type="court", court_date__gte=today).count(),
+        "documents_this_week": qs.filter(uploaded_at__date__gte=week_start).count(),
+        "documents_last_updated": _format_analytics_last_updated(qs.order_by("-uploaded_at", "-id").first()),
+    }
+
+
+@login_required
+def documents_analytics(request):
+    return JsonResponse(_documents_analytics_data(request))
+
+
+def _inspection_analytics_queryset(request, include_asset_type=True):
+    qs = Inspection.objects.all()
+    qs = _apply_analytics_location_filter(qs, "district", clean_optional_char(request.GET.get("district")), "district")
+    qs = _apply_analytics_location_filter(qs, "taluka", clean_optional_char(request.GET.get("taluka")), "taluka")
+    qs = _apply_analytics_location_filter(qs, "village", clean_optional_char(request.GET.get("village")), "village")
+    gut_number = clean_optional_char(request.GET.get("gut_number") or request.GET.get("gut"))
+    asset_type = clean_optional_char(request.GET.get("asset_type")) if include_asset_type else ""
+    if gut_number and gut_number.lower() != "all":
+        gut_norm = normalize_gut_value(gut_number)
+        qs = qs.filter(id__in=[record.id for record in qs if normalize_gut_value(record.gut_number) == gut_norm])
+    if asset_type and asset_type.lower() != "all":
+        qs = qs.filter(inspection_asset_type__iexact=asset_type)
+    return qs
+
+
+def _inspection_analytics_data(request):
+    base_qs = _inspection_analytics_queryset(request, include_asset_type=False)
+    timeline_qs = _inspection_analytics_queryset(request)
+    asset_type_qs = base_qs.exclude(inspection_asset_type__isnull=True).exclude(inspection_asset_type__exact="")
+    selected_asset_type = clean_optional_char(request.GET.get("asset_type"))
+    asset_type_lookup = {
+        row["asset_code"]: row["asset_name_marathi"] or row["asset_code"]
+        for row in AssetTypeMaster.objects.filter(is_active=True).values("asset_code", "asset_name_marathi")
+    }
+    village_top = [
+        [row["village"] or "Unknown", row["count"]]
+        for row in base_qs.exclude(village__isnull=True).exclude(village__exact="").values("village").annotate(count=Count("id")).order_by("-count", "village")[:10]
+    ]
+    total_asset_details = base_qs.aggregate(count=Count("details"))["count"] or 0
+    asset_count_field = "details" if total_asset_details else "id"
+    total_assets = total_asset_details or base_qs.count()
+    peak_day = base_qs.annotate(day=TruncDate("date")).values("day").annotate(count=Count(asset_count_field)).order_by("-count", "day").first()
+    top_asset_type = asset_type_qs.values("inspection_asset_type").annotate(count=Count(asset_count_field)).order_by("-count", "inspection_asset_type").first()
+    timeline_rows = list(timeline_qs.annotate(day=TruncDate("date")).values("day").annotate(count=Count(asset_count_field)).order_by("day"))
+    return {
+        "summary": {
+            "total_records": base_qs.count(),
+            "total_assets": total_assets,
+            "asset_type_count": asset_type_qs.values("inspection_asset_type").distinct().count(),
+            "peak_day": peak_day["day"].isoformat() if peak_day and peak_day["day"] else "",
+            "peak_day_count": peak_day["count"] if peak_day else 0,
+            "top_asset_type": asset_type_lookup.get(top_asset_type["inspection_asset_type"], top_asset_type["inspection_asset_type"]) if top_asset_type else "",
+            "top_asset_count": top_asset_type["count"] if top_asset_type else 0,
+            "last_updated": _format_analytics_last_updated(base_qs.order_by("-updated_at", "-id").first()),
+        },
+        "charts": {
+            "village_top": village_top,
+            "asset_timeline": {
+                "categories": [row["day"].isoformat() for row in timeline_rows if row["day"]],
+                "data": [row["count"] for row in timeline_rows if row["day"]],
+                "asset_label": asset_type_lookup.get(selected_asset_type, selected_asset_type) if selected_asset_type and selected_asset_type.lower() != "all" else "सर्व मालमत्ता",
+            },
+        },
+        "filters": {
+            "asset_types": [
+                {"value": row["asset_code"], "label": row["asset_name_marathi"] or row["asset_code"]}
+                for row in AssetTypeMaster.objects.filter(is_active=True).order_by("display_order", "asset_name_marathi").values("asset_code", "asset_name_marathi")
+            ],
+        },
+    }
+
+
+@login_required
+def inspection_analytics(request):
+    return JsonResponse(_inspection_analytics_data(request))
+
+
+def _land_record_712_analytics_queryset(request):
+    qs = LandRecord712.objects.all()
+    qs = _apply_analytics_location_filter(qs, "district", clean_optional_char(request.GET.get("district")), "district")
+    qs = _apply_analytics_location_filter(qs, "taluka", clean_optional_char(request.GET.get("taluka")), "taluka")
+    qs = _apply_analytics_location_filter(qs, "village", clean_optional_char(request.GET.get("village")), "village")
+    gut_number = clean_optional_char(request.GET.get("gut_number") or request.GET.get("gut"))
+    if gut_number and gut_number.lower() != "all":
+        gut_norm = normalize_gut_value(gut_number)
+        qs = qs.filter(id__in=[record.id for record in qs if normalize_gut_value(record.gut_number) == gut_norm])
+    return qs
+
+
+def _format_hectare_area_from_sqm(total_sqm):
+    if not total_sqm:
+        return "0.00 हे."
+    hectares = Decimal(total_sqm) / Decimal("10000")
+    return f"{hectares.quantize(Decimal('0.01'))} हे."
+
+
+def _land_record_712_analytics_data(request):
+    qs = _land_record_712_analytics_queryset(request)
+    records = list(qs)
+    total_records = len(records)
+    village_values = {clean_optional_char(record.village) for record in records if clean_optional_char(record.village)}
+    gut_values = {normalize_gut_value(record.gut_number) for record in records if normalize_gut_value(record.gut_number)}
+    total_sqm = sum(_parse_area_to_sqm(record.total_area) for record in records)
+    average_sqm = int(total_sqm / total_records) if total_records else 0
+    village_top = [
+        [get_marathi_name("village", row.get("district") or "", row.get("taluka") or "", row.get("village") or "") or row.get("village") or "Unknown", row["count"]]
+        for row in qs.exclude(village__isnull=True).exclude(village__exact="").values("district", "taluka", "village").annotate(count=Count("id")).order_by("-count", "village")[:10]
+    ]
+    return {
+        "summary": {
+            "total_records": total_records,
+            "total_villages": len(village_values),
+            "total_guts": len(gut_values),
+            "total_area": _format_hectare_area_from_sqm(total_sqm),
+            "average_area": _format_hectare_area_from_sqm(average_sqm),
+            "top_village": village_top[0][0] if village_top else "-",
+            "last_updated": _format_analytics_last_updated(qs.order_by("-updated_at", "-id").first()),
+        },
+        "charts": {"village_top": village_top},
+    }
+
+
+@login_required
+def land_record_712_analytics(request):
+    return JsonResponse(_land_record_712_analytics_data(request))
+
+
+def _bhusampadan_queryset(request):
+    qs = ProcessChartCase.objects.prefetch_related("step_data", "department_rows", "documents")
+    qs = _apply_analytics_location_filter(qs, "district", clean_optional_char(request.GET.get("district")), "district")
+    qs = _apply_analytics_location_filter(qs, "taluka", clean_optional_char(request.GET.get("taluka")), "taluka")
+    qs = _apply_analytics_location_filter(qs, "village", clean_optional_char(request.GET.get("village")), "village")
+    gut_number = clean_optional_char(request.GET.get("gut_number") or request.GET.get("gut"))
+    if gut_number and gut_number.lower() != "all":
+        gut_norm = normalize_gut_value(gut_number)
+        qs = qs.filter(id__in=[record.id for record in qs if normalize_gut_value(record.gut_number) == gut_norm])
+    return qs
+
+
+def _bhusampadan_valuation_data(request, records):
+    selected_component = clean_optional_char(request.GET.get("component")) or "all"
+    component_meta = {
+        "water_supply": ("water", "पाणीपुरवठा", "#2563eb"),
+        "agriculture": ("agri", "कृषी विभाग", "#16a34a"),
+        "construction": ("construction", "बांधकाम विभाग", "#f59e0b"),
+        "forest": ("forest", "वन विभाग", "#10b981"),
+        "other_department": ("other", "इतर विभाग", "#64748b"),
+    }
+    department_type_meta = {
+        "panipurvatha": component_meta["water_supply"],
+        "krushi": component_meta["agriculture"],
+        "bandhakam": component_meta["construction"],
+        "van": component_meta["forest"],
+        "itar": component_meta["other_department"],
+    }
+    preferred_order = ["water", "agri", "construction", "forest", "other"]
+    component_rows = {}
+    component_record_ids = {key: set() for key in preferred_order}
+
+    def ensure_row(key, label, color):
+        return component_rows.setdefault(
+            key,
+            {"key": key, "name": label, "y": 0, "amount": Decimal("0"), "color": color},
+        )
+
+    def parse_decimal(value, default=Decimal("0")):
+        cleaned = clean_optional_char(value).replace(",", "")
+        if not cleaned:
+            return default
+        try:
+            return Decimal(cleaned)
+        except (InvalidOperation, ValueError):
+            return default
+
+    for record in records:
+        has_department_rows = False
+        for row in record.department_rows.all():
+            has_department_rows = True
+            key, label, color = department_type_meta.get(row.department_type, component_meta["other_department"])
+            if selected_component != "all" and key != selected_component:
+                continue
+            component_record_ids.setdefault(key, set()).add(record.pk)
+            component_row = ensure_row(key, label, color)
+            component_row["y"] += 1
+            component_row["amount"] += row.valuation or Decimal("0")
+
+        if has_department_rows:
+            continue
+
+        step_seven = next((item for item in record.step_data.all() if item.step_no == 7), None)
+        if not step_seven or not isinstance(step_seven.data, dict):
+            continue
+        fields = step_seven.data.get("fields") if isinstance(step_seven.data.get("fields"), dict) else step_seven.data
+        raw_snapshot = fields.get("tab7_snapshot_json")
+        if isinstance(raw_snapshot, str) and raw_snapshot.strip():
+            try:
+                parsed_snapshot = json.loads(raw_snapshot)
+                if isinstance(parsed_snapshot, dict):
+                    fields = {**fields, "tab7_snapshot": parsed_snapshot}
+            except (TypeError, ValueError, json.JSONDecodeError):
+                pass
+
+        for prefix, (key, label, color) in component_meta.items():
+            if selected_component != "all" and key != selected_component:
+                continue
+            for row in _automatic_document_tab7_rows(fields, prefix):
+                detail_key = f"{prefix}_component_detail"
+                count_key = f"{prefix}_component_count"
+                valuation_key = f"{prefix}_component_valuation"
+                item_key = f"{prefix}_component_item"
+                has_value = any(clean_optional_char(row.get(field_key)) for field_key in (
+                    item_key,
+                    detail_key,
+                    count_key,
+                    valuation_key,
+                ))
+                if not has_value:
+                    continue
+                component_record_ids.setdefault(key, set()).add(record.pk)
+                component_row = ensure_row(key, label, color)
+                count_value = parse_decimal(row.get(count_key), Decimal("1"))
+                if count_value <= 0:
+                    count_value = Decimal("1")
+                component_row["y"] += int(count_value)
+                component_row["amount"] += parse_decimal(row.get(valuation_key))
+
+    rows = [component_rows[key] for key in preferred_order if key in component_rows]
+    return {
+        "record_count": len(records) if selected_component == "all" else len(component_record_ids.get(selected_component, set())),
+        "rows": [{"key": row["key"], "name": row["name"], "y": row["y"], "amount": float(row["amount"]), "color": row["color"]} for row in rows],
+        "components": [{"value": component_rows[key]["key"], "label": component_rows[key]["name"]} for key in preferred_order if key in component_rows],
+    }
+
+
+def _bhusampadan_analytics_data(request):
+    records = list(_bhusampadan_queryset(request))
+    kalam_items = [
+        {"key": "prakaran_6", "name": "प्रकरण ६", "step": 2},
+        {"key": "section_32_2", "name": "कलम ३२(२)", "step": 3},
+        {"key": "proposal", "name": "भूसंपादन प्रस्ताव तपशील", "step": 3},
+        {"key": "joint", "name": "संयुक्त मोजणी तपशील", "step": 4},
+        {"key": "section_32_1", "name": "कलम ३२(१)", "step": 5},
+        {"key": "section_33_2", "name": "कलम ३३(२) दर निश्चिती", "step": 6},
+    ]
+    status_colors = {"होय": "#55c365", "नाही": "#ef4444", "None": "#aeb4bf"}
+
+    def step_fields(step):
+        data = step.data if isinstance(step.data, dict) else {}
+        fields = data.get("fields")
+        return fields if isinstance(fields, dict) else data
+
+    def has_value(value):
+        if isinstance(value, dict):
+            return any(has_value(item) for item in value.values())
+        if isinstance(value, list):
+            return any(has_value(item) for item in value)
+        return bool(clean_optional_char(value))
+
+    item_payload = []
+    for item in kalam_items:
+        counts = {"होय": 0, "नाही": 0, "None": 0}
+        for record in records:
+            step = next((row for row in record.step_data.all() if row.step_no == item["step"]), None)
+            explicit_value = clean_optional_char(step_fields(step).get(item["status_field"])).lower() if step and item.get("status_field") else ""
+            if explicit_value in {"yes", "हो", "होय", "true", "1"}:
+                status = "होय"
+            elif explicit_value in {"no", "नाही", "false", "0"}:
+                status = "नाही"
+            elif step and has_value(step_fields(step)):
+                status = "होय"
+            elif record.current_step >= item["step"]:
+                status = "नाही"
+            else:
+                status = "None"
+            counts[status] += 1
+        item_payload.append({
+            "key": item["key"],
+            "name": item["name"],
+            "total": len(records),
+            "counts": counts,
+            "series": [{"name": status, "y": counts[status], "color": status_colors[status]} for status in ("होय", "नाही", "None")],
+        })
+
+    valuation_data = _bhusampadan_valuation_data(request, records)
+    total_count = sum(row["y"] for row in valuation_data["rows"])
+    total_amount = sum(Decimal(str(row["amount"])) for row in valuation_data["rows"])
+    return {
+        "kalam": {"total": len(records), "items": item_payload},
+        "valuation": {"values": valuation_data["rows"], "record_count": valuation_data["record_count"], "count": total_count, "amount": float(total_amount)},
+        "filters": {"components": valuation_data["components"]},
+    }
+
+
+@login_required
+def bhusampadan_analytics(request):
+    return JsonResponse(_bhusampadan_analytics_data(request))
+
+
+@login_required
+def analytics(request):
+    project_village_keys = _analytics_project_village_keys()
+    readyrecnor_data = _readyrecnor_analytics_data(project_village_keys)
+    villageinfo_data = _villageinfo_analytics_data(project_village_keys)
+    documents_data = _documents_analytics_data()
+    land_record_712_last_record = LandRecord712.objects.order_by("-updated_at", "-id").first()
+
+    return render(request, 'analytics.html', {
+        **readyrecnor_data,
+        **villageinfo_data,
+        **documents_data,
+        "land_record_712_last_updated": _format_analytics_last_updated(land_record_712_last_record),
+    })

@@ -1307,29 +1307,89 @@
   }
 
   function locationLabel(d) {
-    return [d.district, d.taluka, d.village, d.gut_number].filter(Boolean).join(' › ');
+    return [
+      d.district_display || d.district,
+      d.taluka_display || d.taluka,
+      d.village_display || d.village,
+      d.gut_display || d.gut_number
+    ].filter(Boolean).join(' › ');
   }
 
   function tabLabel(tab) {
     return tab === 'court' ? 'न्यायालयीन' : 'सामान्य';
   }
 
-  function getFolderEntries(tab) {
+  function pathKey(parts) {
+    return (parts || []).map(part => String(part || '').trim().toLowerCase()).join('||');
+  }
+
+  function folderPathSegments(pathValue) {
+    if (!pathValue) return [];
+    try {
+      const parsed = JSON.parse(decodeURIComponent(pathValue));
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function folderPathValue(parts) {
+    return encodeURIComponent(JSON.stringify(parts || [])).replace(/'/g, '%27');
+  }
+
+  function levelForDepth(depth) {
+    return ['district', 'taluka', 'village', 'gut'][depth - 1] || '';
+  }
+
+  function docLocationParts(doc) {
+    return [
+      doc.district_display || doc.district,
+      doc.taluka_display || doc.taluka,
+      doc.village_display || doc.village,
+      doc.gut_display || doc.gut_number
+    ]
+      .map(part => String(part || '').trim())
+      .filter(Boolean);
+  }
+
+  function docDisplayPath(doc) {
+    const parts = docLocationParts(doc);
+    const levelDepth = { district: 1, taluka: 2, village: 3, gut: 4 }[doc.document_level] || parts.length;
+    return parts.slice(0, Math.max(1, Math.min(levelDepth, parts.length)));
+  }
+
+  function folderDisplayName(level, value) {
+    if (level !== 'gut') return value || '-';
+    const text = String(value || '').trim();
+    return /gut|गट|ग\.|स\./i.test(text) ? text : `Gut ${text}`;
+  }
+
+  function getFolderEntries(tab, currentParts = []) {
     const grouped = new Map();
+    const currentKey = pathKey(currentParts);
+
     state[tab].docs.forEach(doc => {
-      if (!grouped.has(doc.document_level)) {
-        grouped.set(doc.document_level, {
-          id: doc.document_level,
+      const parts = docDisplayPath(doc);
+      if (parts.length <= currentParts.length) return;
+      if (pathKey(parts.slice(0, currentParts.length)) !== currentKey) return;
+
+      const nextParts = parts.slice(0, currentParts.length + 1);
+      const key = pathKey(nextParts);
+      if (!grouped.has(key)) {
+        const level = levelForDepth(nextParts.length);
+        grouped.set(key, {
+          id: key,
           kind: 'folder',
-          name: levelLabel(doc.document_level) + ' स्तर',
-          level: doc.document_level,
+          name: folderDisplayName(level, nextParts[nextParts.length - 1]),
+          level,
+          path: folderPathValue(nextParts),
           count: 0,
         });
       }
-      grouped.get(doc.document_level).count += 1;
+      grouped.get(key).count += 1;
     });
-    const levelOrder = ['district', 'taluka', 'village', 'gut'];
-    return [...grouped.values()].sort((a, b) => levelOrder.indexOf(a.level) - levelOrder.indexOf(b.level));
+
+    return [...grouped.values()].sort((a, b) => a.name.localeCompare(b.name));
   }
 
   function getSortedDocs(tab, docs) {
@@ -1343,14 +1403,16 @@
 
   function getVisibleDocs(tab) {
     if (state[tab].filtersActive) return getSortedDocs(tab, state[tab].docs);
-    if (!state[tab].currentFolder) return getFolderEntries(tab);
-    const filtered = state[tab].docs.filter(d => d.document_level === state[tab].currentFolder);
-    return getSortedDocs(tab, filtered);
+    const currentParts = folderPathSegments(state[tab].currentFolder);
+    const currentKey = pathKey(currentParts);
+    const folders = getFolderEntries(tab, currentParts);
+    const docsHere = state[tab].docs.filter(d => pathKey(docDisplayPath(d)) === currentKey);
+    return [...folders, ...getSortedDocs(tab, docsHere)];
   }
 
   function renderPathBar(tab) {
     const pathBar = document.getElementById(tab + '-path-bar');
-    const folder = state[tab].currentFolder;
+    const folderParts = folderPathSegments(state[tab].currentFolder);
     if (state[tab].filtersActive) {
       const filters = activeSearchFilters(tab);
       const bits = [filters.district, filters.taluka, filters.village, filters.gut].filter(Boolean);
@@ -1360,23 +1422,32 @@
       }
       return;
     }
-    pathBar.innerHTML = folder
-      ? `<span>🏠</span><span class="path-sep">›</span><span class="path-link" onclick="navigateToRoot('${tab}')">कागदपत्रे</span><span class="path-sep">›</span><span>${tabLabel(tab)}</span><span class="path-sep">›</span><span style="font-weight:600;">${levelLabel(folder)} स्तर</span>`
-      : `<span>🏠</span><span class="path-sep">›</span><span>कागदपत्रे</span><span class="path-sep">›</span><span style="font-weight:600;">${tabLabel(tab)}</span>`;
+    const rootClass = folderParts.length ? 'path-link' : '';
+    const rootClick = folderParts.length ? `onclick="navigateToRoot('${tab}')"` : '';
+    const base = `<span>🏠</span><span class="path-sep">›</span><span class="${rootClass}" ${rootClick}>कागदपत्रे</span><span class="path-sep">›</span><span>${tabLabel(tab)}</span>`;
+    const crumbs = folderParts.map((part, index) => {
+      const partialPath = folderPathValue(folderParts.slice(0, index + 1));
+      const label = folderDisplayName(levelForDepth(index + 1), part);
+      const isLast = index === folderParts.length - 1;
+      return `<span class="path-sep">›</span><span ${isLast ? 'style="font-weight:600;"' : `class="path-link" onclick="openFolder('${tab}', '${partialPath}')"`}>${label}</span>`;
+    }).join('');
+    pathBar.innerHTML = base + crumbs;
   }
 
   function updateExplorerUi(tab, visibleDocs) {
     const inFolder = !!state[tab].currentFolder;
     const filtered = state[tab].filtersActive;
+    const folderCount = visibleDocs.filter(item => item.kind === 'folder').length;
+    const docCount = visibleDocs.length - folderCount;
     document.getElementById(tab + '-back-btn').style.display = inFolder ? '' : 'none';
     document.getElementById(tab + '-delete-btn').style.display = (inFolder || filtered) && state[tab].selected ? '' : 'none';
     document.getElementById(tab + '-status').textContent = filtered || inFolder
-      ? `${visibleDocs.length} दस्तऐवज`
-      : `${visibleDocs.length} स्तर फोल्डर`;
+      ? `${folderCount} फोल्डर, ${docCount} दस्तऐवज`
+      : `${folderCount} फोल्डर`;
   }
 
-  function openFolder(tab, level) {
-    state[tab].currentFolder = level;
+  function openFolder(tab, pathValue) {
+    state[tab].currentFolder = pathValue;
     state[tab].selected = null;
     renderDocs(tab);
   }
@@ -1394,12 +1465,12 @@
   function renderGrid(tab, docs) {
     const grid = document.getElementById(tab + '-grid-view');
     if (!docs.length) {
-      grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:40px;color:#999;font-size:13px;">${state[tab].currentFolder ? 'कोणतेही दस्तऐवज नाहीत' : 'कोणतेही स्तर फोल्डर नाहीत'}</div>`;
+      grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:40px;color:#999;font-size:13px;">कोणतीही कागदपत्रे नाहीत</div>`;
       return;
     }
     grid.innerHTML = docs.map(d => `
     <div class="file-item${d.kind === 'folder' ? ' folder-item' : ''}${state[tab].selected === d.id ? ' selected' : ''}"
-      data-kind="${d.kind || 'document'}" data-id="${d.id || ''}" data-name="${d.document_name || d.name || ''}" data-url="${d.file_url || ''}" data-ext="${d.ext || ''}" data-level="${d.level || ''}">
+      data-kind="${d.kind || 'document'}" data-id="${d.id || ''}" data-name="${d.document_name || d.name || ''}" data-url="${d.file_url || ''}" data-ext="${d.ext || ''}" data-level="${d.level || ''}" data-path="${d.path || ''}">
       ${d.kind === 'folder' ? folderIcon() : fileIcon(d.ext)}
       <span class="file-name">${d.kind === 'folder' ? d.name : d.document_name}</span>
       <span class="${d.kind === 'folder' ? 'folder-meta' : 'file-date'}">${d.kind === 'folder' ? `${d.count} दस्तऐवज` : d.uploaded_at}</span>
@@ -1410,18 +1481,18 @@
     const tbody = document.getElementById(tab + '-list-tbody');
     const isCourt = tab === 'court';
     if (!docs.length) {
-      tbody.innerHTML = `<tr><td colspan="${isCourt ? 9 : 6}" style="text-align:center;padding:30px;color:#999;">${state[tab].currentFolder ? 'कोणतेही दस्तऐवज नाहीत' : 'कोणतेही स्तर फोल्डर नाहीत'}</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="${isCourt ? 9 : 6}" style="text-align:center;padding:30px;color:#999;">कोणतीही कागदपत्रे नाहीत</td></tr>`;
       return;
     }
     tbody.innerHTML = docs.map(d => `
     <tr class="${state[tab].selected === d.id ? 'selected' : ''}"
-      data-kind="${d.kind || 'document'}" data-id="${d.id || ''}" data-name="${d.document_name || d.name || ''}" data-url="${d.file_url || ''}" data-ext="${d.ext || ''}" data-level="${d.level || ''}">
+      data-kind="${d.kind || 'document'}" data-id="${d.id || ''}" data-name="${d.document_name || d.name || ''}" data-url="${d.file_url || ''}" data-ext="${d.ext || ''}" data-level="${d.level || ''}" data-path="${d.path || ''}">
       <td><span style="font-size:16px;">${d.kind === 'folder' ? '📁' : ['jpg', 'jpeg', 'png'].includes(d.ext) ? '🖼' : '📄'}</span></td>
       <td>${d.kind === 'folder' ? d.name : d.document_name}</td>
       <td>${d.kind === 'folder' ? `${d.count} दस्तऐवज` : d.uploaded_at}</td>
       <td>${d.kind === 'folder' ? '<span style="font-size:11px;background:#fef3c7;color:#92400e;padding:2px 7px;border-radius:3px;font-weight:600;">FOLDER</span>' : extBadge(d.ext)}</td>
       <td><span style="font-size:11px;background:#f3f4f6;padding:2px 6px;border-radius:3px;">${d.kind === 'folder' ? levelLabel(d.level) : levelLabel(d.document_level)}</span></td>
-      <td style="font-size:12px;color:#555;">${d.kind === 'folder' ? `${levelLabel(d.level)} स्तरातील दस्तऐवज` : locationLabel(d)}</td>
+      <td style="font-size:12px;color:#555;">${d.kind === 'folder' ? `${d.count} दस्तऐवज` : locationLabel(d)}</td>
       ${isCourt ? `<td style="font-size:12px;color:#555;">${d.kind === 'folder' ? '—' : d.owner_name || '—'}</td><td style="font-size:12px;color:#555;">${d.kind === 'folder' ? '—' : d.matter_type_display || '—'}</td><td style="font-size:12px;color:#555;">${d.kind === 'folder' ? '—' : d.court_date || '—'}</td>` : ''}
     </tr>`).join('');
   }
@@ -1443,7 +1514,7 @@
     const item = e.target.closest('.file-item');
     if (!item) { state[tab].selected = null; renderDocs(tab); return; }
     if (item.dataset.kind === 'folder') {
-      openFolder(tab, item.dataset.level);
+      openFolder(tab, item.dataset.path);
       return;
     }
     console.log('Click detected. Detail:', e.detail, 'Item ID:', item.dataset.id);
@@ -1468,7 +1539,7 @@
     const row = e.target.closest('tr[data-id]');
     if (!row) return;
     if (row.dataset.kind === 'folder') {
-      openFolder(tab, row.dataset.level);
+      openFolder(tab, row.dataset.path);
       return;
     }
     if (e.detail === 2) {

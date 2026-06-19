@@ -94,6 +94,11 @@
                         <span class="material-symbols-outlined text-lg">dashboard</span>
                         Dashboard
                     </a>
+                    <a href="/analytics/"
+                        class="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold {% if '/analytics' in request.path %}bg-primary/10 text-primary{% else %}text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800{% endif %}">
+                        <span class="material-symbols-outlined text-lg">monitoring</span>
+                        Analytics
+                    </a>
                     {% endif %}
 
                     {% if request.user.is_staff %}
@@ -147,6 +152,11 @@
                             <span class="material-symbols-outlined text-lg">dashboard</span>
                             Dashboard
                         </a>
+                        <a href="/analytics/"
+                            class="flex items-center gap-2 px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800 sm:hidden">
+                            <span class="material-symbols-outlined text-lg">monitoring</span>
+                            Analytics
+                        </a>
                         {% endif %}
 
                         {% if request.user.is_staff %}
@@ -173,6 +183,11 @@
                         class="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold {% if request.path == '/' %}bg-primary/10 text-primary{% else %}text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800{% endif %}">
                         <span class="material-symbols-outlined text-lg">dashboard</span>
                         Dashboard
+                    </a>
+                    <a href="/analytics/"
+                        class="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold {% if '/analytics' in request.path %}bg-primary/10 text-primary{% else %}text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800{% endif %}">
+                        <span class="material-symbols-outlined text-lg">monitoring</span>
+                        Analytics
                     </a>
                     {% endif %}
 
@@ -3039,4 +3054,3 @@
 </body>
 
 </html>
-

@@ -56,6 +56,15 @@
                     <span class="material-symbols-outlined text-lg">dashboard</span>
                     Dashboard
                 </a>
+                <a href="/analytics/" class="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold
+           {% if '/analytics' in request.path %}
+               bg-blue-50 text-blue-700
+           {% else %}
+               text-gray-600 hover:bg-gray-100
+           {% endif %}">
+                    <span class="material-symbols-outlined text-lg">monitoring</span>
+                    Analytics
+                </a>
                 {% endif %}
 
                 {% if request.user.is_staff %}
@@ -114,6 +123,15 @@
            {% endif %}">
                     <span class="material-symbols-outlined text-lg">dashboard</span>
                     Dashboard
+                </a>
+                <a href="/analytics/" class="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold
+           {% if '/analytics' in request.path %}
+               bg-blue-50 text-blue-700
+           {% else %}
+               text-gray-600 hover:bg-gray-100
+           {% endif %}">
+                    <span class="material-symbols-outlined text-lg">monitoring</span>
+                    Analytics
                 </a>
                 {% endif %}
 

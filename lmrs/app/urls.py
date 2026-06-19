@@ -75,5 +75,11 @@ urlpatterns = [
     path('api/village-info/delete-sec8-row-file/<int:file_id>/', views.delete_village_sec8_row_file, name='delete_village_sec8_row_file'),
     path('api/village-info/delete-8a-file/<int:file_id>/', views.delete_village_8a_file, name='delete_village_8a_file'),
     path('api/village-info/delete/<int:record_id>/', views.delete_village_info_record, name='delete_village_info_record'),
+    path('api/analytics/readyrecnor/', views.readyrecnor_analytics, name='readyrecnor_analytics'),
+    path('api/analytics/villageinfo/', views.villageinfo_analytics, name='villageinfo_analytics'),
+    path('api/analytics/documents/', views.documents_analytics, name='documents_analytics'),
+    path('api/analytics/inspections/', views.inspection_analytics, name='inspection_analytics'),
+    path('api/analytics/land-record-712/', views.land_record_712_analytics, name='land_record_712_analytics'),
+    path('api/analytics/bhusampadan/', views.bhusampadan_analytics, name='bhusampadan_analytics'),
     path('analytics/', views.analytics, name='analytics')
 ]
