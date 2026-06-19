@@ -270,7 +270,7 @@
                 </div>
 
                 <div class="mt-auto flex items-center justify-between gap-3 border-t border-slate-100 bg-slate-50/60 px-5 py-3 text-xs font-bold text-slate-500">
-                    <span class="flex items-center gap-1.5"><span class="material-symbols-outlined text-[14px]">calendar_month</span><span id="rrLastUpdated">{{ rr_last_updated }}</span></span>
+                    <span class="flex items-center gap-1.5"><span class="material-symbols-outlined text-[14px]">calendar_month</span><span>शेवटचे अपडेट:</span><span id="rrLastUpdated">{{ rr_last_updated }}</span></span>
                     <a href="/tools/ready-reckoner/list/" class="inline-flex items-center gap-1 font-extrabold text-blue-600 hover:text-blue-700">सविस्तर पहा <span class="material-symbols-outlined text-[14px]">arrow_forward</span></a>
                 </div>
             </div>
@@ -336,7 +336,7 @@
                 </div>
 
                 <div class="mt-auto flex items-center justify-between gap-3 border-t border-slate-100 bg-slate-50/60 px-5 py-3 text-xs font-bold text-slate-500">
-                    <span class="flex items-center gap-1.5"><span class="material-symbols-outlined text-[14px]">calendar_month</span><span id="villageInfoLastUpdated">{{ village_info_last_updated }}</span></span>
+                    <span class="flex items-center gap-1.5"><span class="material-symbols-outlined text-[14px]">calendar_month</span><span>शेवटचे अपडेट:</span><span id="villageInfoLastUpdated">{{ village_info_last_updated }}</span></span>
                     <a href="/tools/village-info/" class="inline-flex items-center gap-1 font-extrabold text-emerald-600 hover:text-emerald-700">सविस्तर पहा <span class="material-symbols-outlined text-[14px]">arrow_forward</span></a>
                 </div>
             </div>
@@ -411,7 +411,7 @@
                 </div>
 
                 <div class="mt-auto flex items-center justify-between gap-3 border-t border-slate-100 bg-slate-50/60 px-5 py-3 text-xs font-bold text-slate-500">
-                    <span class="flex items-center gap-1.5"><span class="material-symbols-outlined text-[14px]">calendar_month</span><span id="documentsLastUpdated">{{ documents_last_updated }}</span></span>
+                    <span class="flex items-center gap-1.5"><span class="material-symbols-outlined text-[14px]">calendar_month</span><span>शेवटचे अपडेट:</span><span id="documentsLastUpdated">{{ documents_last_updated }}</span></span>
                     <a href="/tools/documents/" class="inline-flex items-center gap-1 font-extrabold text-violet-600 hover:text-violet-700">सविस्तर पहा <span class="material-symbols-outlined text-[14px]">arrow_forward</span></a>
                 </div>
             </div>
@@ -590,6 +590,7 @@
                         </div>
                         <div class="pb-3">
                             <div id="bhusampadanKalamCharts" class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3"></div>
+                            <div id="bhusampadanKalamLegend" class="mt-4 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-sm font-extrabold text-slate-700"></div>
                         </div>
                     </div>
                     <div class="border-t border-slate-100 px-5 py-5">
@@ -756,9 +757,11 @@
             }
 
             return Highcharts.chart(containerId, {
+                custom: { totalRecords: safeTotalRecords },
                 chart: {
                     type: 'pie',
                     height: 240,
+                    animation: false,
                     spacing: [0, 0, 8, 0],
                     events: {
                         render: function () {
@@ -772,7 +775,7 @@
                             if (chart.centerTextLabel) chart.centerTextLabel.destroy();
 
                             chart.centerTotalLabel = chart.renderer
-                                .text(safeTotalRecords.toLocaleString('en-IN'), x, y - 4)
+                                .text(Number(chart.options.custom?.totalRecords || 0).toLocaleString('en-IN'), x, y - 4)
                                 .attr({ align: 'center', zIndex: 5 })
                                 .css({ color: '#0f172a', fontSize: '22px', fontWeight: '900' })
                                 .add();
@@ -787,7 +790,7 @@
                 },
                 title: { text: null },
                 tooltip: {
-                    pointFormat: '<b>{point.y}</b> ({point.percentage:.1f}%)'
+                    pointFormat: '<b>{point.y}</b>'
                 },
                 plotOptions: {
                     pie: {
@@ -798,7 +801,7 @@
                         dataLabels: {
                             enabled: true,
                             distance: 16,
-                            format: '<b>{point.percentage:.1f}%</b>',
+                            format: '<b>{point.y}</b>',
                             connectorColor: '#94a3b8',
                             connectorWidth: 1,
                             softConnector: true,
@@ -837,9 +840,18 @@
                 series: [{
                     name: seriesName,
                     colorByPoint: true,
+                    animation: false,
                     data
                 }]
             });
+        }
+
+        function updateSummaryDonut(chart, totalRecords, data) {
+            if (!chart) return false;
+            chart.update({ custom: { totalRecords: Number(totalRecords) || 0 } }, false);
+            chart.series[0].setData(data.map(point => ({ ...point, y: Number(point.y) || 0 })), false);
+            chart.redraw(false);
+            return true;
         }
 
         window.rrStatusDonutChartInstance = renderSummaryDonut(
@@ -939,7 +951,7 @@
                 backgroundColor: 'transparent'
             },
             tooltip: {
-                pointFormat: '<b>{point.name}</b><br/>{point.y} villages ({point.percentage:.0f}%)',
+                pointFormat: '<b>{point.name}</b><br/>{point.y} villages',
                 hideDelay: 100
             },
             plotOptions: {
@@ -952,7 +964,7 @@
                     dataLabels: {
                         enabled: true,
                         distance: -20,
-                        format: '<b>{point.percentage:.0f}%</b>',
+                        format: '<b>{point.y}</b>',
                         style: {
                             fontSize: '12px',
                             fontWeight: 'bold',
@@ -993,7 +1005,7 @@
                 backgroundColor: 'transparent'
             },
             tooltip: {
-                pointFormat: '<b>{point.name}</b><br/>{point.y} villages ({point.percentage:.0f}%)',
+                pointFormat: '<b>{point.name}</b><br/>{point.y} villages',
                 hideDelay: 100
             },
             plotOptions: {
@@ -1006,7 +1018,7 @@
                     dataLabels: {
                         enabled: true,
                         distance: -20,
-                        format: '<b>{point.percentage:.0f}%</b>',
+                        format: '<b>{point.y}</b>',
                         style: {
                             fontSize: '12px',
                             fontWeight: 'bold',
@@ -1544,18 +1556,18 @@
             const lastUpdatedEl = document.getElementById('rrLastUpdated');
             if (lastUpdatedEl) lastUpdatedEl.textContent = data.rr_last_updated || 'माहिती उपलब्ध नाही';
 
-            if (window.rrStatusDonutChartInstance) {
-                window.rrStatusDonutChartInstance.destroy();
+            const chartData = [
+                { name: 'नोंदी पूर्ण', y: completed, color: '#10b981' },
+                { name: 'प्रलंबित', y: pending, color: '#f97316' }
+            ];
+            if (!updateSummaryDonut(window.rrStatusDonutChartInstance, total, chartData)) {
+                window.rrStatusDonutChartInstance = renderSummaryDonut(
+                    'rrStatusDonutChart',
+                    total,
+                    'रेडी रेकनर',
+                    chartData
+                );
             }
-            window.rrStatusDonutChartInstance = renderSummaryDonut(
-                'rrStatusDonutChart',
-                total,
-                'रेडी रेकनर',
-                [
-                    { name: 'नोंदी पूर्ण', y: completed, color: '#10b981' },
-                    { name: 'प्रलंबित', y: pending, color: '#f97316' }
-                ]
-            );
         }
 
         async function fetchReadyReckonerAnalytics() {
@@ -1581,19 +1593,19 @@
             const lastUpdatedEl = document.getElementById('villageInfoLastUpdated');
             if (lastUpdatedEl) lastUpdatedEl.textContent = data.village_info_last_updated || 'माहिती उपलब्ध नाही';
 
-            if (window.villageInfoStatusDonutChartInstance) {
-                window.villageInfoStatusDonutChartInstance.destroy();
+            const chartData = [
+                { name: 'पूर्ण', y: completed, color: '#10b981' },
+                { name: 'ड्राफ्ट', y: draft, color: '#f59e0b' },
+                { name: 'प्रलंबित', y: pending, color: '#f97316' }
+            ];
+            if (!updateSummaryDonut(window.villageInfoStatusDonutChartInstance, total, chartData)) {
+                window.villageInfoStatusDonutChartInstance = renderSummaryDonut(
+                    'villageInfoStatusDonutChart',
+                    total,
+                    'गाव माहिती',
+                    chartData
+                );
             }
-            window.villageInfoStatusDonutChartInstance = renderSummaryDonut(
-                'villageInfoStatusDonutChart',
-                total,
-                'गाव माहिती',
-                [
-                    { name: 'पूर्ण', y: completed, color: '#10b981' },
-                    { name: 'ड्राफ्ट', y: draft, color: '#f59e0b' },
-                    { name: 'प्रलंबित', y: pending, color: '#f97316' }
-                ]
-            );
         }
 
         async function fetchVillageInfoAnalytics() {
@@ -1667,7 +1679,7 @@
             title: { text: null },
             credits: { enabled: false },
             tooltip: {
-                pointFormat: '<b>{point.y}</b> नोंदी ({point.percentage:.1f}%)'
+                pointFormat: '<b>{point.y}</b> नोंदी'
             },
             plotOptions: {
                 pie: {
@@ -1807,7 +1819,7 @@
             title: { text: null },
             credits: { enabled: false },
             tooltip: {
-                pointFormat: '<b>{point.y}</b> नोंदी ({point.percentage:.1f}%)'
+                pointFormat: '<b>{point.y}</b> नोंदी'
             },
             plotOptions: {
                 pie: {
@@ -1874,10 +1886,84 @@
             return `₹ ${value.toLocaleString('en-IN')}`;
         }
 
+        const bhusampadanStackColors = ['#2563eb', '#16a34a', '#f59e0b', '#10b981', '#64748b', '#8b5cf6', '#ec4899', '#06b6d4', '#ef4444', '#14b8a6'];
+
+        function buildBhusampadanValuationSeries(values = []) {
+            const categories = values.map(item => item.name);
+            const categoryTotals = {};
+            const typeOrder = [];
+            const typeMap = new Map();
+
+            values.forEach((component, componentIndex) => {
+                const componentName = component.name;
+                categoryTotals[componentName] = {
+                    count: Number(component.y || 0),
+                    amount: Number(component.amount || 0)
+                };
+                categoryTotals[componentIndex] = categoryTotals[componentName];
+
+                const breakdown = Array.isArray(component.breakdown) && component.breakdown.length
+                    ? component.breakdown
+                    : [{ name: component.name, y: component.y || 0, amount: component.amount || 0, entries: [] }];
+
+                breakdown.forEach((item) => {
+                    const typeName = item.name || 'इतर';
+                    if (!typeMap.has(typeName)) {
+                        typeMap.set(typeName, { name: typeName, values: new Map() });
+                        typeOrder.push(typeName);
+                    }
+                    typeMap.get(typeName).values.set(componentName, {
+                        y: Number(item.y || 0),
+                        amount: Number(item.amount || 0),
+                        entries: Array.isArray(item.entries) ? item.entries : [],
+                        componentName,
+                        typeName
+                    });
+                });
+            });
+
+            const series = typeOrder.map((typeName, index) => ({
+                name: typeName,
+                color: bhusampadanStackColors[index % bhusampadanStackColors.length],
+                data: categories.map((category) => typeMap.get(typeName).values.get(category) || {
+                    y: 0,
+                    amount: 0,
+                    entries: [],
+                    componentName: category,
+                    typeName
+                })
+            }));
+
+            return { categories, series, categoryTotals };
+        }
+
         window.bhusampadanKalamChartInstances = [];
 
         function reflowBhusampadanKalamCharts() {
             (window.bhusampadanKalamChartInstances || []).forEach(chart => chart?.reflow());
+        }
+
+        function renderBhusampadanKalamLegend(items = []) {
+            const legend = document.getElementById('bhusampadanKalamLegend');
+            if (!legend) return;
+
+            const entries = [];
+            const seen = new Set();
+            items.forEach((item) => {
+                (item.series || []).forEach((point) => {
+                    const name = point.name || '';
+                    if (!name || seen.has(name)) return;
+                    seen.add(name);
+                    entries.push({ name, color: point.color || '#94a3b8' });
+                });
+            });
+
+            legend.innerHTML = entries.map((entry) => `
+                <span class="inline-flex items-center gap-1.5">
+                    <span class="inline-block h-2.5 w-2.5 rounded-full" style="background:${entry.color}"></span>
+                    <span>${entry.name}</span>
+                </span>
+            `).join('');
         }
 
         function renderBhusampadanKalamCharts(items = [], total = 0) {
@@ -1886,18 +1972,20 @@
 
             (window.bhusampadanKalamChartInstances || []).forEach(chart => chart?.destroy());
             window.bhusampadanKalamChartInstances = [];
+            renderBhusampadanKalamLegend(items);
             container.innerHTML = items.map((item, index) => `
                 <article class="rounded-xl border border-slate-200 bg-white px-3 pb-4 pt-4 shadow-sm">
                     <h5 class="min-h-[52px] px-2 text-center text-[14px] font-extrabold leading-6 text-slate-700">${item.name}</h5>
-                    <div id="bhusampadanKalamChart${index}" class="h-[285px] w-full"></div>
+                    <div id="bhusampadanKalamChart${index}" class="h-[245px] w-full"></div>
                 </article>
             `).join('');
 
             items.forEach((item, index) => {
+                const visibleSeries = (item.series || []).filter(point => point.name !== 'None');
                 const chart = Highcharts.chart(`bhusampadanKalamChart${index}`, {
                     chart: {
                         type: 'pie',
-                        height: 285,
+                        height: 245,
                         spacing: [0, 0, 8, 0],
                         events: {
                             render: function () {
@@ -1921,16 +2009,16 @@
                     credits: { enabled: false },
                     tooltip: {
                         pointFormatter: function () {
-                            return `<b>${this.name}: ${this.y}</b> (${this.percentage.toFixed(1)}%)`;
+                            return `<b>${this.name}: ${this.y}</b>`;
                         }
                     },
                     plotOptions: {
                         pie: {
                             size: '70%',
-                            center: ['50%', '40%'],
+                            center: ['50%', '46%'],
                             innerSize: '60%',
                             borderWidth: 2,
-                            showInLegend: true,
+                            showInLegend: false,
                             dataLabels: {
                                 enabled: true,
                                 filter: {
@@ -1940,45 +2028,46 @@
                                 },
                                 distance: 12,
                                 formatter: function () {
-                                    return this.y ? `${this.percentage.toFixed(0)}%` : '';
+                                    return this.y ? this.y.toLocaleString('en-IN') : '';
                                 },
                                 style: { fontSize: '12px', fontWeight: '800', color: '#0f172a', textOutline: 'none' }
                             }
                         }
                     },
                     legend: {
-                        align: 'center',
-                        verticalAlign: 'bottom',
-                        layout: 'horizontal',
-                        itemDistance: 10,
-                        padding: 0,
-                        margin: 8,
-                        labelFormatter: function () { return `${this.name}: ${this.y}`; },
-                        itemStyle: { fontSize: '13px', fontWeight: '800', color: '#334155' },
-                        symbolHeight: 10,
-                        symbolWidth: 10,
-                        symbolRadius: 5
+                        enabled: false
                     },
                     series: [{
                         name: item.name,
                         colorByPoint: true,
-                        data: item.series || []
+                        data: visibleSeries
                     }]
                 });
                 window.bhusampadanKalamChartInstances.push(chart);
             });
         }
 
+        const initialBhusampadanValuationChart = buildBhusampadanValuationSeries(bhusampadanValuationDataMap.all.values);
+
         window.stagesAwardStatusChartInstance = Highcharts.chart('stagesAwardStatusChart', {
+            custom: { categoryTotals: initialBhusampadanValuationChart.categoryTotals },
             chart: {
                 type: 'column',
-                spacing: [8, 8, 16, 8]
+                height: 380,
+                spacing: [16, 8, 12, 8]
             },
             title: { text: null },
             credits: { enabled: false },
-            legend: { enabled: false },
+            legend: {
+                enabled: true,
+                align: 'center',
+                verticalAlign: 'bottom',
+                layout: 'horizontal',
+                itemMarginTop: 6,
+                itemStyle: { fontSize: '12px', fontWeight: '800', color: '#334155' }
+            },
             xAxis: {
-                categories: bhusampadanValuationDataMap.all.values.map(item => item.name),
+                categories: initialBhusampadanValuationChart.categories,
                 labels: {
                     style: { fontSize: '13px', color: '#334155', fontWeight: '800' }
                 }
@@ -1993,33 +2082,50 @@
                 labels: {
                     style: { fontSize: '13px', color: '#475569', fontWeight: '800' }
                 },
-                gridLineColor: '#eef2f7'
+                gridLineColor: '#eef2f7',
+                stackLabels: {
+                    enabled: true,
+                    useHTML: true,
+                    formatter: function () {
+                        const categories = this.axis.chart.xAxis[0].categories || [];
+                        const key = categories[this.x] || this.x;
+                        const totals = this.axis.chart.options.custom?.categoryTotals || {};
+                        const total = totals[key] || totals[this.x] || { count: this.total, amount: 0 };
+                        return `<span style="display:inline-block;text-align:center;color:#0f172a;font-weight:900;font-size:12px;line-height:1.25">${Number(total.count || this.total || 0).toLocaleString('en-IN')}<br><span style="font-size:11px;color:#334155">${formatIndianCurrencyShort(total.amount || 0)}</span></span>`;
+                    },
+                    style: { textOutline: 'none' }
+                }
             },
             tooltip: {
                 useHTML: true,
                 pointFormatter: function () {
-                    return `<b>${this.category}</b><br>मूल्यांकन संख्या: <b>${this.y}</b><br>मूल्यांकन: <b>${formatIndianCurrencyShort(this.options.amount || 0)}</b>`;
+                    const entries = Array.isArray(this.options.entries) && this.options.entries.length
+                        ? `<div style="margin-top:6px">${this.options.entries.map(entry => `${entry.detail ? `${entry.detail}: ` : ''}${entry.y} | ${formatIndianCurrencyShort(entry.amount || 0)}`).join('<br>')}</div>`
+                        : '';
+                    return `<b>${this.options.componentName || this.category}</b><br>घटक प्रकार: <b>${this.series.name}</b><br>संख्या: <b>${this.y}</b><br>मूल्यांकन: <b>${formatIndianCurrencyShort(this.options.amount || 0)}</b>${entries}`;
                 }
             },
             plotOptions: {
                 column: {
+                    stacking: 'normal',
                     borderRadius: 5,
-                    colorByPoint: true,
                     pointPadding: 0.14,
                     groupPadding: 0.12,
                     dataLabels: {
                         enabled: true,
+                        inside: true,
+                        useHTML: true,
                         formatter: function () {
-                            return `${this.y}<br><span style="font-size:12px;color:#475569">${formatIndianCurrencyShort(this.point.options.amount || 0)}</span>`;
+                            if (!this.y) return '';
+                            return `<span style="display:inline-block;text-align:center;line-height:1.15">${this.series.name}<br>${this.y}<br><span style="font-size:10px">${formatIndianCurrencyShort(this.point.options.amount || 0)}</span></span>`;
                         },
-                        style: { fontSize: '14px', fontWeight: '800', color: '#0f172a', textOutline: 'none' }
+                        padding: 3,
+                        borderRadius: 4,
+                        style: { fontSize: '10px', fontWeight: '800', color: '#ffffff', textOutline: '1px rgba(15,23,42,0.35)' }
                     }
                 }
             },
-            series: [{
-                name: 'मूल्यांकन',
-                data: bhusampadanValuationDataMap.all.values
-            }]
+            series: initialBhusampadanValuationChart.series
         });
 
         // -------------------------------------------------------------
@@ -2265,8 +2371,14 @@
             if (amountEl) amountEl.textContent = formatIndianCurrencyShort(totalAmount);
 
             if (!window.stagesAwardStatusChartInstance) return;
-            window.stagesAwardStatusChartInstance.xAxis[0].setCategories(values.map(item => item.name), false);
-            window.stagesAwardStatusChartInstance.series[0].setData(values, true);
+            const chartData = buildBhusampadanValuationSeries(values);
+            window.stagesAwardStatusChartInstance.update({ custom: { categoryTotals: chartData.categoryTotals } }, false);
+            window.stagesAwardStatusChartInstance.xAxis[0].setCategories(chartData.categories, false);
+            while (window.stagesAwardStatusChartInstance.series.length) {
+                window.stagesAwardStatusChartInstance.series[0].remove(false);
+            }
+            chartData.series.forEach(series => window.stagesAwardStatusChartInstance.addSeries(series, false));
+            window.stagesAwardStatusChartInstance.redraw();
         }
 
         function updateBhusampadanKalamChart(items = [], total = 0) {
