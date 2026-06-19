@@ -8619,13 +8619,26 @@ def _bhusampadan_valuation_data(request, records):
         "itar": component_meta["other_department"],
     }
     preferred_order = ["water", "agri", "construction", "forest", "other"]
+    fallback_item_labels = {
+        "water_supply": {"well": "विहीर", "canal": "कालवा"},
+        "agriculture": {"shed_net": "शेडनेट", "farm_pond": "शेततळे", "fruit_tree": "फळझाडे"},
+        "forest": {"timber_tree": "इमारती लाकूड झाडे", "fruit_tree": "फळझाडे"},
+    }
+    asset_item_labels = {prefix: dict(fallback_item_labels.get(prefix, {})) for prefix in component_meta}
+    for category in AssetCategory.objects.filter(is_active=True).prefetch_related("asset_list"):
+        if category.code not in asset_item_labels:
+            continue
+        for item in category.asset_list.filter(is_active=True):
+            asset_item_labels[category.code][clean_optional_char(item.code)] = clean_optional_char(item.name_marathi) or clean_optional_char(item.code)
+            asset_item_labels[category.code][clean_optional_char(item.name_marathi)] = clean_optional_char(item.name_marathi)
+
     component_rows = {}
     component_record_ids = {key: set() for key in preferred_order}
 
     def ensure_row(key, label, color):
         return component_rows.setdefault(
             key,
-            {"key": key, "name": label, "y": 0, "amount": Decimal("0"), "color": color},
+            {"key": key, "name": label, "y": 0, "amount": Decimal("0"), "color": color, "breakdown": {}},
         )
 
     def parse_decimal(value, default=Decimal("0")):
@@ -8637,6 +8650,23 @@ def _bhusampadan_valuation_data(request, records):
         except (InvalidOperation, ValueError):
             return default
 
+    def component_item_label(prefix, row):
+        raw_item = clean_optional_char(row.get(f"{prefix}_component_item"))
+        raw_detail = clean_optional_char(row.get(f"{prefix}_component_detail"))
+        if raw_item:
+            return asset_item_labels.get(prefix, {}).get(raw_item, raw_item)
+        return raw_detail or "इतर"
+
+    def add_breakdown(component_row, item_name, count_value, amount_value, detail=""):
+        item_name = clean_optional_char(item_name) or "इतर"
+        detail = clean_optional_char(detail)
+        count_int = int(count_value)
+        if item_name not in component_row["breakdown"]:
+            component_row["breakdown"][item_name] = {"name": item_name, "y": 0, "amount": Decimal("0"), "entries": []}
+        component_row["breakdown"][item_name]["y"] += count_int
+        component_row["breakdown"][item_name]["amount"] += amount_value
+        component_row["breakdown"][item_name]["entries"].append({"detail": detail, "y": count_int, "amount": amount_value})
+
     for record in records:
         has_department_rows = False
         for row in record.department_rows.all():
@@ -8647,7 +8677,15 @@ def _bhusampadan_valuation_data(request, records):
             component_record_ids.setdefault(key, set()).add(record.pk)
             component_row = ensure_row(key, label, color)
             component_row["y"] += 1
-            component_row["amount"] += row.valuation or Decimal("0")
+            amount_value = row.valuation or Decimal("0")
+            component_row["amount"] += amount_value
+            add_breakdown(
+                component_row,
+                clean_optional_char(row.related_component_details) or clean_optional_char(row.details) or label,
+                Decimal("1"),
+                amount_value,
+                clean_optional_char(row.details),
+            )
 
         if has_department_rows:
             continue
@@ -8686,13 +8724,42 @@ def _bhusampadan_valuation_data(request, records):
                 count_value = parse_decimal(row.get(count_key), Decimal("1"))
                 if count_value <= 0:
                     count_value = Decimal("1")
+                amount_value = parse_decimal(row.get(valuation_key))
                 component_row["y"] += int(count_value)
-                component_row["amount"] += parse_decimal(row.get(valuation_key))
+                component_row["amount"] += amount_value
+                add_breakdown(
+                    component_row,
+                    component_item_label(prefix, row),
+                    count_value,
+                    amount_value,
+                    row.get(detail_key),
+                )
 
     rows = [component_rows[key] for key in preferred_order if key in component_rows]
     return {
         "record_count": len(records) if selected_component == "all" else len(component_record_ids.get(selected_component, set())),
-        "rows": [{"key": row["key"], "name": row["name"], "y": row["y"], "amount": float(row["amount"]), "color": row["color"]} for row in rows],
+        "rows": [
+            {
+                "key": row["key"],
+                "name": row["name"],
+                "y": row["y"],
+                "amount": float(row["amount"]),
+                "color": row["color"],
+                "breakdown": [
+                    {
+                        "name": item["name"],
+                        "y": item["y"],
+                        "amount": float(item["amount"]),
+                        "entries": [
+                            {"detail": entry["detail"], "y": entry["y"], "amount": float(entry["amount"])}
+                            for entry in item.get("entries", [])
+                        ],
+                    }
+                    for item in sorted(row.get("breakdown", {}).values(), key=lambda item: (-item["amount"], item["name"]))
+                ],
+            }
+            for row in rows
+        ],
         "components": [{"value": component_rows[key]["key"], "label": component_rows[key]["name"]} for key in preferred_order if key in component_rows],
     }
 
