@@ -4228,6 +4228,18 @@ def doc_edit(request, id):
     return JsonResponse({'error': 'Method not allowed'}, status=405)
 
 
+def _document_location_display(doc):
+    district = doc.district or ''
+    taluka = doc.taluka or ''
+    village = doc.village or ''
+    return {
+        'district_display': get_marathi_name('district', district) if district else '',
+        'taluka_display': get_marathi_name('taluka', district, taluka) if district and taluka else taluka,
+        'village_display': get_marathi_name('village', district, taluka, village) if district and taluka and village else village,
+        'gut_display': doc.gut_number or '',
+    }
+
+
 @login_required
 def doc_list_api(request):
     doc_type = request.GET.get('type', 'general')
@@ -4265,13 +4277,14 @@ def doc_list_api(request):
             'taluka': d.taluka or '',
             'village': d.village or '',
             'gut_number': d.gut_number or '',
+            **_document_location_display(d),
             'description': d.description or '',
             'document_date': d.document_date.strftime('%d/%m/%Y') if d.document_date else '',
             'court_date': d.court_date.strftime('%d/%m/%Y') if d.court_date else '',
             'owner_name': d.owner_name or '',
             'matter_type': d.matter_type or '',
             'matter_type_display': matter_labels.get(d.matter_type, '') if d.matter_type else '',
-            'uploaded_at': d.uploaded_at.strftime('%d/%m/%Y'),
+            'uploaded_at': timezone.localtime(d.uploaded_at).strftime('%d/%m/%Y') if d.uploaded_at else '',
             'file_url': file_url,
             'ext': ext,
         })
@@ -4355,13 +4368,14 @@ def get_filtered_documents(request):
             'taluka': d.taluka or '',
             'village': d.village or '',
             'gut_number': d.gut_number or '',
+            **_document_location_display(d),
             'description': d.description or '',
             'document_date': d.document_date.strftime('%d/%m/%Y') if d.document_date else '',
             'court_date': d.court_date.strftime('%d/%m/%Y') if d.court_date else '',
             'owner_name': d.owner_name or '',
             'matter_type': d.matter_type or '',
             'matter_type_display': matter_labels.get(d.matter_type, '') if d.matter_type else '',
-            'uploaded_at': d.uploaded_at.strftime('%d/%m/%Y'),
+            'uploaded_at': timezone.localtime(d.uploaded_at).strftime('%d/%m/%Y') if d.uploaded_at else '',
             'file_url': first_attachment.file.url,
             'ext': first_attachment.file.name.rsplit('.', 1)[-1].lower() if '.' in first_attachment.file.name else '',
         })
