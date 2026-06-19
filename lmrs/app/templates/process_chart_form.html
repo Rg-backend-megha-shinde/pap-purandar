@@ -3234,7 +3234,22 @@
         let lastSavedTab7SnapshotSignature = '';
         let latestProcessChartStepData = {};
         const assetCategories = JSON.parse('{{ asset_categories_json|default:"[]"|escapejs }}');
-        const todayIsoDate = new Date().toISOString().split('T')[0];
+        function formatLocalIsoDate(date) {
+            return [
+                date.getFullYear(),
+                String(date.getMonth() + 1).padStart(2, '0'),
+                String(date.getDate()).padStart(2, '0'),
+            ].join('-');
+        }
+
+        function addCalendarDays(date, days) {
+            const result = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+            result.setDate(result.getDate() + days);
+            return result;
+        }
+
+        const todayIsoDate = formatLocalIsoDate(new Date());
+        const tomorrowIsoDate = formatLocalIsoDate(addCalendarDays(new Date(), 1));
 
         function getSummaryStepData(stepNo) {
             return latestProcessChartStepData?.[`step_${stepNo}`]
@@ -3517,11 +3532,27 @@
                     field.readOnly = false;
                     field.removeAttribute('readonly');
                 }
-                field.max = todayIsoDate;
+                if (!wasReadonly && !field.disabled) {
+                    field.min = tomorrowIsoDate;
+                    field.removeAttribute('max');
+                }
                 if (field.value) {
                     field.value = normalizeDateInputValue(field.value);
                 }
             });
+        }
+
+        function validateFutureDateInputs(scope = processChartForm) {
+            if (!scope) return true;
+            const fields = Array.from(scope.querySelectorAll('input[type="date"]'))
+                .filter((field) => !field.disabled && !field.readOnly && field.value);
+            const invalidField = fields.find((field) => normalizeDateInputValue(field.value) <= todayIsoDate);
+            if (!invalidField) return true;
+
+            invalidField.focus();
+            invalidField.reportValidity?.();
+            alert('दिनांक उद्यापासून पुढील निवडा. आजची किंवा मागील दिनांक निवडता येणार नाही.');
+            return false;
         }
 
         function enhanceProcessChartAreaInputs() {
@@ -12290,6 +12321,10 @@
                 : (getCurrentPanel() || getProcessChartPanel(currentStep) || document.querySelector(`[data-pc-panel="${currentStep}"]`));
             if (!validateIdentityFields(validationScope)) {
                 return { success: false, error: 'Invalid Aadhaar, PAN, or mobile number.' };
+            }
+            enhanceProcessChartDateInputs();
+            if (!validateFutureDateInputs(validationScope)) {
+                return { success: false, error: 'Invalid date.' };
             }
 
             // Debug helper: expose last save step + keys (useful for tabs like 9).
