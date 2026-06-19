@@ -43,8 +43,8 @@
 <body class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100 antialiased">
     <div class="relative flex h-screen w-full flex-col overflow-x-hidden">
         <header
-            class="relative flex flex-wrap items-center justify-between gap-3 border-b border-solid border-slate-200 bg-white px-4 py-3 dark:border-slate-800 dark:bg-slate-900 sm:px-6 lg:flex-nowrap lg:whitespace-nowrap sticky top-0 z-[9999]">
-            <div class="flex min-w-0 items-center gap-4 lg:flex-1">
+            class="relative flex flex-wrap items-center justify-between gap-3 border-b border-solid border-slate-200 bg-white px-4 py-3 dark:border-slate-800 dark:bg-slate-900 sm:px-6 lg:grid lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] lg:items-center lg:gap-3 lg:whitespace-nowrap sticky top-0 z-[9999]">
+            <div class="flex min-w-0 flex-1 items-center gap-4 lg:col-start-1 lg:flex-none lg:justify-self-start">
                 <div class="flex items-center gap-4 text-primary">
                     <div class="size-10 flex items-center justify-center bg-primary/10 rounded-lg overflow-hidden">
                         <img src="{% static 'logo/purandar_airport.png' %}" alt="Purandar Airport logo"
@@ -61,7 +61,7 @@
                 <span class="material-symbols-outlined text-xl">menu</span>
             </button>
             <div
-                class="order-3 w-full grid grid-cols-1 gap-2 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4 md:w-auto md:gap-2 lg:order-none">
+                class="order-3 grid w-full grid-cols-1 gap-2 sm:grid-cols-2 md:grid-cols-2 md:w-auto md:gap-2 lg:order-none lg:col-start-2 lg:flex lg:w-max lg:items-center lg:justify-center lg:gap-2">
                 <select id="districtSelect"
                     class="form-select h-10 w-full max-w-full rounded-lg border-none bg-slate-100 px-3 pr-8 text-[11px] font-medium focus:ring-primary dark:bg-slate-800 md:max-w-[11rem]">
                     <option value="">Select District</option>
@@ -82,7 +82,7 @@
                     <option value="">Select Gut Number</option>
                 </select>
             </div>
-            <div class="flex items-center justify-end gap-3 lg:justify-end lg:gap-3">
+            <div class="flex items-center justify-end gap-3 lg:col-start-3 lg:justify-self-end lg:gap-3">
                 <nav class="hidden items-center gap-2 md:flex" aria-label="Primary navigation">
                     {% if request.user.is_superuser %}
                     <a href="/"
@@ -326,6 +326,141 @@
 
         .animate-slide-in {
             animation: slide-in 0.3s ease-out;
+        }
+
+        .native-location-select-hidden {
+            display: none !important;
+        }
+
+        .location-search-select {
+            position: relative;
+            width: 100%;
+            min-width: 0;
+        }
+
+        .location-search-select__button {
+            display: flex;
+            height: 2.5rem;
+            width: 100%;
+            min-width: 0;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.5rem;
+            border-radius: 0.5rem;
+            background: #f1f5f9;
+            padding: 0 0.75rem;
+            font-weight: 500;
+            color: #0f172a;
+            outline: none;
+        }
+
+        .location-search-select__button:focus {
+            box-shadow: 0 0 0 2px #1269e2;
+        }
+
+        .location-search-select.is-open .location-search-select__button {
+            box-shadow: 0 0 0 2px #1269e2;
+        }
+
+        .location-search-select.is-disabled .location-search-select__button {
+            cursor: not-allowed;
+            opacity: 0.55;
+        }
+
+        .location-search-select__label {
+            flex: 1;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+        }
+
+        .location-search-select__menu {
+            position: absolute;
+            left: 0;
+            top: calc(100% + 0.25rem);
+            z-index: 10000;
+            display: none;
+            width: 100%;
+            min-width: 10rem;
+            overflow: hidden;
+            border: 1px solid #dbe3ef;
+            border-radius: 0.5rem;
+            background: #ffffff;
+            box-shadow: 0 18px 35px rgba(15, 23, 42, 0.18);
+        }
+
+        .location-search-select.is-open .location-search-select__menu {
+            display: block;
+        }
+
+        .location-search-select__search-wrap {
+            border-bottom: 1px solid #e2e8f0;
+            padding: 0.5rem;
+        }
+
+        .location-search-select__search {
+            height: 2rem;
+            width: 100%;
+            border: 1px solid #dbe3ef;
+            border-radius: 0.375rem;
+            padding: 0 0.625rem;
+            outline: none;
+        }
+
+        .location-search-select__search:focus {
+            border-color: #1269e2;
+            box-shadow: 0 0 0 1px #1269e2;
+        }
+
+        .location-search-select__options {
+            max-height: 14rem;
+            overflow-y: auto;
+            padding: 0.25rem;
+        }
+
+        .location-search-select__option {
+            display: block;
+            width: 100%;
+            border-radius: 0.375rem;
+            padding: 0.5rem 0.625rem;
+            text-align: left;
+            font-size: 0.75rem;
+            color: #334155;
+        }
+
+        .location-search-select__option:hover,
+        .location-search-select__option.is-active {
+            background: #1269e2;
+            color: #ffffff;
+        }
+
+        .location-search-select__empty {
+            padding: 0.75rem;
+            text-align: center;
+            color: #64748b;
+        }
+
+        .dark .location-search-select__button {
+            background: #1e293b;
+            color: #f8fafc;
+        }
+
+        .dark .location-search-select__menu {
+            border-color: #334155;
+            background: #0f172a;
+        }
+
+        .dark .location-search-select__search-wrap {
+            border-color: #334155;
+        }
+
+        .dark .location-search-select__search {
+            border-color: #334155;
+            background: #1e293b;
+            color: #f8fafc;
+        }
+
+        .dark .location-search-select__option {
+            color: #cbd5e1;
         }
     </style>
     <script>
@@ -660,6 +795,153 @@
             const talukaSelect = document.getElementById('talukaSelect');
             const villageSelect = document.getElementById('villageSelect');
             const gutSelect = document.getElementById('gutSelect');
+            const locationSearchSelects = [districtSelect, talukaSelect, villageSelect, gutSelect]
+                .filter(Boolean)
+                .map(initLocationSearchSelect);
+
+            function initLocationSearchSelect(select) {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'location-search-select';
+                wrapper.dataset.selectId = select.id;
+
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.className = 'location-search-select__button';
+                button.setAttribute('aria-haspopup', 'listbox');
+                button.setAttribute('aria-expanded', 'false');
+
+                const label = document.createElement('span');
+                label.className = 'location-search-select__label';
+
+                const icon = document.createElement('span');
+                icon.className = 'material-symbols-outlined text-base text-slate-400';
+                icon.textContent = 'expand_more';
+
+                const menu = document.createElement('div');
+                menu.className = 'location-search-select__menu';
+
+                const searchWrap = document.createElement('div');
+                searchWrap.className = 'location-search-select__search-wrap';
+
+                const search = document.createElement('input');
+                search.type = 'search';
+                search.className = 'location-search-select__search';
+                search.placeholder = 'Search...';
+                search.autocomplete = 'off';
+
+                const optionsBox = document.createElement('div');
+                optionsBox.className = 'location-search-select__options';
+                optionsBox.setAttribute('role', 'listbox');
+
+                button.append(label, icon);
+                searchWrap.appendChild(search);
+                menu.append(searchWrap, optionsBox);
+                wrapper.append(button, menu);
+                select.insertAdjacentElement('afterend', wrapper);
+                select.classList.add('native-location-select-hidden');
+
+                const close = () => {
+                    wrapper.classList.remove('is-open');
+                    button.setAttribute('aria-expanded', 'false');
+                    search.value = '';
+                    renderOptions('');
+                };
+
+                const open = () => {
+                    if (select.disabled) return;
+                    refresh();
+                    wrapper.classList.add('is-open');
+                    button.setAttribute('aria-expanded', 'true');
+                    setTimeout(() => search.focus(), 0);
+                };
+
+                const selectedLabel = () => {
+                    const selected = select.options[select.selectedIndex];
+                    return selected?.textContent?.trim() || select.options[0]?.textContent?.trim() || 'Select';
+                };
+
+                const refresh = () => {
+                    label.textContent = selectedLabel();
+                    wrapper.classList.toggle('is-disabled', select.disabled);
+                    button.disabled = select.disabled;
+                    renderOptions(search.value);
+                };
+
+                const renderOptions = (query = '') => {
+                    const normalizedQuery = query.trim().toLowerCase();
+                    const options = Array.from(select.options).filter(option => option.value !== '');
+                    optionsBox.innerHTML = '';
+
+                    const matches = options.filter(option => {
+                        const text = option.textContent.trim().toLowerCase();
+                        return !normalizedQuery || text.includes(normalizedQuery);
+                    });
+
+                    if (!matches.length) {
+                        const empty = document.createElement('div');
+                        empty.className = 'location-search-select__empty';
+                        empty.textContent = 'No results found';
+                        optionsBox.appendChild(empty);
+                        return;
+                    }
+
+                    matches.forEach(option => {
+                        const item = document.createElement('button');
+                        item.type = 'button';
+                        item.className = 'location-search-select__option';
+                        item.textContent = option.textContent;
+                        item.dataset.value = option.value;
+                        item.setAttribute('role', 'option');
+                        item.setAttribute('aria-selected', option.selected ? 'true' : 'false');
+                        if (option.selected) item.classList.add('is-active');
+                        item.addEventListener('click', () => {
+                            select.value = option.value;
+                            select.dispatchEvent(new CustomEvent('change', {
+                                bubbles: true,
+                                detail: { userSelected: true }
+                            }));
+                            refreshAllLocationSearchSelects();
+                            close();
+                        });
+                        optionsBox.appendChild(item);
+                    });
+                };
+
+                button.addEventListener('click', (event) => {
+                    event.stopPropagation();
+                    wrapper.classList.contains('is-open') ? close() : open();
+                });
+                search.addEventListener('click', event => event.stopPropagation());
+                search.addEventListener('input', () => renderOptions(search.value));
+                search.addEventListener('keydown', (event) => {
+                    if (event.key === 'Escape') {
+                        event.preventDefault();
+                        close();
+                        button.focus();
+                    }
+                });
+                select.addEventListener('change', () => setTimeout(refreshAllLocationSearchSelects, 0));
+
+                new MutationObserver(refresh).observe(select, {
+                    attributes: true,
+                    attributeFilter: ['disabled'],
+                    childList: true,
+                    subtree: true
+                });
+
+                refresh();
+                return { wrapper, refresh, close };
+            }
+
+            function refreshAllLocationSearchSelects() {
+                locationSearchSelects.forEach(control => control.refresh());
+            }
+
+            document.addEventListener('click', (event) => {
+                locationSearchSelects.forEach(control => {
+                    if (!control.wrapper.contains(event.target)) control.close();
+                });
+            });
 
             // Load districts on page load
             loadDistricts();
@@ -1543,7 +1825,10 @@
 
                                     // Update dropdown
                                     const gutSelect = document.getElementById('gutSelect');
-                                    if (gutSelect) gutSelect.value = currentGutNumber;
+                                    if (gutSelect) {
+                                        gutSelect.value = currentGutNumber;
+                                        refreshAllLocationSearchSelects();
+                                    }
 
                                     // Reload gut boundaries to show selection
                                     loadVillageGutBoundaries(currentDistrict, currentTaluka, currentVillage, currentDistrictId, currentTalukaId, currentVillageId);
