@@ -2182,8 +2182,7 @@
                     otherCategoriesHTML += '</div>';
                 }
 
-                if (landClassificationList) {
-                    landClassificationList.innerHTML = `
+                const classificationHTML = `
                     <!-- Trees Category -->
                     <div class="mb-3">
                         <div class="flex justify-between items-center text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
@@ -2214,12 +2213,13 @@
                         ${otherCategoriesHTML}
                     </div>
                 `;
+
+                if (landClassificationList) {
+                    landClassificationList.innerHTML = classificationHTML;
                 }
 
                 if (analyticsClassificationList) {
-                    analyticsClassificationList.innerHTML = landClassificationList
-                        ? landClassificationList.innerHTML
-                        : '';
+                    analyticsClassificationList.innerHTML = classificationHTML;
                 }
             }
 
