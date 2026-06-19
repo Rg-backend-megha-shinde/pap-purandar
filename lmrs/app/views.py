@@ -5696,6 +5696,9 @@ _PROCESS_CHART_STEP9_BANK_FIELD_LABELS = {
     'step9_ifsc_code': 'IFSC Code',
 }
 
+_PROCESS_CHART_STEP10_BANK_REQUIRED_FIELDS = tuple(_PROCESS_CHART_STEP10_BANK_FIELD_LABELS)
+_PROCESS_CHART_STEP9_BANK_REQUIRED_FIELDS = tuple(_PROCESS_CHART_STEP9_BANK_FIELD_LABELS)
+
 
 def _process_chart_value_to_text(value):
     if value is None:
@@ -5827,6 +5830,13 @@ def _process_chart_list_value(data, key, index):
     return values if index == 0 else ''
 
 
+def _process_chart_row_has_all_values(data, keys, index):
+    return all(
+        bool(_process_chart_value_to_text(_process_chart_list_value(data, key, index)))
+        for key in keys
+    )
+
+
 def _flatten_process_chart_step10_bank_data(data):
     if not isinstance(data, dict):
         return {}
@@ -5841,6 +5851,8 @@ def _flatten_process_chart_step10_bank_data(data):
 
     flattened = {}
     for index in range(max_rows):
+        if not _process_chart_row_has_all_values(data, _PROCESS_CHART_STEP10_BANK_REQUIRED_FIELDS, index):
+            continue
         owner_name = _process_chart_value_to_text(_process_chart_list_value(data, 'step10_owner_name', index)) or f'भूधारक {index + 1}'
         for key, field_label in _PROCESS_CHART_STEP10_BANK_FIELD_LABELS.items():
             value = _process_chart_value_to_text(_process_chart_list_value(data, key, index))
@@ -5865,6 +5877,8 @@ def _flatten_process_chart_step9_bank_data(data):
 
     flattened = {}
     for index in range(max_rows):
+        if not _process_chart_row_has_all_values(data, _PROCESS_CHART_STEP9_BANK_REQUIRED_FIELDS, index):
+            continue
         owner_name = _process_chart_value_to_text(_process_chart_list_value(data, 'step9_owner_name', index)) or f'खातेदार {index + 1}'
         for key, field_label in _PROCESS_CHART_STEP9_BANK_FIELD_LABELS.items():
             value = _process_chart_value_to_text(_process_chart_list_value(data, key, index))
@@ -5878,16 +5892,18 @@ def _flatten_process_chart_step9_bank_data(data):
 def _record_process_chart_step9_bank_audit(case, old_data, new_data, user, section_code='step_9'):
     old_flat = _flatten_process_chart_step9_bank_data(old_data)
     new_flat = _flatten_process_chart_step9_bank_data(new_data)
-    if not old_flat:
+    if not old_flat or not new_flat:
         return []
 
     changed_logs = []
-    for field_path in sorted(set(old_flat) | set(new_flat)):
+    for field_path in sorted(set(old_flat) & set(new_flat)):
         old_item = old_flat.get(field_path, {})
         new_item = new_flat.get(field_path, {})
         old_value = old_item.get('value', '')
         new_value = new_item.get('value', '')
         if old_value == new_value:
+            continue
+        if not old_value and new_value:
             continue
         label = new_item.get('label') or old_item.get('label') or field_path
         changed_logs.append(ProcessChartAuditLog(
@@ -5911,16 +5927,18 @@ def _record_process_chart_step9_bank_audit(case, old_data, new_data, user, secti
 def _record_process_chart_step10_bank_audit(case, old_data, new_data, user, section_code='step_10'):
     old_flat = _flatten_process_chart_step10_bank_data(old_data)
     new_flat = _flatten_process_chart_step10_bank_data(new_data)
-    if not old_flat:
+    if not old_flat or not new_flat:
         return []
 
     changed_logs = []
-    for field_path in sorted(set(old_flat) | set(new_flat)):
+    for field_path in sorted(set(old_flat) & set(new_flat)):
         old_item = old_flat.get(field_path, {})
         new_item = new_flat.get(field_path, {})
         old_value = old_item.get('value', '')
         new_value = new_item.get('value', '')
         if old_value == new_value:
+            continue
+        if not old_value and new_value:
             continue
         label = new_item.get('label') or old_item.get('label') or field_path
         changed_logs.append(ProcessChartAuditLog(
@@ -5970,6 +5988,8 @@ def _serialize_process_chart_audit_logs(case, step_no=None, limit=100):
         for item in serialized_logs:
             old_value = str(item.get('old_value') or '').strip()
             new_value = str(item.get('new_value') or '').strip()
+            if item.get('step_no') in (9, 10) and not old_value and new_value:
+                continue
             pair_key = (
                 item.get('field_label') or '',
                 item.get('changed_by') or '',
