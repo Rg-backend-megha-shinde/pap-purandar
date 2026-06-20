@@ -2328,6 +2328,40 @@
                 }
             }
 
+            const AFFECTED_COUNTS_CACHE_TTL_MS = 5 * 60 * 1000;
+
+            function getAffectedCountsCacheKey(params) {
+                return `lmrs:affected-counts:${params.toString()}`;
+            }
+
+            function readDashboardSessionCache(cacheKey) {
+                try {
+                    const raw = sessionStorage.getItem(cacheKey);
+                    if (!raw) return null;
+
+                    const cached = JSON.parse(raw);
+                    if (!cached || Date.now() - Number(cached.savedAt || 0) > AFFECTED_COUNTS_CACHE_TTL_MS) {
+                        sessionStorage.removeItem(cacheKey);
+                        return null;
+                    }
+
+                    return cached.data || null;
+                } catch (error) {
+                    return null;
+                }
+            }
+
+            function writeDashboardSessionCache(cacheKey, data) {
+                try {
+                    sessionStorage.setItem(cacheKey, JSON.stringify({
+                        savedAt: Date.now(),
+                        data: data || {}
+                    }));
+                } catch (error) {
+                    // Storage may be unavailable in private browsing; fresh fetch still updates the UI.
+                }
+            }
+
             function fetchAffectedCounts(district = null, taluka = null, village = null, gut = null) {
                 const params = new URLSearchParams();
 
@@ -2345,7 +2379,13 @@
                     params.append('tenant_id', PROJECT_SCHEMA);
                 }
 
-                setAffectedCardsLoading();
+                const cacheKey = getAffectedCountsCacheKey(params);
+                const cachedData = readDashboardSessionCache(cacheKey);
+                if (cachedData) {
+                    updateAffectedCards(cachedData);
+                } else if (hasLocationSelection()) {
+                    setAffectedCardsLoading();
+                }
 
                 fetch(`/api/dashboard/affected-counts/?${params.toString()}`)
                     .then(async (response) => {
@@ -2362,14 +2402,16 @@
                         return data;
                     })
                     .then(data => {
+                        writeDashboardSessionCache(cacheKey, data || {});
                         updateAffectedCards(data || {});
                     })
                     .catch(error => {
                         console.error('Error loading affected counts:', error);
-                        updateAffectedCards({});
+                        if (!cachedData && hasLocationSelection()) {
+                            updateAffectedCards({});
+                        }
                     });
             }
-
             // Fetch Project Statistics - with optional filters (district, taluka, village, gut)
             function fetchProjectStats(district = null, taluka = null, village = null, gut = null) {
                 let url = '/api/project-stats/?';
@@ -2382,9 +2424,21 @@
 
                 url += params.join('&');
 
+                const projectStatsCacheKey = `lmrs:project-stats:${url}`;
+                const cachedProjectStats = readDashboardSessionCache(projectStatsCacheKey);
+                if (cachedProjectStats) {
+                    populateAssetLayers(cachedProjectStats.assets || {});
+                    if (cachedProjectStats.land_classification) {
+                        populateLandClassification(cachedProjectStats.land_classification);
+                        populateAssetsDistribution(cachedProjectStats.land_classification);
+                    }
+                }
+
                 fetch(url)
                     .then(response => response.json())
                     .then(data => {
+                        writeDashboardSessionCache(projectStatsCacheKey, data || {});
+
                         // Populate asset layers (always call to ensure prj_bd is shown)
                         populateAssetLayers(data.assets || {});
 
