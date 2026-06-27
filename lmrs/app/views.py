@@ -927,7 +927,23 @@ def _parse_ready_reckoner_blocks(request, block_count, village_type):
 
 @login_required
 def ready_reckoner_list(request):
-    all_records = ReadyReckonerInfo.objects.prefetch_related('rates').all().order_by('district', 'taluka', 'village', 'year', 'id')
+    filter_type = clean_optional_char(request.GET.get('filter_type'))
+    district_filter = clean_optional_char(request.GET.get('district'))
+    taluka_filter = clean_optional_char(request.GET.get('taluka'))
+    village_filter = clean_optional_char(request.GET.get('village'))
+    if filter_type not in {'district', 'taluka', 'village'}:
+        filter_type = ''
+
+    qs = ReadyReckonerInfo.objects.prefetch_related('rates').all()
+    if filter_type:
+        if district_filter:
+            qs = _apply_analytics_location_filter(qs, "district", district_filter, "district")
+        if filter_type in {'taluka', 'village'} and taluka_filter:
+            qs = _apply_analytics_location_filter(qs, "taluka", taluka_filter, "taluka")
+        if filter_type == 'village' and village_filter:
+            qs = _apply_analytics_location_filter(qs, "village", village_filter, "village")
+
+    all_records = qs.order_by('district', 'taluka', 'village', 'year', 'id')
 
     # Group by village+year ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¾Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¦ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â one entry per village
     from itertools import groupby
@@ -964,7 +980,15 @@ def ready_reckoner_list(request):
             'village_mr': village_mr,
             'year': key[3],
         })
-    return render(request, 'ready_reckoner_list.html', {'groups': groups})
+    clear_filter_query_string = urlencode({})
+    return render(request, 'ready_reckoner_list.html', {
+        'groups': groups,
+        'filter_type': filter_type,
+        'district_filter': district_filter,
+        'taluka_filter': taluka_filter,
+        'village_filter': village_filter,
+        'clear_filter_query_string': clear_filter_query_string,
+    })
 
 @login_required
 def edit_ready_reckoner(request, id):
@@ -1709,6 +1733,13 @@ def land_record_712_list(request):
 
     per_page_raw = (request.GET.get('per_page', '10') or '10').strip().lower()
     search_query = (request.GET.get('search') or '').strip()
+    filter_type = clean_optional_char(request.GET.get('filter_type'))
+    district_filter = clean_optional_char(request.GET.get('district'))
+    taluka_filter = clean_optional_char(request.GET.get('taluka'))
+    village_filter = clean_optional_char(request.GET.get('village'))
+    gut_filter = clean_optional_char(request.GET.get('gut_number') or request.GET.get('gut'))
+    if filter_type not in {'district', 'taluka', 'village', 'gut_number'}:
+        filter_type = ''
     show_all = per_page_raw == 'all'
     per_page = 10
     if not show_all:
@@ -1751,6 +1782,24 @@ def land_record_712_list(request):
             filters = filters | Q(id=int(search_query))
         qs = qs.filter(filters)
 
+    if filter_type:
+        if district_filter:
+            qs = _apply_analytics_location_filter(qs, "district", district_filter, "district")
+        if filter_type in {'taluka', 'village', 'gut_number'} and taluka_filter:
+            qs = _apply_analytics_location_filter(qs, "taluka", taluka_filter, "taluka")
+        if filter_type in {'village', 'gut_number'} and village_filter:
+            qs = _apply_analytics_location_filter(qs, "village", village_filter, "village")
+        if filter_type == 'gut_number' and gut_filter:
+            gut_norm = normalize_gut_value(gut_filter)
+            matching_rows = [
+                row
+                for row in qs.values("id", "gut_number")
+                if normalize_gut_value(row.get("gut_number")) == gut_norm
+            ]
+            matching_ids = [row["id"] for row in matching_rows]
+            qs = qs.filter(id__in=matching_ids)
+            gut_filter = (matching_rows[0]["gut_number"] or '').strip() if matching_rows else gut_norm
+
     if show_all:
         records = list(qs)
         page_obj = None
@@ -1788,6 +1837,17 @@ def land_record_712_list(request):
     query_params = {'per_page': per_page_raw if show_all else str(per_page)}
     if search_query:
         query_params['search'] = search_query
+    clear_filter_query_string = urlencode(query_params)
+    if filter_type:
+        query_params['filter_type'] = filter_type
+        if district_filter:
+            query_params['district'] = district_filter
+        if taluka_filter:
+            query_params['taluka'] = taluka_filter
+        if village_filter:
+            query_params['village'] = village_filter
+        if gut_filter:
+            query_params['gut_number'] = gut_filter
     query_string = urlencode(query_params)
 
     district_mr_cache = {}
@@ -1828,7 +1888,13 @@ def land_record_712_list(request):
         'end_index': end_index,
         'page_links': page_links,
         'search_query': search_query,
+        'filter_type': filter_type,
+        'district_filter': district_filter,
+        'taluka_filter': taluka_filter,
+        'village_filter': village_filter,
+        'gut_filter': gut_filter,
         'query_string': query_string,
+        'clear_filter_query_string': clear_filter_query_string,
         'include_document_preview': include_document_preview,
     })
 

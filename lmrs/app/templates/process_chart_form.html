@@ -11091,6 +11091,7 @@
                 document.querySelector('input[name="interested_in_10_percent_plot"]:checked')?.value === 'yes';
             const row9DeductionAmount = isInterestedInDevelopedPlot ? Math.ceil(row7TotalAmount / 10) : 0;
             const row9DeductionStr = formatNoticeAmountLatin(row9DeductionAmount) || '0';
+            const houseDeductionStr = formatNoticeAmountLatin(getFieldValue('#pcCompensationHouse')) || '0';
 
             const red = (value) => `<span class="red">${getDisplayValue(value)}</span>`;
 
@@ -11218,15 +11219,14 @@
 
                     <p class="numbered"><span class="no">१.</span>वरिल तक्त्यात नमूद केल्याप्रमाणे ${red(projectPurpose)} करिता भूसंपादन प्रक्रीया राबविणेत आली आहे.</p>
                     <p class="numbered"><span class="no">२.</span>सदर जमिनीच्या भूसंपादन कार्यवाही अंतर्गत भूमि संपादन, पुनर्वसन व पुनर्वसाहत करताना उचित भरपाई मिळण्याचा आणि पारदर्शकतेचा हक्क अधिनियम, २०१३ चे कलम २६ ते ३० तसेच महाराष्ट्र औद्योगिक विकास अधिनियम १९६१ चे कलम ३३(२) अन्वये मा. जिल्हाधिकारी सो. पुणे यांनी प्रति हेक्टरी रक्कम रुपये ${red(approvedRate)} इतका जमीनीचा मोबदला निश्चित केलेला आहे. त्यानुसार संमती पत्र व प्रतिज्ञापत्र सादर केल्यास संमती करारनामा व संमती निवाडा करण्यात येणार आहे.</p>
-                    <p class="numbered"><span class="no">३.</span>वरिल प्रमाणे निश्चीत केलेल्या दरानुसार आपले संपादीत होणाऱ्या क्षेत्राचा मोबदला सोबतच्या परिशिष्ट - अ मध्ये परिगणित करून देण्यात आला आहे.</p>
-                    <p class="numbered"><span class="no">४.</span>त्यामधील तपशिल तपासून मान्य असल्यास आपण संमती करारनामा करण्याबाबतचे हमीपत्र व खालील नमूद केलेले कागदपत्र जोडून ${red(sec3OfficerName)}, ${red(officeAddress)} येथे दि. ${red(deadlineDateLong)} पर्यंत सादर करावीत, अन्यथा सक्तीचा भूसंपादन निवाडा जाहिर करून जमीन ताब्यात घेण्यात येईल.</p>
-                    <p class="numbered"><span class="no">५.</span>संमती करारनामा केल्यास महाराष्ट्र औद्योगीक विकास महामंडळ यांचे पुनर्वसन व पुनर्बहाली धोरण, २०१९ दि. २६/०८/२०१९ नुसार पात्र व्यक्तीस देय असणारा भूखंड परतावा व इतर लाभ देय राहतील.</p>
-                    <p class="numbered"><span class="no">६.</span>भूसंपादीत होणाऱ्या जमिनीच्या मोबदल्यात १०% विकसीत भूखंड परतावा क्षेत्राची मागणी केल्यास संपादीत जमीनीच्या एकूण परिगणित केलेल्या मुल्याच्या १०% रक्कम कपात करून महाराष्ट्र औद्योगिक विकास महामंडळाकडे जमा करण्यात येईल.</p>
-                    <p class="numbered"><span class="no">७.</span>महाराष्ट्र औद्योगिक विकास अधिनियम १९६१ चे कलम ३२ (४)(i) अन्वये संपादीत जमिनी सर्व भारांपासून मुक्त होवून शासनाकडे संपुर्णपणे निहित होतील.</p>
-                    <p class="numbered"><span class="no">८.</span>सदर जमिनीचा मोबदला वाटपाचे संपुर्ण कामकाज हे पारदर्शक पद्धतीने करण्यात येणार असून, देय मोबदला हा संबंधित खातेदारास मा. जिल्हाधिकारी सो. पुणे यांचेमार्फत आर.टी.जी.एस. द्वारे संबंधितांचे बॅंक खात्यामध्ये जमा करण्यात येणार आहे.</p>
-                    <p class="numbered"><span class="no">९.</span>शपथपत्र / संमतीपत्र यामध्ये संबंधित खातेदार यांनी कोणतीही चूकीची / दिशाभूल करणारी माहिती दिलेचे आढळून आल्यास संबंधितावर भारतीय न्याय संहिता २०२३ चे कलम २१६, २१७ व ३३७ नुसार फौजदारी कारवाई करण्यात येईल.</p>
-                    <p class="numbered"><span class="no">१०.</span>सदर संपादीत जमीनीच्या ७/१२ वरील दाखल असलेल्या खातेदारांव्यतिरिक्त इतर कोणत्याही त्रयस्त व्यक्ती अथवा संस्था इत्यादी चा हक्क / हितसंबंध असल्यास, तसेच न्यायालयीन वाद अथवा कोणतीही हरकत असल्यास त्याबाबतची माहिती दि. ${red(deadlineDateLong)} पर्यंत सादर करावी.</p>
-                    <p class="numbered"><span class="no">११.</span>संमतीपत्रासोबत भूसंपादन मोबदला स्विकारण्याकरिता खालील कागदपत्रे सादर करावीत -</p>
+                    <p class="numbered"><span class="no">३.</span>त्यामधील तपशिल तपासून मान्य असल्यास आपण संमती करारनामा करण्याबाबतचे हमीपत्र व खालील नमूद केलेले कागदपत्र जोडून ${red(sec3OfficerName)}, ${red(officeAddress)} येथे दि. ${red(deadlineDateLong)} पर्यंत सादर करावीत, अन्यथा सक्तीचा भूसंपादन निवाडा जाहिर करून जमीन ताब्यात घेण्यात येईल.</p>
+                    <p class="numbered"><span class="no">४.</span>संमती करारनामा केल्यास महाराष्ट्र औद्योगीक विकास महामंडळ यांचे पुनर्वसन व पुनर्बहाली धोरण, २०१९ दि. २६/०८/२०१९ नुसार पात्र व्यक्तीस देय असणारा भूखंड परतावा व इतर लाभ देय राहतील.</p>
+                    <p class="numbered"><span class="no">५.</span>भूसंपादीत होणाऱ्या जमिनीच्या मोबदल्यात १०% विकसीत भूखंड परतावा क्षेत्राची मागणी केल्यास संपादीत जमीनीच्या एकूण परिगणित केलेल्या मुल्याच्या १०% रक्कम कपात करून महाराष्ट्र औद्योगिक विकास महामंडळाकडे जमा करण्यात येईल.</p>
+                    <p class="numbered"><span class="no">६.</span>महाराष्ट्र औद्योगिक विकास अधिनियम १९६१ चे कलम ३२ (४)(i) अन्वये संपादीत जमिनी सर्व भारांपासून मुक्त होवून शासनाकडे संपुर्णपणे निहित होतील.</p>
+                    <p class="numbered"><span class="no">७.</span>सदर जमिनीचा मोबदला वाटपाचे संपुर्ण कामकाज हे पारदर्शक पद्धतीने करण्यात येणार असून, देय मोबदला हा संबंधित खातेदारास मा. जिल्हाधिकारी सो. पुणे यांचेमार्फत आर.टी.जी.एस. द्वारे संबंधितांचे बॅंक खात्यामध्ये जमा करण्यात येणार आहे.</p>
+                    <p class="numbered"><span class="no">८.</span>शपथपत्र / संमतीपत्र यामध्ये संबंधित खातेदार यांनी कोणतीही चूकीची / दिशाभूल करणारी माहिती दिलेचे आढळून आल्यास संबंधितावर भारतीय न्याय संहिता २०२३ चे कलम २१६, २१७ व ३३७ नुसार फौजदारी कारवाई करण्यात येईल.</p>
+                    <p class="numbered"><span class="no">९.</span>सदर संपादीत जमीनीच्या ७/१२ वरील दाखल असलेल्या खातेदारांव्यतिरिक्त इतर कोणत्याही त्रयस्त व्यक्ती अथवा संस्था इत्यादी चा हक्क / हितसंबंध असल्यास, तसेच न्यायालयीन वाद अथवा कोणतीही हरकत असल्यास त्याबाबतची माहिती दि. ${red(deadlineDateLong)} पर्यंत सादर करावी.</p>
+                    <p class="numbered"><span class="no">१०.</span>संमतीपत्रासोबत भूसंपादन मोबदला स्विकारण्याकरिता खालील कागदपत्रे सादर करावीत -</p>
                     <ol class="doc-list">
                         <li>बँक, वि.का. सोसायटी व इतर वित्तीय संस्थांचा बोजा नसलेबाबत, शासकीय थकबाकी नसलेबाबत, मालकी हक्काबाबत, कोणताही दिवाणी व महसुली दावा नसलेबाबत कार्यकारी दंडाधिकारी यांचेसमोरील संमतीपत्र व प्रतिज्ञापत्र.</li>
                         <li>अद्ययावत ७/१२ उतारा, ग्राम महसूल अधिकारी यांच्या स्वाक्षरीसह.</li>
@@ -11238,70 +11238,6 @@
                     </ol>
                     <p class="paragraph">तरी आपण वरीलप्रमाणे आवश्यक कागदपत्रांसह संमतीपत्र सादर करून मोबदला वाटपाची कार्यवाही वेळेत पूर्ण होण्यासाठी सहकार्य करावे.</p>
 
-                    <div class="signature">
-                        <p class="name">(${red(sec3OfficerPersonName)})</p>
-                        <p class="designation">${red(sec3OfficerName)}</p>
-                    </div>
-                </section>
-
-                <section class="page">
-                    <p class="center top-heading"><strong>मोबदला वितरण तपशील</strong></p>
-                    <table class="schedule-table">
-                        <thead>
-                            <tr>
-                                <th style="width: 8%;">अ.क्र.</th>
-                                <th>खातेदाराचे नाव</th>
-                                <th>बँकेचे नाव व शाखा</th>
-                                <th>खाते क्रमांक</th>
-                                <th>IFSC Code</th>
-                                <th>मोबदला रक्कम</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${step9PaymentRows.map((row, index) => {
-                const amt = step9DistributionEqual ? equalShare : (row.distribution_amount || '0');
-                return `
-                                    <tr>
-                                        <td>${index + 1}</td>
-                                        <td>${red(row.owner_name)}</td>
-                                        <td>${red([row.bank_name, row.bank_branch].filter(Boolean).join(', '))}</td>
-                                        <td>${red(row.bank_account_number)}</td>
-                                        <td>${red(row.ifsc_code)}</td>
-                                        <td>${red(formatNoticeAmountLatin(amt))}</td>
-                                    </tr>
-                                `;
-            }).join('')}
-                        </tbody>
-                    </table>
-                </section>
-
-                <section class="page">
-
-                    <p class="center top-heading"><strong>परिशिष्ट - अ</strong></p>
-                    <p class="center sub-heading"><strong>मौजे ${red(village)} गट क्र. ${red(gutNumber)} क्षेत्र ${red(consentArea)} हे.आर. मोबदला परिगणना</strong></p>
-                    <table class="govt-table" style="text-align: center;">
-                        <thead>
-                            <tr>
-                                <th style="width: 8%;">अ.क्र.</th>
-                                <th>घटक</th>
-                                <th style="width: 25%;">रक्कम (रुपये)</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr><td>1</td><td style="text-align: left;">उच्चाधिकार समितीने निश्चित केलेला जमिनीचा दर (12% अतिरिक्त घटकाचे रकमेसह) रुपये</td><td class="amount">4,02,54,814/- प्रती हेक्टर</td></tr>
-                            <tr><td>2</td><td style="text-align: left;">उच्चाधिकार समितीने निश्चित केलेल्या वरीलप्रमाणे दरानुसार या संमती करारनाम्याचा विषय असलेल्या संपादन क्षेत्र ${red(consentArea)} हे.आर. ची रक्कम रुपये</td><td class="amount">${red(row2Str)}</td></tr>
-                            <tr><td>3</td><td style="text-align: left;">फळझाडांची एकूण मोबदला रक्कम (100% दिलासा रकमेसह)</td><td>${red(row3Str)}</td></tr>
-                            <tr><td>4</td><td style="text-align: left;">वनझाडांची एकूण मोबदला रक्कम रुपये (100% दिलासा रकमेसह)</td><td>${red(row4Str)}</td></tr>
-                            <tr><td>5</td><td style="text-align: left;">बांधकामांची / ताळाची एकूण मोबदला रक्कम रुपये (100% दिलासा रकमेसह)</td><td>${red(row5Str)}</td></tr>
-                            <tr><td>6</td><td style="text-align: left;">पाईपलाईन / बोअरवेल / शेततळे / विहिरीची एकूण मोबदला रक्कम रुपये (100% दिलासा रकमेसह)</td><td>${red(row6Str)}</td></tr>
-                            <tr><td>7</td><td style="text-align: left;"><strong>एकूण मोबदला रक्कम रुपये (अ. क्र. 2 + 3 + 4 + 5 + 6)</strong></td><td><strong>${red(row7TotalStr)}</strong></td></tr>
-                            <tr><td>8</td><td style="text-align: left;">भोगवटादार वर्ग-2 / नजराणा / अनर्जित रक्कम रुपये</td><td>${red(compensation[8])}</td></tr>
-                            <tr><td>9</td><td style="text-align: left;">विकसित भूखंडापोटी 10% कपात करावयाची रक्कम रुपये</td><td>${red(row9DeductionStr)}</td></tr>
-                            <tr><td>10</td><td style="text-align: left;">घर बाधित होत असल्यास पर्यायी जागेसाठी कपात करावयाची रक्कम रुपये</td><td>${red(houseDeductionStr)}</td></tr>
-                            <tr><td>11</td><td style="text-align: left;"><strong>भूमी संपादनाच्या संमती करारनाम्याकरीता एकूण देय मोबदला रक्कम (अ. क्र. 7 - 8 - 9 - 10)</strong></td><td><strong>${red(compensation[10])}</strong></td></tr>
-                        </tbody>
-                    </table>
-                    <p class="paragraph"><strong>अक्षरी रक्कम रुपये - ${red(compensationAksari)}</strong></p>
                     <div class="signature">
                         <p class="name">(${red(sec3OfficerPersonName)})</p>
                         <p class="designation">${red(sec3OfficerName)}</p>

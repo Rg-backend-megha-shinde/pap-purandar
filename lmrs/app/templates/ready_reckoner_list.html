@@ -90,6 +90,45 @@
         </div>
     </div>
 
+    <div class="mb-3 rounded-lg border border-[#d7e5f6] bg-white p-3">
+        <div class="grid grid-cols-1 gap-3 md:grid-cols-[220px_1fr_auto]">
+            <label class="text-sm font-semibold text-[#44597a]">
+                <span class="mb-1 block">फिल्टर प्रकार</span>
+                <select id="rrFilterType" class="w-full rounded border border-gray-300 px-3 py-2 text-sm">
+                    <option value="">फिल्टर प्रकार निवडा</option>
+                    <option value="district" {% if filter_type == 'district' %}selected{% endif %}>जिल्हा</option>
+                    <option value="taluka" {% if filter_type == 'taluka' %}selected{% endif %}>तालुका</option>
+                    <option value="village" {% if filter_type == 'village' %}selected{% endif %}>गाव</option>
+                </select>
+            </label>
+            <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                <label id="rrDistrictFilterWrap" class="hidden text-sm font-semibold text-[#44597a]">
+                    <span class="mb-1 block">जिल्हा</span>
+                    <select id="rrDistrictFilter" class="w-full rounded border border-gray-300 px-3 py-2 text-sm" data-selected="{{ district_filter|escapejs }}">
+                        <option value="">जिल्हा निवडा</option>
+                    </select>
+                </label>
+                <label id="rrTalukaFilterWrap" class="hidden text-sm font-semibold text-[#44597a]">
+                    <span class="mb-1 block">तालुका</span>
+                    <select id="rrTalukaFilter" class="w-full rounded border border-gray-300 px-3 py-2 text-sm" data-selected="{{ taluka_filter|escapejs }}" disabled>
+                        <option value="">तालुका निवडा</option>
+                    </select>
+                </label>
+                <label id="rrVillageFilterWrap" class="hidden text-sm font-semibold text-[#44597a]">
+                    <span class="mb-1 block">गाव</span>
+                    <select id="rrVillageFilter" class="w-full rounded border border-gray-300 px-3 py-2 text-sm" data-selected="{{ village_filter|escapejs }}" disabled>
+                        <option value="">गाव निवडा</option>
+                    </select>
+                </label>
+            </div>
+            <div class="flex items-end">
+                <a href="{% url 'ready_reckoner_list' %}{% if clear_filter_query_string %}?{{ clear_filter_query_string }}{% endif %}" class="inline-flex w-full items-center justify-center rounded bg-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-300">
+                    फिल्टर काढा
+                </a>
+            </div>
+        </div>
+    </div>
+
     <form id="bulkDeleteReadyReckonerForm" method="POST" action="{% url 'delete_selected_ready_reckoner' %}">
         {% csrf_token %}
     <div class="overflow-x-auto">
@@ -299,6 +338,142 @@
 
 <script>
     $(document).ready(function () {
+        const rrFilterType = document.getElementById('rrFilterType');
+        const rrDistrictFilter = document.getElementById('rrDistrictFilter');
+        const rrTalukaFilter = document.getElementById('rrTalukaFilter');
+        const rrVillageFilter = document.getElementById('rrVillageFilter');
+        const rrDistrictFilterWrap = document.getElementById('rrDistrictFilterWrap');
+        const rrTalukaFilterWrap = document.getElementById('rrTalukaFilterWrap');
+        const rrVillageFilterWrap = document.getElementById('rrVillageFilterWrap');
+
+        function rrRequiredLocationDepth() {
+            if (rrFilterType?.value === 'district') return 1;
+            if (rrFilterType?.value === 'taluka') return 2;
+            if (rrFilterType?.value === 'village') return 3;
+            return 0;
+        }
+
+        function rrSetSelectOptions(selectEl, items, placeholder, selectedValue = '') {
+            if (!selectEl) return;
+            selectEl.innerHTML = '';
+            selectEl.add(new Option(placeholder, ''));
+            (Array.isArray(items) ? items : []).forEach((item) => {
+                if (item && typeof item === 'object') {
+                    selectEl.add(new Option(item.label || item.value || item.id, item.value || item.label || item.id));
+                } else if (item !== null && item !== undefined && `${item}`.trim() !== '') {
+                    selectEl.add(new Option(item, item));
+                }
+            });
+            if (selectedValue && Array.from(selectEl.options).some(option => option.value === selectedValue)) {
+                selectEl.value = selectedValue;
+            }
+            selectEl.disabled = !(items && items.length);
+        }
+
+        function rrResetSelect(selectEl, placeholder) {
+            rrSetSelectOptions(selectEl, [], placeholder);
+        }
+
+        async function rrFetchLocationOptions(params = '') {
+            const suffix = params ? `?${params}` : '?lang=mr';
+            const response = await fetch(`/api/locations/${suffix}`, { headers: { 'Accept': 'application/json' } });
+            if (!response.ok) throw new Error(`Location request failed: ${response.status}`);
+            return response.json();
+        }
+
+        function rrUpdateLocationVisibility() {
+            const depth = rrRequiredLocationDepth();
+            rrDistrictFilterWrap?.classList.toggle('hidden', depth < 1);
+            rrTalukaFilterWrap?.classList.toggle('hidden', depth < 2);
+            rrVillageFilterWrap?.classList.toggle('hidden', depth < 3);
+        }
+
+        async function rrLoadDistricts(selectedValue = '') {
+            const data = await rrFetchLocationOptions('lang=mr');
+            rrSetSelectOptions(rrDistrictFilter, data.data || [], 'जिल्हा निवडा', selectedValue);
+        }
+
+        async function rrLoadTalukas(selectedValue = '') {
+            rrResetSelect(rrTalukaFilter, 'तालुका निवडा');
+            rrResetSelect(rrVillageFilter, 'गाव निवडा');
+            if (!rrDistrictFilter?.value) return;
+            const data = await rrFetchLocationOptions(`district=${encodeURIComponent(rrDistrictFilter.value)}&lang=mr`);
+            rrSetSelectOptions(rrTalukaFilter, data.data || [], 'तालुका निवडा', selectedValue);
+        }
+
+        async function rrLoadVillages(selectedValue = '') {
+            rrResetSelect(rrVillageFilter, 'गाव निवडा');
+            if (!rrDistrictFilter?.value || !rrTalukaFilter?.value) return;
+            const data = await rrFetchLocationOptions(`district=${encodeURIComponent(rrDistrictFilter.value)}&taluka=${encodeURIComponent(rrTalukaFilter.value)}&lang=mr`);
+            rrSetSelectOptions(rrVillageFilter, data.data || [], 'गाव निवडा', selectedValue);
+        }
+
+        function rrSyncFilterParams(params) {
+            const depth = rrRequiredLocationDepth();
+            const complete = (depth === 1 && rrDistrictFilter?.value)
+                || (depth === 2 && rrDistrictFilter?.value && rrTalukaFilter?.value)
+                || (depth === 3 && rrDistrictFilter?.value && rrTalukaFilter?.value && rrVillageFilter?.value);
+            if (rrFilterType?.value && complete) {
+                params.set('filter_type', rrFilterType.value);
+                if (rrDistrictFilter?.value) params.set('district', rrDistrictFilter.value); else params.delete('district');
+                if (rrTalukaFilter?.value) params.set('taluka', rrTalukaFilter.value); else params.delete('taluka');
+                if (rrVillageFilter?.value) params.set('village', rrVillageFilter.value); else params.delete('village');
+            } else {
+                params.delete('filter_type');
+                params.delete('district');
+                params.delete('taluka');
+                params.delete('village');
+            }
+        }
+
+        function rrApplyFilterIfComplete() {
+            const depth = rrRequiredLocationDepth();
+            const complete = (depth === 1 && rrDistrictFilter?.value)
+                || (depth === 2 && rrDistrictFilter?.value && rrTalukaFilter?.value)
+                || (depth === 3 && rrDistrictFilter?.value && rrTalukaFilter?.value && rrVillageFilter?.value);
+            if (!complete) return;
+            const params = new URLSearchParams(window.location.search);
+            rrSyncFilterParams(params);
+            window.location.search = params.toString();
+        }
+
+        async function rrInitializeLocationFilters() {
+            rrUpdateLocationVisibility();
+            const depth = rrRequiredLocationDepth();
+            if (!depth) return;
+            await rrLoadDistricts(rrDistrictFilter?.dataset.selected || '');
+            if (depth >= 2) await rrLoadTalukas(rrTalukaFilter?.dataset.selected || '');
+            if (depth >= 3) await rrLoadVillages(rrVillageFilter?.dataset.selected || '');
+        }
+
+        rrInitializeLocationFilters();
+
+        rrFilterType?.addEventListener('change', function () {
+            [rrDistrictFilter, rrTalukaFilter, rrVillageFilter].forEach((select) => {
+                if (select) select.dataset.selected = '';
+            });
+            rrUpdateLocationVisibility();
+            rrResetSelect(rrTalukaFilter, 'तालुका निवडा');
+            rrResetSelect(rrVillageFilter, 'गाव निवडा');
+            if (rrRequiredLocationDepth()) {
+                rrLoadDistricts();
+            }
+        });
+
+        rrDistrictFilter?.addEventListener('change', async function () {
+            await rrLoadTalukas();
+            rrApplyFilterIfComplete();
+        });
+
+        rrTalukaFilter?.addEventListener('change', async function () {
+            await rrLoadVillages();
+            rrApplyFilterIfComplete();
+        });
+
+        rrVillageFilter?.addEventListener('change', function () {
+            rrApplyFilterIfComplete();
+        });
+
         // Destroy existing DataTable if it exists
         if ($.fn.DataTable.isDataTable('#readyReckonerTable')) {
             $('#readyReckonerTable').DataTable().destroy();
@@ -741,6 +916,4 @@
 </script>
 
 {% endblock %}
-
-
 
