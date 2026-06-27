@@ -14,6 +14,7 @@ from django.db import connection
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 import csv
+import hashlib
 import re
 import json
 import os
@@ -32,6 +33,7 @@ from datetime import date as datetime_date, timedelta
 from django.utils import timezone
 from django.db.utils import OperationalError
 from django.core.paginator import Paginator
+from django.core.cache import cache
 from uuid import uuid4
 
 def clean_optional_char(value):
@@ -2628,6 +2630,42 @@ def _as_int_or_none(value):
         return None
 
 
+
+DASHBOARD_AFFECTED_COUNTS_CACHE_TIMEOUT = 300
+
+
+def _dashboard_affected_counts_cache_key(*, project_id, tenant_id, district_id, taluka_id, village_id, gut_id, district_name, taluka_name, village_name):
+    payload = {
+        "project_id": project_id,
+        "tenant_id": tenant_id or "",
+        "district_id": district_id,
+        "taluka_id": taluka_id,
+        "village_id": village_id,
+        "gut_id": gut_id or "",
+        "district_name": district_name or "",
+        "taluka_name": taluka_name or "",
+        "village_name": village_name or "",
+    }
+    digest = hashlib.sha256(json.dumps(payload, sort_keys=True, separators=(",", ":")).encode("utf-8")).hexdigest()
+    return f"dashboard_affected_counts:v2:{digest}"
+
+
+DASHBOARD_PROJECT_STATS_CACHE_TIMEOUT = 300
+
+
+def _dashboard_project_stats_cache_key(*, district_id, taluka_id, village_id, district_name, taluka_name, village_name, gut_number):
+    payload = {
+        "district_id": district_id or "",
+        "taluka_id": taluka_id or "",
+        "village_id": village_id or "",
+        "district_name": district_name or "",
+        "taluka_name": taluka_name or "",
+        "village_name": village_name or "",
+        "gut_number": gut_number or "",
+    }
+    digest = hashlib.sha256(json.dumps(payload, sort_keys=True, separators=(",", ":")).encode("utf-8")).hexdigest()
+    return f"dashboard_project_stats:v2:{digest}"
+
 def _aligned_geom_expr(alias):
     return f"""
         CASE
@@ -2661,6 +2699,23 @@ def get_dashboard_affected_counts(request):
         "affected_guts": 0,
         "affected_area_ha": 0,
     }
+
+    cache_key = _dashboard_affected_counts_cache_key(
+        project_id=project_id,
+        tenant_id=tenant_id,
+        district_id=district_id,
+        taluka_id=taluka_id,
+        village_id=village_id,
+        gut_id=gut_id,
+        district_name=district_name,
+        taluka_name=taluka_name,
+        village_name=village_name,
+    )
+    cached_payload = cache.get(cache_key)
+    if cached_payload is not None:
+        response = JsonResponse(cached_payload)
+        response["X-Dashboard-Cache"] = "hit"
+        return response
 
     try:
         with connection.cursor() as cursor:
@@ -2933,17 +2988,19 @@ def get_dashboard_affected_counts(request):
                 )
                 affected_area_ha = float(cursor.fetchone()[0] or 0)
 
-        return JsonResponse(
-            {
-                "affected_districts": int(affected_districts or 0),
-                "affected_talukas": int(affected_talukas or 0),
-                "affected_villages": int(affected_villages or 0),
-                "affected_guts": int(affected_guts or 0),
-                "affected_area_ha": round(float(affected_area_ha or 0), 2),
-                "project_id": resolved_project_id,
-                "tenant_id": tenant_id or project_schema,
-            }
-        )
+        payload = {
+            "affected_districts": int(affected_districts or 0),
+            "affected_talukas": int(affected_talukas or 0),
+            "affected_villages": int(affected_villages or 0),
+            "affected_guts": int(affected_guts or 0),
+            "affected_area_ha": round(float(affected_area_ha or 0), 2),
+            "project_id": resolved_project_id,
+            "tenant_id": tenant_id or project_schema,
+        }
+        cache.set(cache_key, payload, DASHBOARD_AFFECTED_COUNTS_CACHE_TIMEOUT)
+        response = JsonResponse(payload)
+        response["X-Dashboard-Cache"] = "miss"
+        return response
     except OperationalError:
         return JsonResponse(zero_payload)
     except Exception as exc:
@@ -2962,6 +3019,21 @@ def get_project_stats(request):
     taluka_name = (request.GET.get('taluka') or '').strip() or None
     village_name = (request.GET.get('village') or '').strip() or None
     gut_number = request.GET.get('gut')
+
+    cache_key = _dashboard_project_stats_cache_key(
+        district_id=district_id,
+        taluka_id=taluka_id,
+        village_id=village_id,
+        district_name=district_name,
+        taluka_name=taluka_name,
+        village_name=village_name,
+        gut_number=gut_number,
+    )
+    cached_payload = cache.get(cache_key)
+    if cached_payload is not None:
+        response = JsonResponse(cached_payload)
+        response["X-Project-Stats-Cache"] = "hit"
+        return response
 
     with connection.cursor() as cursor:
         column_cache = {}
@@ -3058,7 +3130,7 @@ def get_project_stats(request):
         )
 
         if invalid_location:
-            return JsonResponse({
+            payload = {
                 "land_classification": {
                     "trees_total": 0,
                     "trees_valuation": 0,
@@ -3075,7 +3147,11 @@ def get_project_stats(request):
                     "water_total": 0,
                     "water_valuation": 0,
                 }
-            })
+            }
+            cache.set(cache_key, payload, DASHBOARD_PROJECT_STATS_CACHE_TIMEOUT)
+            response = JsonResponse(payload)
+            response["X-Project-Stats-Cache"] = "miss"
+            return response
 
         # Build filters for asset tables (which may not always have district_id/taluka_id).
         def build_asset_filters(table_name):
@@ -3258,9 +3334,13 @@ def get_project_stats(request):
         # -----------------------------
         # FINAL RESPONSE
         # -----------------------------
-        return JsonResponse({
+        payload = {
             "land_classification": land_classification
-        })
+        }
+        cache.set(cache_key, payload, DASHBOARD_PROJECT_STATS_CACHE_TIMEOUT)
+        response = JsonResponse(payload)
+        response["X-Project-Stats-Cache"] = "miss"
+        return response
 
 @api_login_required
 def get_gut_numbers_by_village(request, village_name):
