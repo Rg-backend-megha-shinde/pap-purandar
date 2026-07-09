@@ -4387,9 +4387,98 @@ def _document_location_display(doc):
     }
 
 
+def _process_chart_document_location_display(case):
+    district = case.district or ''
+    taluka = case.taluka or ''
+    village = case.village or ''
+    return {
+        'district_display': get_marathi_name('district', district) if district else '',
+        'taluka_display': get_marathi_name('taluka', district, taluka) if district and taluka else taluka,
+        'village_display': get_marathi_name('village', district, taluka, village) if district and taluka and village else village,
+        'gut_display': case.gut_number or '',
+    }
+
+
+def _process_chart_document_name(doc):
+    file_name = os.path.basename(getattr(doc.file, 'name', '') or '')
+    return file_name or doc.document_type or f'process_chart_document_{doc.id}'
+
+
+def _serialize_process_chart_document_for_tool(doc):
+    case = doc.case
+    document_name = _process_chart_document_name(doc)
+    file_name = getattr(doc.file, 'name', '') or ''
+    return {
+        'id': doc.id,
+        'document_name': document_name,
+        'document_level': 'gut',
+        'district': case.district,
+        'taluka': case.taluka or '',
+        'village': case.village or '',
+        'gut_number': case.gut_number or '',
+        **_process_chart_document_location_display(case),
+        'description': doc.remarks or '',
+        'document_date': '',
+        'court_date': '',
+        'owner_name': '',
+        'matter_type': doc.document_type or '',
+        'matter_type_display': f"Step {doc.step_no} - {doc.document_type}" if doc.step_no else doc.document_type,
+        'uploaded_at': timezone.localtime(doc.created_at).strftime('%d/%m/%Y') if doc.created_at else '',
+        'file_url': doc.file.url if doc.file else '',
+        'ext': file_name.rsplit('.', 1)[-1].lower() if '.' in file_name else '',
+        'source': 'process_chart',
+        'step_no': doc.step_no,
+        'section_code': doc.section_code or '',
+    }
+
+
+def _process_chart_documents_for_tool(request, apply_exact_level=False):
+    import re as _re
+    district = request.GET.get('district') or None
+    taluka = request.GET.get('taluka') or None
+    village = request.GET.get('village') or None
+    gut = request.GET.get('gut') or None
+    file_name = request.GET.get('file_name') or None
+
+    qs = ProcessChartDocument.objects.select_related('case').filter(case__user=request.user)
+
+    if district:
+        qs = qs.filter(case__district__iexact=district)
+    if taluka:
+        qs = qs.filter(case__taluka__iexact=taluka)
+    if village:
+        qs = qs.filter(case__village__iexact=village)
+    if gut:
+        numeric = _re.search(r'\d+', gut)
+        if numeric:
+            num = numeric.group()
+            qs = qs.filter(case__gut_number__iregex=r'(^|[^0-9])' + num + r'([^0-9]|$)')
+        else:
+            qs = qs.filter(case__gut_number__iexact=gut)
+
+    if file_name:
+        qs = qs.filter(
+            Q(file__icontains=file_name) |
+            Q(document_type__icontains=file_name) |
+            Q(section_code__icontains=file_name)
+        )
+
+    if apply_exact_level and district and not taluka and not village and not gut:
+        pass
+
+    return [
+        _serialize_process_chart_document_for_tool(doc)
+        for doc in qs.order_by('-created_at', '-id')
+        if doc.file
+    ]
+
+
 @login_required
 def doc_list_api(request):
     doc_type = request.GET.get('type', 'general')
+    if doc_type == 'process_chart':
+        return JsonResponse({'documents': _process_chart_documents_for_tool(request)})
+
     docs = Document.objects.filter(document_type=doc_type, user=request.user).order_by('-uploaded_at')
     matter_labels = dict(Document.MATTER_TYPE_CHOICES)
     data = []
@@ -4442,6 +4531,9 @@ def get_filtered_documents(request):
     """Return documents for the exact selected location level with real uploaded files only."""
     import re as _re
     doc_type = request.GET.get('type', 'general')
+    if doc_type == 'process_chart':
+        return JsonResponse({'documents': _process_chart_documents_for_tool(request, apply_exact_level=True)})
+
     district = request.GET.get('district') or None
     taluka   = request.GET.get('taluka')   or None
     village  = request.GET.get('village')  or None
