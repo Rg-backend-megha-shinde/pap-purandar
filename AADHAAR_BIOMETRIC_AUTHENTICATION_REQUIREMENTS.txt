@@ -1,0 +1,271 @@
+Aadhaar Biometric Authentication Requirements for LMRS Purandar Airport Portal
+============================================================================
+
+Purpose
+-------
+We want Aadhaar-based biometric authentication in the LMRS portal.
+
+The expected flow is:
+1. User provides Aadhaar number or Virtual ID.
+2. User gives consent for Aadhaar authentication.
+3. Operator captures fingerprint using Mantra MFS110 Registered Device service.
+4. The application sends the encrypted biometric capture to UIDAI through an approved Aadhaar authentication route.
+5. UIDAI verifies whether the fingerprint matches the Aadhaar holder.
+6. The application stores only the authentication result and audit metadata.
+
+
+Important Clarification
+-----------------------
+Aadhaar authentication is not a normal public API that any website can directly call.
+
+To use Aadhaar biometric authentication officially, the department or vendor must have UIDAI-approved access.
+
+UIDAI full form:
+Unique Identification Authority of India
+
+Aadhaar authentication access is usually available through one of these routes:
+
+1. Authentication User Agency
+   This is an organization approved by UIDAI to use Aadhaar authentication services.
+
+2. Sub Authentication User Agency
+   This is a department, project, or application that uses Aadhaar authentication under an already approved Authentication User Agency.
+
+3. Authentication Service Agency
+   This is the approved technical network/service provider that securely routes Aadhaar authentication requests to UIDAI.
+
+
+What We Need From Management / Department / Vendor
+--------------------------------------------------
+1. Confirm whether this land acquisition workflow is legally allowed to use Aadhaar biometric authentication.
+
+2. Confirm whether the department already has UIDAI Aadhaar authentication approval.
+
+3. Confirm whether the department is an approved Authentication User Agency.
+
+4. If the department is not an approved Authentication User Agency, confirm whether we can work under an existing approved Authentication User Agency as a Sub Authentication User Agency.
+
+5. Confirm which Authentication Service Agency will route our authentication requests to UIDAI.
+
+6. Get official permission for the exact use case:
+   Aadhaar fingerprint authentication for land acquisition consent/agreement verification.
+
+7. Get official API documentation from the approved agency/vendor.
+
+8. Get staging/test credentials.
+
+9. Get production credentials.
+
+10. Get agency code or Sub Authentication User Agency code.
+
+11. Get required signing certificates.
+
+12. Get required encryption certificates or public keys.
+
+13. Get request/response format specification.
+
+14. Get list of supported authentication modes:
+    - Fingerprint
+    - Iris
+    - Face
+    - One Time Password
+
+15. Get UIDAI/vendor error code documentation.
+
+16. Get audit logging requirements.
+
+17. Get data retention rules.
+
+18. Get compliance/security requirements before production use.
+
+
+Hardware and Operator-Side Requirements
+---------------------------------------
+1. UIDAI-compatible registered biometric device.
+
+2. Mantra MFS110 device, if approved for the selected Aadhaar authentication flow.
+
+3. Mantra device driver installed on the operator machine.
+
+4. Mantra Registered Device service installed on the operator machine.
+
+5. Device registration/activation completed if required.
+
+6. Browser must be able to access the local Registered Device service.
+
+Example local service:
+http://127.0.0.1:11100
+
+7. Operators must be trained for:
+   - Taking user consent
+   - Correct finger placement
+   - Retrying low-quality captures
+   - Cleaning scanner/finger when needed
+   - Handling failed biometric authentication
+   - Using alternate verification process when biometric fails
+
+
+Application Changes Needed
+--------------------------
+1. Add Aadhaar number or Virtual ID input.
+
+2. Prefer Virtual ID or masked Aadhaar where possible.
+
+3. Add explicit consent text and checkbox before biometric capture.
+
+4. Capture fingerprint using Mantra Registered Device service.
+
+5. Receive encrypted PID data from the Registered Device service.
+
+6. Send encrypted PID data immediately to backend for authentication.
+
+7. Backend should create Aadhaar authentication request as per official UIDAI/vendor specification.
+
+8. Backend should send the request through the approved Authentication Service Agency / Authentication User Agency route.
+
+9. Backend should receive UIDAI authentication response.
+
+10. Show clear result in UI:
+    - Aadhaar fingerprint verified
+    - Aadhaar fingerprint failed
+    - Biometric locked
+    - Poor quality
+    - Network failure
+    - Device not connected
+    - Registered Device service not running
+
+11. Add duplicate person check using Aadhaar reference hash.
+
+Example:
+If the same Aadhaar reference hash is already used in another case, show duplicate warning.
+
+12. Add exception handling path for genuine users whose biometric authentication fails.
+
+
+Database Storage Rules
+----------------------
+For Aadhaar authentication, the application should not permanently store raw fingerprint, biometric image, or PID data.
+
+Do not permanently store:
+- Raw fingerprint image
+- Fingerprint template
+- Aadhaar PID data
+- Biometric data from Aadhaar authentication
+- One Time Password used for Aadhaar authentication
+
+Store only allowed result/audit metadata, for example:
+
+{
+  "aadhaar_auth_status": "success",
+  "aadhaar_auth_transaction_id": "...",
+  "aadhaar_auth_error_code": "",
+  "aadhaar_auth_mode": "fingerprint",
+  "aadhaar_auth_provider": "mantra_mfs110",
+  "aadhaar_auth_device_id": "...",
+  "aadhaar_auth_quality": "90",
+  "aadhaar_auth_verified_at": "2026-07-14T10:30:00Z",
+  "aadhaar_reference_hash": "..."
+}
+
+
+Duplicate Detection Approach
+----------------------------
+Do not compare fingerprints locally when using Aadhaar authentication.
+
+UIDAI performs the fingerprint match against the Aadhaar holder.
+
+Our application should detect duplicate persons using Aadhaar reference hash.
+
+Example:
+1. Person authenticates successfully with Aadhaar.
+2. Application stores a hashed Aadhaar/Virtual ID reference.
+3. If the same hash appears in another case, show duplicate warning.
+
+
+Security and Compliance Requirements
+------------------------------------
+1. Use HTTPS in hosted environment.
+
+2. Keep Aadhaar authentication credentials only on backend server.
+
+3. Do not expose certificates, private keys, or API secrets in browser JavaScript.
+
+4. Do not store Aadhaar number in plain text unless legally approved.
+
+5. Prefer storing masked Aadhaar or hashed Aadhaar reference.
+
+6. Do not permanently store biometric PID data.
+
+7. Log only allowed audit metadata.
+
+8. Define retention policy for authentication logs.
+
+9. Maintain operator/user activity logs as required.
+
+10. Get legal/compliance approval before production rollout.
+
+
+Questions To Ask Vendor / Department
+------------------------------------
+1. Do we have UIDAI permission to use Aadhaar biometric authentication for this workflow?
+
+2. Is the department an approved Authentication User Agency?
+
+3. If not, which approved Authentication User Agency will we work under?
+
+4. Will we be a Sub Authentication User Agency?
+
+5. Which Authentication Service Agency will route requests to UIDAI?
+
+6. Can you provide staging credentials?
+
+7. Can you provide production credentials?
+
+8. Can you provide API documentation?
+
+9. Can you provide signing/encryption certificate requirements?
+
+10. Can you provide error code documentation?
+
+11. Are we allowed to use fingerprint authentication specifically?
+
+12. Are we allowed to use Mantra MFS110 for this flow?
+
+13. What metadata are we allowed to store?
+
+14. What data must not be stored?
+
+15. What exception process should we follow when Aadhaar authentication fails?
+
+
+Official UIDAI Links
+--------------------
+UIDAI Developer Section:
+https://uidai.gov.in/en/ecosystem/authentication-devices-documents/developer-section.html
+
+Authentication Ecosystem:
+https://uidai.gov.in/en/ecosystem/authentication-ecosystem.html
+
+Authentication Requesting Agency:
+https://uidai.gov.in/en/ecosystem/authentication-ecosystem/authentication-requesting-agency.html
+
+Authentication Service Agency:
+https://uidai.gov.in/en/ecosystem/authentication-ecosystem/authentication-service-agencies.html
+
+Authentication Devices and Documents:
+https://uidai.gov.in/en/ecosystem/authentication-devices-documents.html
+
+UIDAI Support and Frequently Asked Questions:
+https://uidai.gov.in/en/contact-support/have-any-question.html
+
+UIDAI Contact and Support:
+https://uidai.gov.in/en/contact-support.html
+
+
+Manager Summary
+---------------
+We can prepare the LMRS application UI and backend structure for Aadhaar biometric authentication.
+
+However, official Aadhaar fingerprint verification cannot be completed until the department or vendor provides UIDAI-approved authentication access, Authentication Service Agency route, credentials, certificates, API documentation, and use-case approval.
+
+Without UIDAI-approved access, the application can only capture fingerprint locally using Mantra Registered Device service. It cannot officially verify whether the fingerprint belongs to an Aadhaar holder.

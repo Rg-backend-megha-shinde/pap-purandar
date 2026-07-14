@@ -798,6 +798,35 @@
         }
     }
 
+    .pc-camera-device-picker {
+        display: grid;
+        gap: 0.35rem;
+        margin-top: 0.85rem;
+    }
+
+    .pc-camera-device-picker label {
+        color: #244271;
+        font-size: 0.78rem;
+        font-weight: 800;
+    }
+
+    .pc-camera-device-select {
+        width: 100%;
+        border: 1px solid #ccdbef;
+        border-radius: 0.65rem;
+        background: #fff;
+        color: #244271;
+        font-size: 0.84rem;
+        font-weight: 700;
+        padding: 0.6rem 0.75rem;
+    }
+
+    .pc-camera-device-help {
+        color: #6c82a6;
+        font-size: 0.76rem;
+        font-weight: 700;
+    }
+
     @media (max-width: 767px) {
         .pc-agreement-capture-grid {
             grid-template-columns: 1fr;
@@ -3078,6 +3107,13 @@
                 <div class="pc-face-ring" aria-hidden="true"></div>
                 <div class="pc-camera-guide-line" aria-hidden="true"></div>
             </div>
+            <div class="pc-camera-device-picker">
+                <label for="agreement-camera-device-select">Camera</label>
+                <select id="agreement-camera-device-select" class="pc-camera-device-select">
+                    <option value="">Default camera</option>
+                </select>
+                <span id="agreement-camera-device-help" class="pc-camera-device-help">Available cameras will appear after camera permission is allowed.</span>
+            </div>
             <p id="agreement-camera-modal-status" class="pc-capture-status">Align face inside the ring.</p>
         </div>
         <div class="border-t px-4 py-3 flex flex-wrap justify-end gap-2">
@@ -4174,6 +4210,7 @@
         let agreementFaceDetectionFrameId = null;
         let agreementFaceDetectionBusy = false;
         let agreementFaceAlignmentReady = false;
+        let agreementSelectedCameraDeviceId = '';
         let agreementSignatureInitialized = false;
         let agreementSignatureHasInk = false;
         let agreementBiometricAbortController = null;
@@ -4362,6 +4399,56 @@
             if (!agreementCameraStream) return;
             agreementCameraStream.getTracks().forEach((track) => track.stop());
             agreementCameraStream = null;
+        }
+
+        async function refreshAgreementCameraDevices() {
+            const select = document.getElementById('agreement-camera-device-select');
+            const help = document.getElementById('agreement-camera-device-help');
+            if (!(select instanceof HTMLSelectElement) || !navigator.mediaDevices?.enumerateDevices) return;
+
+            try {
+                const devices = await navigator.mediaDevices.enumerateDevices();
+                const cameras = devices.filter((device) => device.kind === 'videoinput');
+                const previousValue = agreementSelectedCameraDeviceId || select.value || '';
+                select.innerHTML = '';
+
+                if (!cameras.length) {
+                    const option = document.createElement('option');
+                    option.value = '';
+                    option.textContent = 'No camera found';
+                    select.appendChild(option);
+                    select.disabled = true;
+                    if (help) help.textContent = 'No connected camera was detected.';
+                    return;
+                }
+
+                cameras.forEach((camera, index) => {
+                    const option = document.createElement('option');
+                    option.value = camera.deviceId;
+                    option.textContent = camera.label || `Camera ${index + 1}`;
+                    select.appendChild(option);
+                });
+
+                const activeDeviceExists = cameras.some((camera) => camera.deviceId === previousValue);
+                select.value = activeDeviceExists ? previousValue : (cameras[0]?.deviceId || '');
+                agreementSelectedCameraDeviceId = select.value;
+                select.disabled = cameras.length <= 1;
+                if (help) {
+                    help.textContent = cameras.length === 1
+                        ? 'Only one camera is connected.'
+                        : 'Select a camera to switch the live preview.';
+                }
+            } catch (error) {
+                select.disabled = true;
+                if (help) help.textContent = 'Camera list is not available in this browser.';
+            }
+        }
+
+        async function handleAgreementCameraDeviceChange(event) {
+            const select = event?.target;
+            if (!(select instanceof HTMLSelectElement)) return;
+            agreementSelectedCameraDeviceId = select.value;
+            await startAgreementCamera(agreementSelectedCameraDeviceId);
         }
 
         function setAgreementPhotoCaptureEnabled(enabled = false) {
@@ -4613,7 +4700,7 @@
             setCaptureStatus('agreement-photo-status', hasPhoto ? 'Photo captured.' : 'Photo not captured', hasPhoto ? 'success' : '');
         }
 
-        async function startAgreementCamera() {
+        async function startAgreementCamera(deviceId = agreementSelectedCameraDeviceId) {
             const video = document.getElementById('agreement-webcam-preview');
             if (!(video instanceof HTMLVideoElement)) return;
             if (!navigator.mediaDevices?.getUserMedia) {
@@ -4624,8 +4711,23 @@
                 stopAgreementCamera();
                 openAgreementCameraModal();
                 setCaptureStatus('agreement-camera-modal-status', 'Starting camera...', '');
-                agreementCameraStream = await navigator.mediaDevices.getUserMedia({ video: true });
+                const videoConstraints = deviceId
+                    ? { deviceId: { exact: deviceId } }
+                    : true;
+                try {
+                    agreementCameraStream = await navigator.mediaDevices.getUserMedia({ video: videoConstraints });
+                } catch (error) {
+                    if (!deviceId) throw error;
+                    agreementSelectedCameraDeviceId = '';
+                    agreementCameraStream = await navigator.mediaDevices.getUserMedia({ video: true });
+                }
+                const activeVideoTrack = agreementCameraStream.getVideoTracks()[0];
+                const activeDeviceId = activeVideoTrack?.getSettings?.().deviceId || deviceId || '';
+                if (activeDeviceId) {
+                    agreementSelectedCameraDeviceId = activeDeviceId;
+                }
                 video.srcObject = agreementCameraStream;
+                await refreshAgreementCameraDevices();
                 await video.play().catch(() => {});
                 video.onloadedmetadata = () => startAgreementFaceDetection(video);
                 if (video.readyState >= 2) {
@@ -4955,6 +5057,7 @@
                 }
             });
             document.getElementById('capture-photo-btn')?.addEventListener('click', captureAgreementPhoto);
+            document.getElementById('agreement-camera-device-select')?.addEventListener('change', handleAgreementCameraDeviceChange);
             document.getElementById('retake-photo-btn')?.addEventListener('click', retakeAgreementPhoto);
             document.getElementById('clear-photo-btn')?.addEventListener('click', clearAgreementPhoto);
             document.getElementById('close-agreement-camera-modal-btn')?.addEventListener('click', closeAgreementCameraModal);
