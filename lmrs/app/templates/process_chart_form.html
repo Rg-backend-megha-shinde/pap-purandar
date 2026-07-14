@@ -424,6 +424,185 @@
         grid-column: 1 / -1;
     }
 
+    .pc-biometric-scanner {
+        margin-top: 0.85rem;
+        display: flex;
+        align-items: center;
+        gap: 0.85rem;
+        border: 1px solid #dce8f7;
+        border-radius: 0.65rem;
+        background: #f8fbff;
+        padding: 0.85rem;
+    }
+
+    .pc-biometric-scan-icon {
+        position: relative;
+        display: grid;
+        width: 76px;
+        height: 76px;
+        min-width: 76px;
+        place-items: center;
+        overflow: hidden;
+        border: 1px solid #bfd3ef;
+        border-radius: 0.65rem;
+        background: #ffffff;
+        color: #4f6f9f;
+    }
+
+    .pc-biometric-scan-icon svg {
+        width: 48px;
+        height: 48px;
+        stroke: currentColor;
+    }
+
+    .pc-biometric-scan-line {
+        position: absolute;
+        left: 10px;
+        right: 10px;
+        top: 12px;
+        height: 3px;
+        border-radius: 9999px;
+        background: #125fcb;
+        box-shadow: 0 0 14px rgba(18, 95, 203, 0.55);
+        opacity: 0;
+    }
+
+    .pc-biometric-scanner-text {
+        min-width: 0;
+    }
+
+    .pc-biometric-scanner-title {
+        color: #244271;
+        font-size: 0.92rem;
+        font-weight: 900;
+    }
+
+    .pc-biometric-scanner-help {
+        margin-top: 0.18rem;
+        color: #6c82a6;
+        font-size: 0.8rem;
+        font-weight: 700;
+    }
+
+    .pc-biometric-scanner.is-scanning {
+        border-color: #9ec3f7;
+        background: #f2f8ff;
+    }
+
+    .pc-biometric-scanner.is-scanning .pc-biometric-scan-icon {
+        color: #125fcb;
+        border-color: #9ec3f7;
+    }
+
+    .pc-biometric-scanner.is-scanning .pc-biometric-scan-line {
+        opacity: 1;
+        animation: pcBiometricScan 1.15s ease-in-out infinite;
+    }
+
+    .pc-biometric-scanner.is-success {
+        border-color: #a7d8b6;
+        background: #f4fbf6;
+    }
+
+    .pc-biometric-scanner.is-success .pc-biometric-scan-icon {
+        color: #166534;
+        border-color: #a7d8b6;
+    }
+
+    .pc-biometric-scanner.is-error {
+        border-color: #f0b4b4;
+        background: #fff7f7;
+    }
+
+    .pc-biometric-scanner.is-error .pc-biometric-scan-icon {
+        color: #b91c1c;
+        border-color: #f0b4b4;
+    }
+
+    @keyframes pcBiometricScan {
+        0% {
+            transform: translateY(0);
+        }
+        50% {
+            transform: translateY(49px);
+        }
+        100% {
+            transform: translateY(0);
+        }
+    }
+
+    .pc-biometric-summary {
+        margin-top: 0.85rem;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.65rem;
+    }
+
+    .pc-biometric-summary-item {
+        min-height: 54px;
+        border: 1px solid #dce8f7;
+        border-radius: 0.5rem;
+        background: #f8fbff;
+        padding: 0.65rem 0.75rem;
+    }
+
+    .pc-biometric-summary-label {
+        display: block;
+        color: #6c82a6;
+        font-size: 0.72rem;
+        font-weight: 800;
+        text-transform: uppercase;
+    }
+
+    .pc-biometric-summary-value {
+        display: block;
+        margin-top: 0.18rem;
+        color: #244271;
+        font-size: 0.84rem;
+        font-weight: 800;
+        overflow-wrap: anywhere;
+    }
+
+    @media (max-width: 640px) {
+        .pc-biometric-summary {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .pc-fingerprint-preview-wrap {
+        margin-top: 0.85rem;
+        border: 1px dashed #bfd3ef;
+        border-radius: 0.65rem;
+        background: #f8fbff;
+        padding: 0.75rem;
+    }
+
+    .pc-fingerprint-preview-wrap.hidden {
+        display: none;
+    }
+
+    .pc-fingerprint-preview-img {
+        display: block;
+        max-width: 180px;
+        max-height: 180px;
+        object-fit: contain;
+        border: 1px solid #dce8f7;
+        border-radius: 0.5rem;
+        background: #fff;
+    }
+
+    .pc-fingerprint-preview-img.hidden {
+        display: none;
+    }
+
+    .pc-fingerprint-preview-note {
+        display: block;
+        margin-top: 0.35rem;
+        color: #6c82a6;
+        font-size: 0.8rem;
+        font-weight: 700;
+    }
+
     .pc-capture-surface {
         width: 100%;
         min-height: 180px;
@@ -570,6 +749,31 @@
             0 0 0 999px rgba(15, 23, 42, 0.25),
             0 0 0 7px rgba(18, 95, 203, 0.32);
         pointer-events: none;
+        transition: border-color 140ms ease, box-shadow 140ms ease;
+    }
+
+    .pc-camera-frame.is-face-ready .pc-face-ring {
+        border-color: rgba(34, 197, 94, 0.96);
+        box-shadow:
+            0 0 0 999px rgba(15, 23, 42, 0.2),
+            0 0 0 7px rgba(34, 197, 94, 0.32),
+            0 0 22px rgba(34, 197, 94, 0.45);
+    }
+
+    .pc-camera-frame.is-face-misaligned .pc-face-ring {
+        border-color: rgba(220, 38, 38, 0.96);
+        box-shadow:
+            0 0 0 999px rgba(15, 23, 42, 0.26),
+            0 0 0 7px rgba(220, 38, 38, 0.3),
+            0 0 22px rgba(220, 38, 38, 0.4);
+    }
+
+    .pc-camera-frame.is-face-unavailable .pc-face-ring {
+        border-color: rgba(245, 158, 11, 0.96);
+        box-shadow:
+            0 0 0 999px rgba(15, 23, 42, 0.22),
+            0 0 0 7px rgba(245, 158, 11, 0.32),
+            0 0 22px rgba(245, 158, 11, 0.4);
     }
 
     .pc-camera-guide-line {
@@ -594,34 +798,6 @@
         }
     }
 
-    .pc-ring-adjuster {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 0.75rem;
-        margin-top: 0.9rem;
-        padding: 0.85rem;
-        border: 1px solid #d8e4f2;
-        border-radius: 0.75rem;
-        background: #f8fbff;
-    }
-
-    .pc-ring-adjuster label {
-        color: #244271;
-        font-size: 0.76rem;
-        font-weight: 800;
-    }
-
-    .pc-ring-adjuster input[type="range"] {
-        width: 100%;
-        accent-color: #125fcb;
-    }
-
-    .pc-ring-adjuster-value {
-        color: #5c78a5;
-        font-size: 0.72rem;
-        font-weight: 700;
-    }
-
     @media (max-width: 767px) {
         .pc-agreement-capture-grid {
             grid-template-columns: 1fr;
@@ -630,10 +806,6 @@
         .pc-webcam-card {
             max-width: 100%;
             min-height: 323px;
-        }
-
-        .pc-ring-adjuster {
-            grid-template-columns: repeat(2, minmax(0, 1fr));
         }
     }
 
@@ -659,6 +831,23 @@
         border-color: #125fcb;
         color: #125fcb;
         background: #edf5ff;
+    }
+
+    .pc-capture-btn:disabled {
+        cursor: not-allowed;
+        opacity: 0.6;
+    }
+
+    .pc-capture-btn.is-danger {
+        border-color: #fecaca;
+        color: #b91c1c;
+        background: #fff7f7;
+    }
+
+    .pc-capture-btn.is-danger:hover {
+        border-color: #b91c1c;
+        color: #991b1b;
+        background: #fee2e2;
     }
 
     .pc-capture-status {
@@ -2496,6 +2685,7 @@
                                         </div>
                                         <div id="agreement-photo-actions" class="pc-capture-actions is-hidden">
                                             <button type="button" id="retake-photo-btn" class="pc-capture-btn">Retake Photo</button>
+                                            <button type="button" id="clear-photo-btn" class="pc-capture-btn">Clear Photo</button>
                                         </div>
                                         <p id="agreement-photo-status" class="pc-capture-status">Photo not captured</p>
                                     </div>
@@ -2517,16 +2707,60 @@
                                     <div class="pc-capture-actions mt-0">
                                         <button type="button" id="capture-thumb-btn" class="pc-capture-btn">Capture Thumb Impression</button>
                                         <button type="button" id="retry-thumb-btn" class="pc-capture-btn">Retry</button>
+                                        <button type="button" id="clear-thumb-btn" class="pc-capture-btn hidden">Clear Thumb</button>
+                                        <button type="button" id="cancel-thumb-btn" class="pc-capture-btn is-danger hidden">Cancel Capture</button>
                                     </div>
                                     <p id="thumb-capture-status" class="pc-capture-status">Not captured</p>
-                                    <p id="thumb-quality" class="pc-capture-status"></p>
-                                    <p id="thumb-device-id" class="pc-capture-status"></p>
+                                    <div id="thumb-scanner-state" class="pc-biometric-scanner" aria-live="polite">
+                                        <div class="pc-biometric-scan-icon" aria-hidden="true">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M12 11c0 2.8-1.2 5.5-3.2 7.4"></path>
+                                                <path d="M15.1 18.7c.7-1.8 1.1-3.9 1.1-6.1a4.2 4.2 0 0 0-8.4 0"></path>
+                                                <path d="M6.3 16.3c.9-1.1 1.5-2.4 1.5-3.8"></path>
+                                                <path d="M18.6 16.8c.4-1.4.6-2.8.6-4.3a7.2 7.2 0 0 0-14.4 0"></path>
+                                                <path d="M10.2 21c2-2.4 3-5.2 3-8.4a1.2 1.2 0 0 0-2.4 0c0 2.1-.8 4.2-2.2 5.8"></path>
+                                                <path d="M4.2 19.2c1.3-1.4 2.1-3.1 2.4-5"></path>
+                                                <path d="M20.5 20.2c.6-1.5 1-3.1 1.2-4.8"></path>
+                                            </svg>
+                                            <span class="pc-biometric-scan-line"></span>
+                                        </div>
+                                        <div class="pc-biometric-scanner-text">
+                                            <div id="thumb-scanner-title" class="pc-biometric-scanner-title">Ready to capture</div>
+                                            <div id="thumb-scanner-help" class="pc-biometric-scanner-help">Click capture and place thumb on the scanner.</div>
+                                        </div>
+                                    </div>
+                                    <div id="thumb-fingerprint-preview-wrap" class="pc-fingerprint-preview-wrap hidden">
+                                        <span class="pc-biometric-summary-label">Fingerprint Preview</span>
+                                        <img id="thumb-fingerprint-preview" class="pc-fingerprint-preview-img" alt="Fingerprint preview">
+                                        <span id="thumb-fingerprint-preview-note" class="pc-fingerprint-preview-note"></span>
+                                    </div>
+                                    <div class="pc-biometric-summary" aria-live="polite">
+                                        <div class="pc-biometric-summary-item">
+                                            <span class="pc-biometric-summary-label">Quality</span>
+                                            <span id="thumb-quality" class="pc-biometric-summary-value">-</span>
+                                            <span id="thumb-quality-note" class="pc-biometric-scanner-help">Minimum required: 60</span>
+                                        </div>
+                                        <div class="pc-biometric-summary-item">
+                                            <span class="pc-biometric-summary-label">Device</span>
+                                            <span id="thumb-provider" class="pc-biometric-summary-value">-</span>
+                                        </div>
+                                        <div class="pc-biometric-summary-item">
+                                            <span class="pc-biometric-summary-label">Device ID</span>
+                                            <span id="thumb-device-id" class="pc-biometric-summary-value">-</span>
+                                        </div>
+                                        <div class="pc-biometric-summary-item">
+                                            <span class="pc-biometric-summary-label">Captured At</span>
+                                            <span id="thumb-captured-at" class="pc-biometric-summary-value">-</span>
+                                        </div>
+                                    </div>
                                     <input type="hidden" name="agreement_fingerprint_image" id="agreement_fingerprint_image">
                                     <input type="hidden" name="agreement_fingerprint_template" id="agreement_fingerprint_template">
+                                    <input type="hidden" name="agreement_biometric_pid_data" id="agreement_biometric_pid_data">
                                     <input type="hidden" name="agreement_fingerprint_quality" id="agreement_fingerprint_quality">
                                     <input type="hidden" name="agreement_fingerprint_device_id" id="agreement_fingerprint_device_id">
                                     <input type="hidden" name="agreement_biometric_captured_at" id="agreement_biometric_captured_at">
                                     <input type="hidden" name="agreement_biometric_provider" id="agreement_biometric_provider">
+                                    <input type="hidden" name="agreement_biometric_status" id="agreement_biometric_status">
                                 </div>
                             </div>
                         </div>
@@ -2844,23 +3078,9 @@
                 <div class="pc-face-ring" aria-hidden="true"></div>
                 <div class="pc-camera-guide-line" aria-hidden="true"></div>
             </div>
-            <div class="pc-ring-adjuster" id="agreement-ring-adjuster">
-                <label>
-                    Width
-                    <input type="range" data-ring-control="w" min="20" max="46" value="30">
-                    <span class="pc-ring-adjuster-value" data-ring-value="w">30</span>
-                </label>
-                <label>
-                    Height
-                    <input type="range" data-ring-control="h" min="38" max="74" value="58">
-                    <span class="pc-ring-adjuster-value" data-ring-value="h">58</span>
-                </label>
-            </div>
             <p id="agreement-camera-modal-status" class="pc-capture-status">Align face inside the ring.</p>
         </div>
         <div class="border-t px-4 py-3 flex flex-wrap justify-end gap-2">
-            <button type="button" id="reset-ring-adjuster-btn" class="pc-capture-btn">Reset Ring</button>
-            <button type="button" id="save-ring-adjuster-btn" class="pc-capture-btn">Save Ring</button>
             <button type="button" id="cancel-agreement-camera-btn" class="pc-capture-btn">Cancel</button>
             <button type="button" id="capture-photo-btn" class="pc-capture-btn">Capture Photo</button>
         </div>
@@ -3015,12 +3235,18 @@
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script src="{% static 'js/biometric/mockBiometricAdapter.js' %}"></script>
 <script src="{% static 'js/biometric/genericHttpBiometricAdapter.js' %}"></script>
+<script src="{% static 'js/biometric/adapters/mantraMfs110Adapter.js' %}"></script>
 <script src="{% static 'js/biometric/biometricService.js' %}"></script>
 <script>
     window.BIOMETRIC_CONFIG = {
-        provider: 'mock',
-        captureUrl: 'http://127.0.0.1:11100/capture',
+        provider: 'mantra_mfs110',
+        rdServiceUrl: 'http://127.0.0.1:11100',
+        captureUrl: 'http://127.0.0.1:11100/rd/capture',
+        discoveryMethod: 'RDSERVICE',
+        method: 'CAPTURE',
         minQuality: 60,
+        timeoutMs: 15000,
+        showFingerprintPreview: false,
     };
 </script>
 <script>
@@ -3943,10 +4169,16 @@
         }
 
         let agreementCameraStream = null;
+        let agreementMediaPipeVision = null;
+        let agreementFaceDetector = null;
+        let agreementFaceDetectionFrameId = null;
+        let agreementFaceDetectionBusy = false;
+        let agreementFaceAlignmentReady = false;
         let agreementSignatureInitialized = false;
         let agreementSignatureHasInk = false;
+        let agreementBiometricAbortController = null;
+        let agreementBiometricCaptureCancelled = false;
         const agreementRingDefaults = { w: 30, h: 58 };
-        const agreementRingStorageKey = 'pcAgreementCameraRingSettings';
 
         function setCaptureStatus(elementId, message, state = '') {
             const element = document.getElementById(elementId);
@@ -3956,10 +4188,365 @@
             element.classList.toggle('is-success', state === 'success');
         }
 
+        function formatAgreementBiometricDate(value) {
+            if (!value) return '-';
+            const date = new Date(value);
+            if (Number.isNaN(date.getTime())) return String(value);
+            return date.toLocaleString('en-IN', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: true,
+            });
+        }
+
+        function getAgreementBiometricProviderLabel(provider) {
+            return provider === 'mantra_mfs110' ? 'Mantra MFS110 L1' : (provider || '-');
+        }
+
+        function isFingerprintPreviewEnabled() {
+            return window.BIOMETRIC_CONFIG?.showFingerprintPreview === true;
+        }
+
+        function setAgreementFingerprintPreview(fingerprintImage = '') {
+            const previewWrap = document.getElementById('thumb-fingerprint-preview-wrap');
+            const previewImage = document.getElementById('thumb-fingerprint-preview');
+            const previewNote = document.getElementById('thumb-fingerprint-preview-note');
+            const previewEnabled = isFingerprintPreviewEnabled();
+            const hasImage = Boolean(String(fingerprintImage || '').trim());
+            previewWrap?.classList.toggle('hidden', !previewEnabled || !hasImage);
+            if (previewNote) {
+                previewNote.textContent = '';
+            }
+            if (!(previewImage instanceof HTMLImageElement)) return;
+            previewImage.classList.toggle('hidden', !hasImage);
+            if (previewEnabled && hasImage) {
+                previewImage.src = fingerprintImage;
+            } else {
+                previewImage.removeAttribute('src');
+            }
+        }
+
+        function getAgreementBiometricQualityLabel(quality) {
+            const qualityText = String(quality ?? '').trim();
+            const qualityNumber = Number(qualityText);
+            const minQuality = Number(window.BIOMETRIC_CONFIG?.minQuality || 60);
+            if (!qualityText || !Number.isFinite(qualityNumber)) {
+                return `Minimum required: ${minQuality}`;
+            }
+            if (qualityNumber < minQuality) {
+                return `Poor quality. Minimum required: ${minQuality}. Retry capture.`;
+            }
+            if (qualityNumber >= 80) {
+                return 'Excellent quality';
+            }
+            return 'Good quality';
+        }
+
+        function setAgreementBiometricCaptureButtons(isCapturing = false) {
+            const captureButton = document.getElementById('capture-thumb-btn');
+            const retryButton = document.getElementById('retry-thumb-btn');
+            const cancelButton = document.getElementById('cancel-thumb-btn');
+            const clearButton = document.getElementById('clear-thumb-btn');
+            const hasBiometricValue = [
+                'agreement_biometric_status',
+                'agreement_biometric_captured_at',
+                'agreement_fingerprint_quality',
+                'agreement_fingerprint_device_id',
+                'agreement_biometric_pid_data',
+            ].some((id) => String(document.getElementById(id)?.value || '').trim());
+            if (captureButton instanceof HTMLButtonElement) captureButton.disabled = isCapturing;
+            if (retryButton instanceof HTMLButtonElement) retryButton.disabled = isCapturing;
+            if (cancelButton instanceof HTMLButtonElement) {
+                cancelButton.classList.toggle('hidden', !isCapturing);
+                cancelButton.disabled = !isCapturing;
+            }
+            if (clearButton instanceof HTMLButtonElement) {
+                clearButton.classList.toggle('hidden', isCapturing || !hasBiometricValue);
+                clearButton.disabled = isCapturing || !hasBiometricValue;
+            }
+        }
+
+        function setAgreementBiometricSummary({ quality = '', deviceId = '', capturedAt = '', provider = '', status = '' } = {}) {
+            const qualityElement = document.getElementById('thumb-quality');
+            const qualityNoteElement = document.getElementById('thumb-quality-note');
+            const providerElement = document.getElementById('thumb-provider');
+            const deviceElement = document.getElementById('thumb-device-id');
+            const capturedAtElement = document.getElementById('thumb-captured-at');
+            if (qualityElement) qualityElement.textContent = quality !== null && quality !== undefined && String(quality).trim() ? String(quality) : '-';
+            if (qualityNoteElement) qualityNoteElement.textContent = getAgreementBiometricQualityLabel(quality);
+            if (providerElement) providerElement.textContent = getAgreementBiometricProviderLabel(provider);
+            if (deviceElement) deviceElement.textContent = deviceId ? String(deviceId) : '-';
+            if (capturedAtElement) capturedAtElement.textContent = formatAgreementBiometricDate(capturedAt);
+
+            const resolvedStatus = status || document.getElementById('agreement_biometric_status')?.value || '';
+            const hasCapturedMetadata = [quality, deviceId, capturedAt, provider].some((value) => String(value ?? '').trim());
+            if (resolvedStatus === 'failed') {
+                setAgreementBiometricScannerState('error');
+            } else if (resolvedStatus === 'captured' || hasCapturedMetadata) {
+                setAgreementBiometricScannerState('success');
+            } else {
+                setAgreementBiometricScannerState('idle');
+            }
+        }
+
+        function setAgreementBiometricScannerState(state = 'idle') {
+            const scanner = document.getElementById('thumb-scanner-state');
+            const title = document.getElementById('thumb-scanner-title');
+            const help = document.getElementById('thumb-scanner-help');
+            if (!scanner || !title || !help) return;
+
+            const states = {
+                idle: {
+                    title: 'Ready to capture',
+                    help: 'Click capture and place thumb on the scanner.',
+                },
+                scanning: {
+                    title: 'Scanning thumb impression...',
+                    help: 'Keep thumb steady on the scanner until capture completes.',
+                },
+                success: {
+                    title: 'Captured',
+                    help: 'Thumb impression stored successfully. You can remove finger now.',
+                },
+                error: {
+                    title: 'Capture failed',
+                    help: 'Check the scanner, place thumb again, and retry.',
+                },
+            };
+            const selected = states[state] || states.idle;
+            scanner.classList.toggle('is-scanning', state === 'scanning');
+            scanner.classList.toggle('is-success', state === 'success');
+            scanner.classList.toggle('is-error', state === 'error');
+            title.textContent = selected.title;
+            help.textContent = selected.help;
+        }
+
+        function cancelAgreementThumbCapture() {
+            if (!agreementBiometricAbortController) return;
+            agreementBiometricCaptureCancelled = true;
+            agreementBiometricAbortController.abort();
+            setAgreementBiometricScannerState('idle');
+            setCaptureStatus('thumb-capture-status', 'Capture cancelled. Place thumb again and retry when ready.', '');
+            setAgreementBiometricCaptureButtons(false);
+        }
+
+        function clearAgreementThumbImpression() {
+            if (agreementBiometricAbortController) {
+                cancelAgreementThumbCapture();
+            }
+            [
+                'agreement_fingerprint_image',
+                'agreement_fingerprint_template',
+                'agreement_biometric_pid_data',
+                'agreement_fingerprint_quality',
+                'agreement_fingerprint_device_id',
+                'agreement_biometric_captured_at',
+                'agreement_biometric_provider',
+                'agreement_biometric_status',
+            ].forEach((id) => {
+                const field = document.getElementById(id);
+                if (field instanceof HTMLInputElement) field.value = '';
+            });
+            setAgreementBiometricSummary();
+            setAgreementFingerprintPreview('');
+            setAgreementBiometricScannerState('idle');
+            setCaptureStatus('thumb-capture-status', 'Thumb impression cleared. Capture again when ready.', '');
+            setAgreementBiometricCaptureButtons(false);
+        }
+
         function stopAgreementCamera() {
+            stopAgreementFaceDetection();
             if (!agreementCameraStream) return;
             agreementCameraStream.getTracks().forEach((track) => track.stop());
             agreementCameraStream = null;
+        }
+
+        function setAgreementPhotoCaptureEnabled(enabled = false) {
+            const captureButton = document.getElementById('capture-photo-btn');
+            if (captureButton instanceof HTMLButtonElement) {
+                captureButton.disabled = !enabled;
+            }
+        }
+
+        function setAgreementFaceGuideState(state = 'neutral', message = 'Align face inside the ring.') {
+            const frame = document.querySelector('.pc-camera-frame');
+            if (frame instanceof HTMLElement) {
+                frame.classList.toggle('is-face-ready', state === 'ready');
+                frame.classList.toggle('is-face-misaligned', state === 'misaligned');
+                frame.classList.toggle('is-face-unavailable', state === 'unavailable');
+            }
+            agreementFaceAlignmentReady = state === 'ready';
+            setAgreementPhotoCaptureEnabled(agreementFaceAlignmentReady);
+            const statusState = state === 'ready' ? 'success' : (state === 'misaligned' ? 'error' : '');
+            setCaptureStatus('agreement-camera-modal-status', message, statusState);
+        }
+
+        function stopAgreementFaceDetection() {
+            if (agreementFaceDetectionFrameId) {
+                window.cancelAnimationFrame(agreementFaceDetectionFrameId);
+                agreementFaceDetectionFrameId = null;
+            }
+            agreementFaceDetectionBusy = false;
+            agreementFaceAlignmentReady = false;
+            setAgreementFaceGuideState('neutral', 'Align face inside the ring.');
+        }
+
+        function getAgreementLargestFace(faces = []) {
+            return faces.reduce((largest, face) => {
+                const box = face?.boundingBox;
+                if (!box) return largest;
+                const area = Number(box.width || 0) * Number(box.height || 0);
+                const largestArea = Number(largest?.boundingBox?.width || 0) * Number(largest?.boundingBox?.height || 0);
+                return area > largestArea ? face : largest;
+            }, null);
+        }
+
+        function getAgreementVideoContentRect(video) {
+            const rect = video.getBoundingClientRect();
+            const videoWidth = Number(video.videoWidth || 0);
+            const videoHeight = Number(video.videoHeight || 0);
+            if (!rect.width || !rect.height || !videoWidth || !videoHeight) return null;
+            const scale = Math.max(rect.width / videoWidth, rect.height / videoHeight);
+            const renderedWidth = videoWidth * scale;
+            const renderedHeight = videoHeight * scale;
+            return {
+                left: rect.left + (rect.width - renderedWidth) / 2,
+                top: rect.top + (rect.height - renderedHeight) / 2,
+                scale,
+            };
+        }
+
+        function isAgreementFaceInsideRing(video, face) {
+            const rawBox = face?.boundingBox || face?.locationData?.relativeBoundingBox || null;
+            const ring = document.querySelector('.pc-face-ring');
+            const mapping = getAgreementVideoContentRect(video);
+            if (!rawBox || !(ring instanceof HTMLElement) || !mapping) return false;
+            const videoWidth = Number(video.videoWidth || 0);
+            const videoHeight = Number(video.videoHeight || 0);
+            const isRelativeBox = rawBox.xmin !== undefined || rawBox.ymin !== undefined;
+            const box = isRelativeBox
+                ? {
+                    x: Number(rawBox.xmin || 0) * videoWidth,
+                    y: Number(rawBox.ymin || 0) * videoHeight,
+                    width: Number(rawBox.width || 0) * videoWidth,
+                    height: Number(rawBox.height || 0) * videoHeight,
+                }
+                : {
+                    x: Number(rawBox.originX ?? rawBox.x ?? 0),
+                    y: Number(rawBox.originY ?? rawBox.y ?? 0),
+                    width: Number(rawBox.width || 0),
+                    height: Number(rawBox.height || 0),
+                };
+            const faceRect = {
+                left: mapping.left + box.x * mapping.scale,
+                top: mapping.top + box.y * mapping.scale,
+                width: box.width * mapping.scale,
+                height: box.height * mapping.scale,
+            };
+            faceRect.right = faceRect.left + faceRect.width;
+            faceRect.bottom = faceRect.top + faceRect.height;
+
+            const ringRect = ring.getBoundingClientRect();
+            const toleranceX = ringRect.width * 0.14;
+            const toleranceY = ringRect.height * 0.12;
+            const faceCenterX = faceRect.left + faceRect.width / 2;
+            const faceCenterY = faceRect.top + faceRect.height / 2;
+            const centerInside =
+                faceCenterX >= ringRect.left &&
+                faceCenterX <= ringRect.right &&
+                faceCenterY >= ringRect.top &&
+                faceCenterY <= ringRect.bottom;
+            const sizeReasonable =
+                faceRect.width >= ringRect.width * 0.28 &&
+                faceRect.height >= ringRect.height * 0.28 &&
+                faceRect.width <= ringRect.width * 1.18 &&
+                faceRect.height <= ringRect.height * 1.18;
+            const boundsInside =
+                faceRect.left >= ringRect.left - toleranceX &&
+                faceRect.right <= ringRect.right + toleranceX &&
+                faceRect.top >= ringRect.top - toleranceY &&
+                faceRect.bottom <= ringRect.bottom + toleranceY;
+            return centerInside && sizeReasonable && boundsInside;
+        }
+
+        async function runAgreementFaceDetection(video) {
+            if (!(video instanceof HTMLVideoElement) || !agreementFaceDetector) {
+                return;
+            }
+            if (agreementFaceDetectionBusy) return;
+            if (!agreementCameraStream || video.readyState < 2) {
+                agreementFaceDetectionFrameId = window.requestAnimationFrame(() => runAgreementFaceDetection(video));
+                return;
+            }
+            agreementFaceDetectionBusy = true;
+            try {
+                const result = agreementFaceDetector.detectForVideo(video, performance.now());
+                const detections = result?.detections || [];
+                const face = getAgreementLargestFace(detections);
+                if (!face) {
+                    setAgreementFaceGuideState('misaligned', 'No face detected. Align face inside the ring.');
+                } else if (isAgreementFaceInsideRing(video, face)) {
+                    setAgreementFaceGuideState('ready', 'Face aligned. Ready to capture.');
+                } else {
+                    setAgreementFaceGuideState('misaligned', 'Move face fully inside the ring.');
+                }
+            } catch (error) {
+                setAgreementFaceGuideState('neutral', 'Align face inside the ring.');
+            } finally {
+                agreementFaceDetectionBusy = false;
+                if (agreementCameraStream) {
+                    agreementFaceDetectionFrameId = window.requestAnimationFrame(() => runAgreementFaceDetection(video));
+                }
+            }
+        }
+
+        async function initAgreementMediaPipeFaceDetector() {
+            if (agreementFaceDetector) return agreementFaceDetector;
+            const version = '0.10.14';
+            const moduleUrls = [
+                `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${version}`,
+                `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${version}/vision_bundle.mjs`,
+            ];
+            const wasmUrl = `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${version}/wasm`;
+            const modelUrl = 'https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_short_range/float16/latest/blaze_face_short_range.tflite';
+            let visionModule = null;
+            for (const moduleUrl of moduleUrls) {
+                try {
+                    visionModule = await import(moduleUrl);
+                    break;
+                } catch (error) {
+                    visionModule = null;
+                }
+            }
+            if (!visionModule) {
+                throw new Error('MediaPipe face detector module could not load.');
+            }
+            const { FaceDetector, FilesetResolver } = visionModule;
+            agreementMediaPipeVision = agreementMediaPipeVision || await FilesetResolver.forVisionTasks(wasmUrl);
+            agreementFaceDetector = await FaceDetector.createFromOptions(agreementMediaPipeVision, {
+                baseOptions: {
+                    modelAssetPath: modelUrl,
+                },
+                runningMode: 'VIDEO',
+                minDetectionConfidence: 0.5,
+            });
+            return agreementFaceDetector;
+        }
+
+        async function startAgreementFaceDetection(video) {
+            stopAgreementFaceDetection();
+            try {
+                setAgreementFaceGuideState('neutral', 'Loading face alignment model...');
+                await initAgreementMediaPipeFaceDetector();
+                setAgreementFaceGuideState('misaligned', 'No face detected. Align face inside the ring.');
+                agreementFaceDetectionFrameId = window.requestAnimationFrame(() => runAgreementFaceDetection(video));
+            } catch (error) {
+                agreementFaceDetector = null;
+                setAgreementFaceGuideState('unavailable', 'Face alignment model could not load. Check internet/model access and try again.');
+            }
         }
 
         function closeAgreementCameraModal() {
@@ -3975,7 +4562,9 @@
             modal?.classList.remove('hidden');
             if (modal instanceof HTMLElement) modal.style.display = 'flex';
             document.body.style.overflow = 'hidden';
-            applyAgreementRingSettings(readAgreementRingSettings());
+            agreementFaceAlignmentReady = false;
+            setAgreementPhotoCaptureEnabled(false);
+            applyAgreementRingSettings();
         }
 
         function normalizeAgreementRingSettings(settings = {}) {
@@ -3990,24 +4579,6 @@
             }));
         }
 
-        function readAgreementRingSettings() {
-            try {
-                return normalizeAgreementRingSettings(JSON.parse(window.localStorage.getItem(agreementRingStorageKey) || 'null') || agreementRingDefaults);
-            } catch (error) {
-                return { ...agreementRingDefaults };
-            }
-        }
-
-        function getAgreementRingSettingsFromControls() {
-            const controls = document.querySelectorAll('[data-ring-control]');
-            const settings = { ...agreementRingDefaults };
-            controls.forEach((control) => {
-                const key = control.getAttribute('data-ring-control');
-                if (key) settings[key] = Number(control.value);
-            });
-            return normalizeAgreementRingSettings(settings);
-        }
-
         function applyAgreementRingSettings(settings = agreementRingDefaults) {
             const normalized = normalizeAgreementRingSettings(settings);
             const frame = document.querySelector('.pc-camera-frame');
@@ -4017,25 +4588,6 @@
                 frame.style.setProperty('--pc-face-ring-x', '50%');
                 frame.style.setProperty('--pc-face-ring-y', '48%');
             }
-            Object.entries(normalized).forEach(([key, value]) => {
-                const input = document.querySelector(`[data-ring-control="${key}"]`);
-                const output = document.querySelector(`[data-ring-value="${key}"]`);
-                if (input instanceof HTMLInputElement) input.value = String(value);
-                if (output) output.textContent = String(value);
-            });
-        }
-
-        function saveAgreementRingSettings() {
-            const settings = getAgreementRingSettingsFromControls();
-            window.localStorage.setItem(agreementRingStorageKey, JSON.stringify(settings));
-            applyAgreementRingSettings(settings);
-            setCaptureStatus('agreement-camera-modal-status', 'Ring settings saved.', 'success');
-        }
-
-        function resetAgreementRingSettings() {
-            window.localStorage.removeItem(agreementRingStorageKey);
-            applyAgreementRingSettings(agreementRingDefaults);
-            setCaptureStatus('agreement-camera-modal-status', 'Ring settings reset.', '');
         }
 
         function setAgreementPhotoState(dataUrl = '') {
@@ -4074,7 +4626,13 @@
                 setCaptureStatus('agreement-camera-modal-status', 'Starting camera...', '');
                 agreementCameraStream = await navigator.mediaDevices.getUserMedia({ video: true });
                 video.srcObject = agreementCameraStream;
-                setCaptureStatus('agreement-camera-modal-status', 'Align face inside the ring.', '');
+                await video.play().catch(() => {});
+                video.onloadedmetadata = () => startAgreementFaceDetection(video);
+                if (video.readyState >= 2) {
+                    startAgreementFaceDetection(video);
+                } else {
+                    setCaptureStatus('agreement-camera-modal-status', 'Align face inside the ring.', '');
+                }
             } catch (error) {
                 closeAgreementCameraModal();
                 const message = error?.name === 'NotAllowedError'
@@ -4093,6 +4651,10 @@
                 setCaptureStatus('agreement-photo-status', 'Start camera before capturing photo.', 'error');
                 return;
             }
+            if (!agreementFaceAlignmentReady) {
+                setAgreementFaceGuideState('misaligned', 'Align face inside the ring before capturing photo.');
+                return;
+            }
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
             canvas.getContext('2d')?.drawImage(video, 0, 0, canvas.width, canvas.height);
@@ -4107,6 +4669,13 @@
             if (hiddenInput instanceof HTMLInputElement) hiddenInput.value = '';
             setAgreementPhotoState('');
             startAgreementCamera();
+        }
+
+        function clearAgreementPhoto() {
+            const hiddenInput = document.getElementById('agreement_webcam_photo');
+            if (hiddenInput instanceof HTMLInputElement) hiddenInput.value = '';
+            setAgreementPhotoState('');
+            setCaptureStatus('agreement-photo-status', 'Photo cleared. Capture again when ready.', '');
         }
 
         function resizeAgreementSignatureCanvas({ preserve = true } = {}) {
@@ -4222,14 +4791,21 @@
             };
             setValue('agreement_fingerprint_image', result.fingerprintImage || '');
             setValue('agreement_fingerprint_template', result.fingerprintTemplate || '');
+            setValue('agreement_biometric_pid_data', result.pidData || '');
             setValue('agreement_fingerprint_quality', result.quality ?? '');
             setValue('agreement_fingerprint_device_id', result.deviceId || '');
             setValue('agreement_biometric_captured_at', result.capturedAt || '');
             setValue('agreement_biometric_provider', result.provider || '');
-            const quality = document.getElementById('thumb-quality');
-            const device = document.getElementById('thumb-device-id');
-            if (quality) quality.textContent = result.quality === null || result.quality === undefined ? '' : `Quality: ${result.quality}`;
-            if (device) device.textContent = result.deviceId ? `Device ID: ${result.deviceId}` : '';
+            setValue('agreement_biometric_status', result.status || (result.success ? 'captured' : ''));
+            setAgreementBiometricSummary({
+                quality: result.quality,
+                deviceId: result.deviceId,
+                capturedAt: result.capturedAt,
+                provider: result.provider,
+                status: result.status || (result.success ? 'captured' : ''),
+            });
+            setAgreementFingerprintPreview(result.fingerprintImage || '');
+            setAgreementBiometricCaptureButtons(false);
         }
 
         function resetTransientAgreementCaptureFields() {
@@ -4238,10 +4814,12 @@
                 'agreement_digital_signature',
                 'agreement_fingerprint_image',
                 'agreement_fingerprint_template',
+                'agreement_biometric_pid_data',
                 'agreement_fingerprint_quality',
                 'agreement_fingerprint_device_id',
                 'agreement_biometric_captured_at',
                 'agreement_biometric_provider',
+                'agreement_biometric_status',
             ].forEach((id) => {
                 const field = document.getElementById(id);
                 if (field instanceof HTMLInputElement) field.value = '';
@@ -4250,26 +4828,51 @@
             setAgreementPhotoState('');
 
             clearAgreementSignature();
-            const quality = document.getElementById('thumb-quality');
-            const device = document.getElementById('thumb-device-id');
-            if (quality) quality.textContent = '';
-            if (device) device.textContent = '';
+            setAgreementBiometricSummary();
+            setAgreementFingerprintPreview('');
+            setAgreementBiometricScannerState('idle');
             setCaptureStatus('thumb-capture-status', 'Not captured', '');
         }
 
         async function captureAgreementThumbImpression() {
-            setCaptureStatus('thumb-capture-status', 'Capturing', '');
+            if (agreementBiometricAbortController) return;
+            agreementBiometricAbortController = new AbortController();
+            agreementBiometricCaptureCancelled = false;
+            setCaptureStatus('thumb-capture-status', 'Place your thumb on the scanner...', '');
+            setAgreementBiometricScannerState('scanning');
+            setAgreementBiometricCaptureButtons(true);
             try {
-                const result = await window.captureFingerprint();
+                const result = await window.captureFingerprint({ signal: agreementBiometricAbortController.signal });
+                if (agreementBiometricCaptureCancelled) {
+                    setAgreementBiometricFields({});
+                    setAgreementBiometricScannerState('idle');
+                    setCaptureStatus('thumb-capture-status', 'Capture cancelled. Place thumb again and retry when ready.', '');
+                    return;
+                }
                 setAgreementBiometricFields(result);
                 if (!result.success) {
+                    const statusField = document.getElementById('agreement_biometric_status');
+                    if (statusField instanceof HTMLInputElement) statusField.value = 'failed';
+                    setAgreementBiometricScannerState('error');
                     setCaptureStatus('thumb-capture-status', result.message || 'Failed', 'error');
                     return;
                 }
-                setCaptureStatus('thumb-capture-status', result.message || 'Captured', 'success');
+                setAgreementBiometricScannerState('success');
+                setCaptureStatus('thumb-capture-status', result.message || 'Thumb impression captured successfully', 'success');
             } catch (error) {
-                setAgreementBiometricFields({});
-                setCaptureStatus('thumb-capture-status', error.message || 'Failed', 'error');
+                if (agreementBiometricCaptureCancelled || error?.name === 'AbortError') {
+                    setAgreementBiometricFields({});
+                    setAgreementBiometricScannerState('idle');
+                    setCaptureStatus('thumb-capture-status', 'Capture cancelled. Place thumb again and retry when ready.', '');
+                    return;
+                }
+                setAgreementBiometricFields({ status: 'failed' });
+                setAgreementBiometricScannerState('error');
+                setCaptureStatus('thumb-capture-status', error.message || 'Unable to capture thumb impression. Please retry.', 'error');
+            } finally {
+                agreementBiometricAbortController = null;
+                agreementBiometricCaptureCancelled = false;
+                setAgreementBiometricCaptureButtons(false);
             }
         }
 
@@ -4290,14 +4893,23 @@
             const capturedAt = document.getElementById('agreement_biometric_captured_at')?.value || '';
             const qualityValue = document.getElementById('agreement_fingerprint_quality')?.value || '';
             const deviceValue = document.getElementById('agreement_fingerprint_device_id')?.value || '';
-            if (provider || capturedAt) {
-                setCaptureStatus('thumb-capture-status', 'Captured', 'success');
-                const quality = document.getElementById('thumb-quality');
-                const device = document.getElementById('thumb-device-id');
-                if (quality) quality.textContent = qualityValue ? `Quality: ${qualityValue}` : '';
-                if (device) device.textContent = deviceValue ? `Device ID: ${deviceValue}` : '';
+            const fingerprintImageValue = document.getElementById('agreement_fingerprint_image')?.value || '';
+            const biometricStatus = document.getElementById('agreement_biometric_status')?.value || '';
+            if (biometricStatus === 'failed') {
+                setCaptureStatus('thumb-capture-status', 'Previous thumb impression capture failed. Please retry.', 'error');
+                setAgreementBiometricScannerState('error');
+                setAgreementBiometricSummary({ provider, quality: qualityValue, deviceId: deviceValue, capturedAt, status: biometricStatus });
+                setAgreementFingerprintPreview('');
+            } else if (biometricStatus === 'captured' || provider || capturedAt) {
+                setCaptureStatus('thumb-capture-status', 'Thumb impression captured successfully', 'success');
+                setAgreementBiometricScannerState('success');
+                setAgreementBiometricSummary({ provider, quality: qualityValue, deviceId: deviceValue, capturedAt, status: biometricStatus || 'captured' });
+                setAgreementFingerprintPreview(fingerprintImageValue);
             } else {
                 setCaptureStatus('thumb-capture-status', 'Not captured', '');
+                setAgreementBiometricScannerState('idle');
+                setAgreementBiometricSummary();
+                setAgreementFingerprintPreview('');
             }
         }
 
@@ -4316,9 +4928,16 @@
                     return false;
                 }
             }
+            const biometricStatus = document.getElementById('agreement_biometric_status')?.value || '';
+            if (biometricStatus && biometricStatus !== 'captured') {
+                setStep(9);
+                alert('Thumb impression capture failed. Please retry before final submit.');
+                return false;
+            }
             const minQuality = Number(window.BIOMETRIC_CONFIG?.minQuality || 0);
-            const quality = Number(document.getElementById('agreement_fingerprint_quality')?.value || '');
-            if (Number.isFinite(quality) && minQuality && quality < minQuality) {
+            const qualityText = document.getElementById('agreement_fingerprint_quality')?.value || '';
+            const quality = Number(qualityText);
+            if (String(qualityText).trim() && Number.isFinite(quality) && minQuality && quality < minQuality) {
                 setStep(9);
                 alert(`Fingerprint quality ${quality} is below minimum ${minQuality}.`);
                 return false;
@@ -4337,13 +4956,9 @@
             });
             document.getElementById('capture-photo-btn')?.addEventListener('click', captureAgreementPhoto);
             document.getElementById('retake-photo-btn')?.addEventListener('click', retakeAgreementPhoto);
+            document.getElementById('clear-photo-btn')?.addEventListener('click', clearAgreementPhoto);
             document.getElementById('close-agreement-camera-modal-btn')?.addEventListener('click', closeAgreementCameraModal);
             document.getElementById('cancel-agreement-camera-btn')?.addEventListener('click', closeAgreementCameraModal);
-            document.getElementById('save-ring-adjuster-btn')?.addEventListener('click', saveAgreementRingSettings);
-            document.getElementById('reset-ring-adjuster-btn')?.addEventListener('click', resetAgreementRingSettings);
-            document.querySelectorAll('[data-ring-control]').forEach((control) => {
-                control.addEventListener('input', () => applyAgreementRingSettings(getAgreementRingSettingsFromControls()));
-            });
             document.getElementById('agreementCameraModal')?.addEventListener('click', (event) => {
                 if (event.target === document.getElementById('agreementCameraModal')) {
                     closeAgreementCameraModal();
@@ -4353,8 +4968,10 @@
             document.getElementById('clear-signature-btn')?.addEventListener('click', clearAgreementSignature);
             document.getElementById('capture-thumb-btn')?.addEventListener('click', captureAgreementThumbImpression);
             document.getElementById('retry-thumb-btn')?.addEventListener('click', captureAgreementThumbImpression);
+            document.getElementById('clear-thumb-btn')?.addEventListener('click', clearAgreementThumbImpression);
+            document.getElementById('cancel-thumb-btn')?.addEventListener('click', cancelAgreementThumbCapture);
             initAgreementSignatureCanvas();
-            applyAgreementRingSettings(readAgreementRingSettings());
+            applyAgreementRingSettings();
             resetTransientAgreementCaptureFields();
             syncAgreementCapturePreviews();
             window.addEventListener('beforeunload', stopAgreementCamera);
