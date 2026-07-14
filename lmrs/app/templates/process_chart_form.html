@@ -810,6 +810,11 @@
         font-weight: 800;
     }
 
+    .pc-camera-device-row {
+        display: flex;
+        gap: 0.45rem;
+    }
+
     .pc-camera-device-select {
         width: 100%;
         border: 1px solid #ccdbef;
@@ -819,6 +824,23 @@
         font-size: 0.84rem;
         font-weight: 700;
         padding: 0.6rem 0.75rem;
+    }
+
+    .pc-camera-device-refresh {
+        flex: 0 0 auto;
+        border: 1px solid #ccdbef;
+        border-radius: 0.65rem;
+        background: #fff;
+        color: #244271;
+        font-size: 0.78rem;
+        font-weight: 800;
+        padding: 0.58rem 0.72rem;
+    }
+
+    .pc-camera-device-refresh:hover {
+        border-color: #125fcb;
+        color: #125fcb;
+        background: #edf5ff;
     }
 
     .pc-camera-device-help {
@@ -3109,9 +3131,12 @@
             </div>
             <div class="pc-camera-device-picker">
                 <label for="agreement-camera-device-select">Camera</label>
-                <select id="agreement-camera-device-select" class="pc-camera-device-select">
-                    <option value="">Default camera</option>
-                </select>
+                <div class="pc-camera-device-row">
+                    <select id="agreement-camera-device-select" class="pc-camera-device-select">
+                        <option value="">Default camera</option>
+                    </select>
+                    <button type="button" class="pc-camera-device-refresh" data-camera-refresh>Refresh</button>
+                </div>
                 <span id="agreement-camera-device-help" class="pc-camera-device-help">Available cameras will appear after camera permission is allowed.</span>
             </div>
             <p id="agreement-camera-modal-status" class="pc-capture-status">Align face inside the ring.</p>
@@ -4401,46 +4426,82 @@
             agreementCameraStream = null;
         }
 
-        async function refreshAgreementCameraDevices() {
-            const select = document.getElementById('agreement-camera-device-select');
-            const help = document.getElementById('agreement-camera-device-help');
-            if (!(select instanceof HTMLSelectElement) || !navigator.mediaDevices?.enumerateDevices) return;
+        function getAgreementCameraDeviceControls() {
+            return [
+                {
+                    select: document.getElementById('agreement-camera-device-select'),
+                    help: document.getElementById('agreement-camera-device-help'),
+                },
+            ].filter(({ select }) => select instanceof HTMLSelectElement);
+        }
 
+        function syncAgreementCameraDeviceSelects(selectedDeviceId = agreementSelectedCameraDeviceId) {
+            getAgreementCameraDeviceControls().forEach(({ select }) => {
+                if (select instanceof HTMLSelectElement) select.value = selectedDeviceId || '';
+            });
+        }
+
+        async function refreshAgreementCameraDevices({ requestPermission = false } = {}) {
+            const controls = getAgreementCameraDeviceControls();
+            if (!controls.length || !navigator.mediaDevices?.enumerateDevices) return;
+
+            let permissionStream = null;
             try {
+                if (requestPermission && navigator.mediaDevices?.getUserMedia && !agreementCameraStream) {
+                    permissionStream = await navigator.mediaDevices.getUserMedia({ video: true });
+                }
                 const devices = await navigator.mediaDevices.enumerateDevices();
                 const cameras = devices.filter((device) => device.kind === 'videoinput');
-                const previousValue = agreementSelectedCameraDeviceId || select.value || '';
-                select.innerHTML = '';
+                const previousValue = agreementSelectedCameraDeviceId
+                    || controls.map(({ select }) => select.value).find(Boolean)
+                    || '';
 
                 if (!cameras.length) {
-                    const option = document.createElement('option');
-                    option.value = '';
-                    option.textContent = 'No camera found';
-                    select.appendChild(option);
-                    select.disabled = true;
-                    if (help) help.textContent = 'No connected camera was detected.';
+                    controls.forEach(({ select, help }) => {
+                        select.innerHTML = '';
+                        const option = document.createElement('option');
+                        option.value = '';
+                        option.textContent = 'No camera found';
+                        select.appendChild(option);
+                        select.disabled = true;
+                        if (help) help.textContent = 'No connected camera was detected.';
+                    });
                     return;
                 }
 
-                cameras.forEach((camera, index) => {
-                    const option = document.createElement('option');
-                    option.value = camera.deviceId;
-                    option.textContent = camera.label || `Camera ${index + 1}`;
-                    select.appendChild(option);
-                });
-
                 const activeDeviceExists = cameras.some((camera) => camera.deviceId === previousValue);
-                select.value = activeDeviceExists ? previousValue : (cameras[0]?.deviceId || '');
-                agreementSelectedCameraDeviceId = select.value;
-                select.disabled = cameras.length <= 1;
-                if (help) {
-                    help.textContent = cameras.length === 1
-                        ? 'Only one camera is connected.'
-                        : 'Select a camera to switch the live preview.';
-                }
+                const selectedDeviceId = activeDeviceExists ? previousValue : '';
+                agreementSelectedCameraDeviceId = selectedDeviceId;
+
+                controls.forEach(({ select, help }) => {
+                    select.innerHTML = '';
+                    const defaultOption = document.createElement('option');
+                    defaultOption.value = '';
+                    defaultOption.textContent = 'Default camera';
+                    select.appendChild(defaultOption);
+                    cameras.forEach((camera, index) => {
+                        const option = document.createElement('option');
+                        option.value = camera.deviceId;
+                        option.textContent = camera.label || `Camera ${index + 1}`;
+                        select.appendChild(option);
+                    });
+                    select.value = selectedDeviceId;
+                    select.disabled = false;
+                    if (help) {
+                        help.textContent = cameras.length === 1
+                            ? 'Browser is exposing one camera. Click Refresh after allowing permission, and close other apps using camera.'
+                            : `${cameras.length} cameras detected. Select one before capturing or switch the live preview.`;
+                    }
+                });
             } catch (error) {
-                select.disabled = true;
-                if (help) help.textContent = 'Camera list is not available in this browser.';
+                controls.forEach(({ select, help }) => {
+                    select.disabled = true;
+                    if (help) help.textContent = 'Camera list is not available in this browser.';
+                });
+            } finally {
+                if (permissionStream && !agreementCameraStream) {
+                    permissionStream.getTracks().forEach((track) => track.stop());
+                }
             }
         }
 
@@ -4448,7 +4509,10 @@
             const select = event?.target;
             if (!(select instanceof HTMLSelectElement)) return;
             agreementSelectedCameraDeviceId = select.value;
-            await startAgreementCamera(agreementSelectedCameraDeviceId);
+            syncAgreementCameraDeviceSelects(agreementSelectedCameraDeviceId);
+            if (agreementCameraStream) {
+                await startAgreementCamera(agreementSelectedCameraDeviceId);
+            }
         }
 
         function setAgreementPhotoCaptureEnabled(enabled = false) {
@@ -5058,6 +5122,9 @@
             });
             document.getElementById('capture-photo-btn')?.addEventListener('click', captureAgreementPhoto);
             document.getElementById('agreement-camera-device-select')?.addEventListener('change', handleAgreementCameraDeviceChange);
+            document.querySelectorAll('[data-camera-refresh]').forEach((button) => {
+                button.addEventListener('click', () => refreshAgreementCameraDevices({ requestPermission: true }));
+            });
             document.getElementById('retake-photo-btn')?.addEventListener('click', retakeAgreementPhoto);
             document.getElementById('clear-photo-btn')?.addEventListener('click', clearAgreementPhoto);
             document.getElementById('close-agreement-camera-modal-btn')?.addEventListener('click', closeAgreementCameraModal);
@@ -5075,6 +5142,7 @@
             document.getElementById('cancel-thumb-btn')?.addEventListener('click', cancelAgreementThumbCapture);
             initAgreementSignatureCanvas();
             applyAgreementRingSettings();
+            refreshAgreementCameraDevices();
             resetTransientAgreementCaptureFields();
             syncAgreementCapturePreviews();
             window.addEventListener('beforeunload', stopAgreementCamera);

@@ -262,7 +262,7 @@ UIDAI Contact and Support:
 https://uidai.gov.in/en/contact-support.html
 
 
-Manager Summary
+Summary
 ---------------
 We can prepare the LMRS application UI and backend structure for Aadhaar biometric authentication.
 
