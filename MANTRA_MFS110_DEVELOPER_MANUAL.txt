@@ -1,0 +1,293 @@
+# Mantra MFS110 L1 Developer Manual
+
+This manual is for developers or deployers maintaining the Mantra MFS110 L1 biometric integration in the LMRS Purandar Airport Portal.
+
+## 1. Integration Architecture
+
+The LMRS server does not communicate directly with the USB fingerprint scanner.
+
+Flow:
+
+```text
+LMRS page in operator browser
+    -> local Mantra RD Service on operator PC
+    -> USB Mantra MFS110 L1 scanner
+    -> RD/PID response back to browser
+    -> hidden form fields
+    -> LMRS Save Draft / Submit payload
+```
+
+Important:
+
+```text
+http://127.0.0.1:11100
+```
+
+always means the operator's own PC, not the hosted LMRS server.
+
+## 2. Client PC Requirements
+
+Every operator PC must install:
+
+1. Mantra MFS110 / MFS110 L1 Windows driver
+2. Mantra MFS110 L1 RD Service
+3. Chrome or Edge browser
+
+The hosted server does not need Mantra drivers or RD service.
+
+Official download page:
+
+[Mantra Technical Resources - Drivers, RD Service, SDK, Manuals & Release Notes](https://www.mantratec.com/Download/User)
+
+Use this same page for:
+
+```text
+Windows MFS110 RD Service Manual
+MFS110 User Manual
+MFS110 Windows Driver
+MFS110 L1 RD Service / Windows RD Service
+RD SDK Developer package, only if endpoint/request debugging is needed
+```
+
+The Mantra page may require captcha, user details, and OTP before download. Do not hardcode direct installer URLs in LMRS documentation because those download links may be session-specific or change behind Mantra's download flow.
+
+## 3. Code Locations
+
+Main form/template:
+
+```text
+lmrs/app/templates/process_chart_form.html
+```
+
+Common biometric service:
+
+```text
+lmrs/static/js/biometric/biometricService.js
+```
+
+Adapters:
+
+```text
+lmrs/static/js/biometric/mockBiometricAdapter.js
+lmrs/static/js/biometric/genericHttpBiometricAdapter.js
+lmrs/static/js/biometric/adapters/mantraMfs110Adapter.js
+```
+
+## 4. Active Configuration
+
+The active page config is in:
+
+```text
+lmrs/app/templates/process_chart_form.html
+```
+
+Look for:
+
+```js
+window.BIOMETRIC_CONFIG = {
+    provider: 'mantra_mfs110',
+    rdServiceUrl: 'http://127.0.0.1:11100',
+    captureUrl: 'http://127.0.0.1:11100/rd/capture',
+    discoveryMethod: 'RDSERVICE',
+    method: 'CAPTURE',
+    minQuality: 60,
+    timeoutMs: 15000,
+    showFingerprintPreview: false,
+};
+```
+
+Keep `showFingerprintPreview` as `false` for production unless the device/adapter returns a real displayable image.
+
+## 5. Provider Selection
+
+`biometricService.js` exposes:
+
+```js
+window.captureFingerprint()
+```
+
+It selects adapter by:
+
+```js
+window.BIOMETRIC_CONFIG.provider
+```
+
+Supported providers:
+
+```text
+mock
+generic_http
+mantra_mfs110
+```
+
+## 6. Mantra RD Methods
+
+The Mantra RD service may reject normal browser `GET` with HTTP 405. That is not necessarily an error.
+
+The adapter uses RD-style methods:
+
+```text
+RDSERVICE
+CAPTURE
+```
+
+Default endpoints:
+
+```text
+RD discovery: http://127.0.0.1:11100
+Capture fallback: http://127.0.0.1:11100/rd/capture
+```
+
+## 7. Stored Hidden Fields
+
+The Tab 9 form uses hidden inputs:
+
+```text
+agreement_fingerprint_image
+agreement_fingerprint_template
+agreement_biometric_pid_data
+agreement_fingerprint_quality
+agreement_fingerprint_device_id
+agreement_biometric_captured_at
+agreement_biometric_provider
+agreement_biometric_status
+```
+
+Do not display raw values from:
+
+```text
+agreement_biometric_pid_data
+agreement_fingerprint_template
+```
+
+## 8. Payload Flow
+
+The form uses JavaScript serialization:
+
+```text
+collectPanelData()
+buildSavePayload()
+fetch('/api/process-chart-form/save/', FormData)
+```
+
+Backend stores tab data in:
+
+```text
+ProcessChartStepData.data
+```
+
+No dedicated biometric model fields are currently required because the hidden inputs are serialized into Tab 9 JSON data.
+
+## 9. UI Rules
+
+Show only safe metadata:
+
+```text
+Status
+Quality
+Device
+Device ID
+Captured At
+```
+
+Do not show:
+
+```text
+PID XML
+Fingerprint template
+Raw biometric response
+Base64 PID/secure data
+```
+
+`showFingerprintPreview` should show an image only if `fingerprintImage` exists. Mantra RD commonly returns secure PID data, not an image.
+
+## 10. Validation Rules
+
+Final Submit requires:
+
+```text
+agreement_biometric_status = captured
+agreement_biometric_captured_at present
+```
+
+If quality is returned and below `minQuality`, final submit is blocked.
+
+Save Draft should not be blocked by biometric validation unless existing draft behavior changes.
+
+## 11. Local Development Checklist
+
+For testing on a developer PC:
+
+1. Download the required files from `https://www.mantratec.com/Download/User`.
+2. Install Mantra driver.
+3. Install Mantra RD Service.
+4. Connect scanner by USB.
+5. Confirm Mantra app Capture Test works.
+6. Run Django dev server.
+7. Open LMRS in Chrome/Edge.
+8. Hard refresh after template/static changes.
+9. Capture thumb in Tab 9.
+10. Confirm hidden fields are populated.
+11. Save Draft and reopen case.
+12. Submit with valid quality.
+
+## 12. Hosted Deployment Checklist
+
+For production/hosted use:
+
+1. Deploy LMRS normally.
+2. Do not install scanner software on server unless an operator is physically using the server as a client.
+3. Give operators this official download link: `https://www.mantratec.com/Download/User`.
+4. Install Mantra driver and RD service on each operator PC.
+5. Confirm browser can reach local RD service.
+6. Confirm Tab 9 capture succeeds.
+7. Confirm HTTPS site can call local RD service in target browser environment.
+
+## 13. Troubleshooting For Developers
+
+### Mantra app works but LMRS fails
+
+Check browser DevTools:
+
+```text
+Console
+Network
+Requests to 127.0.0.1:11100
+```
+
+Likely causes:
+
+1. Browser blocks localhost request.
+2. RD service uses a different port.
+3. RD service uses a different capture path.
+4. CORS/local service policy issue.
+5. Request XML needs adjustment from vendor sample.
+
+### HTTP 405 at 127.0.0.1:11100
+
+This can be normal when opened directly in browser. The adapter uses `RDSERVICE` and `CAPTURE`, not normal `GET`.
+
+### No fingerprint image preview
+
+Normal for RD service. Mantra often returns secure PID data, not an image.
+
+### Poor quality
+
+The UI marks quality below `minQuality` as failed. Default:
+
+```text
+60
+```
+
+## 14. Security Notes
+
+Biometric data is sensitive.
+
+Do not:
+
+1. Log PID/template values.
+2. Display PID/template values.
+3. Expose biometric fields in list APIs.
+4. Store raw data outside the intended secured payload.
+
+Keep access controlled and audit changes according to project policy.

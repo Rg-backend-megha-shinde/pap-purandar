@@ -1,0 +1,245 @@
+# Mantra MFS110 L1 Operator Manual
+
+This manual is for the person using the Mantra MFS110 L1 fingerprint scanner with the LMRS Purandar Airport Portal.
+
+## 1. What You Need
+
+On the same Windows PC where you will open LMRS and connect the scanner, you need:
+
+1. Mantra MFS110 / MFS110 L1 Windows driver
+2. Mantra MFS110 L1 RD Service
+3. Chrome or Edge browser
+4. Mantra MFS110 L1 scanner connected by USB
+
+The scanner software must be installed on your PC. It is not enough for the LMRS server to have it.
+
+## 2. Download Software
+
+Open the official Mantra download page:
+
+```text
+https://www.mantratec.com/Download/User
+```
+
+Direct link:
+
+[Mantra Technical Resources - Drivers, RD Service, SDK, Manuals & Release Notes](https://www.mantratec.com/Download/User)
+
+Download these items from that page:
+
+1. From Documents tab: Windows MFS110 RD Service Manual
+2. From Driver tab: MFS110 Windows driver
+3. From RD Service tab: MFS110 L1 RD Service installer
+
+You normally do not need the RD SDK Developer package.
+
+### Step-by-step on Mantra website
+
+1. Open:
+
+```text
+https://www.mantratec.com/Download/User
+```
+
+2. Select or search product:
+
+```text
+MFS110 / MFS110 L1
+```
+
+3. Open the Documents tab and download:
+
+```text
+Windows MFS110 RD Service Manual
+MFS110 User Manual
+```
+
+4. Open the Driver tab and download:
+
+```text
+MFS110 Windows Driver
+```
+
+5. Open the RD Service tab and download:
+
+```text
+MFS110 L1 RD Service / MFS110 Windows RD Service
+```
+
+6. If the website asks for captcha, user details, or OTP, complete it and then download.
+
+If the download does not start:
+
+1. Press `Ctrl + J` and check browser downloads.
+2. Allow popups/downloads for the Mantra website.
+3. Try Chrome or Edge.
+4. Temporarily disable download-blocking browser extensions.
+
+For Mantra support, use the support details shown on their website:
+
+```text
+Support email: servico@mantratec.com
+Support phone: 079-49068000
+```
+
+## 3. Install In This Order
+
+1. Install the MFS110 Windows driver.
+2. Restart the PC if asked.
+3. Connect the scanner by USB.
+4. Install the MFS110 L1 RD Service.
+5. Restart the PC if asked.
+6. Keep the scanner connected.
+
+## 4. Check Scanner Is Ready
+
+Open the Mantra L1 RD Service application.
+
+Click:
+
+```text
+Capture
+```
+
+Place thumb on the scanner.
+
+Expected result:
+
+```text
+Capture Success
+```
+
+If it says `Device not ready`, try:
+
+1. Unplug and reconnect scanner.
+2. Use another USB port.
+3. Restart the Mantra RD service.
+4. Restart the PC.
+5. Reinstall the driver if Windows does not detect the device.
+
+## 5. Use In LMRS
+
+Open LMRS in Chrome or Edge.
+
+Go to:
+
+```text
+Bhusampadan Form
+Tab 9
+Thumb Impression / Biometric Capture
+```
+
+Click:
+
+```text
+Capture Thumb Impression
+```
+
+When the UI says:
+
+```text
+Scanning thumb impression...
+```
+
+place your thumb on the scanner and keep it steady.
+
+After success, LMRS shows:
+
+```text
+Thumb impression captured successfully
+Quality
+Device
+Device ID
+Captured At
+```
+
+## 6. Buttons
+
+```text
+Capture Thumb Impression
+```
+
+Starts capture.
+
+```text
+Retry
+```
+
+Captures again if the first scan failed or quality is poor.
+
+```text
+Cancel Capture
+```
+
+Appears only while scanning is active.
+
+```text
+Clear Thumb
+```
+
+Clears only the saved thumb impression data. It does not clear photo or signature.
+
+## 7. Quality Meaning
+
+LMRS uses minimum quality:
+
+```text
+60
+```
+
+Meaning:
+
+```text
+Below 60: Poor quality, retry required
+60-79: Good quality
+80+: Excellent quality
+```
+
+If quality is poor:
+
+1. Clean scanner surface.
+2. Clean/dry finger.
+3. Place thumb flat.
+4. Do not move during scanning.
+5. Retry capture.
+
+## 8. Common Problems
+
+### Mantra RD service is not reachable
+
+Check:
+
+1. RD service is installed.
+2. RD service is running.
+3. Scanner is connected.
+4. Browser can contact local service.
+5. Antivirus/firewall is not blocking Mantra service.
+
+### Device not ready
+
+Check:
+
+1. USB connection.
+2. Windows Device Manager.
+3. Driver installation.
+4. Restart Mantra RD service.
+5. Restart PC.
+
+### Capture timeout
+
+Try:
+
+1. Place thumb as soon as capture starts.
+2. Keep thumb steady.
+3. Retry.
+4. Restart RD service if repeated.
+
+## 9. Daily Checklist
+
+Before using biometric capture:
+
+1. Scanner is connected.
+2. Mantra RD Service is running.
+3. Mantra app Capture Test works.
+4. LMRS page is hard refreshed if there was an update.
+5. Capture in Tab 9 succeeds.
