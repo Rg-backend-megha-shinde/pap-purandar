@@ -2784,9 +2784,10 @@
                                     name="consent_area" type="text" placeholder="हेक्टर.आर."></div>
                             <div>
                                 <label class="pc-label">संमती पत्र</label>
-                                <input class="pc-upload" name="consent_letter_file" type="file">
+                                <input class="pc-upload" name="consent_letter_file" type="file" multiple>
                                 <a class="mt-2 hidden text-xs font-semibold text-[#125fcb] underline"
                                     data-pc-doc-link-for="consent_letter_file" target="_blank" rel="noopener"></a>
+                                <button type="button" class="mt-2 hidden rounded-full px-2 text-sm font-bold text-[#d33]" data-pc-doc-delete-for="consent_letter_file" title="Remove">&times;</button>
                             </div>
                             <div><label class="pc-label">संमतीचा निर्णय</label><select class="pc-input"
                                     id="pcConsentDecision" name="consent_decision">
@@ -2798,6 +2799,7 @@
                                 <input class="pc-upload" name="consent_decision_file" type="file">
                                 <a class="mt-2 hidden text-xs font-semibold text-[#125fcb] underline"
                                     data-pc-doc-link-for="consent_decision_file" target="_blank" rel="noopener"></a>
+                                <button type="button" class="mt-2 hidden rounded-full px-2 text-sm font-bold text-[#d33]" data-pc-doc-delete-for="consent_decision_file" title="Remove">&times;</button>
                             </div>
 
                         </div>
@@ -2858,6 +2860,7 @@
                                 <input class="pc-upload" name="agreement_letter_file" type="file">
                                 <a class="mt-2 hidden text-xs font-semibold text-[#125fcb] underline"
                                     data-pc-doc-link-for="agreement_letter_file" target="_blank" rel="noopener"></a>
+                                <button type="button" class="mt-2 hidden rounded-full px-2 text-sm font-bold text-[#d33]" data-pc-doc-delete-for="agreement_letter_file" title="Remove">&times;</button>
                             </div>
                             <div><label class="pc-label">करारनामा झाल्याचा दिनांक</label><input class="pc-input"
                                     id="pcAgreementDate" name="agreement_date" type="date"></div>
@@ -2866,7 +2869,78 @@
                                 <input class="pc-upload" name="agreement_upload_file" type="file">
                                 <a class="mt-2 hidden text-xs font-semibold text-[#125fcb] underline"
                                     data-pc-doc-link-for="agreement_upload_file" target="_blank" rel="noopener"></a>
+                                <button type="button" class="mt-2 hidden rounded-full px-2 text-sm font-bold text-[#d33]" data-pc-doc-delete-for="agreement_upload_file" title="Remove">&times;</button>
                             </div>
+                        </div>
+                        <div class="mt-6 space-y-5">
+                            <div class="rounded-xl border border-[#dbe8f8] bg-[#f8fbff] p-4">
+                                <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+                                    <h4 class="text-base font-bold text-[#244271]">करारनामा लिहून देणारे भूधारक - फोटो, अंगठा व स्वाक्षरी</h4>
+                                    <div class="flex flex-wrap items-center gap-2">
+                                        <button type="button" id="pcAgreementFetchOwnerCaptureRowsBtn"
+                                            class="rounded-lg bg-[#0f766e] px-4 py-2 text-sm font-semibold text-white"
+                                            onclick="window.pcOpenAgreementOwnerCapturePicker && window.pcOpenAgreementOwnerCapturePicker()">भूधारक नावे भरा</button>
+                                        <button type="button" id="pcAgreementAddOwnerCaptureRowBtn"
+                                            class="rounded-lg bg-[#125fcb] px-4 py-2 text-sm font-semibold text-white">ओळ जोडा</button>
+                                    </div>
+                                </div>
+                                <div class="overflow-x-auto">
+                                    <table class="pc-table">
+                                        <thead>
+                                            <tr>
+                                                <th>करारनामा लिहून देणाऱ्याचे नाव</th>
+                                                <th>कृती</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="pcAgreementOwnerCaptureRows"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <div class="rounded-xl border border-[#dbe8f8] bg-[#f8fbff] p-4">
+                                <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+                                    <h4 class="text-base font-bold text-[#244271]">करारनामा लिहून घेणार - फोटो, अंगठा व स्वाक्षरी</h4>
+                                </div>
+                                <div class="overflow-x-auto">
+                                    <table class="pc-table">
+                                        <thead>
+                                            <tr>
+                                                <th>करारनामा लिहून घेणार</th>
+                                                <th>कृती</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="pcAgreementReceiverCaptureRows"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <div class="rounded-xl border border-[#dbe8f8] bg-[#f8fbff] p-4">
+                                <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+                                    <h4 class="text-base font-bold text-[#244271]">साक्षीदार - फोटो, अंगठा व स्वाक्षरी</h4>
+                                    <button type="button" id="pcAgreementAddWitnessCaptureRowBtn"
+                                        class="rounded-lg bg-[#125fcb] px-4 py-2 text-sm font-semibold text-white">ओळ जोडा</button>
+                                </div>
+                                <div class="overflow-x-auto">
+                                    <table class="pc-table">
+                                        <thead>
+                                            <tr>
+                                                <th>साक्षीदाराचे नाव</th>
+                                                <th>कृती</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="pcAgreementWitnessCaptureRows"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="pcAgreementBiometricModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
+                            <div class="max-h-[92vh] w-full max-w-6xl overflow-y-auto rounded-xl bg-white shadow-xl">
+                                <div class="flex items-center justify-between border-b px-5 py-4">
+                                    <div>
+                                        <h3 class="text-base font-bold text-[#244271]">Add Biometrics</h3>
+                                        <p id="pcAgreementBiometricPersonName" class="mt-1 text-sm font-semibold text-[#5c78a5]"></p>
+                                    </div>
+                                    <button type="button" id="pcAgreementBiometricModalCloseBtn" class="text-xl font-bold text-[#5c78a5] hover:text-[#244271]">&times;</button>
+                                </div>
+                                <div class="px-5 py-5">
                             <div class="pc-agreement-capture-grid">
                                 <div class="pc-capture-card pc-webcam-card">
                                     <label class="pc-label">Webcam Photo Capture</label>
@@ -2960,6 +3034,12 @@
                                     <input type="hidden" name="agreement_biometric_captured_at" id="agreement_biometric_captured_at">
                                     <input type="hidden" name="agreement_biometric_provider" id="agreement_biometric_provider">
                                     <input type="hidden" name="agreement_biometric_status" id="agreement_biometric_status">
+                                </div>
+                            </div>
+                                </div>
+                                <div class="flex flex-wrap justify-end gap-2 border-t px-5 py-4">
+                                    <button type="button" id="pcAgreementBiometricModalCancelBtn" class="rounded-lg border border-[#d4deec] bg-white px-4 py-2 text-sm font-semibold text-[#5d7293]">Cancel</button>
+                                    <button type="button" id="pcAgreementBiometricSubmitBtn" class="rounded-lg bg-[#125fcb] px-4 py-2 text-sm font-semibold text-white">Submit Biometrics</button>
                                 </div>
                             </div>
                         </div>
@@ -3580,6 +3660,9 @@
         };
         window.pcOpenStep9OwnerPicker = () => {
             openJointSurveyNamesModal(currentProcessChartPrefill, { mode: 'step9' });
+        };
+        window.pcOpenAgreementOwnerCapturePicker = () => {
+            openJointSurveyNamesModal(currentProcessChartPrefill, { mode: 'agreement_owner_capture' });
         };
         window.pcStep9AddPaymentRow = () => {
             appendStep9PaymentRow();
@@ -4392,9 +4475,33 @@
         let agreementSelectedCameraDeviceId = '';
         let agreementSignatureInitialized = false;
         let agreementSignatureHasInk = false;
+        let activeAgreementCaptureType = 'owner';
+        let activeAgreementCaptureIndex = 0;
+        let activeAgreementCaptureRowPrefix = 'agreement_owner_capture_0';
+        let agreementOwnerCaptureSelectionCache = new Map();
         let agreementBiometricAbortController = null;
         let agreementBiometricCaptureCancelled = false;
         const agreementRingDefaults = { w: 30, h: 58 };
+
+        const agreementCaptureGroups = {
+            owner: {
+                bodyId: 'pcAgreementOwnerCaptureRows',
+                prefix: 'agreement_owner_capture',
+                defaultName: '',
+            },
+            receiver: {
+                bodyId: 'pcAgreementReceiverCaptureRows',
+                prefix: 'agreement_receiver_capture',
+                defaultName: '',
+                readOnlyName: true,
+                fixedRows: true,
+            },
+            witness: {
+                bodyId: 'pcAgreementWitnessCaptureRows',
+                prefix: 'agreement_witness_capture',
+                defaultName: 'साक्षीदार 1',
+            },
+        };
 
         function setCaptureStatus(elementId, message, state = '') {
             const element = document.getElementById(elementId);
@@ -4402,6 +4509,193 @@
             element.textContent = message;
             element.classList.toggle('is-error', state === 'error');
             element.classList.toggle('is-success', state === 'success');
+        }
+
+        function getAgreementCaptureConfig(type = 'owner') {
+            return agreementCaptureGroups[type] || agreementCaptureGroups.owner;
+        }
+
+        function getAgreementCaptureFieldIds(prefix = 'agreement_owner_capture_0') {
+            return {
+                photo: `${prefix}_photo`,
+                signature: `${prefix}_signature`,
+                fingerprint_image: `${prefix}_fingerprint_image`,
+                fingerprint_template: `${prefix}_fingerprint_template`,
+                biometric_pid_data: `${prefix}_biometric_pid_data`,
+                fingerprint_quality: `${prefix}_fingerprint_quality`,
+                fingerprint_device_id: `${prefix}_fingerprint_device_id`,
+                biometric_captured_at: `${prefix}_biometric_captured_at`,
+                biometric_provider: `${prefix}_biometric_provider`,
+                biometric_status: `${prefix}_biometric_status`,
+            };
+        }
+
+        function buildAgreementCaptureRow(type = 'owner', row = {}, index = 0) {
+            const config = getAgreementCaptureConfig(type);
+            const idPrefix = `${config.prefix}_${index}`;
+            const fallbackName = type === 'witness' ? `साक्षीदार ${index + 1}` : '';
+            const nameValue = row.name || row.owner_name || row.witness_name || fallbackName;
+            const hasCapture = row.photo || row.signature || row.biometric_captured_at || row.fingerprint_template || row.fingerprint_image;
+            const removeButton = index === 0 || config.fixedRows
+                ? ''
+                : '<button type="button" class="pc-agreement-capture-remove-row rounded-md border border-[#d4deec] px-2 py-1 text-xs text-[#5d7293]">काढा</button>';
+            const nameField = config.readOnlyName
+                ? `<input class="pc-input bg-gray-50 font-semibold text-[#244271]" name="${config.prefix}_name" type="text" value="${escapeHtml(nameValue)}" readonly data-pc-prefill-source="agreement_receiver">`
+                : `<input class="pc-input" name="${config.prefix}_name" type="text" value="${escapeHtml(nameValue)}" placeholder="${type === 'witness' ? 'साक्षीदाराचे नाव' : 'भूधारकाचे नाव'}">`;
+            const witnessExtraFields = type === 'witness' ? `
+                        <input class="pc-input mt-2" name="${config.prefix}_address" type="text" value="${escapeHtml(row.address || '')}" placeholder="पत्ता (रा.)">
+                        <input class="pc-input mt-2" name="${config.prefix}_aadhaar_number" type="text" inputmode="numeric" maxlength="12" pattern="[0-9]{12}" placeholder="आधार क्र. (12 अंक)" title="आधार कार्ड क्रमांक 12 अंकी असावा." value="${escapeHtml(row.aadhaar_number || '')}">` : '';
+            return `
+                <tr data-agreement-capture-row="${escapeHtml(type)}">
+                    <td>
+                        ${nameField}${witnessExtraFields}
+                        <input type="hidden" name="${config.prefix}_photo" id="${idPrefix}_photo" value="${escapeHtml(row.photo || '')}">
+                        <input type="hidden" name="${config.prefix}_signature" id="${idPrefix}_signature" value="${escapeHtml(row.signature || '')}">
+                        <input type="hidden" name="${config.prefix}_fingerprint_image" id="${idPrefix}_fingerprint_image" value="${escapeHtml(row.fingerprint_image || '')}">
+                        <input type="hidden" name="${config.prefix}_fingerprint_template" id="${idPrefix}_fingerprint_template" value="${escapeHtml(row.fingerprint_template || '')}">
+                        <input type="hidden" name="${config.prefix}_biometric_pid_data" id="${idPrefix}_biometric_pid_data" value="${escapeHtml(row.biometric_pid_data || '')}">
+                        <input type="hidden" name="${config.prefix}_fingerprint_quality" id="${idPrefix}_fingerprint_quality" value="${escapeHtml(row.fingerprint_quality || '')}">
+                        <input type="hidden" name="${config.prefix}_fingerprint_device_id" id="${idPrefix}_fingerprint_device_id" value="${escapeHtml(row.fingerprint_device_id || '')}">
+                        <input type="hidden" name="${config.prefix}_biometric_captured_at" id="${idPrefix}_biometric_captured_at" value="${escapeHtml(row.biometric_captured_at || '')}">
+                        <input type="hidden" name="${config.prefix}_biometric_provider" id="${idPrefix}_biometric_provider" value="${escapeHtml(row.biometric_provider || '')}">
+                        <input type="hidden" name="${config.prefix}_biometric_status" id="${idPrefix}_biometric_status" value="${escapeHtml(row.biometric_status || '')}">
+                    </td>
+                    <td>
+                        <div class="flex flex-wrap items-center gap-2">
+                            <button type="button" class="pc-agreement-biometrics-btn rounded-md bg-[#125fcb] px-3 py-2 text-xs font-semibold text-white" data-capture-type="${escapeHtml(type)}" data-capture-index="${index}" data-target-prefix="${escapeHtml(idPrefix)}">Add Biometrics</button>
+                            <div class="pc-eye-col">
+                                <button type="button" class="pc-agreement-biometrics-view-btn pc-eye-view ${hasCapture ? '' : 'hidden'}" data-capture-type="${escapeHtml(type)}" data-capture-index="${index}" data-target-prefix="${escapeHtml(idPrefix)}" data-agreement-capture-view="${escapeHtml(idPrefix)}" aria-label="View/Edit Biometrics" title="View/Edit Biometrics">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                        <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"></path>
+                                        <circle cx="12" cy="12" r="3"></circle>
+                                    </svg>
+                                </button>
+                            </div>
+                            ${removeButton}
+                        </div>
+                        <p class="pc-capture-status ${hasCapture ? 'is-success' : ''}" data-agreement-capture-summary="${escapeHtml(idPrefix)}">${hasCapture ? 'Biometrics added' : 'Not added'}</p>
+                    </td>
+                </tr>
+            `;
+        }
+
+        function collectAgreementCaptureRows(type = 'owner') {
+            const config = getAgreementCaptureConfig(type);
+            const body = document.getElementById(config.bodyId);
+            if (!body) return [];
+            return Array.from(body.querySelectorAll('tr')).map((row) => {
+                const value = (suffix) => row.querySelector(`[name="${config.prefix}_${suffix}"]`)?.value || '';
+                return {
+                    name: String(value('name')).trim(),
+                    address: String(value('address')).trim(),
+                    aadhaar_number: String(value('aadhaar_number')).trim(),
+                    photo: value('photo'),
+                    signature: value('signature'),
+                    fingerprint_image: value('fingerprint_image'),
+                    fingerprint_template: value('fingerprint_template'),
+                    biometric_pid_data: value('biometric_pid_data'),
+                    fingerprint_quality: value('fingerprint_quality'),
+                    fingerprint_device_id: value('fingerprint_device_id'),
+                    biometric_captured_at: value('biometric_captured_at'),
+                    biometric_provider: value('biometric_provider'),
+                    biometric_status: value('biometric_status'),
+                };
+            });
+        }
+
+        function renderAgreementCaptureRows(type = 'owner', rows = []) {
+            const config = getAgreementCaptureConfig(type);
+            const body = document.getElementById(config.bodyId);
+            if (!body) return;
+            const nextRows = rows.length ? rows : [{ name: config.defaultName }];
+            body.innerHTML = nextRows.map((row, index) => buildAgreementCaptureRow(type, row || {}, index)).join('');
+        }
+
+        function appendAgreementCaptureRow(type = 'owner', row = {}) {
+            const rows = collectAgreementCaptureRows(type);
+            rows.push(row);
+            renderAgreementCaptureRows(type, rows);
+        }
+
+        function getAgreementOwnerNamesForCapture() {
+            const names = [
+                ...collectTab4OwnerRows().map((row) => row.owner_name),
+                ...getStep9PaymentOwnerNamesFromRows(),
+                ...collectStep1OwnerRows(currentProcessChartPrefill).map((row) => row.owner_name),
+                ...getStep10OwnerNamesFromTab1(currentProcessChartPrefill),
+            ]
+                .map((name) => String(name || '').trim())
+                .filter(Boolean);
+            return Array.from(new Set(names));
+        }
+
+        function getAgreementReceiverNamesForCapture() {
+            const prefill = currentProcessChartPrefill || {};
+            const sec3Rows = Array.isArray(prefill.village_data?.sec3_rows) ? prefill.village_data.sec3_rows : [];
+            const names = [
+                ...sec3Rows.map((row) => row?.officer_name || row?.sec3_officer_name),
+                ...Array.from(document.querySelectorAll('#pcSec3Rows .pc-sec3-officer-name'))
+                    .map((field) => field instanceof HTMLInputElement ? field.value : ''),
+            ]
+                .map((name) => String(name || '').trim())
+                .filter(Boolean);
+            if (!names.length) {
+                const fallbackName = getFieldValue('[name="sec3_officer_name"]');
+                if (fallbackName) names.push(fallbackName);
+            }
+            const seen = new Set();
+            return names.filter((name) => {
+                const key = normalizeOwnerLookupName(name);
+                if (!key || seen.has(key)) return false;
+                seen.add(key);
+                return true;
+            });
+        }
+
+        function fetchAgreementReceiverCaptureRows() {
+            const existingRows = collectAgreementCaptureRows('receiver');
+            const existingByName = new Map();
+            existingRows.forEach((row) => {
+                const key = normalizeOwnerLookupName(row.name || '');
+                if (key) existingByName.set(key, row);
+            });
+            const receiverNames = getAgreementReceiverNamesForCapture();
+            if (!receiverNames.length) {
+                const filledExistingRows = existingRows.filter((row) =>
+                    Object.values(row).some((value) => String(value || '').trim())
+                );
+                renderAgreementCaptureRows('receiver', filledExistingRows.length ? filledExistingRows : [{ name: '' }]);
+                return;
+            }
+            renderAgreementCaptureRows('receiver', receiverNames.map((name) => ({
+                ...(existingByName.get(normalizeOwnerLookupName(name)) || {}),
+                name,
+            })));
+        }
+
+        function populateAgreementOwnerCaptureSelection(options = {}) {
+            const ownerNames = getAgreementOwnerNamesForCapture();
+            const existingByName = new Map(agreementOwnerCaptureSelectionCache);
+            collectAgreementCaptureRows('owner').forEach((row) => {
+                const key = normalizeOwnerLookupName(row.name || '');
+                if (key) existingByName.set(key, row);
+            });
+            const selectedRows = Array.from(document.querySelectorAll('.pc-joint-survey-name-checkbox[data-group-type="agreement-owner"]:checked'))
+                .map((checkbox) => {
+                    const rowIndex = Number.parseInt(checkbox.getAttribute('data-row-index') || '-1', 10);
+                    return String(ownerNames[rowIndex] || '').trim();
+                })
+                .filter(Boolean)
+                .map((name) => ({
+                    ...(existingByName.get(normalizeOwnerLookupName(name)) || {}),
+                    name,
+                }));
+
+            agreementOwnerCaptureSelectionCache = existingByName;
+            renderAgreementCaptureRows('owner', selectedRows);
+            if (options.closeModal !== false) {
+                closeJointSurveyNamesModal();
+            }
         }
 
         function formatAgreementBiometricDate(value) {
@@ -4858,7 +5152,8 @@
             const modal = document.getElementById('agreementCameraModal');
             modal?.classList.add('hidden');
             if (modal instanceof HTMLElement) modal.style.display = '';
-            document.body.style.overflow = '';
+            const biometricModalOpen = !document.getElementById('pcAgreementBiometricModal')?.classList.contains('hidden');
+            document.body.style.overflow = biometricModalOpen ? 'hidden' : '';
             stopAgreementCamera();
         }
 
@@ -5233,7 +5528,118 @@
             }
         }
 
+        function setLegacyAgreementCaptureFields(row = {}) {
+            const setValue = (id, value) => {
+                const field = document.getElementById(id);
+                if (field instanceof HTMLInputElement) field.value = value || '';
+            };
+            setValue('agreement_webcam_photo', row.photo);
+            setValue('agreement_digital_signature', row.signature);
+            setValue('agreement_fingerprint_image', row.fingerprint_image);
+            setValue('agreement_fingerprint_template', row.fingerprint_template);
+            setValue('agreement_biometric_pid_data', row.biometric_pid_data);
+            setValue('agreement_fingerprint_quality', row.fingerprint_quality);
+            setValue('agreement_fingerprint_device_id', row.fingerprint_device_id);
+            setValue('agreement_biometric_captured_at', row.biometric_captured_at);
+            setValue('agreement_biometric_provider', row.biometric_provider);
+            setValue('agreement_biometric_status', row.biometric_status);
+        }
+
+        function getAgreementCaptureRow(type = 'owner', index = 0) {
+            const config = getAgreementCaptureConfig(type);
+            const body = document.getElementById(config.bodyId);
+            return body?.querySelectorAll('tr')?.[index] || null;
+        }
+
+        function readAgreementCaptureRow(type = 'owner', index = 0) {
+            const config = getAgreementCaptureConfig(type);
+            const row = getAgreementCaptureRow(type, index);
+            if (!row) return {};
+            const value = (suffix) => row.querySelector(`[name="${config.prefix}_${suffix}"]`)?.value || '';
+            return {
+                name: String(value('name')).trim(),
+                photo: value('photo'),
+                signature: value('signature'),
+                fingerprint_image: value('fingerprint_image'),
+                fingerprint_template: value('fingerprint_template'),
+                biometric_pid_data: value('biometric_pid_data'),
+                fingerprint_quality: value('fingerprint_quality'),
+                fingerprint_device_id: value('fingerprint_device_id'),
+                biometric_captured_at: value('biometric_captured_at'),
+                biometric_provider: value('biometric_provider'),
+                biometric_status: value('biometric_status'),
+            };
+        }
+
+        function updateAgreementCaptureSummary(prefix = activeAgreementCaptureRowPrefix) {
+            const ids = getAgreementCaptureFieldIds(prefix);
+            const hasCapture = ['photo', 'signature', 'biometric_captured_at', 'fingerprint_template', 'fingerprint_image']
+                .some((key) => String(document.getElementById(ids[key])?.value || '').trim());
+            const summary = document.querySelector(`[data-agreement-capture-summary="${CSS.escape(prefix)}"]`);
+            if (summary) {
+                summary.textContent = hasCapture ? 'Biometrics added' : 'Not added';
+                summary.classList.toggle('is-success', hasCapture);
+            }
+            const viewBtn = document.querySelector(`[data-agreement-capture-view="${CSS.escape(prefix)}"]`);
+            viewBtn?.classList.toggle('hidden', !hasCapture);
+        }
+
+        function openAgreementBiometricModal(type = 'owner', index = 0, prefix = '') {
+            const config = getAgreementCaptureConfig(type);
+            activeAgreementCaptureType = type;
+            activeAgreementCaptureIndex = index;
+            activeAgreementCaptureRowPrefix = prefix || `${config.prefix}_${index}`;
+            setLegacyAgreementCaptureFields(readAgreementCaptureRow(type, index));
+            syncAgreementCapturePreviews();
+            const rowName = readAgreementCaptureRow(type, index).name || config.defaultName || '';
+            const personName = document.getElementById('pcAgreementBiometricPersonName');
+            if (personName) personName.textContent = rowName;
+            const modal = document.getElementById('pcAgreementBiometricModal');
+            modal?.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+            requestAnimationFrame(() => resizeAgreementSignatureCanvas({ preserve: true }));
+        }
+
+        function closeAgreementBiometricModal({ reset = true } = {}) {
+            document.getElementById('pcAgreementBiometricModal')?.classList.add('hidden');
+            stopAgreementCamera();
+            document.body.style.overflow = '';
+            if (reset) resetTransientAgreementCaptureFields();
+        }
+
+        function submitAgreementBiometrics() {
+            const ids = getAgreementCaptureFieldIds(activeAgreementCaptureRowPrefix);
+            const copyValue = (legacyId, targetId) => {
+                const source = document.getElementById(legacyId);
+                const target = document.getElementById(targetId);
+                if (source instanceof HTMLInputElement && target instanceof HTMLInputElement) {
+                    target.value = source.value || '';
+                }
+            };
+            copyValue('agreement_webcam_photo', ids.photo);
+            copyValue('agreement_digital_signature', ids.signature);
+            copyValue('agreement_fingerprint_image', ids.fingerprint_image);
+            copyValue('agreement_fingerprint_template', ids.fingerprint_template);
+            copyValue('agreement_biometric_pid_data', ids.biometric_pid_data);
+            copyValue('agreement_fingerprint_quality', ids.fingerprint_quality);
+            copyValue('agreement_fingerprint_device_id', ids.fingerprint_device_id);
+            copyValue('agreement_biometric_captured_at', ids.biometric_captured_at);
+            copyValue('agreement_biometric_provider', ids.biometric_provider);
+            copyValue('agreement_biometric_status', ids.biometric_status);
+            updateAgreementCaptureSummary(activeAgreementCaptureRowPrefix);
+            closeAgreementBiometricModal();
+        }
+
         function validateAgreementCapturesForFinalSubmit() {
+            const hasCompleteRowCapture = (row = {}) =>
+                Boolean(String(row.name || '').trim())
+                && Boolean(String(row.photo || '').trim())
+                && Boolean(String(row.signature || '').trim())
+                && Boolean(String(row.biometric_captured_at || row.fingerprint_template || row.fingerprint_image || '').trim());
+            const ownerRows = collectAgreementCaptureRows('owner').filter((row) => String(row.name || '').trim());
+            if (ownerRows.some(hasCompleteRowCapture)) {
+                return true;
+            }
             const required = [
                 ['agreement_webcam_photo', 'Capture webcam photo before final submit.'],
                 ['agreement_digital_signature', 'Save digital signature before final submit.'],
@@ -5267,7 +5673,7 @@
 
         function initAgreementCaptureControls() {
             const photoTrigger = document.getElementById('agreement-photo-trigger');
-            photoTrigger?.addEventListener('click', startAgreementCamera);
+            photoTrigger?.addEventListener('click', () => startAgreementCamera());
             photoTrigger?.addEventListener('keydown', (event) => {
                 if (event.key === 'Enter' || event.key === ' ') {
                     event.preventDefault();
@@ -5294,9 +5700,40 @@
             document.getElementById('retry-thumb-btn')?.addEventListener('click', captureAgreementThumbImpression);
             document.getElementById('clear-thumb-btn')?.addEventListener('click', clearAgreementThumbImpression);
             document.getElementById('cancel-thumb-btn')?.addEventListener('click', cancelAgreementThumbCapture);
+            document.getElementById('pcAgreementBiometricModalCloseBtn')?.addEventListener('click', () => closeAgreementBiometricModal());
+            document.getElementById('pcAgreementBiometricModalCancelBtn')?.addEventListener('click', () => closeAgreementBiometricModal());
+            document.getElementById('pcAgreementBiometricSubmitBtn')?.addEventListener('click', submitAgreementBiometrics);
+            document.getElementById('pcAgreementBiometricModal')?.addEventListener('click', (event) => {
+                if (event.target === document.getElementById('pcAgreementBiometricModal')) {
+                    closeAgreementBiometricModal();
+                }
+            });
+            document.getElementById('pcAgreementAddOwnerCaptureRowBtn')?.addEventListener('click', () => appendAgreementCaptureRow('owner'));
+            document.getElementById('pcAgreementAddWitnessCaptureRowBtn')?.addEventListener('click', () => appendAgreementCaptureRow('witness'));
+            ['owner', 'receiver', 'witness'].forEach((type) => {
+                const body = document.getElementById(getAgreementCaptureConfig(type).bodyId);
+                body?.addEventListener('click', (event) => {
+                    const target = event.target instanceof Element ? event.target : null;
+                    if (!target) return;
+                    const biometricsBtn = target.closest('.pc-agreement-biometrics-btn, .pc-agreement-biometrics-view-btn');
+                    if (biometricsBtn) {
+                        const captureType = biometricsBtn.getAttribute('data-capture-type') || type;
+                        const captureIndex = Number.parseInt(biometricsBtn.getAttribute('data-capture-index') || '0', 10) || 0;
+                        openAgreementBiometricModal(captureType, captureIndex, biometricsBtn.getAttribute('data-target-prefix') || '');
+                        return;
+                    }
+                    const removeBtn = target.closest('.pc-agreement-capture-remove-row');
+                    if (removeBtn) {
+                        removeBtn.closest('tr')?.remove();
+                    }
+                });
+            });
             initAgreementSignatureCanvas();
             applyAgreementRingSettings();
             refreshAgreementCameraDevices();
+            renderAgreementCaptureRows('owner', []);
+            fetchAgreementReceiverCaptureRows();
+            renderAgreementCaptureRows('witness', []);
             resetTransientAgreementCaptureFields();
             syncAgreementCapturePreviews();
             window.addEventListener('beforeunload', stopAgreementCamera);
@@ -5957,6 +6394,7 @@
                 if (rowEl) sec3RowsContainer.appendChild(rowEl);
             });
             syncSec3RowControls();
+            fetchAgreementReceiverCaptureRows();
         }
 
         function ensureSec3RowsForData(sectionData = {}) {
@@ -9212,7 +9650,7 @@
             const singleSection = document.getElementById('pcJointSurveySingleNamesSection');
             const multiSection = document.getElementById('pcJointSurveyMultiNamesSection');
             const isAssetOwnerMode = mode === 'asset';
-            const isPlainNamesMode = isAssetOwnerMode || mode === 'step10';
+            const isPlainNamesMode = isAssetOwnerMode || mode === 'step10' || mode === 'agreement_owner_capture';
             const isTab1OwnerMode = mode === 'joint_single' || mode === 'joint_multi';
             singleSection?.classList.toggle('hidden', false);
             multiSection?.classList.toggle('hidden', isPlainNamesMode || isTab1OwnerMode || mode === 'joint_single');
@@ -9279,6 +9717,44 @@
                     }).join('')
                     : '<div class="rounded border border-dashed border-[#d6e3f5] px-3 py-3 text-sm text-[#6b7d99]">टॅब 4 मध्ये संपादन क्षेत्र असलेली आणि टॅब 10 मध्ये असलेली नावे उपलब्ध नाहीत.</div>';
                 jointSurveyMultiNamesList.innerHTML = '<div class="rounded border border-dashed border-[#d6e3f5] px-3 py-3 text-sm text-[#6b7d99]">वरील यादी टॅब 4 मधील संपादन क्षेत्र + टॅब 10 मधील भूधारक नावे जुळवून तयार केली आहे.</div>';
+                jointSurveyNamesModal.classList.remove('hidden');
+                document.body.style.overflow = 'hidden';
+                return;
+            }
+            if (currentJointSurveyApplyMode === 'agreement_owner_capture') {
+                const ownerNames = getAgreementOwnerNamesForCapture();
+                agreementOwnerCaptureSelectionCache = new Map();
+                collectAgreementCaptureRows('owner').forEach((row) => {
+                    const key = normalizeOwnerLookupName(row.name || '');
+                    if (key) agreementOwnerCaptureSelectionCache.set(key, row);
+                });
+                const selectedNames = new Set(
+                    collectAgreementCaptureRows('owner')
+                        .map((row) => normalizeOwnerLookupName(row.name || ''))
+                        .filter(Boolean)
+                );
+                jointSurveySingleNamesList.innerHTML = ownerNames.length
+                    ? `
+                        <label class="mb-3 flex items-center gap-2 rounded border border-[#dbe8f8] bg-white px-3 py-2 text-sm font-semibold text-[#244271]">
+                            <input type="checkbox" class="pc-joint-survey-select-all-single">
+                            <span>सर्व निवडा</span>
+                        </label>
+                        ${ownerNames.map((name, index) => {
+                            const normalizedName = normalizeOwnerLookupName(name);
+                            return `
+                                <label class="flex items-center gap-3 rounded border border-[#dbe8f8] bg-[#f8fbff] px-3 py-3">
+                                    <input type="checkbox" class="pc-joint-survey-name-checkbox" data-group-type="agreement-owner" data-row-index="${index}" ${selectedNames.has(normalizedName) ? 'checked' : ''}>
+                                    <span class="text-sm text-[#244271]">${escapeHtml(name)}</span>
+                                </label>
+                            `;
+                        }).join('')}`
+                    : '<div class="rounded border border-dashed border-[#d6e3f5] px-3 py-3 text-sm text-[#6b7d99]">भूधारक नावे उपलब्ध नाहीत. आधी Tab 1, Tab 4 किंवा खातेदार / बँक तपशील मध्ये भूधारक नावे भरा.</div>';
+                const selectAll = jointSurveySingleNamesList.querySelector('.pc-joint-survey-select-all-single');
+                const checkboxes = Array.from(jointSurveySingleNamesList.querySelectorAll('.pc-joint-survey-name-checkbox[data-group-type="agreement-owner"]'));
+                if (selectAll instanceof HTMLInputElement) {
+                    selectAll.checked = checkboxes.length > 0 && checkboxes.every((checkbox) => checkbox.checked);
+                }
+                jointSurveyMultiNamesList.innerHTML = '';
                 jointSurveyNamesModal.classList.remove('hidden');
                 document.body.style.overflow = 'hidden';
                 return;
@@ -9638,6 +10114,10 @@
             }
             if (currentJointSurveyApplyMode === 'step10') {
                 populateStep10OwnerSelection(prefill);
+                return;
+            }
+            if (currentJointSurveyApplyMode === 'agreement_owner_capture') {
+                populateAgreementOwnerCaptureSelection(options);
                 return;
             }
             if (currentJointSurveyApplyMode === 'arbitration') {
@@ -12222,13 +12702,12 @@
             const witnessCaptureSource = agreementWitnessCaptureRows.length
                 ? agreementWitnessCaptureRows
                 : [{ name: 'साक्षीदार 1' }];
-            const witnessSignatureBlock = (label, name = '') => `
+            const witnessSignatureBlock = (label, name = '', address = '', aadhaarNumber = '') => `
                 <div class="witness-box">
                     <p><strong>${label}</strong></p>
-                    <p>स्वाक्षरी :........................................................................</p>
                     <p>नाव : ${name ? red(name) : '............................................................................'}</p>
-                    <p>रा.: ................................................................................</p>
-                    <p>आधार क्र .......................................................................</p>
+                    <p>रा.: ${address ? red(address) : '................................................................................'}</p>
+                    <p>आधार क्र ${aadhaarNumber ? red(aadhaarNumber) : '.......................................................................'}</p>
                 </div>
             `;
             const captureImageOrStatus = (src, label, style) =>
@@ -12621,8 +13100,8 @@
                         <p class="center"><strong>करारनामा लिहून देणार / घेणार यांचे</strong></p>
                         <table class="witness-table">
                             <tr>
-                                <td>${witnessSignatureBlock('साक्षीदार 1) :', witnessCaptureSource[0]?.name || '')}</td>
-                                <td>${witnessSignatureBlock('साक्षीदार 2) :', witnessCaptureSource[1]?.name || '')}</td>
+                                <td>${witnessSignatureBlock('साक्षीदार 1) :', witnessCaptureSource[0]?.name || '', witnessCaptureSource[0]?.address || '', witnessCaptureSource[0]?.aadhaar_number || '')}</td>
+                                <td>${witnessSignatureBlock('साक्षीदार 2) :', witnessCaptureSource[1]?.name || '', witnessCaptureSource[1]?.address || '', witnessCaptureSource[1]?.aadhaar_number || '')}</td>
                             </tr>
                         </table>
                         <table class="signature-table">
@@ -14261,14 +14740,18 @@
             const config = getAgreementCaptureConfig(type);
             return [
                 'name',
+                'address',
+                'aadhaar_number',
                 'photo',
                 'signature',
                 'fingerprint_image',
                 'fingerprint_template',
+                'biometric_pid_data',
                 'fingerprint_quality',
                 'fingerprint_device_id',
                 'biometric_captured_at',
                 'biometric_provider',
+                'biometric_status',
             ].reduce((maxCount, suffix) => {
                 const value = sectionData[`${config.prefix}_${suffix}`];
                 return Array.isArray(value) ? Math.max(maxCount, value.length) : (String(value || '').trim() ? Math.max(maxCount, 1) : maxCount);
@@ -14282,14 +14765,18 @@
                 if (!rowCount) return;
                 const rows = Array.from({ length: rowCount }, (_, index) => ({
                     name: getArrayValue(sectionData, `${config.prefix}_name`, index),
+                    address: getArrayValue(sectionData, `${config.prefix}_address`, index),
+                    aadhaar_number: getArrayValue(sectionData, `${config.prefix}_aadhaar_number`, index),
                     photo: getArrayValue(sectionData, `${config.prefix}_photo`, index),
                     signature: getArrayValue(sectionData, `${config.prefix}_signature`, index),
                     fingerprint_image: getArrayValue(sectionData, `${config.prefix}_fingerprint_image`, index),
                     fingerprint_template: getArrayValue(sectionData, `${config.prefix}_fingerprint_template`, index),
+                    biometric_pid_data: getArrayValue(sectionData, `${config.prefix}_biometric_pid_data`, index),
                     fingerprint_quality: getArrayValue(sectionData, `${config.prefix}_fingerprint_quality`, index),
                     fingerprint_device_id: getArrayValue(sectionData, `${config.prefix}_fingerprint_device_id`, index),
                     biometric_captured_at: getArrayValue(sectionData, `${config.prefix}_biometric_captured_at`, index),
                     biometric_provider: getArrayValue(sectionData, `${config.prefix}_biometric_provider`, index),
+                    biometric_status: getArrayValue(sectionData, `${config.prefix}_biometric_status`, index),
                 }));
                 renderAgreementCaptureRows(type, rows);
             });
@@ -14351,6 +14838,7 @@
             }
             restoreSavedTab11Fields(stepData);
             restoreSavedTab12Fields(stepData);
+            fetchAgreementReceiverCaptureRows();
             syncAgreementCapturePreviews();
             requestAnimationFrame(updateTotalAssetValuation);
         }
@@ -15336,6 +15824,11 @@
                 openFilesModal(savedDocument?.url ? [savedDocument, ...villageFiles] : villageFiles);
             }
         });
+        sec3RowsContainer?.addEventListener('change', (event) => {
+            if (event.target instanceof HTMLInputElement && event.target.classList.contains('pc-sec3-officer-name')) {
+                fetchAgreementReceiverCaptureRows();
+            }
+        });
         const singleKhataOwnersBody = document.getElementById('pcSingleKhataOwnersBody');
         const multiKhataOwnersBody = document.getElementById('pcMultiKhataOwnersBody');
         const addSingleKhataOwnerRowBtn = document.getElementById('pcAddSingleKhataOwnerRowBtn');
@@ -15627,12 +16120,24 @@
                 populateStep10OwnerSelection(currentProcessChartPrefill, { closeModal: false });
                 return;
             }
+            if (currentJointSurveyApplyMode === 'agreement_owner_capture' && target.classList.contains('pc-joint-survey-name-checkbox')) {
+                const agreementCheckboxes = Array.from(jointSurveyNamesModal.querySelectorAll('.pc-joint-survey-name-checkbox[data-group-type="agreement-owner"]'))
+                    .filter((checkbox) => checkbox instanceof HTMLInputElement);
+                const selectAllCheckbox = jointSurveyNamesModal.querySelector('.pc-joint-survey-select-all-single');
+                if (selectAllCheckbox instanceof HTMLInputElement) {
+                    selectAllCheckbox.checked = agreementCheckboxes.length > 0 && agreementCheckboxes.every((checkbox) => checkbox.checked);
+                }
+                populateAgreementOwnerCaptureSelection({ closeModal: false });
+                return;
+            }
             if (target.classList.contains('pc-joint-survey-select-all-single')) {
                 let selector = '.pc-joint-survey-name-checkbox[data-group-type="single"]';
                 if (currentJointSurveyApplyMode === 'joint_single' || currentJointSurveyApplyMode === 'joint_multi') {
                     selector = '.pc-joint-survey-name-checkbox[data-group-type="tab1-owner"]';
                 } else if (currentJointSurveyApplyMode === 'step10') {
                     selector = '.pc-joint-survey-name-checkbox[data-group-type="step10-tab4"]';
+                } else if (currentJointSurveyApplyMode === 'agreement_owner_capture') {
+                    selector = '.pc-joint-survey-name-checkbox[data-group-type="agreement-owner"]';
                 }
                 jointSurveyNamesModal.querySelectorAll(selector).forEach((checkbox) => {
                     if (checkbox instanceof HTMLInputElement) {
@@ -15644,6 +16149,9 @@
                 }
                 if (currentJointSurveyApplyMode === 'step10') {
                     populateStep10OwnerSelection(currentProcessChartPrefill, { closeModal: false });
+                }
+                if (currentJointSurveyApplyMode === 'agreement_owner_capture') {
+                    populateAgreementOwnerCaptureSelection({ closeModal: false });
                 }
                 return;
             }
