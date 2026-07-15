@@ -5900,17 +5900,38 @@ def _serialize_process_chart_documents(case):
     if not case:
         return {}
 
-    documents = {}
+    grouped_documents = {}
     for doc in case.documents.all().order_by('id'):
         if not doc.file:
             continue
-        documents[doc.document_type] = {
+        grouped_documents.setdefault(doc.document_type, []).append({
+            'id': doc.id,
             'url': doc.file.url,
             'name': os.path.basename(doc.file.name or ''),
             'step_no': doc.step_no,
             'section_code': doc.section_code,
+        })
+
+    documents = {}
+    for document_type, files in grouped_documents.items():
+        if not files:
+            continue
+        primary_file = files[-1]
+        documents[document_type] = {
+            **primary_file,
+            'files': files,
         }
     return documents
+
+
+@login_required
+def delete_process_chart_document(request, doc_id):
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'POST required.'}, status=405)
+    doc = get_object_or_404(ProcessChartDocument, id=doc_id, case__user=request.user)
+    doc.file.delete(save=False)
+    doc.delete()
+    return JsonResponse({'success': True})
 
 
 _PROCESS_CHART_TAB7_PREFIX_LABELS = {
@@ -7229,11 +7250,23 @@ def save_process_chart_form(request):
                 )
 
     if step_no and section_code:
+        multi_file_fields = {'consent_letter_file'}
         for field_key in request.FILES:
             if field_key.startswith('owner_info_aadhaar_file_') or field_key.startswith('owner_info_pan_file_'):
                 continue
             uploaded_files = request.FILES.getlist(field_key)
             if not uploaded_files:
+                continue
+            if field_key in multi_file_fields:
+                for uploaded_file in uploaded_files:
+                    ProcessChartDocument.objects.create(
+                        case=case,
+                        step_no=int(step_no),
+                        section_code=section_code,
+                        document_type=field_key,
+                        file=uploaded_file,
+                        remarks='',
+                    )
                 continue
             uploaded_file = uploaded_files[-1]
             ProcessChartDocument.objects.update_or_create(
