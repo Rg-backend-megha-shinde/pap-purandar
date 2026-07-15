@@ -62,6 +62,7 @@ urlpatterns = [
     path('tools/automatic-documents/', views.automatic_document_generation, name='automatic_document_generation'),
     path('api/process-chart-form/data/', views.get_process_chart_form_data, name='process_chart_form_data'),
     path('api/process-chart-form/save/', views.save_process_chart_form, name='save_process_chart_form'),
+    path('api/process-chart/document/<int:doc_id>/delete/', views.delete_process_chart_document, name='delete_process_chart_document'),
     path('tools/add-entry/list/', views.entry_list, name='entry_list'),
     path('tools/add-entry/delete/<int:id>/', views.delete_entry, name='delete_entry'),
     path('tools/rate-calculator/', views.village_info_list, name='rate_calculator'),
