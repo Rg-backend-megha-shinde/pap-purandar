@@ -242,6 +242,14 @@
         box-sizing: border-box;
     }
 
+    /* .pc-section's own `display: flow-root` has the same specificity as
+       Tailwind's `.hidden` utility, and this stylesheet is injected after
+       Tailwind's CDN <style>, so `.pc-section.hidden` would otherwise stay
+       visible. Force it hidden when both classes are combined. */
+    .pc-section.hidden {
+        display: none !important;
+    }
+
     /* ─── Inner sub-card ( )
        Give it a slightly deeper tint + stronger border so it reads as a
        distinct nested card rather than merging with the outer section. ─── */
@@ -288,11 +296,18 @@
 
     .pc-question-grid {
         display: grid;
-        gap: 0.75rem;
+        gap: 1rem 2rem;
     }
 
     .pc-question-left {
         min-width: 0;
+    }
+
+    .pc-question-left .pc-label,
+    .pc-question-right .pc-label {
+        line-height: 1.45;
+        white-space: normal;
+        overflow-wrap: anywhere;
     }
 
     .pc-question-radios {
@@ -306,13 +321,13 @@
 
     .pc-question-right {
         width: 100%;
-        max-width: 200px;
+        max-width: 260px;
         justify-self: start;
     }
 
     @media (min-width: 768px) {
         .pc-question-grid {
-            grid-template-columns: fit-content(520px) minmax(160px, 200px);
+            grid-template-columns: minmax(0, 1fr) minmax(220px, 260px);
             align-items: start;
         }
     }
@@ -385,6 +400,104 @@
         font-weight: 700;
         padding: 0.58rem 0.9rem;
         cursor: pointer;
+    }
+
+    .pc-fetched-files,
+    .pc-saved-file-card {
+        width: 100%;
+        border: 1px solid #d5e3f6;
+        border-radius: 0.75rem;
+        background: #f8fbff;
+        padding: 0.65rem;
+    }
+
+    .pc-fetched-files.hidden,
+    .pc-saved-file-card.hidden {
+        display: none;
+    }
+
+    .pc-fetched-files__list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.45rem;
+    }
+
+    .pc-fetched-file {
+        display: flex;
+        min-width: 0;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.65rem;
+        border: 1px solid #bfd4f2;
+        border-radius: 0.65rem;
+        background: #fff;
+        padding: 0.55rem 0.7rem;
+        color: #125fcb;
+        font-size: 0.8rem;
+        font-weight: 700;
+    }
+
+    .pc-saved-file-name {
+        min-width: 0;
+        flex: 1 1 auto;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        color: #125fcb;
+        font-size: 0.86rem;
+        font-weight: 800;
+        text-decoration: none;
+    }
+
+    .pc-saved-file-name:hover {
+        text-decoration: underline;
+    }
+
+    .pc-fetched-file__actions,
+    .pc-saved-file-actions {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        flex: 0 0 auto;
+    }
+
+    .pc-saved-file-view {
+        width: 2.1rem;
+        height: 2.1rem;
+        border: 1px solid #b9d0ef;
+        border-radius: 9999px;
+        background: #ffffff;
+        color: #2164cf;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 120ms ease;
+    }
+
+    .pc-saved-file-view:hover {
+        background: #edf5ff;
+        border-color: #2164cf;
+    }
+
+    .pc-saved-file-view svg {
+        width: 1.05rem;
+        height: 1.05rem;
+    }
+
+    .pc-saved-file-delete {
+        border: 0;
+        background: transparent;
+        color: #dc2626;
+        font-size: 1rem;
+        font-weight: 900;
+        line-height: 1;
+        cursor: pointer;
+        padding: 0.4rem;
+    }
+
+    .pc-saved-file-delete:hover {
+        color: #991b1b;
     }
 
     .pc-capture-card {
@@ -1307,24 +1420,54 @@
                                                 <td class="border-r border-gray-200 p-3"><input class="w-48 rounded-lg border border-gray-300 px-3 py-2 text-center text-sm font-medium text-gray-700 outline-none transition focus:border-[#125fcb] focus:ring-2 focus:ring-[#125fcb]/20" name="owner_info_khata_number" type="text"></td>
                                                 <td class="border-r border-gray-200 p-3"><input class="w-48 rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 outline-none transition placeholder-gray-400 focus:border-[#125fcb] focus:ring-2 focus:ring-[#125fcb]/20" name="owner_info_aadhaar_number" type="text" inputmode="numeric" maxlength="12" pattern="[0-9]{12}" placeholder="12 अंक" title="आधार कार्ड क्रमांक 12 अंकी असावा."></td>
                                                 <td class="border-r border-gray-200 p-3">
-                                                    <div class="flex w-48 flex-col gap-1.5">
+                                                    <div class="flex w-48 flex-col gap-1.5" data-owner-file-control>
                                                         <label class="flex w-full cursor-pointer items-center justify-center rounded-lg border border-dashed border-[#125fcb] bg-[#125fcb]/5 px-3 py-2 text-sm font-semibold text-[#125fcb] transition hover:bg-[#125fcb]/10">
                                                             <span>Choose file</span>
                                                             <input class="hidden" name="owner_info_aadhaar_file" data-file-field="owner_info_aadhaar_file" type="file" accept="application/pdf,image/*">
                                                         </label>
                                                         <span class="max-w-full truncate px-1 text-center text-[11px] font-medium text-gray-500" data-file-name>No file chosen</span>
-                                                        <button type="button" class="hidden rounded-lg border border-green-200 bg-green-50 px-3 py-1.5 text-xs font-semibold text-green-700 transition hover:bg-green-100" data-view-file>View</button>
+                                                        <div class="pc-saved-file-card pc-fetched-files hidden" data-owner-saved-file-card>
+                                                            <div class="pc-fetched-files__list">
+                                                                <div class="pc-fetched-file">
+                                                                    <span class="pc-saved-file-name" data-owner-saved-file-name>अपलोड केलेली प्रत</span>
+                                                                    <div class="pc-saved-file-actions pc-fetched-file__actions">
+                                                                        <button type="button" class="pc-saved-file-view" data-view-file aria-label="View uploaded file" title="View uploaded file">
+                                                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                                                                <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"></path>
+                                                                                <circle cx="12" cy="12" r="3"></circle>
+                                                                            </svg>
+                                                                        </button>
+                                                                        <button type="button" class="pc-saved-file-delete hidden" data-pc-doc-delete-for="owner_info_aadhaar_file_0" aria-label="Remove uploaded file" title="Remove uploaded file">×</button>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
                                                     </div>
                                                 </td>
                                                 <td class="border-r border-gray-200 p-3"><input class="w-48 rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 outline-none transition placeholder-gray-400 focus:border-[#125fcb] focus:ring-2 focus:ring-[#125fcb]/20" name="owner_info_pan_number" type="text" maxlength="10" pattern="[A-Za-z]{5}[0-9]{4}[A-Za-z]{1}" placeholder="ABCDE1234F" title="पॅन कार्ड क्रमांक 5 अक्षरे, 4 अंक आणि शेवटी 1 अक्षर असा असावा."></td>
                                                 <td class="border-r border-gray-200 p-3">
-                                                    <div class="flex w-48 flex-col gap-1.5">
+                                                    <div class="flex w-48 flex-col gap-1.5" data-owner-file-control>
                                                         <label class="flex w-full cursor-pointer items-center justify-center rounded-lg border border-dashed border-[#125fcb] bg-[#125fcb]/5 px-3 py-2 text-sm font-semibold text-[#125fcb] transition hover:bg-[#125fcb]/10">
                                                             <span>Choose file</span>
                                                             <input class="hidden" name="owner_info_pan_file" data-file-field="owner_info_pan_file" type="file" accept="application/pdf,image/*">
                                                         </label>
                                                         <span class="max-w-full truncate px-1 text-center text-[11px] font-medium text-gray-500" data-file-name>No file chosen</span>
-                                                        <button type="button" class="hidden rounded-lg border border-green-200 bg-green-50 px-3 py-1.5 text-xs font-semibold text-green-700 transition hover:bg-green-100" data-view-file>View</button>
+                                                        <div class="pc-saved-file-card pc-fetched-files hidden" data-owner-saved-file-card>
+                                                            <div class="pc-fetched-files__list">
+                                                                <div class="pc-fetched-file">
+                                                                    <span class="pc-saved-file-name" data-owner-saved-file-name>अपलोड केलेली प्रत</span>
+                                                                    <div class="pc-saved-file-actions pc-fetched-file__actions">
+                                                                        <button type="button" class="pc-saved-file-view" data-view-file aria-label="View uploaded file" title="View uploaded file">
+                                                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                                                                <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"></path>
+                                                                                <circle cx="12" cy="12" r="3"></circle>
+                                                                            </svg>
+                                                                        </button>
+                                                                        <button type="button" class="pc-saved-file-delete hidden" data-pc-doc-delete-for="owner_info_pan_file_0" aria-label="Remove uploaded file" title="Remove uploaded file">×</button>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
                                                     </div>
                                                 </td>
                                                 <td class="border-r border-gray-200 p-3"><input class="w-48 rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 outline-none transition placeholder-gray-400 focus:border-[#125fcb] focus:ring-2 focus:ring-[#125fcb]/20" name="owner_info_mobile_number" type="tel" inputmode="numeric" maxlength="10" pattern="[6-9][0-9]{9}" placeholder="10 अंक" title="मोबाईल नंबर 6, 7, 8 किंवा 9 ने सुरू होणारा 10 अंकी असावा."></td>
@@ -1513,7 +1656,6 @@
                         </div>
 
                     </div>
-        </div>
         </section>
 
         <section class="pc-step-panel" data-pc-panel="3">
@@ -1648,6 +1790,7 @@
                                     <input class="pc-upload mt-3" name="section32_notice_file" type="file">
                                     <a class="mt-2 hidden text-xs font-semibold text-[#125fcb] underline"
                                         data-pc-doc-link-for="section32_notice_file" target="_blank" rel="noopener"></a>
+                                <button type="button" class="mt-2 hidden rounded-full px-2 text-sm font-bold text-[#d33]" data-pc-doc-delete-for="section32_notice_file" title="Remove">&times;</button>
                                 </div>
                             </div>
                             <div class="flex justify-end">
@@ -1679,6 +1822,7 @@
                                 <input class="pc-upload" name="objection_letter_file" type="file">
                                 <a class="mt-2 hidden text-xs font-semibold text-[#125fcb] underline"
                                     data-pc-doc-link-for="objection_letter_file" target="_blank" rel="noopener"></a>
+                                <button type="button" class="mt-2 hidden rounded-full px-2 text-sm font-bold text-[#d33]" data-pc-doc-delete-for="objection_letter_file" title="Remove">&times;</button>
                             </div>
                         </div>
                     </div>
@@ -1724,6 +1868,7 @@
                                 <input class="pc-upload mt-3" name="section323_notice_file" type="file">
                                 <a class="mt-2 hidden text-xs font-semibold text-[#125fcb] underline"
                                     data-pc-doc-link-for="section323_notice_file" target="_blank" rel="noopener"></a>
+                                <button type="button" class="mt-2 hidden rounded-full px-2 text-sm font-bold text-[#d33]" data-pc-doc-delete-for="section323_notice_file" title="Remove">&times;</button>
                             </div>
                             <div class="flex justify-end">
                                 <button type="button" class="pc-generate-notice-btn pc-323-notice-generate-btn">Generate
@@ -1772,6 +1917,7 @@
                                         <a class="mt-2 hidden text-xs font-semibold text-[#125fcb] underline"
                                             data-pc-doc-link-for="objection_report_file" target="_blank"
                                             rel="noopener"></a>
+                                <button type="button" class="mt-2 hidden rounded-full px-2 text-sm font-bold text-[#d33]" data-pc-doc-delete-for="objection_report_file" title="Remove">&times;</button>
                                     </div>
                                 </div>
                                 <div id="pcObjectionReportNoFields" class="mt-5 hidden">
@@ -1912,7 +2058,7 @@
                             </div>
                         </div>
 
-                        <div class="pc-section" id="pcMultiKhataSection">
+                        <div class="pc-section hidden" id="pcMultiKhataSection">
                             <div class="mb-4 flex items-center justify-between gap-3">
                                 <h3 class="text-lg font-bold text-[#244271]">स्वतंत्र क्षेत्र नसल्यास अन्य खातेदारांचे
                                     नाव समाविष्ट करण्यासाठी</h3>
@@ -2264,7 +2410,7 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="mt-4 pc-question-grid">
+                            <div class="mt-5 pc-question-grid">
                                 <div class="pc-question-left">
                                     <span class="pc-label">अधिसूचनेमध्ये सर्वे क्रमांक किंवा गट क्रमांक समाविष्ट आहे
                                         का?</span>
@@ -2287,14 +2433,14 @@
                                 <div class="hidden pc-question-right md:col-start-2" id="pcGroupClauseReasonWrap">
                                     <label class="pc-label">नसल्यास कारण नमूद करा</label>
                                     <input class="pc-input mt-2" id="pcGroupClauseReason" name="group_clause_reason"
-                                        type="text" placeholder="कारण नमूद करा">
+                                    type="text" placeholder="कारण नमूद करा">
                                 </div>
                             </div>
                         </div>
-                        <div class="pc-section">
+                        <div class="pc-section mt-6">
                             <div class="space-y-5 ">
                                 <h3 class="mb-4 text-lg font-bold text-[#244271]">कलम ३२(५) अन्वये नोटीस</h3>
-                                <div class="grid gap-4 md:grid-cols-[240px_minmax(320px,1fr)] md:items-end">
+                                <div class="grid gap-5 md:grid-cols-[300px_minmax(0,1fr)] md:items-end">
                                     <div>
                                         <label class="pc-label">नोटीस बजावण्याचा दिनांक</label>
                                         <input class="pc-input pc-date-input" name="section325_notice_date" type="date"
@@ -2306,6 +2452,7 @@
                                         <a class="mt-2 hidden text-xs font-semibold text-[#125fcb] underline"
                                             data-pc-doc-link-for="section325_notice_file" target="_blank"
                                             rel="noopener"></a>
+                                        <button type="button" class="mt-2 hidden rounded-full px-2 text-sm font-bold text-[#d33]" data-pc-doc-delete-for="section325_notice_file" title="Remove">&times;</button>
                                     </div>
                                 </div>
                                 <div class="flex justify-end">
@@ -2316,6 +2463,7 @@
                         </div>
                     </div>
                 </div>
+            </div>
         </section>
 
         <section class="pc-step-panel" data-pc-panel="6">
@@ -2636,9 +2784,10 @@
                                     name="consent_area" type="text" placeholder="हेक्टर.आर."></div>
                             <div>
                                 <label class="pc-label">संमती पत्र</label>
-                                <input class="pc-upload" name="consent_letter_file" type="file">
+                                <input class="pc-upload" name="consent_letter_file" type="file" multiple>
                                 <a class="mt-2 hidden text-xs font-semibold text-[#125fcb] underline"
                                     data-pc-doc-link-for="consent_letter_file" target="_blank" rel="noopener"></a>
+                                <button type="button" class="mt-2 hidden rounded-full px-2 text-sm font-bold text-[#d33]" data-pc-doc-delete-for="consent_letter_file" title="Remove">&times;</button>
                             </div>
                             <div><label class="pc-label">संमतीचा निर्णय</label><select class="pc-input"
                                     id="pcConsentDecision" name="consent_decision">
@@ -2650,6 +2799,7 @@
                                 <input class="pc-upload" name="consent_decision_file" type="file">
                                 <a class="mt-2 hidden text-xs font-semibold text-[#125fcb] underline"
                                     data-pc-doc-link-for="consent_decision_file" target="_blank" rel="noopener"></a>
+                                <button type="button" class="mt-2 hidden rounded-full px-2 text-sm font-bold text-[#d33]" data-pc-doc-delete-for="consent_decision_file" title="Remove">&times;</button>
                             </div>
 
                         </div>
@@ -2710,6 +2860,7 @@
                                 <input class="pc-upload" name="agreement_letter_file" type="file">
                                 <a class="mt-2 hidden text-xs font-semibold text-[#125fcb] underline"
                                     data-pc-doc-link-for="agreement_letter_file" target="_blank" rel="noopener"></a>
+                                <button type="button" class="mt-2 hidden rounded-full px-2 text-sm font-bold text-[#d33]" data-pc-doc-delete-for="agreement_letter_file" title="Remove">&times;</button>
                             </div>
                             <div><label class="pc-label">करारनामा झाल्याचा दिनांक</label><input class="pc-input"
                                     id="pcAgreementDate" name="agreement_date" type="date"></div>
@@ -2718,7 +2869,78 @@
                                 <input class="pc-upload" name="agreement_upload_file" type="file">
                                 <a class="mt-2 hidden text-xs font-semibold text-[#125fcb] underline"
                                     data-pc-doc-link-for="agreement_upload_file" target="_blank" rel="noopener"></a>
+                                <button type="button" class="mt-2 hidden rounded-full px-2 text-sm font-bold text-[#d33]" data-pc-doc-delete-for="agreement_upload_file" title="Remove">&times;</button>
                             </div>
+                        </div>
+                        <div class="mt-6 space-y-5">
+                            <div class="rounded-xl border border-[#dbe8f8] bg-[#f8fbff] p-4">
+                                <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+                                    <h4 class="text-base font-bold text-[#244271]">करारनामा लिहून देणारे भूधारक - फोटो, अंगठा व स्वाक्षरी</h4>
+                                    <div class="flex flex-wrap items-center gap-2">
+                                        <button type="button" id="pcAgreementFetchOwnerCaptureRowsBtn"
+                                            class="rounded-lg bg-[#0f766e] px-4 py-2 text-sm font-semibold text-white"
+                                            onclick="window.pcOpenAgreementOwnerCapturePicker && window.pcOpenAgreementOwnerCapturePicker()">भूधारक नावे भरा</button>
+                                        <button type="button" id="pcAgreementAddOwnerCaptureRowBtn"
+                                            class="rounded-lg bg-[#125fcb] px-4 py-2 text-sm font-semibold text-white">ओळ जोडा</button>
+                                    </div>
+                                </div>
+                                <div class="overflow-x-auto">
+                                    <table class="pc-table">
+                                        <thead>
+                                            <tr>
+                                                <th>करारनामा लिहून देणाऱ्याचे नाव</th>
+                                                <th>कृती</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="pcAgreementOwnerCaptureRows"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <div class="rounded-xl border border-[#dbe8f8] bg-[#f8fbff] p-4">
+                                <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+                                    <h4 class="text-base font-bold text-[#244271]">करारनामा लिहून घेणार - फोटो, अंगठा व स्वाक्षरी</h4>
+                                </div>
+                                <div class="overflow-x-auto">
+                                    <table class="pc-table">
+                                        <thead>
+                                            <tr>
+                                                <th>करारनामा लिहून घेणार</th>
+                                                <th>कृती</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="pcAgreementReceiverCaptureRows"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <div class="rounded-xl border border-[#dbe8f8] bg-[#f8fbff] p-4">
+                                <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+                                    <h4 class="text-base font-bold text-[#244271]">साक्षीदार - फोटो, अंगठा व स्वाक्षरी</h4>
+                                    <button type="button" id="pcAgreementAddWitnessCaptureRowBtn"
+                                        class="rounded-lg bg-[#125fcb] px-4 py-2 text-sm font-semibold text-white">ओळ जोडा</button>
+                                </div>
+                                <div class="overflow-x-auto">
+                                    <table class="pc-table">
+                                        <thead>
+                                            <tr>
+                                                <th>साक्षीदाराचे नाव</th>
+                                                <th>कृती</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="pcAgreementWitnessCaptureRows"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="pcAgreementBiometricModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
+                            <div class="max-h-[92vh] w-full max-w-6xl overflow-y-auto rounded-xl bg-white shadow-xl">
+                                <div class="flex items-center justify-between border-b px-5 py-4">
+                                    <div>
+                                        <h3 class="text-base font-bold text-[#244271]">Add Biometrics</h3>
+                                        <p id="pcAgreementBiometricPersonName" class="mt-1 text-sm font-semibold text-[#5c78a5]"></p>
+                                    </div>
+                                    <button type="button" id="pcAgreementBiometricModalCloseBtn" class="text-xl font-bold text-[#5c78a5] hover:text-[#244271]">&times;</button>
+                                </div>
+                                <div class="px-5 py-5">
                             <div class="pc-agreement-capture-grid">
                                 <div class="pc-capture-card pc-webcam-card">
                                     <label class="pc-label">Webcam Photo Capture</label>
@@ -2812,6 +3034,12 @@
                                     <input type="hidden" name="agreement_biometric_captured_at" id="agreement_biometric_captured_at">
                                     <input type="hidden" name="agreement_biometric_provider" id="agreement_biometric_provider">
                                     <input type="hidden" name="agreement_biometric_status" id="agreement_biometric_status">
+                                </div>
+                            </div>
+                                </div>
+                                <div class="flex flex-wrap justify-end gap-2 border-t px-5 py-4">
+                                    <button type="button" id="pcAgreementBiometricModalCancelBtn" class="rounded-lg border border-[#d4deec] bg-white px-4 py-2 text-sm font-semibold text-[#5d7293]">Cancel</button>
+                                    <button type="button" id="pcAgreementBiometricSubmitBtn" class="rounded-lg bg-[#125fcb] px-4 py-2 text-sm font-semibold text-white">Submit Biometrics</button>
                                 </div>
                             </div>
                         </div>
@@ -2912,6 +3140,7 @@
                                 <input class="pc-upload" name="forced_notice_served_file" type="file">
                                 <a class="mt-2 hidden text-xs font-semibold text-[#125fcb] underline"
                                     data-pc-doc-link-for="forced_notice_served_file" target="_blank" rel="noopener"></a>
+                                <button type="button" class="mt-2 hidden rounded-full px-2 text-sm font-bold text-[#d33]" data-pc-doc-delete-for="forced_notice_served_file" title="Remove">&times;</button>
                             </div>
                         </div>
                         <div class="mt-4 flex justify-end">
@@ -2944,6 +3173,7 @@
                                 <a class="mt-2 hidden text-xs font-semibold text-[#125fcb] underline"
                                     data-pc-doc-link-for="court_payment_receipt_file" target="_blank"
                                     rel="noopener"></a>
+                                <button type="button" class="mt-2 hidden rounded-full px-2 text-sm font-bold text-[#d33]" data-pc-doc-delete-for="court_payment_receipt_file" title="Remove">&times;</button>
                             </div>
                             <div><label class="pc-label">संबंधित विधिज्ञ बाब तपशील</label><input class="pc-input"
                                     name="court_legal_matter_detail" type="text"></div>
@@ -2975,6 +3205,7 @@
                                 <input class="pc-upload" name="possession_notice_file" type="file">
                                 <a class="mt-2 hidden text-xs font-semibold text-[#125fcb] underline"
                                     data-pc-doc-link-for="possession_notice_file" target="_blank" rel="noopener"></a>
+                                <button type="button" class="mt-2 hidden rounded-full px-2 text-sm font-bold text-[#d33]" data-pc-doc-delete-for="possession_notice_file" title="Remove">&times;</button>
                             </div>
                             <div><label class="pc-label">कार्यालयाचे नाव</label><input class="pc-input"
                                     name="possession_office_name" type="text"></div>
@@ -2984,6 +3215,7 @@
                                 <a class="mt-2 hidden text-xs font-semibold text-[#125fcb] underline"
                                     data-pc-doc-link-for="possession_office_letter_file" target="_blank"
                                     rel="noopener"></a>
+                                <button type="button" class="mt-2 hidden rounded-full px-2 text-sm font-bold text-[#d33]" data-pc-doc-delete-for="possession_office_letter_file" title="Remove">&times;</button>
                             </div>
                             <div class="md:col-span-3">
                                 <span class="pc-label">सक्षम प्राधिकारी संपादित जमिनीचा ताबा घेण्यात आला आहे का?</span>
@@ -3021,6 +3253,7 @@
                                         <a class="mt-2 hidden text-xs font-semibold text-[#125fcb] underline"
                                             data-pc-doc-link-for="possession_handed_receipt_file" target="_blank"
                                             rel="noopener"></a>
+                                <button type="button" class="mt-2 hidden rounded-full px-2 text-sm font-bold text-[#d33]" data-pc-doc-delete-for="possession_handed_receipt_file" title="Remove">&times;</button>
                                     </div>
                                 </div>
                             </div>
@@ -3054,6 +3287,7 @@
                                         <a class="mt-2 hidden text-xs font-semibold text-[#125fcb] underline"
                                             data-pc-doc-link-for="record_updated_712_file" target="_blank"
                                             rel="noopener"></a>
+                                <button type="button" class="mt-2 hidden rounded-full px-2 text-sm font-bold text-[#d33]" data-pc-doc-delete-for="record_updated_712_file" title="Remove">&times;</button>
                                     </div>
                                 </div>
                             </div>
@@ -3426,6 +3660,9 @@
         };
         window.pcOpenStep9OwnerPicker = () => {
             openJointSurveyNamesModal(currentProcessChartPrefill, { mode: 'step9' });
+        };
+        window.pcOpenAgreementOwnerCapturePicker = () => {
+            openJointSurveyNamesModal(currentProcessChartPrefill, { mode: 'agreement_owner_capture' });
         };
         window.pcStep9AddPaymentRow = () => {
             appendStep9PaymentRow();
@@ -4238,9 +4475,33 @@
         let agreementSelectedCameraDeviceId = '';
         let agreementSignatureInitialized = false;
         let agreementSignatureHasInk = false;
+        let activeAgreementCaptureType = 'owner';
+        let activeAgreementCaptureIndex = 0;
+        let activeAgreementCaptureRowPrefix = 'agreement_owner_capture_0';
+        let agreementOwnerCaptureSelectionCache = new Map();
         let agreementBiometricAbortController = null;
         let agreementBiometricCaptureCancelled = false;
         const agreementRingDefaults = { w: 30, h: 58 };
+
+        const agreementCaptureGroups = {
+            owner: {
+                bodyId: 'pcAgreementOwnerCaptureRows',
+                prefix: 'agreement_owner_capture',
+                defaultName: '',
+            },
+            receiver: {
+                bodyId: 'pcAgreementReceiverCaptureRows',
+                prefix: 'agreement_receiver_capture',
+                defaultName: '',
+                readOnlyName: true,
+                fixedRows: true,
+            },
+            witness: {
+                bodyId: 'pcAgreementWitnessCaptureRows',
+                prefix: 'agreement_witness_capture',
+                defaultName: 'साक्षीदार 1',
+            },
+        };
 
         function setCaptureStatus(elementId, message, state = '') {
             const element = document.getElementById(elementId);
@@ -4248,6 +4509,193 @@
             element.textContent = message;
             element.classList.toggle('is-error', state === 'error');
             element.classList.toggle('is-success', state === 'success');
+        }
+
+        function getAgreementCaptureConfig(type = 'owner') {
+            return agreementCaptureGroups[type] || agreementCaptureGroups.owner;
+        }
+
+        function getAgreementCaptureFieldIds(prefix = 'agreement_owner_capture_0') {
+            return {
+                photo: `${prefix}_photo`,
+                signature: `${prefix}_signature`,
+                fingerprint_image: `${prefix}_fingerprint_image`,
+                fingerprint_template: `${prefix}_fingerprint_template`,
+                biometric_pid_data: `${prefix}_biometric_pid_data`,
+                fingerprint_quality: `${prefix}_fingerprint_quality`,
+                fingerprint_device_id: `${prefix}_fingerprint_device_id`,
+                biometric_captured_at: `${prefix}_biometric_captured_at`,
+                biometric_provider: `${prefix}_biometric_provider`,
+                biometric_status: `${prefix}_biometric_status`,
+            };
+        }
+
+        function buildAgreementCaptureRow(type = 'owner', row = {}, index = 0) {
+            const config = getAgreementCaptureConfig(type);
+            const idPrefix = `${config.prefix}_${index}`;
+            const fallbackName = type === 'witness' ? `साक्षीदार ${index + 1}` : '';
+            const nameValue = row.name || row.owner_name || row.witness_name || fallbackName;
+            const hasCapture = row.photo || row.signature || row.biometric_captured_at || row.fingerprint_template || row.fingerprint_image;
+            const removeButton = index === 0 || config.fixedRows
+                ? ''
+                : '<button type="button" class="pc-agreement-capture-remove-row rounded-md border border-[#d4deec] px-2 py-1 text-xs text-[#5d7293]">काढा</button>';
+            const nameField = config.readOnlyName
+                ? `<input class="pc-input bg-gray-50 font-semibold text-[#244271]" name="${config.prefix}_name" type="text" value="${escapeHtml(nameValue)}" readonly data-pc-prefill-source="agreement_receiver">`
+                : `<input class="pc-input" name="${config.prefix}_name" type="text" value="${escapeHtml(nameValue)}" placeholder="${type === 'witness' ? 'साक्षीदाराचे नाव' : 'भूधारकाचे नाव'}">`;
+            const witnessExtraFields = type === 'witness' ? `
+                        <input class="pc-input mt-2" name="${config.prefix}_address" type="text" value="${escapeHtml(row.address || '')}" placeholder="पत्ता (रा.)">
+                        <input class="pc-input mt-2" name="${config.prefix}_aadhaar_number" type="text" inputmode="numeric" maxlength="12" pattern="[0-9]{12}" placeholder="आधार क्र. (12 अंक)" title="आधार कार्ड क्रमांक 12 अंकी असावा." value="${escapeHtml(row.aadhaar_number || '')}">` : '';
+            return `
+                <tr data-agreement-capture-row="${escapeHtml(type)}">
+                    <td>
+                        ${nameField}${witnessExtraFields}
+                        <input type="hidden" name="${config.prefix}_photo" id="${idPrefix}_photo" value="${escapeHtml(row.photo || '')}">
+                        <input type="hidden" name="${config.prefix}_signature" id="${idPrefix}_signature" value="${escapeHtml(row.signature || '')}">
+                        <input type="hidden" name="${config.prefix}_fingerprint_image" id="${idPrefix}_fingerprint_image" value="${escapeHtml(row.fingerprint_image || '')}">
+                        <input type="hidden" name="${config.prefix}_fingerprint_template" id="${idPrefix}_fingerprint_template" value="${escapeHtml(row.fingerprint_template || '')}">
+                        <input type="hidden" name="${config.prefix}_biometric_pid_data" id="${idPrefix}_biometric_pid_data" value="${escapeHtml(row.biometric_pid_data || '')}">
+                        <input type="hidden" name="${config.prefix}_fingerprint_quality" id="${idPrefix}_fingerprint_quality" value="${escapeHtml(row.fingerprint_quality || '')}">
+                        <input type="hidden" name="${config.prefix}_fingerprint_device_id" id="${idPrefix}_fingerprint_device_id" value="${escapeHtml(row.fingerprint_device_id || '')}">
+                        <input type="hidden" name="${config.prefix}_biometric_captured_at" id="${idPrefix}_biometric_captured_at" value="${escapeHtml(row.biometric_captured_at || '')}">
+                        <input type="hidden" name="${config.prefix}_biometric_provider" id="${idPrefix}_biometric_provider" value="${escapeHtml(row.biometric_provider || '')}">
+                        <input type="hidden" name="${config.prefix}_biometric_status" id="${idPrefix}_biometric_status" value="${escapeHtml(row.biometric_status || '')}">
+                    </td>
+                    <td>
+                        <div class="flex flex-wrap items-center gap-2">
+                            <button type="button" class="pc-agreement-biometrics-btn rounded-md bg-[#125fcb] px-3 py-2 text-xs font-semibold text-white" data-capture-type="${escapeHtml(type)}" data-capture-index="${index}" data-target-prefix="${escapeHtml(idPrefix)}">Add Biometrics</button>
+                            <div class="pc-eye-col">
+                                <button type="button" class="pc-agreement-biometrics-view-btn pc-eye-view ${hasCapture ? '' : 'hidden'}" data-capture-type="${escapeHtml(type)}" data-capture-index="${index}" data-target-prefix="${escapeHtml(idPrefix)}" data-agreement-capture-view="${escapeHtml(idPrefix)}" aria-label="View/Edit Biometrics" title="View/Edit Biometrics">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                        <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"></path>
+                                        <circle cx="12" cy="12" r="3"></circle>
+                                    </svg>
+                                </button>
+                            </div>
+                            ${removeButton}
+                        </div>
+                        <p class="pc-capture-status ${hasCapture ? 'is-success' : ''}" data-agreement-capture-summary="${escapeHtml(idPrefix)}">${hasCapture ? 'Biometrics added' : 'Not added'}</p>
+                    </td>
+                </tr>
+            `;
+        }
+
+        function collectAgreementCaptureRows(type = 'owner') {
+            const config = getAgreementCaptureConfig(type);
+            const body = document.getElementById(config.bodyId);
+            if (!body) return [];
+            return Array.from(body.querySelectorAll('tr')).map((row) => {
+                const value = (suffix) => row.querySelector(`[name="${config.prefix}_${suffix}"]`)?.value || '';
+                return {
+                    name: String(value('name')).trim(),
+                    address: String(value('address')).trim(),
+                    aadhaar_number: String(value('aadhaar_number')).trim(),
+                    photo: value('photo'),
+                    signature: value('signature'),
+                    fingerprint_image: value('fingerprint_image'),
+                    fingerprint_template: value('fingerprint_template'),
+                    biometric_pid_data: value('biometric_pid_data'),
+                    fingerprint_quality: value('fingerprint_quality'),
+                    fingerprint_device_id: value('fingerprint_device_id'),
+                    biometric_captured_at: value('biometric_captured_at'),
+                    biometric_provider: value('biometric_provider'),
+                    biometric_status: value('biometric_status'),
+                };
+            });
+        }
+
+        function renderAgreementCaptureRows(type = 'owner', rows = []) {
+            const config = getAgreementCaptureConfig(type);
+            const body = document.getElementById(config.bodyId);
+            if (!body) return;
+            const nextRows = rows.length ? rows : [{ name: config.defaultName }];
+            body.innerHTML = nextRows.map((row, index) => buildAgreementCaptureRow(type, row || {}, index)).join('');
+        }
+
+        function appendAgreementCaptureRow(type = 'owner', row = {}) {
+            const rows = collectAgreementCaptureRows(type);
+            rows.push(row);
+            renderAgreementCaptureRows(type, rows);
+        }
+
+        function getAgreementOwnerNamesForCapture() {
+            const names = [
+                ...collectTab4OwnerRows().map((row) => row.owner_name),
+                ...getStep9PaymentOwnerNamesFromRows(),
+                ...collectStep1OwnerRows(currentProcessChartPrefill).map((row) => row.owner_name),
+                ...getStep10OwnerNamesFromTab1(currentProcessChartPrefill),
+            ]
+                .map((name) => String(name || '').trim())
+                .filter(Boolean);
+            return Array.from(new Set(names));
+        }
+
+        function getAgreementReceiverNamesForCapture() {
+            const prefill = currentProcessChartPrefill || {};
+            const sec3Rows = Array.isArray(prefill.village_data?.sec3_rows) ? prefill.village_data.sec3_rows : [];
+            const names = [
+                ...sec3Rows.map((row) => row?.officer_name || row?.sec3_officer_name),
+                ...Array.from(document.querySelectorAll('#pcSec3Rows .pc-sec3-officer-name'))
+                    .map((field) => field instanceof HTMLInputElement ? field.value : ''),
+            ]
+                .map((name) => String(name || '').trim())
+                .filter(Boolean);
+            if (!names.length) {
+                const fallbackName = getFieldValue('[name="sec3_officer_name"]');
+                if (fallbackName) names.push(fallbackName);
+            }
+            const seen = new Set();
+            return names.filter((name) => {
+                const key = normalizeOwnerLookupName(name);
+                if (!key || seen.has(key)) return false;
+                seen.add(key);
+                return true;
+            });
+        }
+
+        function fetchAgreementReceiverCaptureRows() {
+            const existingRows = collectAgreementCaptureRows('receiver');
+            const existingByName = new Map();
+            existingRows.forEach((row) => {
+                const key = normalizeOwnerLookupName(row.name || '');
+                if (key) existingByName.set(key, row);
+            });
+            const receiverNames = getAgreementReceiverNamesForCapture();
+            if (!receiverNames.length) {
+                const filledExistingRows = existingRows.filter((row) =>
+                    Object.values(row).some((value) => String(value || '').trim())
+                );
+                renderAgreementCaptureRows('receiver', filledExistingRows.length ? filledExistingRows : [{ name: '' }]);
+                return;
+            }
+            renderAgreementCaptureRows('receiver', receiverNames.map((name) => ({
+                ...(existingByName.get(normalizeOwnerLookupName(name)) || {}),
+                name,
+            })));
+        }
+
+        function populateAgreementOwnerCaptureSelection(options = {}) {
+            const ownerNames = getAgreementOwnerNamesForCapture();
+            const existingByName = new Map(agreementOwnerCaptureSelectionCache);
+            collectAgreementCaptureRows('owner').forEach((row) => {
+                const key = normalizeOwnerLookupName(row.name || '');
+                if (key) existingByName.set(key, row);
+            });
+            const selectedRows = Array.from(document.querySelectorAll('.pc-joint-survey-name-checkbox[data-group-type="agreement-owner"]:checked'))
+                .map((checkbox) => {
+                    const rowIndex = Number.parseInt(checkbox.getAttribute('data-row-index') || '-1', 10);
+                    return String(ownerNames[rowIndex] || '').trim();
+                })
+                .filter(Boolean)
+                .map((name) => ({
+                    ...(existingByName.get(normalizeOwnerLookupName(name)) || {}),
+                    name,
+                }));
+
+            agreementOwnerCaptureSelectionCache = existingByName;
+            renderAgreementCaptureRows('owner', selectedRows);
+            if (options.closeModal !== false) {
+                closeJointSurveyNamesModal();
+            }
         }
 
         function formatAgreementBiometricDate(value) {
@@ -4704,7 +5152,8 @@
             const modal = document.getElementById('agreementCameraModal');
             modal?.classList.add('hidden');
             if (modal instanceof HTMLElement) modal.style.display = '';
-            document.body.style.overflow = '';
+            const biometricModalOpen = !document.getElementById('pcAgreementBiometricModal')?.classList.contains('hidden');
+            document.body.style.overflow = biometricModalOpen ? 'hidden' : '';
             stopAgreementCamera();
         }
 
@@ -5079,7 +5528,118 @@
             }
         }
 
+        function setLegacyAgreementCaptureFields(row = {}) {
+            const setValue = (id, value) => {
+                const field = document.getElementById(id);
+                if (field instanceof HTMLInputElement) field.value = value || '';
+            };
+            setValue('agreement_webcam_photo', row.photo);
+            setValue('agreement_digital_signature', row.signature);
+            setValue('agreement_fingerprint_image', row.fingerprint_image);
+            setValue('agreement_fingerprint_template', row.fingerprint_template);
+            setValue('agreement_biometric_pid_data', row.biometric_pid_data);
+            setValue('agreement_fingerprint_quality', row.fingerprint_quality);
+            setValue('agreement_fingerprint_device_id', row.fingerprint_device_id);
+            setValue('agreement_biometric_captured_at', row.biometric_captured_at);
+            setValue('agreement_biometric_provider', row.biometric_provider);
+            setValue('agreement_biometric_status', row.biometric_status);
+        }
+
+        function getAgreementCaptureRow(type = 'owner', index = 0) {
+            const config = getAgreementCaptureConfig(type);
+            const body = document.getElementById(config.bodyId);
+            return body?.querySelectorAll('tr')?.[index] || null;
+        }
+
+        function readAgreementCaptureRow(type = 'owner', index = 0) {
+            const config = getAgreementCaptureConfig(type);
+            const row = getAgreementCaptureRow(type, index);
+            if (!row) return {};
+            const value = (suffix) => row.querySelector(`[name="${config.prefix}_${suffix}"]`)?.value || '';
+            return {
+                name: String(value('name')).trim(),
+                photo: value('photo'),
+                signature: value('signature'),
+                fingerprint_image: value('fingerprint_image'),
+                fingerprint_template: value('fingerprint_template'),
+                biometric_pid_data: value('biometric_pid_data'),
+                fingerprint_quality: value('fingerprint_quality'),
+                fingerprint_device_id: value('fingerprint_device_id'),
+                biometric_captured_at: value('biometric_captured_at'),
+                biometric_provider: value('biometric_provider'),
+                biometric_status: value('biometric_status'),
+            };
+        }
+
+        function updateAgreementCaptureSummary(prefix = activeAgreementCaptureRowPrefix) {
+            const ids = getAgreementCaptureFieldIds(prefix);
+            const hasCapture = ['photo', 'signature', 'biometric_captured_at', 'fingerprint_template', 'fingerprint_image']
+                .some((key) => String(document.getElementById(ids[key])?.value || '').trim());
+            const summary = document.querySelector(`[data-agreement-capture-summary="${CSS.escape(prefix)}"]`);
+            if (summary) {
+                summary.textContent = hasCapture ? 'Biometrics added' : 'Not added';
+                summary.classList.toggle('is-success', hasCapture);
+            }
+            const viewBtn = document.querySelector(`[data-agreement-capture-view="${CSS.escape(prefix)}"]`);
+            viewBtn?.classList.toggle('hidden', !hasCapture);
+        }
+
+        function openAgreementBiometricModal(type = 'owner', index = 0, prefix = '') {
+            const config = getAgreementCaptureConfig(type);
+            activeAgreementCaptureType = type;
+            activeAgreementCaptureIndex = index;
+            activeAgreementCaptureRowPrefix = prefix || `${config.prefix}_${index}`;
+            setLegacyAgreementCaptureFields(readAgreementCaptureRow(type, index));
+            syncAgreementCapturePreviews();
+            const rowName = readAgreementCaptureRow(type, index).name || config.defaultName || '';
+            const personName = document.getElementById('pcAgreementBiometricPersonName');
+            if (personName) personName.textContent = rowName;
+            const modal = document.getElementById('pcAgreementBiometricModal');
+            modal?.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+            requestAnimationFrame(() => resizeAgreementSignatureCanvas({ preserve: true }));
+        }
+
+        function closeAgreementBiometricModal({ reset = true } = {}) {
+            document.getElementById('pcAgreementBiometricModal')?.classList.add('hidden');
+            stopAgreementCamera();
+            document.body.style.overflow = '';
+            if (reset) resetTransientAgreementCaptureFields();
+        }
+
+        function submitAgreementBiometrics() {
+            const ids = getAgreementCaptureFieldIds(activeAgreementCaptureRowPrefix);
+            const copyValue = (legacyId, targetId) => {
+                const source = document.getElementById(legacyId);
+                const target = document.getElementById(targetId);
+                if (source instanceof HTMLInputElement && target instanceof HTMLInputElement) {
+                    target.value = source.value || '';
+                }
+            };
+            copyValue('agreement_webcam_photo', ids.photo);
+            copyValue('agreement_digital_signature', ids.signature);
+            copyValue('agreement_fingerprint_image', ids.fingerprint_image);
+            copyValue('agreement_fingerprint_template', ids.fingerprint_template);
+            copyValue('agreement_biometric_pid_data', ids.biometric_pid_data);
+            copyValue('agreement_fingerprint_quality', ids.fingerprint_quality);
+            copyValue('agreement_fingerprint_device_id', ids.fingerprint_device_id);
+            copyValue('agreement_biometric_captured_at', ids.biometric_captured_at);
+            copyValue('agreement_biometric_provider', ids.biometric_provider);
+            copyValue('agreement_biometric_status', ids.biometric_status);
+            updateAgreementCaptureSummary(activeAgreementCaptureRowPrefix);
+            closeAgreementBiometricModal();
+        }
+
         function validateAgreementCapturesForFinalSubmit() {
+            const hasCompleteRowCapture = (row = {}) =>
+                Boolean(String(row.name || '').trim())
+                && Boolean(String(row.photo || '').trim())
+                && Boolean(String(row.signature || '').trim())
+                && Boolean(String(row.biometric_captured_at || row.fingerprint_template || row.fingerprint_image || '').trim());
+            const ownerRows = collectAgreementCaptureRows('owner').filter((row) => String(row.name || '').trim());
+            if (ownerRows.some(hasCompleteRowCapture)) {
+                return true;
+            }
             const required = [
                 ['agreement_webcam_photo', 'Capture webcam photo before final submit.'],
                 ['agreement_digital_signature', 'Save digital signature before final submit.'],
@@ -5113,7 +5673,7 @@
 
         function initAgreementCaptureControls() {
             const photoTrigger = document.getElementById('agreement-photo-trigger');
-            photoTrigger?.addEventListener('click', startAgreementCamera);
+            photoTrigger?.addEventListener('click', () => startAgreementCamera());
             photoTrigger?.addEventListener('keydown', (event) => {
                 if (event.key === 'Enter' || event.key === ' ') {
                     event.preventDefault();
@@ -5140,9 +5700,40 @@
             document.getElementById('retry-thumb-btn')?.addEventListener('click', captureAgreementThumbImpression);
             document.getElementById('clear-thumb-btn')?.addEventListener('click', clearAgreementThumbImpression);
             document.getElementById('cancel-thumb-btn')?.addEventListener('click', cancelAgreementThumbCapture);
+            document.getElementById('pcAgreementBiometricModalCloseBtn')?.addEventListener('click', () => closeAgreementBiometricModal());
+            document.getElementById('pcAgreementBiometricModalCancelBtn')?.addEventListener('click', () => closeAgreementBiometricModal());
+            document.getElementById('pcAgreementBiometricSubmitBtn')?.addEventListener('click', submitAgreementBiometrics);
+            document.getElementById('pcAgreementBiometricModal')?.addEventListener('click', (event) => {
+                if (event.target === document.getElementById('pcAgreementBiometricModal')) {
+                    closeAgreementBiometricModal();
+                }
+            });
+            document.getElementById('pcAgreementAddOwnerCaptureRowBtn')?.addEventListener('click', () => appendAgreementCaptureRow('owner'));
+            document.getElementById('pcAgreementAddWitnessCaptureRowBtn')?.addEventListener('click', () => appendAgreementCaptureRow('witness'));
+            ['owner', 'receiver', 'witness'].forEach((type) => {
+                const body = document.getElementById(getAgreementCaptureConfig(type).bodyId);
+                body?.addEventListener('click', (event) => {
+                    const target = event.target instanceof Element ? event.target : null;
+                    if (!target) return;
+                    const biometricsBtn = target.closest('.pc-agreement-biometrics-btn, .pc-agreement-biometrics-view-btn');
+                    if (biometricsBtn) {
+                        const captureType = biometricsBtn.getAttribute('data-capture-type') || type;
+                        const captureIndex = Number.parseInt(biometricsBtn.getAttribute('data-capture-index') || '0', 10) || 0;
+                        openAgreementBiometricModal(captureType, captureIndex, biometricsBtn.getAttribute('data-target-prefix') || '');
+                        return;
+                    }
+                    const removeBtn = target.closest('.pc-agreement-capture-remove-row');
+                    if (removeBtn) {
+                        removeBtn.closest('tr')?.remove();
+                    }
+                });
+            });
             initAgreementSignatureCanvas();
             applyAgreementRingSettings();
             refreshAgreementCameraDevices();
+            renderAgreementCaptureRows('owner', []);
+            fetchAgreementReceiverCaptureRows();
+            renderAgreementCaptureRows('witness', []);
             resetTransientAgreementCaptureFields();
             syncAgreementCapturePreviews();
             window.addEventListener('beforeunload', stopAgreementCamera);
@@ -5275,6 +5866,7 @@
                                 <label class="pc-label">पासबुक / चेकबुक प्रत अपलोड करा</label>
                                 <input class="pc-upload" name="step10_passbook_file_${fileKey}" type="file">
                                 <a class="mt-2 hidden text-xs font-semibold text-[#125fcb] underline" data-pc-doc-link-for="step10_passbook_file_${fileKey}" target="_blank" rel="noopener"></a>
+                                <button type="button" class="mt-2 hidden rounded-full px-2 text-sm font-bold text-[#d33]" data-pc-doc-delete-for="step10_passbook_file_${fileKey}" title="Remove">&times;</button>
                             </div>
                         </div>
                     </div>
@@ -5291,6 +5883,7 @@
                         <label class="pc-label">मोबदला पत्र येथे अपलोड करा (scanned copy)</label>
                         <input class="pc-upload" name="step10_compensation_file_${fileKey}" type="file">
                         <a class="mt-2 hidden text-xs font-semibold text-[#125fcb] underline" data-pc-doc-link-for="step10_compensation_file_${fileKey}" target="_blank" rel="noopener"></a>
+                                <button type="button" class="mt-2 hidden rounded-full px-2 text-sm font-bold text-[#d33]" data-pc-doc-delete-for="step10_compensation_file_${fileKey}" title="Remove">&times;</button>
                     </div>
                 </div>
             `;
@@ -5503,6 +6096,90 @@
             return identityMap;
         }
 
+        function collectStep1OwnerDetailMap(prefill = currentProcessChartPrefill) {
+            const detailMap = new Map();
+            const mergeDetails = (row = {}) => {
+                const ownerName = normalizeOwnerLookupName(row.owner_name || row.farmer_name || '');
+                if (!ownerName) return;
+                const existing = detailMap.get(ownerName) || {};
+                detailMap.set(ownerName, {
+                    owner_name: existing.owner_name || row.owner_name || row.farmer_name || '',
+                    khata_number: existing.khata_number || row.khata_number || '',
+                    aadhaar_number: existing.aadhaar_number || row.aadhaar_number || row.aadhar_number || '',
+                    pan_number: existing.pan_number || row.pan_number || '',
+                    mobile_number: existing.mobile_number || row.mobile_number || row.mobile || '',
+                    address: existing.address || row.address || '',
+                });
+            };
+
+            collectStep1OwnerRows(prefill).forEach(mergeDetails);
+            (Array.isArray(prefill?.farmers) ? prefill.farmers : []).forEach(mergeDetails);
+            return detailMap;
+        }
+
+        function hydrateOwnerRowFromStep1(row = {}, detailMap = collectStep1OwnerDetailMap()) {
+            const ownerName = normalizeOwnerLookupName(row.owner_name || '');
+            if (!ownerName || !detailMap.has(ownerName)) return { ...row };
+            const details = detailMap.get(ownerName) || {};
+            return {
+                ...row,
+                mobile_number: details.mobile_number || row.mobile_number || '',
+                address: details.address || row.address || '',
+                aadhaar_number: details.aadhaar_number || row.aadhaar_number || row.aadhar_number || '',
+                pan_number: details.pan_number || row.pan_number || '',
+                khata_number: row.khata_number || details.khata_number || '',
+            };
+        }
+
+        function hydrateOwnerRowsFromStep1(rows = [], detailMap = collectStep1OwnerDetailMap()) {
+            return rows.map((row) => hydrateOwnerRowFromStep1(row, detailMap));
+        }
+
+        function syncTab4OwnerDetailsFromStep1(prefill = currentProcessChartPrefill) {
+            const detailMap = collectStep1OwnerDetailMap(prefill);
+            if (!detailMap.size) return false;
+
+            let changed = false;
+            const syncRowInputs = (row, fieldNames) => {
+                const ownerInput = row.querySelector(`input[name="${fieldNames.owner}"]`);
+                const ownerName = normalizeOwnerLookupName(ownerInput?.value || '');
+                const details = ownerName ? detailMap.get(ownerName) : null;
+                if (!details) return;
+
+                [
+                    [fieldNames.mobile, details.mobile_number || ''],
+                    [fieldNames.address, details.address || ''],
+                ].forEach(([fieldName, nextValue]) => {
+                    if (!nextValue) return;
+                    const field = row.querySelector(`input[name="${fieldName}"]`);
+                    if (field instanceof HTMLInputElement && field.value !== nextValue) {
+                        field.value = nextValue;
+                        changed = true;
+                    }
+                });
+            };
+
+            document.querySelectorAll('#pcSingleKhataOwnersBody tr').forEach((row) => {
+                syncRowInputs(row, {
+                    owner: 'single_khata_owner_name',
+                    mobile: 'single_khata_mobile_number',
+                    address: 'single_khata_address',
+                });
+            });
+            document.querySelectorAll('#pcMultiKhataOwnersBody tr').forEach((row) => {
+                syncRowInputs(row, {
+                    owner: 'multi_khata_owner_name',
+                    mobile: 'multi_khata_mobile_number',
+                    address: 'multi_khata_address',
+                });
+            });
+
+            if (changed) {
+                renderAcquisitionDetailTable(prefill);
+            }
+            return changed;
+        }
+
         function updateStep10AadhaarFromOwner(prefill = currentProcessChartPrefill) {
             const aadhaarMap = collectStep1OwnerAadhaarMap(prefill);
             const ownerSelects = getStep10OwnerInputs();
@@ -5602,11 +6279,21 @@
             sec3RowsContainer.querySelectorAll('.pc-sec3-row-card').forEach((row, index) => {
                 const link = row.querySelector('.pc-sec3-file-link');
                 if (!(link instanceof HTMLAnchorElement)) return;
-                const doc = documents?.[`sec3_files_${index}`] || null;
+                const key = `sec3_files_${index}`;
+                link.dataset.pcDocLinkFor = key;
+                const deleteBtn = ensureSavedDocumentCard(link, key)?.querySelector(`[data-pc-doc-delete-for="${key}"]`) || null;
+                const doc = documents?.[key] || null;
                 if (!doc?.url) {
                     link.classList.add('hidden');
                     link.removeAttribute('href');
+                    delete link.dataset.pcDocUrl;
+                    delete link.dataset.pcDocName;
                     link.textContent = '';
+                    if (deleteBtn instanceof HTMLButtonElement) {
+                        deleteBtn.classList.add('hidden');
+                        delete deleteBtn.dataset.pcDocDeleteId;
+                    }
+                    setSavedDocumentCardVisible(link, false);
                     return;
                 }
                 link.href = doc.url;
@@ -5619,6 +6306,16 @@
                     link.textContent = doc.name || 'अपलोड केलेली प्रत';
                 }
                 link.classList.remove('hidden');
+                setSavedDocumentCardVisible(link, true);
+                if (deleteBtn instanceof HTMLButtonElement) {
+                    if (doc.id) {
+                        deleteBtn.dataset.pcDocDeleteId = doc.id;
+                        deleteBtn.classList.remove('hidden');
+                    } else {
+                        deleteBtn.classList.add('hidden');
+                        delete deleteBtn.dataset.pcDocDeleteId;
+                    }
+                }
             });
         }
 
@@ -5697,6 +6394,7 @@
                 if (rowEl) sec3RowsContainer.appendChild(rowEl);
             });
             syncSec3RowControls();
+            fetchAgreementReceiverCaptureRows();
         }
 
         function ensureSec3RowsForData(sectionData = {}) {
@@ -5923,14 +6621,26 @@
             const cultivableAreaValue = formatOwnerTableCultivableArea(totalAreaValue, rowData.potkharaba, rowData.cultivable_area);
             const inputClass = 'w-48 rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none transition placeholder-gray-400 focus:border-[#125fcb] focus:ring-2 focus:ring-[#125fcb]/20';
             const centeredClass = `${inputClass} text-center`;
-            const fileControl = (name, fileInfo) => `
-                <div class="flex w-48 flex-col gap-1.5">
+            const fileControl = (name, fileInfo, documentKey) => `
+                <div class="flex w-48 flex-col gap-1.5" data-owner-file-control>
                     <label class="flex w-full cursor-pointer items-center justify-center rounded-lg border border-dashed border-[#125fcb] bg-[#125fcb]/5 px-3 py-2 text-sm font-semibold text-[#125fcb] transition hover:bg-[#125fcb]/10">
                         <span>Choose file</span>
                         <input class="hidden" name="${name}" data-file-field="${name}" type="file" accept="application/pdf,image/*">
                     </label>
                     <span class="max-w-full truncate px-1 text-center text-[11px] font-medium ${fileInfo?.name ? 'text-green-600 font-semibold' : 'text-gray-500'}" data-file-name>${escapeHtml(fileInfo?.name || 'No file chosen')}</span>
-                    <button type="button" class="${fileInfo?.url ? '' : 'hidden '}rounded-lg border border-green-200 bg-green-50 px-3 py-1.5 text-xs font-semibold text-green-700 transition hover:bg-green-100" data-view-file${fileInfo?.url ? ` data-file-url="${escapeHtml(fileInfo.url)}" data-file-name="${escapeHtml(fileInfo.name || 'अपलोड केलेली प्रत')}"` : ''}>View</button>
+                    <div class="pc-saved-file-card pc-fetched-files ${fileInfo?.url ? '' : 'hidden'}" data-owner-saved-file-card>
+                        <div class="pc-fetched-files__list">
+                            <div class="pc-fetched-file">
+                                <span class="pc-saved-file-name" data-owner-saved-file-name>${escapeHtml(fileInfo?.name || 'अपलोड केलेली प्रत')}</span>
+                                <div class="pc-saved-file-actions pc-fetched-file__actions">
+                                    <button type="button" class="pc-saved-file-view" data-view-file${fileInfo?.url ? ` data-file-url="${escapeHtml(fileInfo.url)}" data-file-name="${escapeHtml(fileInfo.name || 'अपलोड केलेली प्रत')}"` : ''} aria-label="View uploaded file" title="View uploaded file">
+                                        ${buildSavedFileEyeIcon()}
+                                    </button>
+                                    <button type="button" class="pc-saved-file-delete ${fileInfo?.id ? '' : 'hidden'}" data-pc-doc-delete-for="${escapeHtml(documentKey)}"${fileInfo?.id ? ` data-pc-doc-delete-id="${escapeHtml(fileInfo.id)}"` : ''} aria-label="Remove uploaded file" title="Remove uploaded file">×</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             `;
             return `
@@ -5938,9 +6648,9 @@
                     <td class="border-r border-gray-200 p-3"><input class="${inputClass}${readonlyClass}" name="owner_info_owner_name" type="text" value="${escapeHtml(rowData.owner_name || '')}" placeholder="7/12 मधून भूधारकाचे नाव"${lockedAttr}></td>
                     <td class="border-r border-gray-200 p-3"><input class="${centeredClass}${rowData.source_locked ? ' bg-gray-50 font-medium text-gray-700' : ' text-gray-900'}" name="owner_info_khata_number" type="text" value="${escapeHtml(rowData.khata_number || '')}"${lockedAttr}></td>
                     <td class="border-r border-gray-200 p-3"><input class="${inputClass} text-gray-900" name="owner_info_aadhaar_number" type="text" inputmode="numeric" maxlength="12" pattern="[0-9]{12}" placeholder="12 अंक" title="आधार कार्ड क्रमांक 12 अंकी असावा." value="${escapeHtml(rowData.aadhaar_number || '')}"></td>
-                    <td class="border-r border-gray-200 p-3">${fileControl('owner_info_aadhaar_file', aadhaarFileInfo)}</td>
+                    <td class="border-r border-gray-200 p-3">${fileControl('owner_info_aadhaar_file', aadhaarFileInfo, `owner_info_aadhaar_file_${rowIndex}`)}</td>
                     <td class="border-r border-gray-200 p-3"><input class="${inputClass} text-gray-900" name="owner_info_pan_number" type="text" maxlength="10" pattern="[A-Za-z]{5}[0-9]{4}[A-Za-z]{1}" placeholder="ABCDE1234F" title="पॅन कार्ड क्रमांक 5 अक्षरे, 4 अंक आणि शेवटी 1 अक्षर असा असावा." value="${escapeHtml(rowData.pan_number || '')}"></td>
-                    <td class="border-r border-gray-200 p-3">${fileControl('owner_info_pan_file', panFileInfo)}</td>
+                    <td class="border-r border-gray-200 p-3">${fileControl('owner_info_pan_file', panFileInfo, `owner_info_pan_file_${rowIndex}`)}</td>
                     <td class="border-r border-gray-200 p-3"><input class="${inputClass} text-gray-900" name="owner_info_mobile_number" type="tel" inputmode="numeric" maxlength="10" pattern="[6-9][0-9]{9}" placeholder="10 अंक" title="मोबाईल नंबर 6, 7, 8 किंवा 9 ने सुरू होणारा 10 अंकी असावा." value="${escapeHtml(rowData.mobile_number || '')}"></td>
                     <td class="border-r border-gray-200 p-3"><textarea class="min-h-[42px] w-48 resize-y rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 outline-none transition placeholder-gray-400 focus:border-[#125fcb] focus:ring-2 focus:ring-[#125fcb]/20" name="owner_info_address" rows="2" placeholder="पत्ता लिहा...">${escapeHtml(rowData.address || '')}</textarea></td>
                     <td class="border-r border-gray-200 p-3"><input class="${centeredClass}${readonlyClass}" name="owner_info_cultivable_area" type="text" placeholder="हे.आर" value="${escapeHtml(cultivableAreaValue)}"${lockedAttr}></td>
@@ -6003,7 +6713,7 @@
         }
 
         function viewOwnerSelectedFile(button) {
-            const container = button.closest('div');
+            const container = button.closest('[data-owner-file-control]') || button.closest('div');
             const input = container?.querySelector('input[type="file"]');
             const file = input?.files?.[0] || null;
             if (file) {
@@ -6029,6 +6739,9 @@
                     const container = input.closest('div');
                     const fileNameLabel = container?.querySelector('[data-file-name]');
                     const viewButton = container?.querySelector('[data-view-file]');
+                    const savedFileCard = container?.querySelector('[data-owner-saved-file-card]');
+                    const savedFileName = container?.querySelector('[data-owner-saved-file-name]');
+                    const deleteButton = container?.querySelector(`[data-pc-doc-delete-for="${documentKey}"]`);
                     const doc = documents?.[documentKey] || null;
 
                     if (!doc?.url) {
@@ -6042,6 +6755,11 @@
                             delete viewButton.dataset.fileUrl;
                             delete viewButton.dataset.fileName;
                         }
+                        savedFileCard?.classList.add('hidden');
+                        if (deleteButton instanceof HTMLButtonElement) {
+                            deleteButton.classList.add('hidden');
+                            delete deleteButton.dataset.pcDocDeleteId;
+                        }
                         return;
                     }
 
@@ -6054,6 +6772,19 @@
                         viewButton.dataset.fileUrl = doc.url;
                         viewButton.dataset.fileName = doc.name || 'अपलोड केलेली प्रत';
                         viewButton.classList.remove('hidden');
+                    }
+                    if (savedFileName) {
+                        savedFileName.textContent = doc.name || 'अपलोड केलेली प्रत';
+                    }
+                    savedFileCard?.classList.remove('hidden');
+                    if (deleteButton instanceof HTMLButtonElement) {
+                        if (doc.id) {
+                            deleteButton.dataset.pcDocDeleteId = doc.id;
+                            deleteButton.classList.remove('hidden');
+                        } else {
+                            deleteButton.classList.add('hidden');
+                            delete deleteButton.dataset.pcDocDeleteId;
+                        }
                     }
                 });
             });
@@ -6300,8 +7031,231 @@
             return selectedOption?.textContent?.trim() || selectEl.value?.trim() || '';
         }
 
+        function buildSavedFileEyeIcon() {
+            return `
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+            `;
+        }
+
+        function ensureSavedDocumentCard(link, key = '') {
+            if (!(link instanceof HTMLAnchorElement) || !key || link.dataset.pcDocLinkIcon === 'true') return null;
+            let card = link.closest('.pc-saved-file-card') || link.closest('.pc-fetched-files');
+            let item = link.closest('.pc-fetched-file');
+            let deleteBtn = card?.querySelector(`[data-pc-doc-delete-for="${key}"]`) || null;
+            if (!deleteBtn) {
+                deleteBtn = link.parentElement?.querySelector(`[data-pc-doc-delete-for="${key}"]`) || null;
+            }
+
+            if (!card) {
+                card = document.createElement('div');
+                card.className = 'pc-saved-file-card pc-fetched-files mt-2 hidden';
+                link.parentNode?.insertBefore(card, link);
+            }
+            let list = card.querySelector('.pc-fetched-files__list');
+            if (!list) {
+                list = document.createElement('div');
+                list.className = 'pc-fetched-files__list';
+                card.appendChild(list);
+            }
+            if (!item || !card.contains(item)) {
+                item = document.createElement('div');
+                item.className = 'pc-fetched-file';
+                list.appendChild(item);
+                item.appendChild(link);
+            } else if (item.parentElement !== list) {
+                list.appendChild(item);
+            }
+
+            link.classList.remove('mt-2', 'text-xs', 'underline');
+            link.classList.add('pc-saved-file-name');
+
+            let actions = item.querySelector('.pc-saved-file-actions');
+            if (!actions) {
+                actions = document.createElement('div');
+                actions.className = 'pc-saved-file-actions pc-fetched-file__actions';
+                item.appendChild(actions);
+            }
+
+            let viewBtn = actions.querySelector('[data-pc-doc-view-for]');
+            if (!viewBtn) {
+                viewBtn = document.createElement('button');
+                viewBtn.type = 'button';
+                viewBtn.className = 'pc-saved-file-view';
+                viewBtn.dataset.pcDocViewFor = key;
+                viewBtn.setAttribute('aria-label', 'View uploaded file');
+                viewBtn.setAttribute('title', 'View uploaded file');
+                viewBtn.innerHTML = buildSavedFileEyeIcon();
+                actions.appendChild(viewBtn);
+            }
+
+            if (!deleteBtn) {
+                deleteBtn = document.createElement('button');
+                deleteBtn.type = 'button';
+                deleteBtn.dataset.pcDocDeleteFor = key;
+                actions.appendChild(deleteBtn);
+            }
+            if (deleteBtn instanceof HTMLButtonElement && deleteBtn.parentElement !== actions) {
+                actions.appendChild(deleteBtn);
+            }
+            if (deleteBtn instanceof HTMLButtonElement) {
+                deleteBtn.className = 'pc-saved-file-delete hidden';
+                deleteBtn.setAttribute('title', 'Remove uploaded file');
+                deleteBtn.setAttribute('aria-label', 'Remove uploaded file');
+                deleteBtn.textContent = '×';
+            }
+
+            return card;
+        }
+
+        function setSavedDocumentCardVisible(link, visible = false) {
+            const card = link instanceof HTMLAnchorElement ? (link.closest('.pc-saved-file-card') || link.closest('.pc-fetched-files')) : null;
+            card?.classList.toggle('hidden', !visible);
+        }
+
+        function getSelectedFilePreviewUrl(file) {
+            if (!file) return '';
+            const existingUrl = file.__pcPreviewUrl || '';
+            if (existingUrl) return existingUrl;
+            const objectUrl = URL.createObjectURL(file);
+            try {
+                Object.defineProperty(file, '__pcPreviewUrl', {
+                    value: objectUrl,
+                    configurable: true,
+                });
+            } catch (error) {
+                file.__pcPreviewUrl = objectUrl;
+            }
+            return objectUrl;
+        }
+
+        function ensureSelectedFileInputId(inputEl) {
+            if (!(inputEl instanceof HTMLInputElement)) return '';
+            if (!inputEl.id) {
+                inputEl.id = `pc_selected_file_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+            }
+            return inputEl.id;
+        }
+
+        function renderSelectedProcessChartFilePreview(inputEl) {
+            if (!(inputEl instanceof HTMLInputElement) || inputEl.type !== 'file') return;
+            if (inputEl.dataset.fileField || inputEl.closest('[data-owner-file-control]')) return;
+            const inputId = ensureSelectedFileInputId(inputEl);
+            let box = inputEl.parentElement?.querySelector('[data-pc-selected-files]');
+            if (!box) {
+                box = document.createElement('div');
+                box.dataset.pcSelectedFiles = '1';
+                box.className = 'pc-fetched-files mt-2';
+                inputEl.insertAdjacentElement('afterend', box);
+            }
+            box.innerHTML = '';
+            const files = Array.from(inputEl.files || []);
+            if (!files.length) {
+                box.classList.add('hidden');
+                return;
+            }
+            box.classList.remove('hidden');
+            const list = document.createElement('div');
+            list.className = 'pc-fetched-files__list';
+            files.forEach((file) => {
+                const fileName = file.name || 'Selected file';
+                const previewUrl = getSelectedFilePreviewUrl(file);
+                const item = document.createElement('div');
+                item.className = 'pc-fetched-file';
+                item.innerHTML = `
+                    <span class="pc-saved-file-name cursor-pointer" data-pc-selected-file-view data-pc-preview-url="${escapeHtml(previewUrl)}" data-pc-preview-name="${escapeHtml(fileName)}" data-pc-selected-input-id="${escapeHtml(inputId)}">${escapeHtml(fileName)}</span>
+                    <span class="pc-fetched-file__actions">
+                        <button type="button" class="pc-saved-file-view" data-pc-selected-file-view data-pc-preview-url="${escapeHtml(previewUrl)}" data-pc-preview-name="${escapeHtml(fileName)}" data-pc-selected-input-id="${escapeHtml(inputId)}" aria-label="View selected file" title="View selected file">
+                            ${buildSavedFileEyeIcon()}
+                        </button>
+                        <button type="button" class="pc-saved-file-delete" data-pc-clear-selected-file title="Remove" aria-label="Remove selected file">×</button>
+                    </span>
+                `;
+                list.appendChild(item);
+            });
+            box.appendChild(list);
+        }
+
         function renderProcessChartDocumentLinks(documents = currentProcessChartDocuments) {
-            const setDocumentLink = (link, doc) => {
+            const findDeleteButton = (link, key) => {
+                const card = ensureSavedDocumentCard(link, key);
+                return card?.querySelector(`[data-pc-doc-delete-for="${key}"]`) || link.parentElement?.querySelector(`[data-pc-doc-delete-for="${key}"]`) || null;
+            };
+            const getDocumentFiles = (doc) => {
+                if (!doc) return [];
+                if (Array.isArray(doc.files)) {
+                    return doc.files.filter((file) => file?.url);
+                }
+                return doc.url ? [doc] : [];
+            };
+            const hideDeleteButton = (deleteBtn) => {
+                if (!deleteBtn) return;
+                deleteBtn.classList.add('hidden');
+                delete deleteBtn.dataset.pcDocDeleteId;
+            };
+            const resetDocumentLink = (link, deleteBtn) => {
+                link.classList.add('hidden');
+                link.removeAttribute('href');
+                delete link.dataset.pcDocUrl;
+                delete link.dataset.pcDocName;
+                if (link.dataset.pcDocLinkIcon !== 'true') {
+                    link.textContent = '';
+                }
+                hideDeleteButton(deleteBtn);
+                setSavedDocumentCardVisible(link, false);
+            };
+            const renderDocumentFileRows = (link, key, files) => {
+                const card = ensureSavedDocumentCard(link, key);
+                const list = card?.querySelector('.pc-fetched-files__list');
+                if (!card || !list) return false;
+                list.innerHTML = '';
+                files.forEach((file, index) => {
+                    const fileName = file.name || 'अपलोड केलेली प्रत';
+                    const item = document.createElement('div');
+                    item.className = 'pc-fetched-file';
+                    const fileLink = index === 0 ? link : document.createElement('a');
+                    fileLink.href = file.url;
+                    fileLink.target = '_blank';
+                    fileLink.rel = 'noopener';
+                    fileLink.dataset.pcDocUrl = file.url || '';
+                    fileLink.dataset.pcDocName = fileName;
+                    fileLink.className = 'pc-saved-file-name';
+                    fileLink.textContent = fileName;
+                    fileLink.classList.remove('hidden');
+                    const actions = document.createElement('div');
+                    actions.className = 'pc-saved-file-actions pc-fetched-file__actions';
+                    const viewBtn = document.createElement('button');
+                    viewBtn.type = 'button';
+                    viewBtn.className = 'pc-saved-file-view';
+                    viewBtn.dataset.pcExternalFileUrl = file.url || '';
+                    viewBtn.dataset.pcExternalFileName = fileName;
+                    viewBtn.setAttribute('aria-label', 'View uploaded file');
+                    viewBtn.setAttribute('title', 'View uploaded file');
+                    viewBtn.innerHTML = buildSavedFileEyeIcon();
+                    const deleteBtn = document.createElement('button');
+                    deleteBtn.type = 'button';
+                    deleteBtn.className = `pc-saved-file-delete ${file.id ? '' : 'hidden'}`;
+                    deleteBtn.dataset.pcDocDeleteFor = key;
+                    if (file.id) deleteBtn.dataset.pcDocDeleteId = file.id;
+                    deleteBtn.setAttribute('title', 'Remove uploaded file');
+                    deleteBtn.setAttribute('aria-label', 'Remove uploaded file');
+                    deleteBtn.textContent = '×';
+                    actions.appendChild(viewBtn);
+                    actions.appendChild(deleteBtn);
+                    item.appendChild(fileLink);
+                    item.appendChild(actions);
+                    list.appendChild(item);
+                });
+                card.classList.remove('hidden');
+                return true;
+            };
+            const setDocumentLink = (link, key, doc, deleteBtn) => {
+                const files = getDocumentFiles(doc);
+                if (files.length > 1 && link.dataset.pcDocLinkIcon !== 'true' && renderDocumentFileRows(link, key, files)) {
+                    return;
+                }
                 link.href = doc.url;
                 link.dataset.pcDocUrl = doc.url || '';
                 link.dataset.pcDocName = doc.name || 'अपलोड केलेली प्रत';
@@ -6312,10 +7266,28 @@
                     link.textContent = doc.name || 'अपलोड केलेली प्रत';
                 }
                 link.classList.remove('hidden');
+                setSavedDocumentCardVisible(link, true);
+                const card = ensureSavedDocumentCard(link, key);
+                const list = card?.querySelector('.pc-fetched-files__list');
+                const item = link.closest('.pc-fetched-file');
+                if (list && item) {
+                    Array.from(list.children).forEach((child) => {
+                        if (child !== item) child.remove();
+                    });
+                }
+                if (deleteBtn) {
+                    if (doc.id) {
+                        deleteBtn.dataset.pcDocDeleteId = doc.id;
+                        deleteBtn.classList.remove('hidden');
+                    } else {
+                        hideDeleteButton(deleteBtn);
+                    }
+                }
             };
 
             document.querySelectorAll('[data-pc-doc-link-for]').forEach((link) => {
                 const key = link.getAttribute('data-pc-doc-link-for') || '';
+                const deleteBtn = findDeleteButton(link, key);
                 if (key === 'award_file' && document.getElementById('pcAwardNumber')?.dataset?.pcVillageManaged) {
                     link.classList.add('hidden');
                     link.removeAttribute('href');
@@ -6324,20 +7296,16 @@
                     if (link.dataset.pcDocLinkIcon !== 'true') {
                         link.textContent = '';
                     }
+                    hideDeleteButton(deleteBtn);
+                    setSavedDocumentCardVisible(link, false);
                     return;
                 }
                 const doc = documents?.[key] || null;
                 if (!doc?.url) {
-                    link.classList.add('hidden');
-                    link.removeAttribute('href');
-                    delete link.dataset.pcDocUrl;
-                    delete link.dataset.pcDocName;
-                    if (link.dataset.pcDocLinkIcon !== 'true') {
-                        link.textContent = '';
-                    }
+                    resetDocumentLink(link, deleteBtn);
                     return;
                 }
-                setDocumentLink(link, doc);
+                setDocumentLink(link, key, doc, deleteBtn);
             });
             // Backward-compat: older drafts stored single keys for step10 files without an index.
             // New UI expects `step10_passbook_file_<i>` and `step10_compensation_file_<i>`.
@@ -6349,7 +7317,7 @@
                 if (!legacyDoc?.url) return;
                 const link = document.querySelector(`[data-pc-doc-link-for="${indexedKey}"]`);
                 if (!(link instanceof HTMLAnchorElement)) return;
-                setDocumentLink(link, legacyDoc);
+                setDocumentLink(link, indexedKey, legacyDoc, findDeleteButton(link, indexedKey));
             };
             applyLegacyStep10Doc('step10_passbook_file', 'step10_passbook_file_0');
             applyLegacyStep10Doc('step10_compensation_file', 'step10_compensation_file_0');
@@ -6364,17 +7332,31 @@
             return Array.isArray(rows) && rows.length ? rows : [{}];
         }
 
-        function buildSec21SavedFilesHtml(files = [], savedDoc = null) {
+        function buildSec21SavedFilesHtml(files = [], savedDoc = null, index = 0, bucket = 'prastaav') {
             const allFiles = [
                 ...(savedDoc?.url ? [savedDoc] : []),
                 ...(Array.isArray(files) ? files : []),
             ].filter((file) => file?.url);
             if (!allFiles.length) return '';
             return `
-                <div class="mt-2 space-y-1 text-xs font-semibold text-[#125fcb]">
-                    ${allFiles.map((file) => `
-                        <a class="block underline" href="${escapeHtml(file.url)}" target="_blank" rel="noopener">${escapeHtml(file.name || 'अपलोड केलेली प्रत')}</a>
-                    `).join('')}
+                <div class="pc-fetched-files mt-2">
+                    <div class="pc-fetched-files__list">
+                    ${allFiles.map((file) => {
+                        const isSavedProcessDoc = savedDoc?.url && file.url === savedDoc.url;
+                        const documentKey = isSavedProcessDoc ? `sec21_row_${index}_${bucket}` : '';
+                        return `
+                            <div class="pc-fetched-file">
+                                <a class="pc-saved-file-name" href="${escapeHtml(file.url)}" target="_blank" rel="noopener"${documentKey ? ` data-pc-doc-link-for="${escapeHtml(documentKey)}" data-pc-doc-url="${escapeHtml(file.url)}" data-pc-doc-name="${escapeHtml(file.name || 'अपलोड केलेली प्रत')}"` : ''}>${escapeHtml(file.name || 'अपलोड केलेली प्रत')}</a>
+                                <div class="pc-saved-file-actions pc-fetched-file__actions">
+                                    <button type="button" class="pc-saved-file-view" ${documentKey ? `data-pc-doc-view-for="${escapeHtml(documentKey)}"` : `data-pc-external-file-url="${escapeHtml(file.url)}" data-pc-external-file-name="${escapeHtml(file.name || 'अपलोड केलेली प्रत')}"`} aria-label="View uploaded file" title="View uploaded file">
+                                        ${buildSavedFileEyeIcon()}
+                                    </button>
+                                    ${documentKey ? `<button type="button" class="pc-saved-file-delete ${savedDoc?.id ? '' : 'hidden'}" data-pc-doc-delete-for="${escapeHtml(documentKey)}"${savedDoc?.id ? ` data-pc-doc-delete-id="${escapeHtml(savedDoc.id)}"` : ''} aria-label="Remove uploaded file" title="Remove uploaded file">×</button>` : ''}
+                                </div>
+                            </div>
+                        `;
+                    }).join('')}
+                    </div>
 	                </div>
 	            `;
         }
@@ -6413,10 +7395,10 @@
             const lockedAttr = row.source_locked ? ' readonly data-pc-prefill-source="village-info"' : '';
             const prastaavFilesHtml = row.source_locked
                 ? buildSec21EyeButtonHtml(index, 'prastaav', files.prastaav_files, savedPrastaavDoc)
-                : buildSec21SavedFilesHtml(files.prastaav_files, savedPrastaavDoc);
+                : buildSec21SavedFilesHtml(files.prastaav_files, savedPrastaavDoc, index, 'prastaav');
             const karyavrutantFilesHtml = row.source_locked
                 ? buildSec21EyeButtonHtml(index, 'karyavrutant', files.karyavrutant_files, savedKaryavrutantDoc)
-                : buildSec21SavedFilesHtml(files.karyavrutant_files, savedKaryavrutantDoc);
+                : buildSec21SavedFilesHtml(files.karyavrutant_files, savedKaryavrutantDoc, index, 'karyavrutant');
             const showPrastaavUpload = !row.source_locked && !prastaavFilesHtml;
             const showKaryavrutantUpload = !row.source_locked && !karyavrutantFilesHtml;
             return `
@@ -6474,12 +7456,12 @@
                 if (prastaavHost) {
                     prastaavHost.innerHTML = sourceLocked
                         ? buildSec21EyeButtonHtml(index, 'prastaav', sourceFiles.prastaav_files, documents?.[`sec21_row_${index}_prastaav`])
-                        : buildSec21SavedFilesHtml(sourceFiles.prastaav_files, documents?.[`sec21_row_${index}_prastaav`]);
+                        : buildSec21SavedFilesHtml(sourceFiles.prastaav_files, documents?.[`sec21_row_${index}_prastaav`], index, 'prastaav');
                 }
                 if (karyavrutantHost) {
                     karyavrutantHost.innerHTML = sourceLocked
                         ? buildSec21EyeButtonHtml(index, 'karyavrutant', sourceFiles.karyavrutant_files, documents?.[`sec21_row_${index}_karyavrutant`])
-                        : buildSec21SavedFilesHtml(sourceFiles.karyavrutant_files, documents?.[`sec21_row_${index}_karyavrutant`]);
+                        : buildSec21SavedFilesHtml(sourceFiles.karyavrutant_files, documents?.[`sec21_row_${index}_karyavrutant`], index, 'karyavrutant');
                 }
             });
         }
@@ -6633,6 +7615,7 @@
         }
 
         function buildSingleKhataOwnerRow(row = {}) {
+            row = hydrateOwnerRowFromStep1(row);
             const sourceLockedAttr = row.source_locked ? ' readonly data-pc-prefill-source="712"' : '';
             return `
                 <tr>
@@ -8162,7 +9145,7 @@
 
         function buildMultiKhataOwnerRows(rows = [], sharedAreaValue = '') {
             if (!rows.length) return '';
-            return rows.map((row, index) => {
+            return hydrateOwnerRowsFromStep1(rows).map((row, index) => {
                 const sourceLockedAttr = row.source_locked ? ' readonly data-pc-prefill-source="712"' : '';
                 return `
                 <tr>
@@ -8667,7 +9650,7 @@
             const singleSection = document.getElementById('pcJointSurveySingleNamesSection');
             const multiSection = document.getElementById('pcJointSurveyMultiNamesSection');
             const isAssetOwnerMode = mode === 'asset';
-            const isPlainNamesMode = isAssetOwnerMode || mode === 'step10';
+            const isPlainNamesMode = isAssetOwnerMode || mode === 'step10' || mode === 'agreement_owner_capture';
             const isTab1OwnerMode = mode === 'joint_single' || mode === 'joint_multi';
             singleSection?.classList.toggle('hidden', false);
             multiSection?.classList.toggle('hidden', isPlainNamesMode || isTab1OwnerMode || mode === 'joint_single');
@@ -8738,12 +9721,55 @@
                 document.body.style.overflow = 'hidden';
                 return;
             }
+            if (currentJointSurveyApplyMode === 'agreement_owner_capture') {
+                const ownerNames = getAgreementOwnerNamesForCapture();
+                agreementOwnerCaptureSelectionCache = new Map();
+                collectAgreementCaptureRows('owner').forEach((row) => {
+                    const key = normalizeOwnerLookupName(row.name || '');
+                    if (key) agreementOwnerCaptureSelectionCache.set(key, row);
+                });
+                const selectedNames = new Set(
+                    collectAgreementCaptureRows('owner')
+                        .map((row) => normalizeOwnerLookupName(row.name || ''))
+                        .filter(Boolean)
+                );
+                jointSurveySingleNamesList.innerHTML = ownerNames.length
+                    ? `
+                        <label class="mb-3 flex items-center gap-2 rounded border border-[#dbe8f8] bg-white px-3 py-2 text-sm font-semibold text-[#244271]">
+                            <input type="checkbox" class="pc-joint-survey-select-all-single">
+                            <span>सर्व निवडा</span>
+                        </label>
+                        ${ownerNames.map((name, index) => {
+                            const normalizedName = normalizeOwnerLookupName(name);
+                            return `
+                                <label class="flex items-center gap-3 rounded border border-[#dbe8f8] bg-[#f8fbff] px-3 py-3">
+                                    <input type="checkbox" class="pc-joint-survey-name-checkbox" data-group-type="agreement-owner" data-row-index="${index}" ${selectedNames.has(normalizedName) ? 'checked' : ''}>
+                                    <span class="text-sm text-[#244271]">${escapeHtml(name)}</span>
+                                </label>
+                            `;
+                        }).join('')}`
+                    : '<div class="rounded border border-dashed border-[#d6e3f5] px-3 py-3 text-sm text-[#6b7d99]">भूधारक नावे उपलब्ध नाहीत. आधी Tab 1, Tab 4 किंवा खातेदार / बँक तपशील मध्ये भूधारक नावे भरा.</div>';
+                const selectAll = jointSurveySingleNamesList.querySelector('.pc-joint-survey-select-all-single');
+                const checkboxes = Array.from(jointSurveySingleNamesList.querySelectorAll('.pc-joint-survey-name-checkbox[data-group-type="agreement-owner"]'));
+                if (selectAll instanceof HTMLInputElement) {
+                    selectAll.checked = checkboxes.length > 0 && checkboxes.every((checkbox) => checkbox.checked);
+                }
+                jointSurveyMultiNamesList.innerHTML = '';
+                jointSurveyNamesModal.classList.remove('hidden');
+                document.body.style.overflow = 'hidden';
+                return;
+            }
             if (currentJointSurveyApplyMode === 'step10') {
                 const rows = collectTab4AcquisitionOwnerRows();
                 const cardKeys = getSelectedStep10OwnerRowKeysFromCards(rows);
                 const selectedKeys = new Set(cardKeys.length ? cardKeys : currentStep10SelectedOwnerKeys);
                 jointSurveySingleNamesList.innerHTML = rows.length
-                    ? rows.map((row, index) => {
+                    ? `
+                        <label class="mb-3 flex items-center gap-2 rounded border border-[#dbe8f8] bg-white px-3 py-2 text-sm font-semibold text-[#244271]">
+                            <input type="checkbox" class="pc-joint-survey-select-all-single">
+                            <span>सर्व निवडा</span>
+                        </label>
+                        ${rows.map((row, index) => {
                         const rowKey = buildArbitrationOwnerRowKey(row);
                         return `
                             <label class="flex items-center gap-3 rounded border border-[#dbe8f8] bg-[#f8fbff] px-3 py-3">
@@ -8751,8 +9777,13 @@
                                 <span class="text-sm text-[#244271]">${escapeHtml(row.owner_name || '')}</span>
                             </label>
                         `;
-                    }).join('')
+                    }).join('')}`
                     : '<div class="rounded border border-dashed border-[#d6e3f5] px-3 py-3 text-sm text-[#6b7d99]">टॅब 4 मध्ये संपादन क्षेत्र भरलेली भूधारक नावे उपलब्ध नाहीत.</div>';
+                const selectAll = jointSurveySingleNamesList.querySelector('.pc-joint-survey-select-all-single');
+                const checkboxes = Array.from(jointSurveySingleNamesList.querySelectorAll('.pc-joint-survey-name-checkbox[data-group-type="step10-tab4"]'));
+                if (selectAll instanceof HTMLInputElement) {
+                    selectAll.checked = checkboxes.length > 0 && checkboxes.every((checkbox) => checkbox.checked);
+                }
                 jointSurveyMultiNamesList.innerHTML = '';
                 jointSurveyNamesModal.classList.remove('hidden');
                 document.body.style.overflow = 'hidden';
@@ -9083,6 +10114,10 @@
             }
             if (currentJointSurveyApplyMode === 'step10') {
                 populateStep10OwnerSelection(prefill);
+                return;
+            }
+            if (currentJointSurveyApplyMode === 'agreement_owner_capture') {
+                populateAgreementOwnerCaptureSelection(options);
                 return;
             }
             if (currentJointSurveyApplyMode === 'arbitration') {
@@ -10377,6 +11412,7 @@
                             <label class="pc-label">पत्र अपलोड करा</label>
                             <input class="pc-upload" name="arbitration_letter_file_${index}" type="file">
                             <a class="mt-2 hidden text-xs font-semibold text-[#125fcb] underline" data-pc-doc-link-for="arbitration_letter_file_${index}" target="_blank" rel="noopener"></a>
+                                <button type="button" class="mt-2 hidden rounded-full px-2 text-sm font-bold text-[#d33]" data-pc-doc-delete-for="arbitration_letter_file_${index}" title="Remove">&times;</button>
                         </div>
                     </div>
                 </div>
@@ -11105,20 +12141,33 @@
 
         function openFilesModal(files = []) {
             if (!filesModal || !filesModalContent) return;
+            const validFiles = (Array.isArray(files) ? files : []).filter((file) => file?.url);
+            if (validFiles.length === 1 && !validFiles[0].selectedInputId) {
+                const file = validFiles[0];
+                openOwnerDocumentModal(file.url, file.name || 'दस्तऐवज', file.type || file.mime_type || '');
+                return;
+            }
 
-            if (!files.length) {
+            if (!validFiles.length) {
                 filesModalContent.innerHTML = '<div class="text-sm text-gray-600">दस्तऐवज उपलब्ध नाहीत.</div>';
             } else {
-                filesModalContent.innerHTML = files.map((file) => `
-                    <div class="flex items-center justify-between gap-3 rounded border border-[#dbe8f8] bg-[#f8fbff] px-3 py-3">
-                        <div class="min-w-0">
-                            <div class="truncate text-sm font-semibold text-[#244271]">${file.name || 'Document'}</div>
+                filesModalContent.innerHTML = `
+                    <div class="pc-fetched-files">
+                        <div class="pc-fetched-files__list">
+                            ${validFiles.map((file) => `
+                                <div class="pc-fetched-file">
+                                    <span class="pc-saved-file-name">${escapeHtml(file.name || 'दस्तऐवज')}</span>
+                                    <div class="pc-saved-file-actions pc-fetched-file__actions">
+                                        <button type="button" class="pc-saved-file-view" data-pc-modal-file-preview-url="${escapeHtml(file.url || '')}" data-pc-modal-file-preview-name="${escapeHtml(file.name || 'दस्तऐवज')}" data-pc-modal-file-preview-type="${escapeHtml(file.type || file.mime_type || '')}" aria-label="View uploaded file" title="View uploaded file">
+                                            ${buildSavedFileEyeIcon()}
+                                        </button>
+                                        ${file.selectedInputId ? `<button type="button" class="pc-saved-file-delete" data-pc-modal-clear-selected-file="${escapeHtml(file.selectedInputId)}" title="Remove" aria-label="Remove selected file">×</button>` : ''}
+                                    </div>
+                                </div>
+                            `).join('')}
                         </div>
-                        <a href="${file.url}" target="_blank" rel="noopener noreferrer" class="rounded-lg bg-[#125fcb] px-3 py-2 text-xs font-semibold text-white">
-                            Open
-                        </a>
                     </div>
-                `).join('');
+                `;
             }
 
             filesModal.classList.remove('hidden');
@@ -11129,6 +12178,15 @@
             if (!filesModal) return;
             filesModal.classList.add('hidden');
             document.body.style.overflow = '';
+        }
+
+        function clearSelectedFileInputById(inputId = '') {
+            if (!inputId) return false;
+            const inputEl = document.getElementById(inputId);
+            if (!(inputEl instanceof HTMLInputElement) || inputEl.type !== 'file') return false;
+            inputEl.value = '';
+            renderSelectedProcessChartFilePreview(inputEl);
+            return true;
         }
 
         function openDocumentLinkPopup(link) {
@@ -11619,15 +12677,61 @@
                     </div>
                 `;
             }).join('');
-            const witnessSignatureBlock = (label) => `
+            const agreementOwnerCaptureRows = collectAgreementCaptureRows('owner')
+                .filter((row) => Object.values(row).some((value) => String(value || '').trim()));
+            const agreementReceiverCaptureRows = collectAgreementCaptureRows('receiver')
+                .filter((row) => Object.values(row).some((value) => String(value || '').trim()));
+            const agreementWitnessCaptureRows = collectAgreementCaptureRows('witness')
+                .filter((row) => Object.values(row).some((value) => String(value || '').trim()));
+            const legacyAgreementCapture = {
+                photo: document.getElementById('agreement_webcam_photo')?.value || '',
+                signature: document.getElementById('agreement_digital_signature')?.value || '',
+                fingerprint_image: document.getElementById('agreement_fingerprint_image')?.value || '',
+                fingerprint_template: document.getElementById('agreement_fingerprint_template')?.value || '',
+                fingerprint_quality: document.getElementById('agreement_fingerprint_quality')?.value || '',
+                fingerprint_device_id: document.getElementById('agreement_fingerprint_device_id')?.value || '',
+                biometric_captured_at: document.getElementById('agreement_biometric_captured_at')?.value || '',
+                biometric_provider: document.getElementById('agreement_biometric_provider')?.value || '',
+            };
+            const ownerCaptureSource = agreementOwnerCaptureRows.length
+                ? agreementOwnerCaptureRows
+                : ownerNames.map((name) => ({ name, ...legacyAgreementCapture }));
+            const receiverCaptureSource = agreementReceiverCaptureRows.length
+                ? agreementReceiverCaptureRows
+                : [{ name: sec3OfficerName }];
+            const witnessCaptureSource = agreementWitnessCaptureRows.length
+                ? agreementWitnessCaptureRows
+                : [{ name: 'साक्षीदार 1' }];
+            const witnessSignatureBlock = (label, name = '', address = '', aadhaarNumber = '') => `
                 <div class="witness-box">
                     <p><strong>${label}</strong></p>
-                    <p>स्वाक्षरी :........................................................................</p>
-                    <p>नाव : ............................................................................</p>
-                    <p>रा.: ................................................................................</p>
-                    <p>आधार क्र .......................................................................</p>
+                    <p>नाव : ${name ? red(name) : '............................................................................'}</p>
+                    <p>रा.: ${address ? red(address) : '................................................................................'}</p>
+                    <p>आधार क्र ${aadhaarNumber ? red(aadhaarNumber) : '.......................................................................'}</p>
                 </div>
             `;
+            const captureImageOrStatus = (src, label, style) =>
+                src ? `<img src="${escapeHtml(src)}" alt="${escapeHtml(label)}" style="${style}">` : 'उपलब्ध नाही';
+            const captureBiometricCell = (row = {}) => {
+                const image = row.fingerprint_image || '';
+                if (image) return captureImageOrStatus(image, 'बायोमेट्रिक', 'width:60px;height:60px;object-fit:cover;');
+                if (row.fingerprint_template || row.biometric_captured_at) {
+                    return `कॅप्चर पूर्ण${row.fingerprint_device_id ? ` (Device: ${escapeHtml(row.fingerprint_device_id)})` : ''}`;
+                }
+                return 'कॅप्चर नाही';
+            };
+            const buildCaptureRowsHtml = (rows = [], fallbackLabel = 'नाव') => rows.map((row, index) => `
+                <tr>
+                    <td>${index + 1}</td>
+                    <td style="text-align:left;">${red(row.name || fallbackLabel)}</td>
+                    <td>${captureImageOrStatus(row.photo, 'फोटो', 'width:60px;height:60px;object-fit:cover;')}</td>
+                    <td>${captureBiometricCell(row)}</td>
+                    <td>${captureImageOrStatus(row.signature, 'स्वाक्षरी', 'width:120px;height:40px;object-fit:contain;')}</td>
+                </tr>
+            `).join('');
+            const ownerCaptureRowsHtml = buildCaptureRowsHtml(ownerCaptureSource, 'भूधारक');
+            const receiverCaptureRowsHtml = buildCaptureRowsHtml(receiverCaptureSource, 'करारनामा लिहून घेणार');
+            const witnessCaptureRowsHtml = buildCaptureRowsHtml(witnessCaptureSource, 'साक्षीदार');
             const parseAmount = (value) =>
                 Number(String(value || '0').replace(/,/g, '').replace(/[^\d.-]/g, '')) || 0;
             const row2Amount = Math.ceil(parseAcquisitionAreaToHectares(consentArea) * 40254814);
@@ -11996,8 +13100,8 @@
                         <p class="center"><strong>करारनामा लिहून देणार / घेणार यांचे</strong></p>
                         <table class="witness-table">
                             <tr>
-                                <td>${witnessSignatureBlock('साक्षीदार 1) :')}</td>
-                                <td>${witnessSignatureBlock('साक्षीदार 2) :')}</td>
+                                <td>${witnessSignatureBlock('साक्षीदार 1) :', witnessCaptureSource[0]?.name || '', witnessCaptureSource[0]?.address || '', witnessCaptureSource[0]?.aadhaar_number || '')}</td>
+                                <td>${witnessSignatureBlock('साक्षीदार 2) :', witnessCaptureSource[1]?.name || '', witnessCaptureSource[1]?.address || '', witnessCaptureSource[1]?.aadhaar_number || '')}</td>
                             </tr>
                         </table>
                         <table class="signature-table">
@@ -12014,6 +13118,51 @@
                                     <p class="big-name">${red(sec3SubdivisionName)}</p>
                                 </td>
                             </tr>
+                        </table>
+                        <p class="center" style="margin-top: 14px;"><strong>भूधारक फोटो, अंगठा व स्वाक्षरी तपशील</strong></p>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>अ.क्र.</th>
+                                    <th>भूधारकाचे नाव</th>
+                                    <th>फोटो</th>
+                                    <th>अंगठा</th>
+                                    <th>स्वाक्षरी</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${ownerCaptureRowsHtml}
+                            </tbody>
+                        </table>
+                        <p class="center" style="margin-top: 14px;"><strong>करारनामा लिहून घेणार फोटो, अंगठा व स्वाक्षरी तपशील</strong></p>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>अ.क्र.</th>
+                                    <th>करारनामा लिहून घेणार</th>
+                                    <th>फोटो</th>
+                                    <th>अंगठा</th>
+                                    <th>स्वाक्षरी</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${receiverCaptureRowsHtml}
+                            </tbody>
+                        </table>
+                        <p class="center" style="margin-top: 14px;"><strong>साक्षीदार फोटो, अंगठा व स्वाक्षरी तपशील</strong></p>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>अ.क्र.</th>
+                                    <th>साक्षीदाराचे नाव</th>
+                                    <th>फोटो</th>
+                                    <th>अंगठा</th>
+                                    <th>स्वाक्षरी</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${witnessCaptureRowsHtml}
+                            </tbody>
                         </table>
                         <div class="center" style="margin-top: 16px;">
                             <p class="dyn" style="margin: 0 0 4px;">ठिकाण : ${getDisplayValue(taluka)}</p>
@@ -13312,6 +14461,9 @@
                 updateTotalAssetValuation();
                 syncTab7SnapshotField();
             }
+            if (Number(panel.dataset.pcPanel || 0) === 4) {
+                syncTab4OwnerDetailsFromStep1(currentProcessChartPrefill);
+            }
             const data = {};
             const radioNames = new Set();
 
@@ -13584,6 +14736,52 @@
             setJointSurveyOwnerTableMode(savedMode);
         }
 
+        function getAgreementCaptureRowCount(sectionData = {}, type = 'owner') {
+            const config = getAgreementCaptureConfig(type);
+            return [
+                'name',
+                'address',
+                'aadhaar_number',
+                'photo',
+                'signature',
+                'fingerprint_image',
+                'fingerprint_template',
+                'biometric_pid_data',
+                'fingerprint_quality',
+                'fingerprint_device_id',
+                'biometric_captured_at',
+                'biometric_provider',
+                'biometric_status',
+            ].reduce((maxCount, suffix) => {
+                const value = sectionData[`${config.prefix}_${suffix}`];
+                return Array.isArray(value) ? Math.max(maxCount, value.length) : (String(value || '').trim() ? Math.max(maxCount, 1) : maxCount);
+            }, 0);
+        }
+
+        function ensureAgreementCaptureRowsForData(sectionData = {}) {
+            ['owner', 'receiver', 'witness'].forEach((type) => {
+                const config = getAgreementCaptureConfig(type);
+                const rowCount = getAgreementCaptureRowCount(sectionData, type);
+                if (!rowCount) return;
+                const rows = Array.from({ length: rowCount }, (_, index) => ({
+                    name: getArrayValue(sectionData, `${config.prefix}_name`, index),
+                    address: getArrayValue(sectionData, `${config.prefix}_address`, index),
+                    aadhaar_number: getArrayValue(sectionData, `${config.prefix}_aadhaar_number`, index),
+                    photo: getArrayValue(sectionData, `${config.prefix}_photo`, index),
+                    signature: getArrayValue(sectionData, `${config.prefix}_signature`, index),
+                    fingerprint_image: getArrayValue(sectionData, `${config.prefix}_fingerprint_image`, index),
+                    fingerprint_template: getArrayValue(sectionData, `${config.prefix}_fingerprint_template`, index),
+                    biometric_pid_data: getArrayValue(sectionData, `${config.prefix}_biometric_pid_data`, index),
+                    fingerprint_quality: getArrayValue(sectionData, `${config.prefix}_fingerprint_quality`, index),
+                    fingerprint_device_id: getArrayValue(sectionData, `${config.prefix}_fingerprint_device_id`, index),
+                    biometric_captured_at: getArrayValue(sectionData, `${config.prefix}_biometric_captured_at`, index),
+                    biometric_provider: getArrayValue(sectionData, `${config.prefix}_biometric_provider`, index),
+                    biometric_status: getArrayValue(sectionData, `${config.prefix}_biometric_status`, index),
+                }));
+                renderAgreementCaptureRows(type, rows);
+            });
+        }
+
         function applyStepDataToForm(stepData = {}) {
             Object.values(stepData || {}).forEach((sectionData) => {
                 if (!sectionData || typeof sectionData !== 'object') return;
@@ -13591,6 +14789,7 @@
                 ensureSec3RowsForData(sectionData);
                 ensureSec21RowsForData(sectionData);
                 ensureTab4OwnerRowsForData(sectionData);
+                ensureAgreementCaptureRowsForData(sectionData);
                 if (Object.keys(sectionData).some((key) => key.startsWith('step9_'))) {
                     renderStep9PaymentRows(sectionData);
                 }
@@ -13621,6 +14820,7 @@
             }
             restoreTab7DataWithFallback(stepData);
             renderStep10OwnerCards(currentProcessChartPrefill, stepData.step_10 || {});
+            syncTab4OwnerDetailsFromStep1(currentProcessChartPrefill);
             updateStep10AadhaarFromOwner(currentProcessChartPrefill);
             restoreSavedProcessChartRadios(stepData);
             restoreSavedCompensationInput(stepData);
@@ -13638,6 +14838,7 @@
             }
             restoreSavedTab11Fields(stepData);
             restoreSavedTab12Fields(stepData);
+            fetchAgreementReceiverCaptureRows();
             syncAgreementCapturePreviews();
             requestAnimationFrame(updateTotalAssetValuation);
         }
@@ -13748,6 +14949,8 @@
                     window.setTimeout(forceToggleTab3QuestionBlocks, 200);
                     window.setTimeout(() => restoreSavedTab4Dates(latestProcessChartStepData), 0);
                     window.setTimeout(() => restoreSavedTab4Dates(latestProcessChartStepData), 150);
+                    window.setTimeout(() => syncTab4OwnerDetailsFromStep1(currentProcessChartPrefill), 0);
+                    window.setTimeout(() => syncTab4OwnerDetailsFromStep1(currentProcessChartPrefill), 150);
                     window.setTimeout(() => restoreSavedTab5Fields(latestProcessChartStepData), 0);
                     window.setTimeout(() => restoreSavedTab5Fields(latestProcessChartStepData), 150);
                     window.setTimeout(() => restoreSavedTab11Fields(latestProcessChartStepData), 0);
@@ -13962,6 +15165,13 @@
                 saveTab7LocalDraft();
                 currentCaseStatus = result.status || payload.status || currentCaseStatus;
                 currentProcessChartDocuments = result.documents || currentProcessChartDocuments || {};
+                filePanel?.querySelectorAll('[data-pc-selected-files]').forEach((box) => {
+                    box.classList.add('hidden');
+                    box.innerHTML = '';
+                });
+                filePanel?.querySelectorAll('input[type="file"]').forEach((input) => {
+                    if (input instanceof HTMLInputElement) input.value = '';
+                });
                 renderProcessChartDocumentLinks();
                 if (result.step_data && typeof result.step_data === 'object') {
                     latestProcessChartStepData = result.step_data;
@@ -14263,11 +15473,145 @@
             ensureRepeatableAssetRows(container, 1);
             syncRepeatableAssetRowButtons(container);
         });
-        processChartForm?.addEventListener('click', (event) => {
+        processChartForm?.addEventListener('click', async (event) => {
             const documentIconLink = event.target.closest('a[data-pc-doc-link-icon="true"]');
             if (documentIconLink instanceof HTMLAnchorElement) {
                 event.preventDefault();
                 openDocumentLinkPopup(documentIconLink);
+                return;
+            }
+            const modalClearSelectedFileBtn = event.target.closest('[data-pc-modal-clear-selected-file]');
+            if (modalClearSelectedFileBtn instanceof HTMLElement) {
+                event.preventDefault();
+                if (clearSelectedFileInputById(modalClearSelectedFileBtn.dataset.pcModalClearSelectedFile || '')) {
+                    closeFilesModal();
+                }
+                return;
+            }
+            const selectedFileViewBtn = event.target.closest('[data-pc-selected-file-view]');
+            if (selectedFileViewBtn instanceof HTMLElement) {
+                event.preventDefault();
+                openFilesModal([{
+                    url: selectedFileViewBtn.dataset.pcPreviewUrl || '',
+                    name: selectedFileViewBtn.dataset.pcPreviewName || 'Selected file',
+                    selectedInputId: selectedFileViewBtn.dataset.pcSelectedInputId || '',
+                }].filter((file) => file.url));
+                return;
+            }
+            const clearSelectedFileBtn = event.target.closest('[data-pc-clear-selected-file]');
+            if (clearSelectedFileBtn instanceof HTMLElement) {
+                event.preventDefault();
+                const box = clearSelectedFileBtn.closest('[data-pc-selected-files]');
+                const inputEl = box?.parentElement?.querySelector('input[type="file"]');
+                if (inputEl instanceof HTMLInputElement) {
+                    clearSelectedFileInputById(ensureSelectedFileInputId(inputEl));
+                }
+                return;
+            }
+            const externalFileViewBtn = event.target.closest('[data-pc-external-file-url]');
+            if (externalFileViewBtn instanceof HTMLButtonElement) {
+                event.preventDefault();
+                openFilesModal([{
+                    url: externalFileViewBtn.dataset.pcExternalFileUrl || '',
+                    name: externalFileViewBtn.dataset.pcExternalFileName || 'अपलोड केलेली प्रत',
+                }].filter((file) => file.url));
+                return;
+            }
+            const savedFileViewBtn = event.target.closest('[data-pc-doc-view-for]');
+            if (savedFileViewBtn instanceof HTMLButtonElement) {
+                event.preventDefault();
+                const key = savedFileViewBtn.dataset.pcDocViewFor || '';
+                const item = savedFileViewBtn.closest('.pc-fetched-file');
+                const card = savedFileViewBtn.closest('.pc-saved-file-card');
+                const link = item?.querySelector(`[data-pc-doc-link-for="${key}"]`) || card?.querySelector(`[data-pc-doc-link-for="${key}"]`) || null;
+                if (link instanceof HTMLAnchorElement) {
+                    openDocumentLinkPopup(link);
+                }
+                return;
+            }
+            const deleteDocBtn = event.target.closest('[data-pc-doc-delete-for]');
+            if (deleteDocBtn instanceof HTMLButtonElement) {
+                event.preventDefault();
+                const docId = deleteDocBtn.dataset.pcDocDeleteId || '';
+                if (!docId || deleteDocBtn.dataset.deleting === '1') return;
+                if (!window.confirm('अपलोड केलेली प्रत काढून टाकायची आहे का?')) return;
+                deleteDocBtn.dataset.deleting = '1';
+                deleteDocBtn.disabled = true;
+                try {
+                    const response = await fetch(`/api/process-chart/document/${docId}/delete/`, {
+                        method: 'POST',
+                        headers: { 'X-CSRFToken': getCookie('csrftoken') },
+                    });
+                    const result = await response.json().catch(() => ({}));
+                    if (!response.ok || !result.success) {
+                        throw new Error(result.error || 'प्रत काढता आली नाही.');
+                    }
+                    const key = deleteDocBtn.getAttribute('data-pc-doc-delete-for') || '';
+                    const savedDoc = key ? currentProcessChartDocuments[key] : null;
+                    const savedFiles = Array.isArray(savedDoc?.files) ? savedDoc.files : [];
+                    if (key && savedFiles.length > 1) {
+                        const remainingFiles = savedFiles.filter((file) => String(file?.id || '') !== String(docId));
+                        if (remainingFiles.length) {
+                            currentProcessChartDocuments[key] = {
+                                ...remainingFiles[remainingFiles.length - 1],
+                                files: remainingFiles,
+                            };
+                        } else {
+                            delete currentProcessChartDocuments[key];
+                        }
+                        renderProcessChartDocumentLinks();
+                        return;
+                    }
+                    if (key) delete currentProcessChartDocuments[key];
+                    const item = deleteDocBtn.closest('.pc-fetched-file');
+                    const filesBox = deleteDocBtn.closest('.pc-fetched-files');
+                    const card = deleteDocBtn.closest('.pc-saved-file-card');
+                    const link = item?.querySelector(`[data-pc-doc-link-for="${key}"]`) || card?.querySelector(`[data-pc-doc-link-for="${key}"]`) || deleteDocBtn.parentElement?.querySelector(`[data-pc-doc-link-for="${key}"]`);
+                    if (link instanceof HTMLAnchorElement) {
+                        link.classList.add('hidden');
+                        link.removeAttribute('href');
+                        delete link.dataset.pcDocUrl;
+                        delete link.dataset.pcDocName;
+                        if (link.dataset.pcDocLinkIcon !== 'true') {
+                            link.textContent = '';
+                        }
+                    }
+                    deleteDocBtn.classList.add('hidden');
+                    if (card) {
+                        card.classList.add('hidden');
+                    } else {
+                        item?.remove();
+                        if (filesBox && !filesBox.querySelector('.pc-fetched-file')) {
+                            filesBox.classList.add('hidden');
+                            filesBox.innerHTML = '';
+                        }
+                    }
+                    delete deleteDocBtn.dataset.pcDocDeleteId;
+                    const fileInput = key ? processChartForm.querySelector(`input[type="file"][name="${key}"]`) : null;
+                    if (fileInput instanceof HTMLInputElement) fileInput.value = '';
+                    const ownerFileControl = deleteDocBtn.closest('[data-owner-file-control]');
+                    if (ownerFileControl) {
+                        const ownerInput = ownerFileControl.querySelector('input[type="file"]');
+                        const ownerFileName = ownerFileControl.querySelector('[data-file-name]');
+                        const ownerViewButton = ownerFileControl.querySelector('[data-view-file]');
+                        if (ownerInput instanceof HTMLInputElement) ownerInput.value = '';
+                        if (ownerFileName) {
+                            ownerFileName.textContent = 'No file chosen';
+                            ownerFileName.classList.remove('text-green-600', 'font-semibold');
+                            ownerFileName.classList.add('text-gray-500');
+                        }
+                        if (ownerViewButton instanceof HTMLButtonElement) {
+                            ownerViewButton.classList.add('hidden');
+                            delete ownerViewButton.dataset.fileUrl;
+                            delete ownerViewButton.dataset.fileName;
+                        }
+                    }
+                } catch (error) {
+                    alert(error.message || 'प्रत काढता आली नाही.');
+                } finally {
+                    deleteDocBtn.dataset.deleting = '0';
+                    deleteDocBtn.disabled = false;
+                }
                 return;
             }
         });
@@ -14298,6 +15642,9 @@
         });
         processChartForm?.addEventListener('change', (event) => {
             handleTab7FieldChanged(event);
+            if (event.target instanceof HTMLInputElement && event.target.type === 'file') {
+                renderSelectedProcessChartFilePreview(event.target);
+            }
             if (event.target instanceof HTMLInputElement && event.target.classList.contains('pc-asset-valuation-input')) {
                 updateTotalAssetValuation();
             }
@@ -14386,11 +15733,24 @@
                 .replace(/&amp;/g, '&');
             openOtherRightsModal(parsed);
         });
+        function handleOwnerInfoDetailChanged(target) {
+            if (!(target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement)) return;
+            if (!String(target.name || '').startsWith('owner_info_')) return;
+            syncTab4OwnerDetailsFromStep1(currentProcessChartPrefill);
+            updateStep10AadhaarFromOwner(currentProcessChartPrefill);
+            syncArbitrationFieldsFromStep10();
+        }
+
+        ownerInfoBody?.addEventListener('input', (event) => {
+            handleOwnerInfoDetailChanged(event.target);
+        });
         ownerInfoBody?.addEventListener('change', (event) => {
             const target = event.target;
             if (target instanceof HTMLInputElement && target.type === 'file') {
                 updateOwnerFileControl(target);
+                return;
             }
+            handleOwnerInfoDetailChanged(target);
         });
         addOwnerRowBtn?.addEventListener('click', () => {
             if (!ownerInfoBody) return;
@@ -14464,7 +15824,11 @@
                 openFilesModal(savedDocument?.url ? [savedDocument, ...villageFiles] : villageFiles);
             }
         });
-
+        sec3RowsContainer?.addEventListener('change', (event) => {
+            if (event.target instanceof HTMLInputElement && event.target.classList.contains('pc-sec3-officer-name')) {
+                fetchAgreementReceiverCaptureRows();
+            }
+        });
         const singleKhataOwnersBody = document.getElementById('pcSingleKhataOwnersBody');
         const multiKhataOwnersBody = document.getElementById('pcMultiKhataOwnersBody');
         const addSingleKhataOwnerRowBtn = document.getElementById('pcAddSingleKhataOwnerRowBtn');
@@ -14710,6 +16074,24 @@
                 closeFilesModal();
             }
         });
+        filesModalContent?.addEventListener('click', (event) => {
+            const previewBtn = event.target.closest('[data-pc-modal-file-preview-url]');
+            if (previewBtn instanceof HTMLElement) {
+                event.preventDefault();
+                const url = previewBtn.dataset.pcModalFilePreviewUrl || '';
+                const name = previewBtn.dataset.pcModalFilePreviewName || 'दस्तऐवज';
+                const type = previewBtn.dataset.pcModalFilePreviewType || '';
+                closeFilesModal();
+                openOwnerDocumentModal(url, name, type);
+                return;
+            }
+            const modalClearSelectedFileBtn = event.target.closest('[data-pc-modal-clear-selected-file]');
+            if (!(modalClearSelectedFileBtn instanceof HTMLElement)) return;
+            event.preventDefault();
+            if (clearSelectedFileInputById(modalClearSelectedFileBtn.dataset.pcModalClearSelectedFile || '')) {
+                closeFilesModal();
+            }
+        });
         assetValuationSummaryModal?.addEventListener('click', (event) => {
             if (event.target === assetValuationSummaryModal) {
                 closeAssetValuationSummaryModal();
@@ -14729,13 +16111,34 @@
             const target = event.target;
             if (!(target instanceof HTMLInputElement)) return;
             if (currentJointSurveyApplyMode === 'step10' && target.classList.contains('pc-joint-survey-name-checkbox')) {
+                const step10Checkboxes = Array.from(jointSurveyNamesModal.querySelectorAll('.pc-joint-survey-name-checkbox[data-group-type="step10-tab4"]'))
+                    .filter((checkbox) => checkbox instanceof HTMLInputElement);
+                const selectAllCheckbox = jointSurveyNamesModal.querySelector('.pc-joint-survey-select-all-single');
+                if (selectAllCheckbox instanceof HTMLInputElement) {
+                    selectAllCheckbox.checked = step10Checkboxes.length > 0 && step10Checkboxes.every((checkbox) => checkbox.checked);
+                }
                 populateStep10OwnerSelection(currentProcessChartPrefill, { closeModal: false });
                 return;
             }
+            if (currentJointSurveyApplyMode === 'agreement_owner_capture' && target.classList.contains('pc-joint-survey-name-checkbox')) {
+                const agreementCheckboxes = Array.from(jointSurveyNamesModal.querySelectorAll('.pc-joint-survey-name-checkbox[data-group-type="agreement-owner"]'))
+                    .filter((checkbox) => checkbox instanceof HTMLInputElement);
+                const selectAllCheckbox = jointSurveyNamesModal.querySelector('.pc-joint-survey-select-all-single');
+                if (selectAllCheckbox instanceof HTMLInputElement) {
+                    selectAllCheckbox.checked = agreementCheckboxes.length > 0 && agreementCheckboxes.every((checkbox) => checkbox.checked);
+                }
+                populateAgreementOwnerCaptureSelection({ closeModal: false });
+                return;
+            }
             if (target.classList.contains('pc-joint-survey-select-all-single')) {
-                const selector = (currentJointSurveyApplyMode === 'joint_single' || currentJointSurveyApplyMode === 'joint_multi')
-                    ? '.pc-joint-survey-name-checkbox[data-group-type="tab1-owner"]'
-                    : '.pc-joint-survey-name-checkbox[data-group-type="single"]';
+                let selector = '.pc-joint-survey-name-checkbox[data-group-type="single"]';
+                if (currentJointSurveyApplyMode === 'joint_single' || currentJointSurveyApplyMode === 'joint_multi') {
+                    selector = '.pc-joint-survey-name-checkbox[data-group-type="tab1-owner"]';
+                } else if (currentJointSurveyApplyMode === 'step10') {
+                    selector = '.pc-joint-survey-name-checkbox[data-group-type="step10-tab4"]';
+                } else if (currentJointSurveyApplyMode === 'agreement_owner_capture') {
+                    selector = '.pc-joint-survey-name-checkbox[data-group-type="agreement-owner"]';
+                }
                 jointSurveyNamesModal.querySelectorAll(selector).forEach((checkbox) => {
                     if (checkbox instanceof HTMLInputElement) {
                         checkbox.checked = target.checked;
@@ -14743,6 +16146,12 @@
                 });
                 if (currentJointSurveyApplyMode === 'joint_single' || currentJointSurveyApplyMode === 'joint_multi') {
                     applySelectedJointSurveyNames(currentProcessChartPrefill, { closeModal: false });
+                }
+                if (currentJointSurveyApplyMode === 'step10') {
+                    populateStep10OwnerSelection(currentProcessChartPrefill, { closeModal: false });
+                }
+                if (currentJointSurveyApplyMode === 'agreement_owner_capture') {
+                    populateAgreementOwnerCaptureSelection({ closeModal: false });
                 }
                 return;
             }
