@@ -2,7 +2,8 @@
 from django.http import JsonResponse, HttpResponse
 from django.urls import reverse
 from django.db import connection, transaction, ProgrammingError, OperationalError
-from django.db.models import Q
+from django.db.models import Q, Count
+from django.db.models.functions import TruncDate
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.sessions.models import Session
@@ -13,6 +14,7 @@ from django.db import connection
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 import csv
+import hashlib
 import re
 import json
 import os
@@ -27,10 +29,11 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from django.utils.dateparse import parse_date
 from django.utils.http import url_has_allowed_host_and_scheme
-from datetime import date as datetime_date
+from datetime import date as datetime_date, timedelta
 from django.utils import timezone
 from django.db.utils import OperationalError
 from django.core.paginator import Paginator
+from django.core.cache import cache
 from uuid import uuid4
 
 def clean_optional_char(value):
@@ -924,7 +927,23 @@ def _parse_ready_reckoner_blocks(request, block_count, village_type):
 
 @login_required
 def ready_reckoner_list(request):
-    all_records = ReadyReckonerInfo.objects.prefetch_related('rates').all().order_by('district', 'taluka', 'village', 'year', 'id')
+    filter_type = clean_optional_char(request.GET.get('filter_type'))
+    district_filter = clean_optional_char(request.GET.get('district'))
+    taluka_filter = clean_optional_char(request.GET.get('taluka'))
+    village_filter = clean_optional_char(request.GET.get('village'))
+    if filter_type not in {'district', 'taluka', 'village'}:
+        filter_type = ''
+
+    qs = ReadyReckonerInfo.objects.prefetch_related('rates').all()
+    if filter_type:
+        if district_filter:
+            qs = _apply_analytics_location_filter(qs, "district", district_filter, "district")
+        if filter_type in {'taluka', 'village'} and taluka_filter:
+            qs = _apply_analytics_location_filter(qs, "taluka", taluka_filter, "taluka")
+        if filter_type == 'village' and village_filter:
+            qs = _apply_analytics_location_filter(qs, "village", village_filter, "village")
+
+    all_records = qs.order_by('district', 'taluka', 'village', 'year', 'id')
 
     # Group by village+year ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¾Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¦ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â one entry per village
     from itertools import groupby
@@ -961,7 +980,15 @@ def ready_reckoner_list(request):
             'village_mr': village_mr,
             'year': key[3],
         })
-    return render(request, 'ready_reckoner_list.html', {'groups': groups})
+    clear_filter_query_string = urlencode({})
+    return render(request, 'ready_reckoner_list.html', {
+        'groups': groups,
+        'filter_type': filter_type,
+        'district_filter': district_filter,
+        'taluka_filter': taluka_filter,
+        'village_filter': village_filter,
+        'clear_filter_query_string': clear_filter_query_string,
+    })
 
 @login_required
 def edit_ready_reckoner(request, id):
@@ -1706,6 +1733,13 @@ def land_record_712_list(request):
 
     per_page_raw = (request.GET.get('per_page', '10') or '10').strip().lower()
     search_query = (request.GET.get('search') or '').strip()
+    filter_type = clean_optional_char(request.GET.get('filter_type'))
+    district_filter = clean_optional_char(request.GET.get('district'))
+    taluka_filter = clean_optional_char(request.GET.get('taluka'))
+    village_filter = clean_optional_char(request.GET.get('village'))
+    gut_filter = clean_optional_char(request.GET.get('gut_number') or request.GET.get('gut'))
+    if filter_type not in {'district', 'taluka', 'village', 'gut_number'}:
+        filter_type = ''
     show_all = per_page_raw == 'all'
     per_page = 10
     if not show_all:
@@ -1748,6 +1782,24 @@ def land_record_712_list(request):
             filters = filters | Q(id=int(search_query))
         qs = qs.filter(filters)
 
+    if filter_type:
+        if district_filter:
+            qs = _apply_analytics_location_filter(qs, "district", district_filter, "district")
+        if filter_type in {'taluka', 'village', 'gut_number'} and taluka_filter:
+            qs = _apply_analytics_location_filter(qs, "taluka", taluka_filter, "taluka")
+        if filter_type in {'village', 'gut_number'} and village_filter:
+            qs = _apply_analytics_location_filter(qs, "village", village_filter, "village")
+        if filter_type == 'gut_number' and gut_filter:
+            gut_norm = normalize_gut_value(gut_filter)
+            matching_rows = [
+                row
+                for row in qs.values("id", "gut_number")
+                if normalize_gut_value(row.get("gut_number")) == gut_norm
+            ]
+            matching_ids = [row["id"] for row in matching_rows]
+            qs = qs.filter(id__in=matching_ids)
+            gut_filter = (matching_rows[0]["gut_number"] or '').strip() if matching_rows else gut_norm
+
     if show_all:
         records = list(qs)
         page_obj = None
@@ -1785,6 +1837,17 @@ def land_record_712_list(request):
     query_params = {'per_page': per_page_raw if show_all else str(per_page)}
     if search_query:
         query_params['search'] = search_query
+    clear_filter_query_string = urlencode(query_params)
+    if filter_type:
+        query_params['filter_type'] = filter_type
+        if district_filter:
+            query_params['district'] = district_filter
+        if taluka_filter:
+            query_params['taluka'] = taluka_filter
+        if village_filter:
+            query_params['village'] = village_filter
+        if gut_filter:
+            query_params['gut_number'] = gut_filter
     query_string = urlencode(query_params)
 
     district_mr_cache = {}
@@ -1825,7 +1888,13 @@ def land_record_712_list(request):
         'end_index': end_index,
         'page_links': page_links,
         'search_query': search_query,
+        'filter_type': filter_type,
+        'district_filter': district_filter,
+        'taluka_filter': taluka_filter,
+        'village_filter': village_filter,
+        'gut_filter': gut_filter,
         'query_string': query_string,
+        'clear_filter_query_string': clear_filter_query_string,
         'include_document_preview': include_document_preview,
     })
 
@@ -2561,6 +2630,42 @@ def _as_int_or_none(value):
         return None
 
 
+
+DASHBOARD_AFFECTED_COUNTS_CACHE_TIMEOUT = 300
+
+
+def _dashboard_affected_counts_cache_key(*, project_id, tenant_id, district_id, taluka_id, village_id, gut_id, district_name, taluka_name, village_name):
+    payload = {
+        "project_id": project_id,
+        "tenant_id": tenant_id or "",
+        "district_id": district_id,
+        "taluka_id": taluka_id,
+        "village_id": village_id,
+        "gut_id": gut_id or "",
+        "district_name": district_name or "",
+        "taluka_name": taluka_name or "",
+        "village_name": village_name or "",
+    }
+    digest = hashlib.sha256(json.dumps(payload, sort_keys=True, separators=(",", ":")).encode("utf-8")).hexdigest()
+    return f"dashboard_affected_counts:v2:{digest}"
+
+
+DASHBOARD_PROJECT_STATS_CACHE_TIMEOUT = 300
+
+
+def _dashboard_project_stats_cache_key(*, district_id, taluka_id, village_id, district_name, taluka_name, village_name, gut_number):
+    payload = {
+        "district_id": district_id or "",
+        "taluka_id": taluka_id or "",
+        "village_id": village_id or "",
+        "district_name": district_name or "",
+        "taluka_name": taluka_name or "",
+        "village_name": village_name or "",
+        "gut_number": gut_number or "",
+    }
+    digest = hashlib.sha256(json.dumps(payload, sort_keys=True, separators=(",", ":")).encode("utf-8")).hexdigest()
+    return f"dashboard_project_stats:v2:{digest}"
+
 def _aligned_geom_expr(alias):
     return f"""
         CASE
@@ -2594,6 +2699,23 @@ def get_dashboard_affected_counts(request):
         "affected_guts": 0,
         "affected_area_ha": 0,
     }
+
+    cache_key = _dashboard_affected_counts_cache_key(
+        project_id=project_id,
+        tenant_id=tenant_id,
+        district_id=district_id,
+        taluka_id=taluka_id,
+        village_id=village_id,
+        gut_id=gut_id,
+        district_name=district_name,
+        taluka_name=taluka_name,
+        village_name=village_name,
+    )
+    cached_payload = cache.get(cache_key)
+    if cached_payload is not None:
+        response = JsonResponse(cached_payload)
+        response["X-Dashboard-Cache"] = "hit"
+        return response
 
     try:
         with connection.cursor() as cursor:
@@ -2866,17 +2988,19 @@ def get_dashboard_affected_counts(request):
                 )
                 affected_area_ha = float(cursor.fetchone()[0] or 0)
 
-        return JsonResponse(
-            {
-                "affected_districts": int(affected_districts or 0),
-                "affected_talukas": int(affected_talukas or 0),
-                "affected_villages": int(affected_villages or 0),
-                "affected_guts": int(affected_guts or 0),
-                "affected_area_ha": round(float(affected_area_ha or 0), 2),
-                "project_id": resolved_project_id,
-                "tenant_id": tenant_id or project_schema,
-            }
-        )
+        payload = {
+            "affected_districts": int(affected_districts or 0),
+            "affected_talukas": int(affected_talukas or 0),
+            "affected_villages": int(affected_villages or 0),
+            "affected_guts": int(affected_guts or 0),
+            "affected_area_ha": round(float(affected_area_ha or 0), 2),
+            "project_id": resolved_project_id,
+            "tenant_id": tenant_id or project_schema,
+        }
+        cache.set(cache_key, payload, DASHBOARD_AFFECTED_COUNTS_CACHE_TIMEOUT)
+        response = JsonResponse(payload)
+        response["X-Dashboard-Cache"] = "miss"
+        return response
     except OperationalError:
         return JsonResponse(zero_payload)
     except Exception as exc:
@@ -2895,6 +3019,21 @@ def get_project_stats(request):
     taluka_name = (request.GET.get('taluka') or '').strip() or None
     village_name = (request.GET.get('village') or '').strip() or None
     gut_number = request.GET.get('gut')
+
+    cache_key = _dashboard_project_stats_cache_key(
+        district_id=district_id,
+        taluka_id=taluka_id,
+        village_id=village_id,
+        district_name=district_name,
+        taluka_name=taluka_name,
+        village_name=village_name,
+        gut_number=gut_number,
+    )
+    cached_payload = cache.get(cache_key)
+    if cached_payload is not None:
+        response = JsonResponse(cached_payload)
+        response["X-Project-Stats-Cache"] = "hit"
+        return response
 
     with connection.cursor() as cursor:
         column_cache = {}
@@ -2991,7 +3130,7 @@ def get_project_stats(request):
         )
 
         if invalid_location:
-            return JsonResponse({
+            payload = {
                 "land_classification": {
                     "trees_total": 0,
                     "trees_valuation": 0,
@@ -3008,7 +3147,11 @@ def get_project_stats(request):
                     "water_total": 0,
                     "water_valuation": 0,
                 }
-            })
+            }
+            cache.set(cache_key, payload, DASHBOARD_PROJECT_STATS_CACHE_TIMEOUT)
+            response = JsonResponse(payload)
+            response["X-Project-Stats-Cache"] = "miss"
+            return response
 
         # Build filters for asset tables (which may not always have district_id/taluka_id).
         def build_asset_filters(table_name):
@@ -3191,9 +3334,13 @@ def get_project_stats(request):
         # -----------------------------
         # FINAL RESPONSE
         # -----------------------------
-        return JsonResponse({
+        payload = {
             "land_classification": land_classification
-        })
+        }
+        cache.set(cache_key, payload, DASHBOARD_PROJECT_STATS_CACHE_TIMEOUT)
+        response = JsonResponse(payload)
+        response["X-Project-Stats-Cache"] = "miss"
+        return response
 
 @api_login_required
 def get_gut_numbers_by_village(request, village_name):
@@ -4228,9 +4375,110 @@ def doc_edit(request, id):
     return JsonResponse({'error': 'Method not allowed'}, status=405)
 
 
+def _document_location_display(doc):
+    district = doc.district or ''
+    taluka = doc.taluka or ''
+    village = doc.village or ''
+    return {
+        'district_display': get_marathi_name('district', district) if district else '',
+        'taluka_display': get_marathi_name('taluka', district, taluka) if district and taluka else taluka,
+        'village_display': get_marathi_name('village', district, taluka, village) if district and taluka and village else village,
+        'gut_display': doc.gut_number or '',
+    }
+
+
+def _process_chart_document_location_display(case):
+    district = case.district or ''
+    taluka = case.taluka or ''
+    village = case.village or ''
+    return {
+        'district_display': get_marathi_name('district', district) if district else '',
+        'taluka_display': get_marathi_name('taluka', district, taluka) if district and taluka else taluka,
+        'village_display': get_marathi_name('village', district, taluka, village) if district and taluka and village else village,
+        'gut_display': case.gut_number or '',
+    }
+
+
+def _process_chart_document_name(doc):
+    file_name = os.path.basename(getattr(doc.file, 'name', '') or '')
+    return file_name or doc.document_type or f'process_chart_document_{doc.id}'
+
+
+def _serialize_process_chart_document_for_tool(doc):
+    case = doc.case
+    document_name = _process_chart_document_name(doc)
+    file_name = getattr(doc.file, 'name', '') or ''
+    return {
+        'id': doc.id,
+        'document_name': document_name,
+        'document_level': 'gut',
+        'district': case.district,
+        'taluka': case.taluka or '',
+        'village': case.village or '',
+        'gut_number': case.gut_number or '',
+        **_process_chart_document_location_display(case),
+        'description': doc.remarks or '',
+        'document_date': '',
+        'court_date': '',
+        'owner_name': '',
+        'matter_type': doc.document_type or '',
+        'matter_type_display': f"Step {doc.step_no} - {doc.document_type}" if doc.step_no else doc.document_type,
+        'uploaded_at': timezone.localtime(doc.created_at).strftime('%d/%m/%Y') if doc.created_at else '',
+        'file_url': doc.file.url if doc.file else '',
+        'ext': file_name.rsplit('.', 1)[-1].lower() if '.' in file_name else '',
+        'source': 'process_chart',
+        'step_no': doc.step_no,
+        'section_code': doc.section_code or '',
+    }
+
+
+def _process_chart_documents_for_tool(request, apply_exact_level=False):
+    import re as _re
+    district = request.GET.get('district') or None
+    taluka = request.GET.get('taluka') or None
+    village = request.GET.get('village') or None
+    gut = request.GET.get('gut') or None
+    file_name = request.GET.get('file_name') or None
+
+    qs = ProcessChartDocument.objects.select_related('case').filter(case__user=request.user)
+
+    if district:
+        qs = qs.filter(case__district__iexact=district)
+    if taluka:
+        qs = qs.filter(case__taluka__iexact=taluka)
+    if village:
+        qs = qs.filter(case__village__iexact=village)
+    if gut:
+        numeric = _re.search(r'\d+', gut)
+        if numeric:
+            num = numeric.group()
+            qs = qs.filter(case__gut_number__iregex=r'(^|[^0-9])' + num + r'([^0-9]|$)')
+        else:
+            qs = qs.filter(case__gut_number__iexact=gut)
+
+    if file_name:
+        qs = qs.filter(
+            Q(file__icontains=file_name) |
+            Q(document_type__icontains=file_name) |
+            Q(section_code__icontains=file_name)
+        )
+
+    if apply_exact_level and district and not taluka and not village and not gut:
+        pass
+
+    return [
+        _serialize_process_chart_document_for_tool(doc)
+        for doc in qs.order_by('-created_at', '-id')
+        if doc.file
+    ]
+
+
 @login_required
 def doc_list_api(request):
     doc_type = request.GET.get('type', 'general')
+    if doc_type == 'process_chart':
+        return JsonResponse({'documents': _process_chart_documents_for_tool(request)})
+
     docs = Document.objects.filter(document_type=doc_type, user=request.user).order_by('-uploaded_at')
     matter_labels = dict(Document.MATTER_TYPE_CHOICES)
     data = []
@@ -4265,13 +4513,14 @@ def doc_list_api(request):
             'taluka': d.taluka or '',
             'village': d.village or '',
             'gut_number': d.gut_number or '',
+            **_document_location_display(d),
             'description': d.description or '',
             'document_date': d.document_date.strftime('%d/%m/%Y') if d.document_date else '',
             'court_date': d.court_date.strftime('%d/%m/%Y') if d.court_date else '',
             'owner_name': d.owner_name or '',
             'matter_type': d.matter_type or '',
             'matter_type_display': matter_labels.get(d.matter_type, '') if d.matter_type else '',
-            'uploaded_at': d.uploaded_at.strftime('%d/%m/%Y'),
+            'uploaded_at': timezone.localtime(d.uploaded_at).strftime('%d/%m/%Y') if d.uploaded_at else '',
             'file_url': file_url,
             'ext': ext,
         })
@@ -4282,6 +4531,9 @@ def get_filtered_documents(request):
     """Return documents for the exact selected location level with real uploaded files only."""
     import re as _re
     doc_type = request.GET.get('type', 'general')
+    if doc_type == 'process_chart':
+        return JsonResponse({'documents': _process_chart_documents_for_tool(request, apply_exact_level=True)})
+
     district = request.GET.get('district') or None
     taluka   = request.GET.get('taluka')   or None
     village  = request.GET.get('village')  or None
@@ -4355,13 +4607,14 @@ def get_filtered_documents(request):
             'taluka': d.taluka or '',
             'village': d.village or '',
             'gut_number': d.gut_number or '',
+            **_document_location_display(d),
             'description': d.description or '',
             'document_date': d.document_date.strftime('%d/%m/%Y') if d.document_date else '',
             'court_date': d.court_date.strftime('%d/%m/%Y') if d.court_date else '',
             'owner_name': d.owner_name or '',
             'matter_type': d.matter_type or '',
             'matter_type_display': matter_labels.get(d.matter_type, '') if d.matter_type else '',
-            'uploaded_at': d.uploaded_at.strftime('%d/%m/%Y'),
+            'uploaded_at': timezone.localtime(d.uploaded_at).strftime('%d/%m/%Y') if d.uploaded_at else '',
             'file_url': first_attachment.file.url,
             'ext': first_attachment.file.name.rsplit('.', 1)[-1].lower() if '.' in first_attachment.file.name else '',
         })
@@ -8273,12 +8526,557 @@ def get_village_sec15_rates(request):
         'message': '' if rates_payload else 'No ready reckoner rates found for selected village'
     })
 
-@login_required
-def analytics(request):
+def _format_analytics_last_updated(record):
+    if not record:
+        return "माहिती उपलब्ध नाही"
+
+    value = None
+    for field_name in ("updated_at", "uploaded_at", "created_at"):
+        value = getattr(record, field_name, None)
+        if value:
+            break
+
+    if not value:
+        return "माहिती उपलब्ध नाही"
+
+    if hasattr(value, "hour"):
+        value = timezone.localtime(value) if timezone.is_aware(value) else value
+        hour = value.strftime("%I").lstrip("0") or "0"
+        time_text = f"{hour}:{value.strftime('%M %p')}"
+    else:
+        time_text = ""
+
+    marathi_months = {
+        1: "जानेवारी", 2: "फेब्रुवारी", 3: "मार्च", 4: "एप्रिल",
+        5: "मे", 6: "जून", 7: "जुलै", 8: "ऑगस्ट",
+        9: "सप्टेंबर", 10: "ऑक्टोबर", 11: "नोव्हेंबर", 12: "डिसेंबर",
+    }
+    date_text = f"{value.day} {marathi_months.get(value.month, value.strftime('%b'))} {value.year}"
+    return f"{date_text} {time_text}".strip()
+
+
+def _analytics_project_scope(request=None):
+    class EmptyGet:
+        def get(self, key, default=None):
+            return default
+
+    class ScopeRequest:
+        GET = EmptyGet()
+
     try:
-        pass
-       
+        scope_rows, village_keys, gut_keys = _resolve_dashboard_scope(request or ScopeRequest())
+    except Exception:
+        return [], set(), set()
+    return scope_rows, village_keys, gut_keys
+
+
+def _analytics_project_village_keys(request=None):
+    return _analytics_project_scope(request)[1]
+
+
+def _analytics_location_variants(level, selected_value):
+    values = {selected_value}
+    if not selected_value or str(selected_value).lower() == "all":
+        return values
+
+    table_by_level = {
+        "district": ("prj_district", "district_id", "name", "public.district_master", "id", "district_name_m"),
+        "taluka": ("prj_taluka", "taluka_id", "taluka", "public.taluka_master", "id", "taluka_name_m"),
+        "village": ("prj_village", "village_id", "village", "public.village_master", "id", "village_name_m"),
+    }
+    config = table_by_level.get(level)
+    if not config:
+        return values
+
+    table, key_field, name_field, master_table, master_key, marathi_field = config
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute(f"""
+                SELECT DISTINCT src.{name_field}, master.{marathi_field}
+                FROM purandar_airport.{table} src
+                LEFT JOIN {master_table} master ON src.{key_field} = master.{master_key}
+                WHERE UPPER(TRIM(src.{name_field})) = UPPER(TRIM(%s))
+                   OR UPPER(TRIM(COALESCE(master.{marathi_field}, ''))) = UPPER(TRIM(%s))
+            """, [selected_value, selected_value])
+            for row in cursor.fetchall():
+                values.update(clean_optional_char(item) for item in row if clean_optional_char(item))
     except Exception:
         pass
+    return values
 
-    return render(request, 'analytics.html')
+
+def _apply_analytics_location_filter(queryset, field_name, selected_value, level):
+    if not selected_value or str(selected_value).lower() == "all":
+        return queryset
+    query = Q()
+    for value in _analytics_location_variants(level, selected_value):
+        query |= Q(**{f"{field_name}__iexact": value})
+    return queryset.filter(query)
+
+
+def _readyrecnor_analytics_data(project_village_keys=None):
+    if project_village_keys is None:
+        project_village_keys = _analytics_project_village_keys()
+
+    rr_village_keys = set()
+    rr_matching_ids = []
+    for row in ReadyReckonerInfo.objects.exclude(village__isnull=True).exclude(village__exact="").values("id", "district", "taluka", "village"):
+        key = (normalize_match_text(row["district"]), normalize_match_text(row["taluka"]), normalize_match_text(row["village"]))
+        if project_village_keys and key not in project_village_keys:
+            continue
+        rr_village_keys.add(key)
+        rr_matching_ids.append(row["id"])
+
+    total_villages = len(project_village_keys) if project_village_keys else len(rr_village_keys)
+    completed = len(project_village_keys.intersection(rr_village_keys)) if project_village_keys else len(rr_village_keys)
+    pending = max(total_villages - completed, 0)
+    last_record = ReadyReckonerInfo.objects.filter(id__in=rr_matching_ids).order_by("-updated_at", "-id").first()
+    return {
+        "rr_total_villages": total_villages,
+        "rr_completed_villages": completed,
+        "rr_pending_villages": pending,
+        "rr_completion_percent": round((completed / total_villages) * 100) if total_villages else 0,
+        "rr_last_updated": _format_analytics_last_updated(last_record),
+    }
+
+
+@login_required
+def readyrecnor_analytics(request):
+    return JsonResponse(_readyrecnor_analytics_data(_analytics_project_village_keys(request)))
+
+
+def _villageinfo_analytics_data(project_village_keys=None):
+    if project_village_keys is None:
+        project_village_keys = _analytics_project_village_keys()
+
+    status_by_key = {}
+    matching_ids = []
+    for record in VillageData.objects.exclude(village__isnull=True).exclude(village__exact="").order_by("is_final_submitted", "updated_at", "id"):
+        key = (normalize_match_text(record.district), normalize_match_text(record.taluka), normalize_match_text(record.village))
+        if project_village_keys and key not in project_village_keys:
+            continue
+        matching_ids.append(record.id)
+        status = "completed" if record.is_final_submitted else "draft"
+        if status_by_key.get(key) != "completed":
+            status_by_key[key] = status
+
+    completed = sum(1 for status in status_by_key.values() if status == "completed")
+    draft = sum(1 for status in status_by_key.values() if status == "draft")
+    total = len(project_village_keys) if project_village_keys else len(status_by_key)
+    pending = max(total - completed - draft, 0)
+    last_record = VillageData.objects.filter(id__in=matching_ids).order_by("-updated_at", "-id").first()
+    return {
+        "village_info_total_villages": total,
+        "village_info_completed_villages": completed,
+        "village_info_draft_villages": draft,
+        "village_info_pending_villages": pending,
+        "village_info_completion_percent": round((completed / total) * 100) if total else 0,
+        "village_info_last_updated": _format_analytics_last_updated(last_record),
+    }
+
+
+@login_required
+def villageinfo_analytics(request):
+    return JsonResponse(_villageinfo_analytics_data(_analytics_project_village_keys(request)))
+
+
+def _documents_analytics_data(request=None):
+    qs = Document.objects.all()
+    if request is not None:
+        qs = _apply_analytics_location_filter(qs, "district", clean_optional_char(request.GET.get("district")), "district")
+        qs = _apply_analytics_location_filter(qs, "taluka", clean_optional_char(request.GET.get("taluka")), "taluka")
+        qs = _apply_analytics_location_filter(qs, "village", clean_optional_char(request.GET.get("village")), "village")
+        gut_number = clean_optional_char(request.GET.get("gut_number") or request.GET.get("gut"))
+        if gut_number:
+            gut_norm = normalize_gut_value(gut_number)
+            qs = qs.filter(id__in=[record.id for record in qs if normalize_gut_value(record.gut_number) == gut_norm])
+
+    today = timezone.localdate()
+    week_start = today - timedelta(days=today.weekday())
+    general = qs.filter(document_type="general").count()
+    court = qs.filter(document_type="court").count()
+    return {
+        "documents_total": general + court,
+        "documents_general": general,
+        "documents_court": court,
+        "documents_past_dates": qs.filter(document_type="court", court_date__lt=today).count(),
+        "documents_upcoming_dates": qs.filter(document_type="court", court_date__gte=today).count(),
+        "documents_this_week": qs.filter(uploaded_at__date__gte=week_start).count(),
+        "documents_last_updated": _format_analytics_last_updated(qs.order_by("-uploaded_at", "-id").first()),
+    }
+
+
+@login_required
+def documents_analytics(request):
+    return JsonResponse(_documents_analytics_data(request))
+
+
+def _inspection_analytics_queryset(request, include_asset_type=True):
+    qs = Inspection.objects.all()
+    qs = _apply_analytics_location_filter(qs, "district", clean_optional_char(request.GET.get("district")), "district")
+    qs = _apply_analytics_location_filter(qs, "taluka", clean_optional_char(request.GET.get("taluka")), "taluka")
+    qs = _apply_analytics_location_filter(qs, "village", clean_optional_char(request.GET.get("village")), "village")
+    gut_number = clean_optional_char(request.GET.get("gut_number") or request.GET.get("gut"))
+    asset_type = clean_optional_char(request.GET.get("asset_type")) if include_asset_type else ""
+    if gut_number and gut_number.lower() != "all":
+        gut_norm = normalize_gut_value(gut_number)
+        qs = qs.filter(id__in=[record.id for record in qs if normalize_gut_value(record.gut_number) == gut_norm])
+    if asset_type and asset_type.lower() != "all":
+        qs = qs.filter(inspection_asset_type__iexact=asset_type)
+    return qs
+
+
+def _inspection_analytics_data(request):
+    base_qs = _inspection_analytics_queryset(request, include_asset_type=False)
+    timeline_qs = _inspection_analytics_queryset(request)
+    asset_type_qs = base_qs.exclude(inspection_asset_type__isnull=True).exclude(inspection_asset_type__exact="")
+    selected_asset_type = clean_optional_char(request.GET.get("asset_type"))
+    asset_type_lookup = {
+        row["asset_code"]: row["asset_name_marathi"] or row["asset_code"]
+        for row in AssetTypeMaster.objects.filter(is_active=True).values("asset_code", "asset_name_marathi")
+    }
+    village_top = [
+        [row["village"] or "Unknown", row["count"]]
+        for row in base_qs.exclude(village__isnull=True).exclude(village__exact="").values("village").annotate(count=Count("id")).order_by("-count", "village")[:10]
+    ]
+    total_asset_details = base_qs.aggregate(count=Count("details"))["count"] or 0
+    asset_count_field = "details" if total_asset_details else "id"
+    total_assets = total_asset_details or base_qs.count()
+    peak_day = base_qs.annotate(day=TruncDate("date")).values("day").annotate(count=Count(asset_count_field)).order_by("-count", "day").first()
+    top_asset_type = asset_type_qs.values("inspection_asset_type").annotate(count=Count(asset_count_field)).order_by("-count", "inspection_asset_type").first()
+    timeline_rows = list(timeline_qs.annotate(day=TruncDate("date")).values("day").annotate(count=Count(asset_count_field)).order_by("day"))
+    return {
+        "summary": {
+            "total_records": base_qs.count(),
+            "total_assets": total_assets,
+            "asset_type_count": asset_type_qs.values("inspection_asset_type").distinct().count(),
+            "peak_day": peak_day["day"].isoformat() if peak_day and peak_day["day"] else "",
+            "peak_day_count": peak_day["count"] if peak_day else 0,
+            "top_asset_type": asset_type_lookup.get(top_asset_type["inspection_asset_type"], top_asset_type["inspection_asset_type"]) if top_asset_type else "",
+            "top_asset_count": top_asset_type["count"] if top_asset_type else 0,
+            "last_updated": _format_analytics_last_updated(base_qs.order_by("-updated_at", "-id").first()),
+        },
+        "charts": {
+            "village_top": village_top,
+            "asset_timeline": {
+                "categories": [row["day"].isoformat() for row in timeline_rows if row["day"]],
+                "data": [row["count"] for row in timeline_rows if row["day"]],
+                "asset_label": asset_type_lookup.get(selected_asset_type, selected_asset_type) if selected_asset_type and selected_asset_type.lower() != "all" else "सर्व मालमत्ता",
+            },
+        },
+        "filters": {
+            "asset_types": [
+                {"value": row["asset_code"], "label": row["asset_name_marathi"] or row["asset_code"]}
+                for row in AssetTypeMaster.objects.filter(is_active=True).order_by("display_order", "asset_name_marathi").values("asset_code", "asset_name_marathi")
+            ],
+        },
+    }
+
+
+@login_required
+def inspection_analytics(request):
+    return JsonResponse(_inspection_analytics_data(request))
+
+
+def _land_record_712_analytics_queryset(request):
+    qs = LandRecord712.objects.all()
+    qs = _apply_analytics_location_filter(qs, "district", clean_optional_char(request.GET.get("district")), "district")
+    qs = _apply_analytics_location_filter(qs, "taluka", clean_optional_char(request.GET.get("taluka")), "taluka")
+    qs = _apply_analytics_location_filter(qs, "village", clean_optional_char(request.GET.get("village")), "village")
+    gut_number = clean_optional_char(request.GET.get("gut_number") or request.GET.get("gut"))
+    if gut_number and gut_number.lower() != "all":
+        gut_norm = normalize_gut_value(gut_number)
+        qs = qs.filter(id__in=[record.id for record in qs if normalize_gut_value(record.gut_number) == gut_norm])
+    return qs
+
+
+def _format_hectare_area_from_sqm(total_sqm):
+    if not total_sqm:
+        return "0.00 हे."
+    hectares = Decimal(total_sqm) / Decimal("10000")
+    return f"{hectares.quantize(Decimal('0.01'))} हे."
+
+
+def _land_record_712_analytics_data(request):
+    qs = _land_record_712_analytics_queryset(request)
+    records = list(qs)
+    total_records = len(records)
+    village_values = {clean_optional_char(record.village) for record in records if clean_optional_char(record.village)}
+    gut_values = {normalize_gut_value(record.gut_number) for record in records if normalize_gut_value(record.gut_number)}
+    total_sqm = sum(_parse_area_to_sqm(record.total_area) for record in records)
+    average_sqm = int(total_sqm / total_records) if total_records else 0
+    village_top = [
+        [get_marathi_name("village", row.get("district") or "", row.get("taluka") or "", row.get("village") or "") or row.get("village") or "Unknown", row["count"]]
+        for row in qs.exclude(village__isnull=True).exclude(village__exact="").values("district", "taluka", "village").annotate(count=Count("id")).order_by("-count", "village")[:10]
+    ]
+    return {
+        "summary": {
+            "total_records": total_records,
+            "total_villages": len(village_values),
+            "total_guts": len(gut_values),
+            "total_area": _format_hectare_area_from_sqm(total_sqm),
+            "average_area": _format_hectare_area_from_sqm(average_sqm),
+            "top_village": village_top[0][0] if village_top else "-",
+            "last_updated": _format_analytics_last_updated(qs.order_by("-updated_at", "-id").first()),
+        },
+        "charts": {"village_top": village_top},
+    }
+
+
+@login_required
+def land_record_712_analytics(request):
+    return JsonResponse(_land_record_712_analytics_data(request))
+
+
+def _bhusampadan_queryset(request):
+    qs = ProcessChartCase.objects.prefetch_related("step_data", "department_rows", "documents")
+    qs = _apply_analytics_location_filter(qs, "district", clean_optional_char(request.GET.get("district")), "district")
+    qs = _apply_analytics_location_filter(qs, "taluka", clean_optional_char(request.GET.get("taluka")), "taluka")
+    qs = _apply_analytics_location_filter(qs, "village", clean_optional_char(request.GET.get("village")), "village")
+    gut_number = clean_optional_char(request.GET.get("gut_number") or request.GET.get("gut"))
+    if gut_number and gut_number.lower() != "all":
+        gut_norm = normalize_gut_value(gut_number)
+        qs = qs.filter(id__in=[record.id for record in qs if normalize_gut_value(record.gut_number) == gut_norm])
+    return qs
+
+
+def _bhusampadan_valuation_data(request, records):
+    selected_component = clean_optional_char(request.GET.get("component")) or "all"
+    component_meta = {
+        "water_supply": ("water", "पाणीपुरवठा", "#2563eb"),
+        "agriculture": ("agri", "कृषी विभाग", "#16a34a"),
+        "construction": ("construction", "बांधकाम विभाग", "#f59e0b"),
+        "forest": ("forest", "वन विभाग", "#10b981"),
+        "other_department": ("other", "इतर विभाग", "#64748b"),
+    }
+    department_type_meta = {
+        "panipurvatha": component_meta["water_supply"],
+        "krushi": component_meta["agriculture"],
+        "bandhakam": component_meta["construction"],
+        "van": component_meta["forest"],
+        "itar": component_meta["other_department"],
+    }
+    preferred_order = ["water", "agri", "construction", "forest", "other"]
+    fallback_item_labels = {
+        "water_supply": {"well": "विहीर", "canal": "कालवा"},
+        "agriculture": {"shed_net": "शेडनेट", "farm_pond": "शेततळे", "fruit_tree": "फळझाडे"},
+        "forest": {"timber_tree": "इमारती लाकूड झाडे", "fruit_tree": "फळझाडे"},
+    }
+    asset_item_labels = {prefix: dict(fallback_item_labels.get(prefix, {})) for prefix in component_meta}
+    for category in AssetCategory.objects.filter(is_active=True).prefetch_related("asset_list"):
+        if category.code not in asset_item_labels:
+            continue
+        for item in category.asset_list.filter(is_active=True):
+            asset_item_labels[category.code][clean_optional_char(item.code)] = clean_optional_char(item.name_marathi) or clean_optional_char(item.code)
+            asset_item_labels[category.code][clean_optional_char(item.name_marathi)] = clean_optional_char(item.name_marathi)
+
+    component_rows = {}
+    component_record_ids = {key: set() for key in preferred_order}
+
+    def ensure_row(key, label, color):
+        return component_rows.setdefault(
+            key,
+            {"key": key, "name": label, "y": 0, "amount": Decimal("0"), "color": color, "breakdown": {}},
+        )
+
+    def parse_decimal(value, default=Decimal("0")):
+        cleaned = clean_optional_char(value).replace(",", "")
+        if not cleaned:
+            return default
+        try:
+            return Decimal(cleaned)
+        except (InvalidOperation, ValueError):
+            return default
+
+    def component_item_label(prefix, row):
+        raw_item = clean_optional_char(row.get(f"{prefix}_component_item"))
+        raw_detail = clean_optional_char(row.get(f"{prefix}_component_detail"))
+        if raw_item:
+            return asset_item_labels.get(prefix, {}).get(raw_item, raw_item)
+        return raw_detail or "इतर"
+
+    def add_breakdown(component_row, item_name, count_value, amount_value, detail=""):
+        item_name = clean_optional_char(item_name) or "इतर"
+        detail = clean_optional_char(detail)
+        count_int = int(count_value)
+        if item_name not in component_row["breakdown"]:
+            component_row["breakdown"][item_name] = {"name": item_name, "y": 0, "amount": Decimal("0"), "entries": []}
+        component_row["breakdown"][item_name]["y"] += count_int
+        component_row["breakdown"][item_name]["amount"] += amount_value
+        component_row["breakdown"][item_name]["entries"].append({"detail": detail, "y": count_int, "amount": amount_value})
+
+    for record in records:
+        has_department_rows = False
+        for row in record.department_rows.all():
+            has_department_rows = True
+            key, label, color = department_type_meta.get(row.department_type, component_meta["other_department"])
+            if selected_component != "all" and key != selected_component:
+                continue
+            component_record_ids.setdefault(key, set()).add(record.pk)
+            component_row = ensure_row(key, label, color)
+            component_row["y"] += 1
+            amount_value = row.valuation or Decimal("0")
+            component_row["amount"] += amount_value
+            add_breakdown(
+                component_row,
+                clean_optional_char(row.related_component_details) or clean_optional_char(row.details) or label,
+                Decimal("1"),
+                amount_value,
+                clean_optional_char(row.details),
+            )
+
+        if has_department_rows:
+            continue
+
+        step_seven = next((item for item in record.step_data.all() if item.step_no == 7), None)
+        if not step_seven or not isinstance(step_seven.data, dict):
+            continue
+        fields = step_seven.data.get("fields") if isinstance(step_seven.data.get("fields"), dict) else step_seven.data
+        raw_snapshot = fields.get("tab7_snapshot_json")
+        if isinstance(raw_snapshot, str) and raw_snapshot.strip():
+            try:
+                parsed_snapshot = json.loads(raw_snapshot)
+                if isinstance(parsed_snapshot, dict):
+                    fields = {**fields, "tab7_snapshot": parsed_snapshot}
+            except (TypeError, ValueError, json.JSONDecodeError):
+                pass
+
+        for prefix, (key, label, color) in component_meta.items():
+            if selected_component != "all" and key != selected_component:
+                continue
+            for row in _automatic_document_tab7_rows(fields, prefix):
+                detail_key = f"{prefix}_component_detail"
+                count_key = f"{prefix}_component_count"
+                valuation_key = f"{prefix}_component_valuation"
+                item_key = f"{prefix}_component_item"
+                has_value = any(clean_optional_char(row.get(field_key)) for field_key in (
+                    item_key,
+                    detail_key,
+                    count_key,
+                    valuation_key,
+                ))
+                if not has_value:
+                    continue
+                component_record_ids.setdefault(key, set()).add(record.pk)
+                component_row = ensure_row(key, label, color)
+                count_value = parse_decimal(row.get(count_key), Decimal("1"))
+                if count_value <= 0:
+                    count_value = Decimal("1")
+                amount_value = parse_decimal(row.get(valuation_key))
+                component_row["y"] += int(count_value)
+                component_row["amount"] += amount_value
+                add_breakdown(
+                    component_row,
+                    component_item_label(prefix, row),
+                    count_value,
+                    amount_value,
+                    row.get(detail_key),
+                )
+
+    rows = [component_rows[key] for key in preferred_order if key in component_rows]
+    return {
+        "record_count": len(records) if selected_component == "all" else len(component_record_ids.get(selected_component, set())),
+        "rows": [
+            {
+                "key": row["key"],
+                "name": row["name"],
+                "y": row["y"],
+                "amount": float(row["amount"]),
+                "color": row["color"],
+                "breakdown": [
+                    {
+                        "name": item["name"],
+                        "y": item["y"],
+                        "amount": float(item["amount"]),
+                        "entries": [
+                            {"detail": entry["detail"], "y": entry["y"], "amount": float(entry["amount"])}
+                            for entry in item.get("entries", [])
+                        ],
+                    }
+                    for item in sorted(row.get("breakdown", {}).values(), key=lambda item: (-item["amount"], item["name"]))
+                ],
+            }
+            for row in rows
+        ],
+        "components": [{"value": component_rows[key]["key"], "label": component_rows[key]["name"]} for key in preferred_order if key in component_rows],
+    }
+
+
+def _bhusampadan_analytics_data(request):
+    records = list(_bhusampadan_queryset(request))
+    kalam_items = [
+        {"key": "prakaran_6", "name": "प्रकरण ६", "step": 2},
+        {"key": "section_32_2", "name": "कलम ३२(२)", "step": 3},
+        {"key": "proposal", "name": "भूसंपादन प्रस्ताव तपशील", "step": 3},
+        {"key": "joint", "name": "संयुक्त मोजणी तपशील", "step": 4},
+        {"key": "section_32_1", "name": "कलम ३२(१)", "step": 5},
+        {"key": "section_33_2", "name": "कलम ३३(२) दर निश्चिती", "step": 6},
+    ]
+    status_colors = {"होय": "#55c365", "नाही": "#ef4444", "None": "#aeb4bf"}
+
+    def step_fields(step):
+        data = step.data if isinstance(step.data, dict) else {}
+        fields = data.get("fields")
+        return fields if isinstance(fields, dict) else data
+
+    def has_value(value):
+        if isinstance(value, dict):
+            return any(has_value(item) for item in value.values())
+        if isinstance(value, list):
+            return any(has_value(item) for item in value)
+        return bool(clean_optional_char(value))
+
+    item_payload = []
+    for item in kalam_items:
+        counts = {"होय": 0, "नाही": 0, "None": 0}
+        for record in records:
+            step = next((row for row in record.step_data.all() if row.step_no == item["step"]), None)
+            explicit_value = clean_optional_char(step_fields(step).get(item["status_field"])).lower() if step and item.get("status_field") else ""
+            if explicit_value in {"yes", "हो", "होय", "true", "1"}:
+                status = "होय"
+            elif explicit_value in {"no", "नाही", "false", "0"}:
+                status = "नाही"
+            elif step and has_value(step_fields(step)):
+                status = "होय"
+            elif record.current_step >= item["step"]:
+                status = "नाही"
+            else:
+                status = "None"
+            counts[status] += 1
+        item_payload.append({
+            "key": item["key"],
+            "name": item["name"],
+            "total": len(records),
+            "counts": counts,
+            "series": [{"name": status, "y": counts[status], "color": status_colors[status]} for status in ("होय", "नाही", "None")],
+        })
+
+    valuation_data = _bhusampadan_valuation_data(request, records)
+    total_count = sum(row["y"] for row in valuation_data["rows"])
+    total_amount = sum(Decimal(str(row["amount"])) for row in valuation_data["rows"])
+    return {
+        "kalam": {"total": len(records), "items": item_payload},
+        "valuation": {"values": valuation_data["rows"], "record_count": valuation_data["record_count"], "count": total_count, "amount": float(total_amount)},
+        "filters": {"components": valuation_data["components"]},
+    }
+
+
+@login_required
+def bhusampadan_analytics(request):
+    return JsonResponse(_bhusampadan_analytics_data(request))
+
+
+@login_required
+def analytics(request):
+    project_village_keys = _analytics_project_village_keys()
+    readyrecnor_data = _readyrecnor_analytics_data(project_village_keys)
+    villageinfo_data = _villageinfo_analytics_data(project_village_keys)
+    documents_data = _documents_analytics_data()
+    land_record_712_last_record = LandRecord712.objects.order_by("-updated_at", "-id").first()
+
+    return render(request, 'analytics.html', {
+        **readyrecnor_data,
+        **villageinfo_data,
+        **documents_data,
+        "land_record_712_last_updated": _format_analytics_last_updated(land_record_712_last_record),
+    })

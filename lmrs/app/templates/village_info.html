@@ -438,6 +438,42 @@
                             Add New
                         </button>
                     </div>
+                    <div class="mb-3 rounded-lg border border-[#d7e5f6] bg-white p-3">
+                        <div class="grid grid-cols-1 gap-3 md:grid-cols-[220px_1fr_auto]">
+                            <label class="text-sm font-semibold text-[#44597a]">
+                                <span class="mb-1 block">फिल्टर प्रकार</span>
+                                <select id="vi-list-filter-type" class="w-full rounded border border-gray-300 px-3 py-2 text-sm">
+                                    <option value="">फिल्टर प्रकार निवडा</option>
+                                    <option value="district">जिल्हा</option>
+                                    <option value="taluka">तालुका</option>
+                                    <option value="village">गाव</option>
+                                </select>
+                            </label>
+                            <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                                <label id="vi-list-district-wrap" class="hidden text-sm font-semibold text-[#44597a]">
+                                    <span class="mb-1 block">जिल्हा</span>
+                                    <select id="vi-list-district-filter" class="w-full rounded border border-gray-300 px-3 py-2 text-sm">
+                                        <option value="">जिल्हा निवडा</option>
+                                    </select>
+                                </label>
+                                <label id="vi-list-taluka-wrap" class="hidden text-sm font-semibold text-[#44597a]">
+                                    <span class="mb-1 block">तालुका</span>
+                                    <select id="vi-list-taluka-filter" class="w-full rounded border border-gray-300 px-3 py-2 text-sm" disabled>
+                                        <option value="">तालुका निवडा</option>
+                                    </select>
+                                </label>
+                                <label id="vi-list-village-wrap" class="hidden text-sm font-semibold text-[#44597a]">
+                                    <span class="mb-1 block">गाव</span>
+                                    <select id="vi-list-village-filter" class="w-full rounded border border-gray-300 px-3 py-2 text-sm" disabled>
+                                        <option value="">गाव निवडा</option>
+                                    </select>
+                                </label>
+                            </div>
+                            <div class="flex items-end">
+                                <button type="button" id="vi-list-filter-clear" class="inline-flex w-full items-center justify-center rounded bg-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-300">फिल्टर काढा</button>
+                            </div>
+                        </div>
+                    </div>
                     <div class="overflow-x-auto rounded-xl border border-[#d7e5f6] bg-white">
                         <table class="min-w-full border-collapse text-sm text-[#2a3f62]">
                             <thead class="bg-[#eef5ff]">
@@ -1568,6 +1604,14 @@
         const recordListBody = document.getElementById('vi-record-list-body');
         const pageSizeSelect = document.getElementById('vi-page-size');
         const searchInput = document.getElementById('vi-search-input');
+        const viListFilterType = document.getElementById('vi-list-filter-type');
+        const viListDistrictFilter = document.getElementById('vi-list-district-filter');
+        const viListTalukaFilter = document.getElementById('vi-list-taluka-filter');
+        const viListVillageFilter = document.getElementById('vi-list-village-filter');
+        const viListDistrictWrap = document.getElementById('vi-list-district-wrap');
+        const viListTalukaWrap = document.getElementById('vi-list-taluka-wrap');
+        const viListVillageWrap = document.getElementById('vi-list-village-wrap');
+        const viListFilterClear = document.getElementById('vi-list-filter-clear');
         const listInfo = document.getElementById('vi-list-info');
         const paginationControls = document.getElementById('vi-pagination-controls');
         let currentTab = 1;
@@ -1579,6 +1623,7 @@
         let currentPage = 1;
         let pageSize = Number(pageSizeSelect.value || 10);
         let currentSearchQuery = '';
+        const viListLocationFilter = { type: '', district: '', taluka: '', village: '' };
 
         const districtSel = document.getElementById('vi-district');
         const talukaSel = document.getElementById('vi-taluka');
@@ -2201,11 +2246,11 @@
 
         function applyVillageSearchAndRender() {
             const query = currentSearchQuery.trim().toLowerCase();
-            if (!query) {
-                filteredVillageRecords = villageRecords.slice();
-            } else {
-                filteredVillageRecords = villageRecords.filter((row) => formatSearchValue(row).includes(query));
-            }
+            viUpdateListFilterState();
+            filteredVillageRecords = villageRecords.filter((row) => {
+                const matchesSearch = !query || formatSearchValue(row).includes(query);
+                return matchesSearch && viRowMatchesLocationFilter(row);
+            });
             const totalPages = Math.max(1, Math.ceil(filteredVillageRecords.length / pageSize));
             if (currentPage > totalPages) currentPage = totalPages;
             renderVillageList(getVisibleVillageRows());
@@ -2289,6 +2334,67 @@
                 sel.appendChild(opt);
             });
             sel.disabled = items.length === 0;
+        }
+
+        function viListFilterDepth() {
+            if (viListFilterType?.value === 'district') return 1;
+            if (viListFilterType?.value === 'taluka') return 2;
+            if (viListFilterType?.value === 'village') return 3;
+            return 0;
+        }
+
+        function viUpdateListFilterVisibility() {
+            const depth = viListFilterDepth();
+            viListDistrictWrap?.classList.toggle('hidden', depth < 1);
+            viListTalukaWrap?.classList.toggle('hidden', depth < 2);
+            viListVillageWrap?.classList.toggle('hidden', depth < 3);
+        }
+
+        async function viLoadListDistricts(selectedDistrict = '') {
+            const data = await fetchJSON('/api/locations/?lang=mr');
+            fillSelect(viListDistrictFilter, data.data || [], 'जिल्हा निवडा');
+            viListDistrictFilter.value = selectedDistrict || '';
+        }
+
+        async function viLoadListTalukas(selectedTaluka = '') {
+            fillSelect(viListTalukaFilter, [], 'तालुका निवडा');
+            fillSelect(viListVillageFilter, [], 'गाव निवडा');
+            if (!viListDistrictFilter?.value) return;
+            const data = await fetchJSON(`/api/locations/?district=${encodeURIComponent(viListDistrictFilter.value)}&lang=mr`);
+            fillSelect(viListTalukaFilter, data.data || [], 'तालुका निवडा');
+            viListTalukaFilter.value = selectedTaluka || '';
+        }
+
+        async function viLoadListVillages(selectedVillage = '') {
+            fillSelect(viListVillageFilter, [], 'गाव निवडा');
+            if (!viListDistrictFilter?.value || !viListTalukaFilter?.value) return;
+            const data = await fetchJSON(`/api/locations/?district=${encodeURIComponent(viListDistrictFilter.value)}&taluka=${encodeURIComponent(viListTalukaFilter.value)}&lang=mr`);
+            fillSelect(viListVillageFilter, data.data || [], 'गाव निवडा');
+            viListVillageFilter.value = selectedVillage || '';
+        }
+
+        function viUpdateListFilterState() {
+            viListLocationFilter.type = viListFilterType?.value || '';
+            viListLocationFilter.district = viListDistrictFilter?.value || '';
+            viListLocationFilter.taluka = viListTalukaFilter?.value || '';
+            viListLocationFilter.village = viListVillageFilter?.value || '';
+        }
+
+        function viRowMatchesLocationFilter(row) {
+            const type = viListLocationFilter.type;
+            if (!type) return true;
+            const rowDistrict = String(row.district_en || row.district || '').trim();
+            const rowTaluka = String(row.taluka_en || row.taluka || '').trim();
+            const rowVillage = String(row.village_en || row.village || '').trim();
+            if (viListLocationFilter.district && rowDistrict !== viListLocationFilter.district) return false;
+            if (['taluka', 'village'].includes(type) && viListLocationFilter.taluka && rowTaluka !== viListLocationFilter.taluka) return false;
+            if (type === 'village' && viListLocationFilter.village && rowVillage !== viListLocationFilter.village) return false;
+            return true;
+        }
+
+        async function viInitListFilter() {
+            viUpdateListFilterVisibility();
+            if (viListFilterDepth()) await viLoadListDistricts();
         }
 
         function panelInputs(panelNo) {
@@ -5184,6 +5290,47 @@
         wireRecordListActions();
         pageSizeSelect.addEventListener('change', handlePageSizeChange);
         searchInput.addEventListener('input', handleSearchChange);
+        viListFilterType?.addEventListener('change', async () => {
+            viUpdateListFilterVisibility();
+            viListLocationFilter.type = viListFilterType.value || '';
+            viListLocationFilter.district = '';
+            viListLocationFilter.taluka = '';
+            viListLocationFilter.village = '';
+            fillSelect(viListTalukaFilter, [], 'तालुका निवडा');
+            fillSelect(viListVillageFilter, [], 'गाव निवडा');
+            if (viListFilterDepth()) {
+                await viLoadListDistricts();
+            }
+            currentPage = 1;
+            applyVillageSearchAndRender();
+        });
+        viListDistrictFilter?.addEventListener('change', async () => {
+            await viLoadListTalukas();
+            currentPage = 1;
+            applyVillageSearchAndRender();
+        });
+        viListTalukaFilter?.addEventListener('change', async () => {
+            await viLoadListVillages();
+            currentPage = 1;
+            applyVillageSearchAndRender();
+        });
+        viListVillageFilter?.addEventListener('change', () => {
+            currentPage = 1;
+            applyVillageSearchAndRender();
+        });
+        viListFilterClear?.addEventListener('click', async () => {
+            if (viListFilterType) viListFilterType.value = '';
+            viListLocationFilter.type = '';
+            viListLocationFilter.district = '';
+            viListLocationFilter.taluka = '';
+            viListLocationFilter.village = '';
+            fillSelect(viListDistrictFilter, [], 'जिल्हा निवडा');
+            fillSelect(viListTalukaFilter, [], 'तालुका निवडा');
+            fillSelect(viListVillageFilter, [], 'गाव निवडा');
+            viUpdateListFilterVisibility();
+            currentPage = 1;
+            applyVillageSearchAndRender();
+        });
         paginationControls.addEventListener('click', (event) => {
             const btn = event.target.closest('.vi-page-btn');
             if (!btn) return;
@@ -5305,6 +5452,7 @@
             // List view - show list and load records
             listView.classList.remove('hidden');
             formView.classList.add('hidden');
+            viInitListFilter().catch(err => showStatus(err.message, true));
             loadVillageRecordList().catch(err => showStatus(err.message, true));
         }
         

@@ -182,49 +182,57 @@
                         </a>
                     </div>
 
-                    <div class="mb-4 grid gap-3 md:grid-cols-[190px_210px_210px_210px_210px_auto] md:items-end">
-                        <div>
-                            <label for="pcListFilterType" class="mb-1 block text-sm font-semibold text-[#244271]">गाळणी प्रकार निवडा</label>
-                            <select id="pcListFilterType" class="w-full rounded border border-[#cbd5e1] bg-white px-3 py-2 text-sm text-[#2a3f62] focus:border-[#125fcb] focus:outline-none">
-                                <option value="">गाळणी प्रकार निवडा</option>
+                    <div class="mb-3 rounded-lg border border-[#d7e5f6] bg-white p-3">
+                        <div class="grid grid-cols-1 gap-3 md:grid-cols-[220px_1fr_auto]">
+                        <label class="text-sm font-semibold text-[#44597a]">
+                            <span class="mb-1 block">फिल्टर प्रकार</span>
+                            <select id="pcListFilterType" class="w-full rounded border border-gray-300 px-3 py-2 text-sm">
+                                <option value="">फिल्टर प्रकार निवडा</option>
+                                <option value="district">जिल्हा</option>
+                                <option value="taluka">तालुका</option>
+                                <option value="village">गाव</option>
+                                <option value="gut">गट क्रमांक</option>
                                 <option value="status">Status</option>
                                 <option value="step">टप्पा</option>
-                                <option value="gut">गट क्रमांक</option>
-                                <option value="village">गाव</option>
                                 <option value="owner">भूधारकाचे नाव</option>
                             </select>
+                        </label>
+                        <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                            <label class="hidden text-sm font-semibold text-[#44597a]" data-pc-list-location-filter="district">
+                                <span class="mb-1 block">जिल्हा</span>
+                                <select id="pcListDistrictFilter" class="w-full rounded border border-gray-300 px-3 py-2 text-sm">
+                                    <option value="">जिल्हा निवडा</option>
+                                </select>
+                            </label>
+                            <label class="hidden text-sm font-semibold text-[#44597a]" data-pc-list-location-filter="taluka">
+                                <span class="mb-1 block">तालुका</span>
+                                <select id="pcListTalukaFilter" class="w-full rounded border border-gray-300 px-3 py-2 text-sm" disabled>
+                                    <option value="">तालुका निवडा</option>
+                                </select>
+                            </label>
+                            <label class="hidden text-sm font-semibold text-[#44597a]" data-pc-list-location-filter="village">
+                                <span class="mb-1 block">गाव</span>
+                                <select id="pcListVillageFilter" class="w-full rounded border border-gray-300 px-3 py-2 text-sm" disabled>
+                                    <option value="">गाव निवडा</option>
+                                </select>
+                            </label>
+                            <label class="hidden text-sm font-semibold text-[#44597a]" data-pc-list-location-filter="gut">
+                                <span class="mb-1 block">गट क्रमांक</span>
+                                <select id="pcListGutFilter" class="w-full rounded border border-gray-300 px-3 py-2 text-sm" disabled>
+                                    <option value="">गट क्रमांक निवडा</option>
+                                </select>
+                            </label>
+                            <label class="text-sm font-semibold text-[#44597a]" data-pc-list-simple-filter>
+                                <span class="mb-1 block">फिल्टर मूल्य</span>
+                                <select id="pcListFilterValue" class="w-full rounded border border-gray-300 px-3 py-2 text-sm" disabled>
+                                    <option value="">फिल्टर प्रकार निवडा</option>
+                                </select>
+                            </label>
                         </div>
-                        <div data-pc-list-simple-filter>
-                            <label for="pcListFilterValue" class="mb-1 block text-sm font-semibold text-[#244271]">मूल्य निवडा</label>
-                            <select id="pcListFilterValue" class="w-full rounded border border-[#cbd5e1] bg-white px-3 py-2 text-sm text-[#2a3f62] focus:border-[#125fcb] focus:outline-none" disabled>
-                                <option value="">प्रथम गाळणी प्रकार निवडा</option>
-                            </select>
+                        <div class="flex items-end">
+                            <button type="button" id="pcListFilterClear" class="inline-flex w-full items-center justify-center rounded bg-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-300">फिल्टर काढा</button>
                         </div>
-                        <div class="hidden" data-pc-list-location-filter="district">
-                            <label for="pcListDistrictFilter" class="mb-1 block text-sm font-semibold text-[#244271]">जिल्हा</label>
-                            <select id="pcListDistrictFilter" class="w-full rounded border border-[#cbd5e1] bg-white px-3 py-2 text-sm text-[#2a3f62] focus:border-[#125fcb] focus:outline-none">
-                                <option value="">जिल्हा निवडा</option>
-                            </select>
                         </div>
-                        <div class="hidden" data-pc-list-location-filter="taluka">
-                            <label for="pcListTalukaFilter" class="mb-1 block text-sm font-semibold text-[#244271]">तालुका</label>
-                            <select id="pcListTalukaFilter" class="w-full rounded border border-[#cbd5e1] bg-white px-3 py-2 text-sm text-[#2a3f62] focus:border-[#125fcb] focus:outline-none" disabled>
-                                <option value="">प्रथम जिल्हा निवडा</option>
-                            </select>
-                        </div>
-                        <div class="hidden" data-pc-list-location-filter="village">
-                            <label for="pcListVillageFilter" class="mb-1 block text-sm font-semibold text-[#244271]">गाव</label>
-                            <select id="pcListVillageFilter" class="w-full rounded border border-[#cbd5e1] bg-white px-3 py-2 text-sm text-[#2a3f62] focus:border-[#125fcb] focus:outline-none" disabled>
-                                <option value="">प्रथम तालुका निवडा</option>
-                            </select>
-                        </div>
-                        <div class="hidden" data-pc-list-location-filter="gut">
-                            <label for="pcListGutFilter" class="mb-1 block text-sm font-semibold text-[#244271]">गट क्रमांक</label>
-                            <select id="pcListGutFilter" class="w-full rounded border border-[#cbd5e1] bg-white px-3 py-2 text-sm text-[#2a3f62] focus:border-[#125fcb] focus:outline-none" disabled>
-                                <option value="">प्रथम गाव निवडा</option>
-                            </select>
-                        </div>
-                        <button type="button" id="pcListFilterClear" class="w-fit rounded border border-[#125fcb] bg-[#125fcb] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#0f52b0]">गाळणी काढा</button>
                     </div>
 
                     <form id="processChartPageSizeForm" method="get" class="pc-page-size-form">
@@ -493,16 +501,21 @@ $(document).ready(function () {
             }
             selectEl.disabled = values.length === 0;
         };
-        const isLocationFilter = (type) => ['village', 'gut'].includes(type);
+        const locationDepth = (type) => {
+            if (type === 'district') return 1;
+            if (type === 'taluka') return 2;
+            if (type === 'village') return 3;
+            if (type === 'gut') return 4;
+            return 0;
+        };
+        const isLocationFilter = (type) => locationDepth(type) > 0;
         const updateFilterVisibility = (type) => {
             simpleFilterWrap?.classList.toggle('hidden', isLocationFilter(type));
+            const depth = locationDepth(type);
             locationFilterWraps.forEach((wrap) => {
                 const key = wrap.dataset.pcListLocationFilter;
-                wrap.classList.toggle(
-                    'hidden',
-                    !(type === 'village' && ['district', 'taluka', 'village'].includes(key))
-                        && !(type === 'gut' && ['district', 'taluka', 'village', 'gut'].includes(key))
-                );
+                const keyDepth = { district: 1, taluka: 2, village: 3, gut: 4 }[key] || 0;
+                wrap.classList.toggle('hidden', !depth || keyDepth > depth);
             });
         };
         const updateTalukaOptions = async () => {
@@ -520,12 +533,17 @@ $(document).ready(function () {
             fillSelect(villageFilter, taluka ? 'गाव निवडा' : 'प्रथम तालुका निवडा', options, selectedVillage);
             if (villageFilter && !taluka) villageFilter.disabled = true;
         };
-        const updateGutOptions = async () => {
-            const district = selectedOptionApiValue(districtFilter);
-            const taluka = selectedOptionApiValue(talukaFilter);
-            const village = selectedOptionApiValue(villageFilter);
+        const updateGutOptions = () => {
+            const village = villageFilter?.value || '';
             const selectedGut = gutFilter?.value || '';
-            const options = district && taluka && village ? await loadLocationOptions({ district, taluka, village }) : [];
+            const gutValues = new Set();
+            if (village) {
+                processChartTable.column(filterColumns.gut, { search: 'applied' }).nodes().each((cell) => {
+                    const text = (cell.textContent || '').trim();
+                    if (text && text !== '-') gutValues.add(text);
+                });
+            }
+            const options = Array.from(gutValues).sort((a, b) => a.localeCompare(b, 'mr'));
             fillSelect(gutFilter, village ? 'गट क्रमांक निवडा' : 'प्रथम गाव निवडा', options, selectedGut);
             if (gutFilter && !village) gutFilter.disabled = true;
         };
@@ -534,7 +552,7 @@ $(document).ready(function () {
             fillSelect(districtFilter, 'जिल्हा निवडा', await loadLocationOptions(), selectedDistrict);
             await updateTalukaOptions();
             await updateVillageOptions();
-            await updateGutOptions();
+            updateGutOptions();
         };
         const setFilterOptions = (type) => {
             updateFilterVisibility(type);
@@ -542,7 +560,7 @@ $(document).ready(function () {
             filterValue.innerHTML = '';
             filterValue.disabled = !type || isLocationFilter(type);
             if (!type || isLocationFilter(type)) {
-                filterValue.add(new Option('प्रथम गाळणी प्रकार निवडा', ''));
+                filterValue.add(new Option('फिल्टर प्रकार निवडा', ''));
                 return;
             }
             filterValue.add(new Option('सर्व', ''));
@@ -574,8 +592,8 @@ $(document).ready(function () {
                 const village = villageFilter?.value || '';
                 const gut = gutFilter?.value || '';
                 if (district) processChartTable.column(filterColumns.district).search(escapeRegex(district), true, false);
-                if (taluka) processChartTable.column(filterColumns.taluka).search(escapeRegex(taluka), true, false);
-                if (village) processChartTable.column(filterColumns.village).search(escapeRegex(village), true, false);
+                if (['taluka', 'village', 'gut'].includes(type) && taluka) processChartTable.column(filterColumns.taluka).search(escapeRegex(taluka), true, false);
+                if (['village', 'gut'].includes(type) && village) processChartTable.column(filterColumns.village).search(escapeRegex(village), true, false);
                 if (type === 'gut' && gut) processChartTable.column(filterColumns.gut).search(escapeRegex(gut), true, false);
                 processChartTable.draw();
                 return;
@@ -611,20 +629,20 @@ $(document).ready(function () {
             if (gutFilter) gutFilter.value = '';
             await updateTalukaOptions();
             await updateVillageOptions();
-            await updateGutOptions();
             applyListFilter();
+            updateGutOptions();
         });
         talukaFilter?.addEventListener('change', async () => {
             if (villageFilter) villageFilter.value = '';
             if (gutFilter) gutFilter.value = '';
             await updateVillageOptions();
-            await updateGutOptions();
             applyListFilter();
+            updateGutOptions();
         });
         villageFilter?.addEventListener('change', async () => {
             if (gutFilter) gutFilter.value = '';
-            await updateGutOptions();
             applyListFilter();
+            updateGutOptions();
         });
         gutFilter?.addEventListener('change', applyListFilter);
         filterClear?.addEventListener('click', async () => {

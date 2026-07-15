@@ -97,7 +97,53 @@
                 <span class="text-lg">+</span> नवीन ७/१२ नोंद
             </a>
         </div>
-    </div>    <div class="mb-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+    </div>
+    <div class="mb-3 rounded-lg border border-[#d7e5f6] bg-white p-3">
+        <div class="grid grid-cols-1 gap-3 md:grid-cols-[220px_1fr_auto]">
+        <label class="text-sm font-semibold text-[#44597a]">
+            <span class="mb-1 block">फिल्टर प्रकार</span>
+            <select id="filterType" class="w-full rounded border border-gray-300 px-3 py-2 text-sm">
+                <option value="">फिल्टर प्रकार निवडा</option>
+                <option value="district" {% if filter_type == 'district' %}selected{% endif %}>जिल्हा</option>
+                <option value="taluka" {% if filter_type == 'taluka' %}selected{% endif %}>तालुका</option>
+                <option value="village" {% if filter_type == 'village' %}selected{% endif %}>गाव</option>
+                <option value="gut_number" {% if filter_type == 'gut_number' %}selected{% endif %}>गट क्रमांक</option>
+            </select>
+        </label>
+        <div id="locationFilterRow" class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <label id="districtFilterWrap" class="hidden text-sm font-semibold text-[#44597a]">
+                <span class="mb-1 block">जिल्हा</span>
+                <select id="districtFilter" class="w-full rounded border border-gray-300 px-3 py-2 text-sm" data-selected="{{ district_filter|escapejs }}">
+                    <option value="">जिल्हा निवडा</option>
+                </select>
+            </label>
+            <label id="talukaFilterWrap" class="hidden text-sm font-semibold text-[#44597a]">
+                <span class="mb-1 block">तालुका</span>
+                <select id="talukaFilter" class="w-full rounded border border-gray-300 px-3 py-2 text-sm" data-selected="{{ taluka_filter|escapejs }}" disabled>
+                    <option value="">तालुका निवडा</option>
+                </select>
+            </label>
+            <label id="villageFilterWrap" class="hidden text-sm font-semibold text-[#44597a]">
+                <span class="mb-1 block">गाव</span>
+                <select id="villageFilter" class="w-full rounded border border-gray-300 px-3 py-2 text-sm" data-selected="{{ village_filter|escapejs }}" disabled>
+                    <option value="">गाव निवडा</option>
+                </select>
+            </label>
+            <label id="gutFilterWrap" class="hidden text-sm font-semibold text-[#44597a]">
+                <span class="mb-1 block">गट क्रमांक</span>
+                <select id="gutFilter" class="w-full rounded border border-gray-300 px-3 py-2 text-sm" data-selected="{{ gut_filter|escapejs }}" disabled>
+                    <option value="">गट क्रमांक निवडा</option>
+                </select>
+            </label>
+        </div>
+        <div class="flex items-end">
+            <a href="{% url 'land_record_712_list' %}{% if clear_filter_query_string %}?{{ clear_filter_query_string }}{% endif %}" class="inline-flex w-full items-center justify-center rounded bg-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-300">
+                फिल्टर काढा
+            </a>
+        </div>
+        </div>
+    </div>
+    <div class="mb-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
         <div class="flex items-center gap-2 text-sm">
             <label for="per_page">दाखवा</label>
             <select id="per_page" name="per_page" class="rounded border border-gray-300 px-2 py-1">
@@ -377,32 +423,188 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const perPageSelect = document.getElementById('per_page');
     const listSearchInput = document.getElementById('listSearchInput');
+    const filterType = document.getElementById('filterType');
+    const districtFilter = document.getElementById('districtFilter');
+    const talukaFilter = document.getElementById('talukaFilter');
+    const villageFilter = document.getElementById('villageFilter');
+    const gutFilter = document.getElementById('gutFilter');
+    const districtFilterWrap = document.getElementById('districtFilterWrap');
+    const talukaFilterWrap = document.getElementById('talukaFilterWrap');
+    const villageFilterWrap = document.getElementById('villageFilterWrap');
+    const gutFilterWrap = document.getElementById('gutFilterWrap');
+
+    function requiredLocationDepth() {
+        if (filterType?.value === 'district') return 1;
+        if (filterType?.value === 'taluka') return 2;
+        if (filterType?.value === 'village') return 3;
+        if (filterType?.value === 'gut_number') return 4;
+        return 0;
+    }
+
+    function setSelectOptions(selectEl, items, placeholder, selectedValue = '') {
+        if (!selectEl) return;
+        selectEl.innerHTML = '';
+        selectEl.add(new Option(placeholder, ''));
+        (Array.isArray(items) ? items : []).forEach((item) => {
+            if (item && typeof item === 'object') {
+                selectEl.add(new Option(item.label || item.value || item.id, item.value || item.label || item.id));
+            } else if (item !== null && item !== undefined && `${item}`.trim() !== '') {
+                selectEl.add(new Option(item, item));
+            }
+        });
+        if (selectedValue && Array.from(selectEl.options).some(option => option.value === selectedValue)) {
+            selectEl.value = selectedValue;
+        }
+        selectEl.disabled = !(items && items.length);
+    }
+
+    function resetSelect(selectEl, placeholder) {
+        setSelectOptions(selectEl, [], placeholder);
+    }
+
+    async function fetchLocationOptions(params = '') {
+        const suffix = params ? `?${params}` : '?lang=mr';
+        const response = await fetch(`/api/locations/${suffix}`, { headers: { 'Accept': 'application/json' } });
+        if (!response.ok) throw new Error(`Location request failed: ${response.status}`);
+        return response.json();
+    }
+
+    function updateLocationVisibility() {
+        const depth = requiredLocationDepth();
+        districtFilterWrap?.classList.toggle('hidden', depth < 1);
+        talukaFilterWrap?.classList.toggle('hidden', depth < 2);
+        villageFilterWrap?.classList.toggle('hidden', depth < 3);
+        gutFilterWrap?.classList.toggle('hidden', depth < 4);
+    }
+
+    async function loadDistricts(selectedValue = '') {
+        const data = await fetchLocationOptions('lang=mr');
+        setSelectOptions(districtFilter, data.data || [], 'जिल्हा निवडा', selectedValue);
+    }
+
+    async function loadTalukas(selectedValue = '') {
+        resetSelect(talukaFilter, 'तालुका निवडा');
+        resetSelect(villageFilter, 'गाव निवडा');
+        resetSelect(gutFilter, 'गट क्रमांक निवडा');
+        if (!districtFilter?.value) return;
+        const data = await fetchLocationOptions(`district=${encodeURIComponent(districtFilter.value)}&lang=mr`);
+        setSelectOptions(talukaFilter, data.data || [], 'तालुका निवडा', selectedValue);
+    }
+
+    async function loadVillages(selectedValue = '') {
+        resetSelect(villageFilter, 'गाव निवडा');
+        resetSelect(gutFilter, 'गट क्रमांक निवडा');
+        if (!districtFilter?.value || !talukaFilter?.value) return;
+        const data = await fetchLocationOptions(`district=${encodeURIComponent(districtFilter.value)}&taluka=${encodeURIComponent(talukaFilter.value)}&lang=mr`);
+        setSelectOptions(villageFilter, data.data || [], 'गाव निवडा', selectedValue);
+    }
+
+    async function loadGuts(selectedValue = '') {
+        resetSelect(gutFilter, 'गट क्रमांक निवडा');
+        if (!districtFilter?.value || !talukaFilter?.value || !villageFilter?.value) return;
+        const params = new URLSearchParams({ district: districtFilter.value, taluka: talukaFilter.value, village: villageFilter.value });
+        const response = await fetch(`/api/land-record-gut-numbers/?${params}`, { headers: { 'Accept': 'application/json' } });
+        const data = response.ok ? await response.json() : {};
+        setSelectOptions(gutFilter, data.gut_numbers || [], 'गट क्रमांक निवडा', selectedValue);
+    }
+
+    async function initializeLocationFilters() {
+        updateLocationVisibility();
+        const depth = requiredLocationDepth();
+        if (!depth) return;
+        await loadDistricts(districtFilter?.dataset.selected || '');
+        if (depth >= 2) await loadTalukas(talukaFilter?.dataset.selected || '');
+        if (depth >= 3) await loadVillages(villageFilter?.dataset.selected || '');
+        if (depth >= 4) await loadGuts(gutFilter?.dataset.selected || '');
+    }
+
+    function syncListParams(params) {
+        params.set('per_page', perPageSelect ? perPageSelect.value : '10');
+        params.set('page', '1');
+        const term = listSearchInput ? listSearchInput.value.trim() : '';
+        if (term) {
+            params.set('search', term);
+        } else {
+            params.delete('search');
+        }
+        const depth = requiredLocationDepth();
+        const complete = (depth === 1 && districtFilter?.value)
+            || (depth === 2 && districtFilter?.value && talukaFilter?.value)
+            || (depth === 3 && districtFilter?.value && talukaFilter?.value && villageFilter?.value)
+            || (depth === 4 && districtFilter?.value && talukaFilter?.value && villageFilter?.value && gutFilter?.value);
+        if (filterType?.value && complete) {
+            params.set('filter_type', filterType.value);
+            if (districtFilter?.value) params.set('district', districtFilter.value); else params.delete('district');
+            if (talukaFilter?.value) params.set('taluka', talukaFilter.value); else params.delete('taluka');
+            if (villageFilter?.value) params.set('village', villageFilter.value); else params.delete('village');
+            if (gutFilter?.value) params.set('gut_number', gutFilter.value); else params.delete('gut_number');
+        } else {
+            params.delete('filter_type');
+            params.delete('district');
+            params.delete('taluka');
+            params.delete('village');
+            params.delete('gut_number');
+        }
+    }
+
+    function applyLocationFilterIfComplete() {
+        const depth = requiredLocationDepth();
+        const complete = (depth === 1 && districtFilter?.value)
+            || (depth === 2 && districtFilter?.value && talukaFilter?.value)
+            || (depth === 3 && districtFilter?.value && talukaFilter?.value && villageFilter?.value)
+            || (depth === 4 && districtFilter?.value && talukaFilter?.value && villageFilter?.value && gutFilter?.value);
+        if (!complete) return;
+        const params = new URLSearchParams(window.location.search);
+        syncListParams(params);
+        window.location.search = params.toString();
+    }
+
+    initializeLocationFilters();
+
     if (perPageSelect) {
         perPageSelect.addEventListener('change', function () {
             const params = new URLSearchParams(window.location.search);
-            params.set('per_page', this.value);
-            params.set('page', '1');
-            const term = listSearchInput ? listSearchInput.value.trim() : '';
-            if (term) {
-                params.set('search', term);
-            } else {
-                params.delete('search');
-            }
+            syncListParams(params);
             window.location.search = params.toString();
         });
     }
+    filterType?.addEventListener('change', function () {
+        [districtFilter, talukaFilter, villageFilter, gutFilter].forEach((select) => {
+            if (select) select.dataset.selected = '';
+        });
+        updateLocationVisibility();
+        resetSelect(talukaFilter, 'तालुका निवडा');
+        resetSelect(villageFilter, 'गाव निवडा');
+        resetSelect(gutFilter, 'गट क्रमांक निवडा');
+        if (requiredLocationDepth()) {
+            loadDistricts();
+        }
+    });
+
+    districtFilter?.addEventListener('change', async function () {
+        await loadTalukas();
+        applyLocationFilterIfComplete();
+    });
+
+    talukaFilter?.addEventListener('change', async function () {
+        await loadVillages();
+        applyLocationFilterIfComplete();
+    });
+
+    villageFilter?.addEventListener('change', async function () {
+        await loadGuts();
+        applyLocationFilterIfComplete();
+    });
+
+    gutFilter?.addEventListener('change', function () {
+        applyLocationFilterIfComplete();
+    });
+
     if (listSearchInput) {
         let searchDebounceTimer = null;
         const applySearch = () => {
             const params = new URLSearchParams(window.location.search);
-            params.set('per_page', perPageSelect ? perPageSelect.value : '25');
-            params.set('page', '1');
-            const term = listSearchInput.value.trim();
-            if (term) {
-                params.set('search', term);
-            } else {
-                params.delete('search');
-            }
+            syncListParams(params);
             window.location.search = params.toString();
         };
 
@@ -741,12 +943,3 @@ document.addEventListener('DOMContentLoaded', function () {
 </script>
 
 {% endblock %}
-
-
-
-
-
-
-
-
-

@@ -328,6 +328,10 @@
         class="flex-1 px-6 py-3 font-semibold text-sm border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50">
         ⚖️ न्यायालयीन प्रकरणे
       </button>
+      <button id="tab-process_chart" onclick="switchTab('process_chart')"
+        class="flex-1 px-6 py-3 font-semibold text-sm border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50">
+        🗂️ भूसंपादन कागदपत्रे
+      </button>
     </div>
 
     <!-- ══ GENERAL TAB ══ -->
@@ -736,6 +740,95 @@
       </div>
     </div><!-- /court -->
 
+    <!-- ══ BHUSAMPADAN TAB ══ -->
+    <div id="content-process_chart" class="tab-content">
+      <div id="process_chart-search-panel" class="px-3 pt-3">
+        <div class="rounded-md border border-blue-200 bg-blue-50 p-3">
+          <div class="flex flex-col gap-3 lg:flex-row lg:items-end">
+            <div class="grid flex-1 grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-5">
+              <div>
+                <label class="mb-1 block text-xs font-semibold text-gray-700">जिल्हा</label>
+                <select id="process_chart-search-district" onchange="onSearchDistrictChange('process_chart')"
+                  class="w-full rounded-md border border-gray-300 p-2 text-sm focus:ring-2 focus:ring-blue-400">
+                  <option value="">जिल्हा निवडा</option>
+                </select>
+              </div>
+              <div>
+                <label class="mb-1 block text-xs font-semibold text-gray-700">तालुका</label>
+                <select id="process_chart-search-taluka" onchange="onSearchTalukaChange('process_chart')"
+                  class="w-full rounded-md border border-gray-300 p-2 text-sm focus:ring-2 focus:ring-blue-400" disabled>
+                  <option value="">तालुका निवडा</option>
+                </select>
+              </div>
+              <div>
+                <label class="mb-1 block text-xs font-semibold text-gray-700">गाव</label>
+                <select id="process_chart-search-village" onchange="onSearchVillageChange('process_chart')"
+                  class="w-full rounded-md border border-gray-300 p-2 text-sm focus:ring-2 focus:ring-blue-400" disabled>
+                  <option value="">गाव निवडा</option>
+                </select>
+              </div>
+              <div>
+                <label class="mb-1 block text-xs font-semibold text-gray-700">गट</label>
+                <select id="process_chart-search-gut"
+                  class="w-full rounded-md border border-gray-300 p-2 text-sm focus:ring-2 focus:ring-blue-400" disabled>
+                  <option value="">गट क्रमांक निवडा</option>
+                </select>
+              </div>
+              <div>
+                <label class="mb-1 block text-xs font-semibold text-gray-700">फाईल नाव</label>
+                <input id="process_chart-search-file_name" type="text" placeholder="फाईल नाव शोधा"
+                  class="w-full rounded-md border border-gray-300 p-2 text-sm focus:ring-2 focus:ring-blue-400"
+                  oninput="onFileNameInput('process_chart')" />
+              </div>
+            </div>
+            <div class="flex gap-2">
+              <button type="button" onclick="applySearch('process_chart')"
+                class="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700">शोधा</button>
+              <button type="button" onclick="clearSearch('process_chart')"
+                class="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50">रीसेट</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="process_chart-explorer"
+        style="border:1px solid #c8c8c8;margin:12px;border-radius:4px;overflow:hidden;background:#fff;">
+        <div class="explorer-toolbar">
+          <button class="toolbar-btn" id="process_chart-back-btn" onclick="navigateToRoot('process_chart')" style="display:none;">← मागे</button>
+          <div class="view-toggle">
+            <button class="view-btn active" id="process_chart-grid-btn" onclick="setView('process_chart','grid')"
+              title="Grid view">⊞</button>
+            <button class="view-btn" id="process_chart-list-btn" onclick="setView('process_chart','list')"
+              title="List view">☰</button>
+          </div>
+          <div style="flex:1;"></div>
+        </div>
+        <div style="padding:5px 10px;background:#fafafa;border-bottom:1px solid #ddd;">
+          <div class="path-bar" id="process_chart-path-bar"></div>
+        </div>
+        <div id="process_chart-grid-view" class="file-grid" onclick="handleGridClick(event,'process_chart')"
+          oncontextmenu="showCtxMenu(event,'process_chart')"></div>
+        <div id="process_chart-list-view" class="file-list-view" onclick="handleListClick(event,'process_chart')"
+          oncontextmenu="showCtxMenu(event,'process_chart')">
+          <table>
+            <thead>
+              <tr>
+                <th style="width:36px;"></th>
+                <th onclick="sortList('process_chart','document_name')">नाव ↕</th>
+                <th onclick="sortList('process_chart','uploaded_at')">दिनांक ↕</th>
+                <th onclick="sortList('process_chart','ext')">प्रकार ↕</th>
+                <th>स्तर</th>
+                <th>स्थान</th>
+                <th>स्टेप / फील्ड</th>
+              </tr>
+            </thead>
+            <tbody id="process_chart-list-tbody"></tbody>
+          </table>
+        </div>
+        <div class="status-bar" id="process_chart-status">लोड होत आहे...</div>
+      </div>
+    </div><!-- /process_chart -->
+
   </div>
 </div>
 
@@ -868,9 +961,11 @@
   // ── Explorer state ──
   const state = {
     general: { selected: null, view: 'grid', docs: [], allDocs: [], sortKey: 'uploaded_at', sortAsc: false, currentFolder: null, filtersActive: false },
-    court: { selected: null, view: 'grid', docs: [], allDocs: [], sortKey: 'uploaded_at', sortAsc: false, currentFolder: null, filtersActive: false }
+    court: { selected: null, view: 'grid', docs: [], allDocs: [], sortKey: 'uploaded_at', sortAsc: false, currentFolder: null, filtersActive: false },
+    process_chart: { selected: null, view: 'grid', docs: [], allDocs: [], sortKey: 'uploaded_at', sortAsc: false, currentFolder: null, filtersActive: false }
   };
-  const fileNameSearchTimers = { general: null, court: null };
+  const documentTabs = ['general', 'court', 'process_chart'];
+  const fileNameSearchTimers = { general: null, court: null, process_chart: null };
   let ctxTab = null;
   const activeTab = '{{ active_tab }}';
 
@@ -895,8 +990,7 @@
     if (params.get('mode') === 'upload') {
       setUploadVisible(activeTab, true, false);
     }
-    loadDocs('general');
-    loadDocs('court');
+    documentTabs.forEach(loadDocs);
     document.addEventListener('click', () => hideCtxMenu());
   });
 
@@ -915,7 +1009,7 @@
         sel.innerHTML = '<option value="">जिल्हा निवडा</option>';
         addSelectOptions(sel, districts);
       });
-      ['general', 'court'].forEach(tab => populateSearchDistricts(tab, districts));
+      documentTabs.forEach(tab => populateSearchDistricts(tab, districts));
     })
     .catch(error => console.error('Error loading districts:', error));
 
@@ -1198,10 +1292,13 @@
     document.getElementById('content-' + tab).classList.add('active');
     const gBtn = document.getElementById('tab-general');
     const cBtn = document.getElementById('tab-court');
+    const pBtn = document.getElementById('tab-process_chart');
     gBtn.className = 'flex-1 px-6 py-3 font-semibold text-sm border-b-2 ' +
       (tab === 'general' ? 'border-indigo-600 text-indigo-600 bg-indigo-50' : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50');
     cBtn.className = 'flex-1 px-6 py-3 font-semibold text-sm border-b-2 ' +
       (tab === 'court' ? 'border-purple-600 text-purple-600 bg-purple-50' : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50');
+    pBtn.className = 'flex-1 px-6 py-3 font-semibold text-sm border-b-2 ' +
+      (tab === 'process_chart' ? 'border-blue-600 text-blue-600 bg-blue-50' : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50');
     if (!updateUrl) return;
 
     const url = new URL(window.location.href);
@@ -1217,6 +1314,11 @@
     const panel = document.getElementById(tab + '-upload-panel');
     const explorer = document.getElementById(tab + '-explorer');
     const searchPanel = document.getElementById(tab + '-search-panel');
+    if (!panel) {
+      if (explorer) explorer.style.display = '';
+      if (searchPanel) searchPanel.style.display = '';
+      return;
+    }
     panel.classList.toggle('open', isOpen);
     explorer.style.display = isOpen ? 'none' : '';
     if (searchPanel) searchPanel.style.display = isOpen ? 'none' : '';
@@ -1234,6 +1336,7 @@
 
   function toggleUpload(tab) {
     const panel = document.getElementById(tab + '-upload-panel');
+    if (!panel) return;
     setUploadVisible(tab, !panel.classList.contains('open'));
   }
 
@@ -1307,29 +1410,91 @@
   }
 
   function locationLabel(d) {
-    return [d.district, d.taluka, d.village, d.gut_number].filter(Boolean).join(' › ');
+    return [
+      d.district_display || d.district,
+      d.taluka_display || d.taluka,
+      d.village_display || d.village,
+      d.gut_display || d.gut_number
+    ].filter(Boolean).join(' › ');
   }
 
   function tabLabel(tab) {
-    return tab === 'court' ? 'न्यायालयीन' : 'सामान्य';
+    if (tab === 'court') return 'न्यायालयीन';
+    if (tab === 'process_chart') return 'भूसंपादन';
+    return 'सामान्य';
   }
 
-  function getFolderEntries(tab) {
+  function pathKey(parts) {
+    return (parts || []).map(part => String(part || '').trim().toLowerCase()).join('||');
+  }
+
+  function folderPathSegments(pathValue) {
+    if (!pathValue) return [];
+    try {
+      const parsed = JSON.parse(decodeURIComponent(pathValue));
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function folderPathValue(parts) {
+    return encodeURIComponent(JSON.stringify(parts || [])).replace(/'/g, '%27');
+  }
+
+  function levelForDepth(depth) {
+    return ['district', 'taluka', 'village', 'gut'][depth - 1] || '';
+  }
+
+  function docLocationParts(doc) {
+    return [
+      doc.district_display || doc.district,
+      doc.taluka_display || doc.taluka,
+      doc.village_display || doc.village,
+      doc.gut_display || doc.gut_number
+    ]
+      .map(part => String(part || '').trim())
+      .filter(Boolean);
+  }
+
+  function docDisplayPath(doc) {
+    const parts = docLocationParts(doc);
+    const levelDepth = { district: 1, taluka: 2, village: 3, gut: 4 }[doc.document_level] || parts.length;
+    return parts.slice(0, Math.max(1, Math.min(levelDepth, parts.length)));
+  }
+
+  function folderDisplayName(level, value) {
+    if (level !== 'gut') return value || '-';
+    const text = String(value || '').trim();
+    return /gut|गट|ग\.|स\./i.test(text) ? text : `Gut ${text}`;
+  }
+
+  function getFolderEntries(tab, currentParts = []) {
     const grouped = new Map();
+    const currentKey = pathKey(currentParts);
+
     state[tab].docs.forEach(doc => {
-      if (!grouped.has(doc.document_level)) {
-        grouped.set(doc.document_level, {
-          id: doc.document_level,
+      const parts = docDisplayPath(doc);
+      if (parts.length <= currentParts.length) return;
+      if (pathKey(parts.slice(0, currentParts.length)) !== currentKey) return;
+
+      const nextParts = parts.slice(0, currentParts.length + 1);
+      const key = pathKey(nextParts);
+      if (!grouped.has(key)) {
+        const level = levelForDepth(nextParts.length);
+        grouped.set(key, {
+          id: key,
           kind: 'folder',
-          name: levelLabel(doc.document_level) + ' स्तर',
-          level: doc.document_level,
+          name: folderDisplayName(level, nextParts[nextParts.length - 1]),
+          level,
+          path: folderPathValue(nextParts),
           count: 0,
         });
       }
-      grouped.get(doc.document_level).count += 1;
+      grouped.get(key).count += 1;
     });
-    const levelOrder = ['district', 'taluka', 'village', 'gut'];
-    return [...grouped.values()].sort((a, b) => levelOrder.indexOf(a.level) - levelOrder.indexOf(b.level));
+
+    return [...grouped.values()].sort((a, b) => a.name.localeCompare(b.name));
   }
 
   function getSortedDocs(tab, docs) {
@@ -1343,14 +1508,16 @@
 
   function getVisibleDocs(tab) {
     if (state[tab].filtersActive) return getSortedDocs(tab, state[tab].docs);
-    if (!state[tab].currentFolder) return getFolderEntries(tab);
-    const filtered = state[tab].docs.filter(d => d.document_level === state[tab].currentFolder);
-    return getSortedDocs(tab, filtered);
+    const currentParts = folderPathSegments(state[tab].currentFolder);
+    const currentKey = pathKey(currentParts);
+    const folders = getFolderEntries(tab, currentParts);
+    const docsHere = state[tab].docs.filter(d => pathKey(docDisplayPath(d)) === currentKey);
+    return [...folders, ...getSortedDocs(tab, docsHere)];
   }
 
   function renderPathBar(tab) {
     const pathBar = document.getElementById(tab + '-path-bar');
-    const folder = state[tab].currentFolder;
+    const folderParts = folderPathSegments(state[tab].currentFolder);
     if (state[tab].filtersActive) {
       const filters = activeSearchFilters(tab);
       const bits = [filters.district, filters.taluka, filters.village, filters.gut].filter(Boolean);
@@ -1360,23 +1527,33 @@
       }
       return;
     }
-    pathBar.innerHTML = folder
-      ? `<span>🏠</span><span class="path-sep">›</span><span class="path-link" onclick="navigateToRoot('${tab}')">कागदपत्रे</span><span class="path-sep">›</span><span>${tabLabel(tab)}</span><span class="path-sep">›</span><span style="font-weight:600;">${levelLabel(folder)} स्तर</span>`
-      : `<span>🏠</span><span class="path-sep">›</span><span>कागदपत्रे</span><span class="path-sep">›</span><span style="font-weight:600;">${tabLabel(tab)}</span>`;
+    const rootClass = folderParts.length ? 'path-link' : '';
+    const rootClick = folderParts.length ? `onclick="navigateToRoot('${tab}')"` : '';
+    const base = `<span>🏠</span><span class="path-sep">›</span><span class="${rootClass}" ${rootClick}>कागदपत्रे</span><span class="path-sep">›</span><span>${tabLabel(tab)}</span>`;
+    const crumbs = folderParts.map((part, index) => {
+      const partialPath = folderPathValue(folderParts.slice(0, index + 1));
+      const label = folderDisplayName(levelForDepth(index + 1), part);
+      const isLast = index === folderParts.length - 1;
+      return `<span class="path-sep">›</span><span ${isLast ? 'style="font-weight:600;"' : `class="path-link" onclick="openFolder('${tab}', '${partialPath}')"`}>${label}</span>`;
+    }).join('');
+    pathBar.innerHTML = base + crumbs;
   }
 
   function updateExplorerUi(tab, visibleDocs) {
     const inFolder = !!state[tab].currentFolder;
     const filtered = state[tab].filtersActive;
+    const folderCount = visibleDocs.filter(item => item.kind === 'folder').length;
+    const docCount = visibleDocs.length - folderCount;
     document.getElementById(tab + '-back-btn').style.display = inFolder ? '' : 'none';
-    document.getElementById(tab + '-delete-btn').style.display = (inFolder || filtered) && state[tab].selected ? '' : 'none';
+    const deleteBtn = document.getElementById(tab + '-delete-btn');
+    if (deleteBtn) deleteBtn.style.display = tab !== 'process_chart' && (inFolder || filtered) && state[tab].selected ? '' : 'none';
     document.getElementById(tab + '-status').textContent = filtered || inFolder
-      ? `${visibleDocs.length} दस्तऐवज`
-      : `${visibleDocs.length} स्तर फोल्डर`;
+      ? `${folderCount} फोल्डर, ${docCount} दस्तऐवज`
+      : `${folderCount} फोल्डर`;
   }
 
-  function openFolder(tab, level) {
-    state[tab].currentFolder = level;
+  function openFolder(tab, pathValue) {
+    state[tab].currentFolder = pathValue;
     state[tab].selected = null;
     renderDocs(tab);
   }
@@ -1394,12 +1571,12 @@
   function renderGrid(tab, docs) {
     const grid = document.getElementById(tab + '-grid-view');
     if (!docs.length) {
-      grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:40px;color:#999;font-size:13px;">${state[tab].currentFolder ? 'कोणतेही दस्तऐवज नाहीत' : 'कोणतेही स्तर फोल्डर नाहीत'}</div>`;
+      grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:40px;color:#999;font-size:13px;">कोणतीही कागदपत्रे नाहीत</div>`;
       return;
     }
     grid.innerHTML = docs.map(d => `
     <div class="file-item${d.kind === 'folder' ? ' folder-item' : ''}${state[tab].selected === d.id ? ' selected' : ''}"
-      data-kind="${d.kind || 'document'}" data-id="${d.id || ''}" data-name="${d.document_name || d.name || ''}" data-url="${d.file_url || ''}" data-ext="${d.ext || ''}" data-level="${d.level || ''}">
+      data-kind="${d.kind || 'document'}" data-id="${d.id || ''}" data-name="${d.document_name || d.name || ''}" data-url="${d.file_url || ''}" data-ext="${d.ext || ''}" data-level="${d.level || ''}" data-path="${d.path || ''}">
       ${d.kind === 'folder' ? folderIcon() : fileIcon(d.ext)}
       <span class="file-name">${d.kind === 'folder' ? d.name : d.document_name}</span>
       <span class="${d.kind === 'folder' ? 'folder-meta' : 'file-date'}">${d.kind === 'folder' ? `${d.count} दस्तऐवज` : d.uploaded_at}</span>
@@ -1409,20 +1586,23 @@
   function renderList(tab, docs) {
     const tbody = document.getElementById(tab + '-list-tbody');
     const isCourt = tab === 'court';
+    const isProcessChart = tab === 'process_chart';
+    const columnCount = isCourt ? 9 : isProcessChart ? 7 : 6;
     if (!docs.length) {
-      tbody.innerHTML = `<tr><td colspan="${isCourt ? 9 : 6}" style="text-align:center;padding:30px;color:#999;">${state[tab].currentFolder ? 'कोणतेही दस्तऐवज नाहीत' : 'कोणतेही स्तर फोल्डर नाहीत'}</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="${columnCount}" style="text-align:center;padding:30px;color:#999;">कोणतीही कागदपत्रे नाहीत</td></tr>`;
       return;
     }
     tbody.innerHTML = docs.map(d => `
     <tr class="${state[tab].selected === d.id ? 'selected' : ''}"
-      data-kind="${d.kind || 'document'}" data-id="${d.id || ''}" data-name="${d.document_name || d.name || ''}" data-url="${d.file_url || ''}" data-ext="${d.ext || ''}" data-level="${d.level || ''}">
+      data-kind="${d.kind || 'document'}" data-id="${d.id || ''}" data-name="${d.document_name || d.name || ''}" data-url="${d.file_url || ''}" data-ext="${d.ext || ''}" data-level="${d.level || ''}" data-path="${d.path || ''}">
       <td><span style="font-size:16px;">${d.kind === 'folder' ? '📁' : ['jpg', 'jpeg', 'png'].includes(d.ext) ? '🖼' : '📄'}</span></td>
       <td>${d.kind === 'folder' ? d.name : d.document_name}</td>
       <td>${d.kind === 'folder' ? `${d.count} दस्तऐवज` : d.uploaded_at}</td>
       <td>${d.kind === 'folder' ? '<span style="font-size:11px;background:#fef3c7;color:#92400e;padding:2px 7px;border-radius:3px;font-weight:600;">FOLDER</span>' : extBadge(d.ext)}</td>
       <td><span style="font-size:11px;background:#f3f4f6;padding:2px 6px;border-radius:3px;">${d.kind === 'folder' ? levelLabel(d.level) : levelLabel(d.document_level)}</span></td>
-      <td style="font-size:12px;color:#555;">${d.kind === 'folder' ? `${levelLabel(d.level)} स्तरातील दस्तऐवज` : locationLabel(d)}</td>
+      <td style="font-size:12px;color:#555;">${d.kind === 'folder' ? `${d.count} दस्तऐवज` : locationLabel(d)}</td>
       ${isCourt ? `<td style="font-size:12px;color:#555;">${d.kind === 'folder' ? '—' : d.owner_name || '—'}</td><td style="font-size:12px;color:#555;">${d.kind === 'folder' ? '—' : d.matter_type_display || '—'}</td><td style="font-size:12px;color:#555;">${d.kind === 'folder' ? '—' : d.court_date || '—'}</td>` : ''}
+      ${isProcessChart ? `<td style="font-size:12px;color:#555;">${d.kind === 'folder' ? '—' : d.matter_type_display || '—'}</td>` : ''}
     </tr>`).join('');
   }
 
@@ -1443,7 +1623,7 @@
     const item = e.target.closest('.file-item');
     if (!item) { state[tab].selected = null; renderDocs(tab); return; }
     if (item.dataset.kind === 'folder') {
-      openFolder(tab, item.dataset.level);
+      openFolder(tab, item.dataset.path);
       return;
     }
     console.log('Click detected. Detail:', e.detail, 'Item ID:', item.dataset.id);
@@ -1468,7 +1648,7 @@
     const row = e.target.closest('tr[data-id]');
     if (!row) return;
     if (row.dataset.kind === 'folder') {
-      openFolder(tab, row.dataset.level);
+      openFolder(tab, row.dataset.path);
       return;
     }
     if (e.detail === 2) {
@@ -1553,6 +1733,7 @@
   }
 
   function deleteSelected(tab) {
+    if (tab === 'process_chart') return;
     const id = state[tab].selected;
     if (!id) return;
     const doc = state[tab].docs.find(d => d.id === id);
@@ -1587,8 +1768,7 @@
         if (data.success) {
           closeDeleteModal();
           state[pendingDeleteTab || ctxTab || 'general'].selected = null;
-          loadDocs('general');
-          loadDocs('court');
+          documentTabs.forEach(loadDocs);
         }
       });
   }
@@ -1601,6 +1781,10 @@
     selectItem(tab, parseInt(item.dataset.id));
     ctxTab = tab;
     const menu = document.getElementById('ctx-menu');
+    const isReadOnly = tab === 'process_chart';
+    menu.querySelectorAll('[onclick="ctxEdit()"], [onclick="ctxDelete()"], .ctx-sep').forEach(el => {
+      el.style.display = isReadOnly ? 'none' : '';
+    });
     menu.style.left = e.clientX + 'px';
     menu.style.top = e.clientY + 'px';
     menu.classList.add('show');
@@ -1623,12 +1807,20 @@
     hideCtxMenu();
   }
   function ctxDelete() {
+    if (ctxTab === 'process_chart') {
+      hideCtxMenu();
+      return;
+    }
     const menu = document.getElementById('ctx-menu');
     confirmDelete(parseInt(menu.dataset.id), menu.dataset.name, ctxTab);
     hideCtxMenu();
   }
 
   function ctxEdit() {
+    if (ctxTab === 'process_chart') {
+      hideCtxMenu();
+      return;
+    }
     const menu = document.getElementById('ctx-menu');
     openEditModal(parseInt(menu.dataset.id));
     hideCtxMenu();
@@ -1682,8 +1874,7 @@
       .then(data => {
         if (data.success) {
           closeEditModal();
-          loadDocs('general');
-          loadDocs('court');
+          documentTabs.forEach(loadDocs);
         }
       });
   }
