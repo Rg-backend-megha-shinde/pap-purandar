@@ -20,6 +20,7 @@
                 success: Boolean(data.success ?? true),
                 fingerprintImage: data.fingerprintImage || data.fingerprint_image || null,
                 fingerprintTemplate: data.fingerprintTemplate || data.fingerprint_template || data.template || null,
+                pidData: data.pidData || data.pid_data || data.pid || null,
                 quality: data.quality ?? data.qualityScore ?? null,
                 deviceId: data.deviceId || data.device_id || null,
                 provider: 'generic_http',
