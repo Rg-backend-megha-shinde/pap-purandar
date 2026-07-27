@@ -1,109 +1,258 @@
 <!DOCTYPE html>
-
 {% load static %}
-
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login | Purandar CMS</title>
+    
+    <!-- Tailwind -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #eef5ff;
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+        }
+        
+        .glass-panel {
+            background: rgba(8, 32, 79, 0.88);
+            backdrop-filter: blur(12px);
+            border-radius: 24px;
+        }
 
-<!-- Tailwind -->
-<script src="https://cdn.tailwindcss.com"></script>
-
-<!-- Fonts -->
-<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
-
-<style>
-    body {
-        font-family: 'Public Sans', sans-serif;
-    }
-</style>
-
-
+        .shadow-soft {
+            box-shadow: 0 25px 60px rgba(15,23,42,0.12);
+        }
+        
+        .bg-curves {
+            background-image: url("data:image/svg+xml,%3Csvg width='100%25' height='100%25' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M-100,50 Q200,-50 500,100 T1200,50' fill='none' stroke='rgba(255,255,255,0.1)' stroke-width='1'/%3E%3Cpath d='M-100,80 Q200,-20 500,130 T1200,80' fill='none' stroke='rgba(255,255,255,0.1)' stroke-width='1'/%3E%3Cpath d='M-100,110 Q200,10 500,160 T1200,110' fill='none' stroke='rgba(255,255,255,0.05)' stroke-width='1'/%3E%3C/svg%3E");
+            background-size: cover;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+    </style>
 </head>
+<body class="bg-[#eef5ff] min-h-screen flex items-center justify-center p-4 sm:p-6 lg:p-8">
 
-<body class="bg-gradient-to-br from-blue-50 via-white to-slate-100 flex items-center justify-center min-h-screen">
+    <!-- Outer container: 1500px, responsive height, 28px border radius -->
+    <div class="w-full max-w-[1500px] h-auto lg:h-[800px] xl:h-[880px] rounded-[28px] overflow-hidden flex flex-col shadow-2xl relative bg-blue-50">
+        
+        <!-- Background Image for the ENTIRE container -->
+        <div 
+            class="absolute inset-0 bg-cover bg-center bg-no-repeat z-0"
+            style="background-image: url('{% static 'img/login.png' %}');"
+        ></div>
+        
+        <!-- Subtle blue overlay -->
+        <div class="absolute inset-0 z-0 pointer-events-none" style="background-color: rgba(230,242,255,0.18);"></div>
+        
+        <!-- Abstract Lines (Decorative) -->
+        <div class="bg-curves z-0"></div>
+        
+        <!-- Dotted square -->
+        <div class="absolute top-12 left-[30%] -translate-x-1/2 opacity-30 z-0 grid grid-cols-4 gap-3 hidden md:grid">
+            <div class="w-1.5 h-1.5 bg-blue-600 rounded-full"></div><div class="w-1.5 h-1.5 bg-blue-600 rounded-full"></div>
+            <div class="w-1.5 h-1.5 bg-blue-600 rounded-full"></div><div class="w-1.5 h-1.5 bg-blue-600 rounded-full"></div>
+            <div class="w-1.5 h-1.5 bg-blue-600 rounded-full"></div><div class="w-1.5 h-1.5 bg-blue-600 rounded-full"></div>
+            <div class="w-1.5 h-1.5 bg-blue-600 rounded-full"></div><div class="w-1.5 h-1.5 bg-blue-600 rounded-full"></div>
+            <div class="w-1.5 h-1.5 bg-blue-600 rounded-full"></div><div class="w-1.5 h-1.5 bg-blue-600 rounded-full"></div>
+            <div class="w-1.5 h-1.5 bg-blue-600 rounded-full"></div><div class="w-1.5 h-1.5 bg-blue-600 rounded-full"></div>
+            <div class="w-1.5 h-1.5 bg-blue-600 rounded-full"></div><div class="w-1.5 h-1.5 bg-blue-600 rounded-full"></div>
+            <div class="w-1.5 h-1.5 bg-blue-600 rounded-full"></div><div class="w-1.5 h-1.5 bg-blue-600 rounded-full"></div>
+        </div>
 
+        <!-- MAIN CONTENT WRAPPER -->
+        <div class="relative z-10 w-full h-full flex flex-col lg:flex-row flex-1 p-6 sm:p-8 lg:p-12 justify-between gap-10">
+            
+            <!-- LEFT SIDE (Transparent background) -->
+            <div class="flex-1 flex flex-col justify-between h-full w-full">
+                
+                <!-- Top part -->
+                <div class="mt-4 lg:mt-0">
+                    <img src="{% static 'logo/purandar_airport.png' %}" alt="Logo" class="h-24 sm:h-28 object-contain mb-8 origin-left mix-blend-multiply brightness-50 contrast-125" />
+                    
+                    <h1 class="text-[48px] sm:text-[56px] xl:text-[64px] font-[800] leading-tight mb-2 tracking-tight drop-shadow-sm">
+                        <span class="text-[#2563EB]">LRMS</span> <span class="text-[#0F172A]">Purandar</span>
+                    </h1>
+                    
+                    <div class="mb-8">
+                        <h2 class="text-[#2563EB] text-[28px] sm:text-[32px] xl:text-[36px] font-bold drop-shadow-sm">GIS Dashboard Access</h2>
+                        <div class="h-1 w-24 bg-[#2563EB] mt-2 rounded-full"></div>
+                    </div>
+                    
+                    <p class="text-[#0F172A] text-[18px] sm:text-[20px] max-w-md font-medium leading-[1.6]">
+                        Land Management &amp; Referencing System<br/>
+                        Empowering efficient planning and<br/>
+                        geospatial decision making.
+                    </p>
+                </div>
 
-<div class="w-full max-w-md px-4">
+                <!-- Bottom Glass Panel -->
+                <div class="glass-panel w-full max-w-[850px] p-6 mt-12 flex flex-col md:flex-row justify-between items-start md:items-center text-white relative overflow-hidden gap-6 md:gap-4">
+                    <div class="absolute inset-0 bg-gradient-to-r from-blue-400/10 to-transparent"></div>
+                    
+                    <!-- Item 1 -->
+                    <div class="flex items-center gap-4 flex-1 relative z-10">
+                        <div class="w-12 h-12 shrink-0 rounded-full bg-blue-500/20 flex items-center justify-center border border-blue-400/30">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 text-blue-300"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"></polygon><line x1="9" x2="9" y1="3" y2="18"></line><line x1="15" x2="15" y1="6" y2="21"></line></svg>
+                        </div>
+                        <div>
+                            <h3 class="font-semibold text-[17px] text-white">GIS Mapping</h3>
+                            <p class="text-blue-100/70 text-[13px] leading-tight mt-1">Integrated geospatial<br/>visualization</p>
+                        </div>
+                    </div>
+                    
+                    <div class="w-full h-[1px] md:w-[1px] md:h-12 bg-blue-400/30 shrink-0 hidden md:block"></div>
+                    
+                    <!-- Item 2 -->
+                    <div class="flex items-center gap-4 flex-1 relative z-10">
+                        <div class="w-12 h-12 shrink-0 rounded-full bg-blue-500/20 flex items-center justify-center border border-blue-400/30">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 text-blue-300"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"></path></svg>
+                        </div>
+                        <div>
+                            <h3 class="font-semibold text-[17px] text-white">Secure Access</h3>
+                            <p class="text-blue-100/70 text-[13px] leading-tight mt-1">Role based secure<br/>authentication</p>
+                        </div>
+                    </div>
+                    
+                    <div class="w-full h-[1px] md:w-[1px] md:h-12 bg-blue-400/30 shrink-0 hidden md:block"></div>
+                    
+                    <!-- Item 3 -->
+                    <div class="flex items-center gap-4 flex-1 relative z-10">
+                        <div class="w-12 h-12 shrink-0 rounded-full bg-blue-500/20 flex items-center justify-center border border-blue-400/30">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 text-blue-300"><path d="M3 3v18h18"/><rect width="4" height="7" x="7" y="10" rx="1"/><rect width="4" height="12" x="15" y="5" rx="1"/></svg>
+                        </div>
+                        <div>
+                            <h3 class="font-semibold text-[17px] text-white">Smart Dashboard</h3>
+                            <p class="text-blue-100/70 text-[13px] leading-tight mt-1">Real-time insights<br/>and analytics</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-    <!-- Header -->
-    <div class="text-center mb-8">
-        <div class="flex justify-center mb-3">
-            <div class="flex h-20 w-20 items-center justify-center overflow-hidden rounded-xl bg-white border border-slate-200 shadow-sm">
-                <img src="{% static 'logo/purandar_airport.png' %}?v=20260619" alt="Purandar Airport logo" class="h-full w-full scale-150 object-cover">
+            <!-- RIGHT SIDE (Floating White Login Card) -->
+            <div class="w-full lg:w-auto h-full flex flex-col justify-center items-center lg:items-end mt-8 lg:mt-0">
+                <div class="w-full max-w-[620px] lg:w-[450px] xl:w-[550px] 2xl:w-[620px] h-auto bg-white rounded-[32px] p-[30px] sm:p-[40px] xl:p-[60px] shadow-soft relative flex flex-col justify-center">
+                    
+                    <div class="flex flex-col items-center mb-8 xl:mb-10">
+                        <div class="w-16 h-16 xl:w-20 xl:h-20 bg-[#eef5ff] rounded-full flex items-center justify-center mb-4 xl:mb-6">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-7 h-7 xl:w-8 xl:h-8 text-blue-600"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                        </div>
+                        <h2 class="text-[28px] xl:text-[32px] font-bold text-gray-900 mb-2">Welcome Back!</h2>
+                        <p class="text-gray-500 text-center text-[15px] xl:text-lg">Login to access your LRMS GIS Dashboard</p>
+                    </div>
+
+                    <form method="POST" class="space-y-5 xl:space-y-6 w-full flex flex-col">
+                        {% csrf_token %}
+                        <input type="hidden" name="next" value="{{ next|default:'' }}" />
+
+                        {% if error %}
+                            <div class="bg-red-50 text-red-600 text-sm p-4 rounded-[14px] text-center border border-red-100">
+                                {{ error }}
+                            </div>
+                        {% endif %}
+
+                        <!-- Username -->
+                        <div class="space-y-2">
+                            <label class="text-[14px] xl:text-[15px] font-semibold text-gray-700 block">Username</label>
+                            <div class="relative">
+                                <div class="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-[20px] h-[20px] xl:w-[22px] xl:h-[22px]"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                                </div>
+                                <input 
+                                    type="text" 
+                                    name="username"
+                                    class="w-full h-[64px] xl:h-[72px] pl-14 pr-4 border border-[#dbe4f3] rounded-[14px] focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all bg-[#F8FAFC] text-gray-800 placeholder-gray-400 text-[16px] xl:text-lg"
+                                    placeholder="Enter your username" 
+                                    required 
+                                />
+                            </div>
+                        </div>
+
+                        <!-- Password -->
+                        <div class="space-y-2 mt-6">
+                            <label class="text-[14px] xl:text-[15px] font-semibold text-gray-700 block">Password</label>
+                            <div class="relative">
+                                <div class="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-[20px] h-[20px] xl:w-[22px] xl:h-[22px]"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                                </div>
+                                <input 
+                                    type="password" 
+                                    id="password-field"
+                                    name="password"
+                                    class="w-full h-[64px] xl:h-[72px] pl-14 pr-16 border border-[#dbe4f3] rounded-[14px] focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all bg-[#F8FAFC] text-gray-800 placeholder-gray-400 text-[16px] xl:text-lg"
+                                    placeholder="Enter your password" 
+                                    required 
+                                />
+                                <button 
+                                    type="button"
+                                    onclick="togglePassword()"
+                                    class="absolute right-5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none transition-colors"
+                                >
+                                    <div id="eye-icon" class="block">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 xl:w-6 xl:h-6"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                                    </div>
+                                    <div id="eye-off-icon" class="hidden">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 xl:w-6 xl:h-6"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" x2="22" y1="2" y2="22"/></svg>
+                                    </div>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Submit Button -->
+                        <button 
+                            type="submit"
+                            class="w-full h-[64px] xl:h-[72px] mt-8 xl:mt-10 bg-gradient-to-r from-[#2563EB] to-[#1D4ED8] hover:from-[#1D4ED8] hover:to-[#1e40af] text-white rounded-[14px] font-bold text-[17px] xl:text-[19px] flex items-center justify-center gap-3 transition-all transform hover:-translate-y-1 shadow-lg hover:shadow-xl hover:shadow-blue-500/30 group"
+                        >
+                            Login
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-[20px] h-[20px] xl:w-[22px] xl:h-[22px] group-hover:translate-x-1 transition-transform"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </button>
+                        
+                    </form>
+
+                    <!-- Footer -->
+                    <div class="mt-8 pt-4 xl:pt-10 text-center">
+                        <p class="text-slate-500 text-sm">
+                            © 2026 Purandar Airport Project. All rights reserved.
+                        </p>
+                    </div>
+
+                </div>
             </div>
         </div>
-        <h1 class="text-2xl font-bold text-blue-600">LMRS purandar</h1>
-        <p class="text-sm text-gray-500">GIS Dashboard Access</p>
     </div>
 
-    <!-- Login Card -->
-    <div class="bg-white shadow-2xl rounded-2xl p-8 border border-gray-100">
-
-        <h2 class="text-xl font-semibold text-gray-800 mb-6 text-center">
-            Login to your account
-        </h2>
-
-        <form method="POST" class="space-y-5">
-            {% csrf_token %}
-            <input type="hidden" name="next" value="{{ next|default:'' }}">
-
-            <!-- Username -->
-            <div>
-                <label class="text-sm text-gray-600">Username</label>
-                <input type="text" name="username"
-                    class="w-full mt-1 p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none transition"
-                    placeholder="Enter username" required>
-            </div>
-
-            <!-- Password -->
-            <div>
-                <label class="text-sm text-gray-600">Password</label>
-                <div class="relative">
-                    <input type="password" name="password" id="password"
-                        class="w-full mt-1 p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none transition pr-10"
-                        placeholder="Enter password" required>
-
-                    <!-- Show/Hide -->
-                    <span onclick="togglePassword()"
-                        class="absolute right-3 top-3 cursor-pointer text-gray-400 hover:text-gray-600">
-                        👁
-                    </span>
-                </div>
-            </div>
-
-            <!-- Error -->
-            {% if error %}
-                <div class="bg-red-50 text-red-600 text-sm p-2 rounded text-center">
-                    {{ error }}
-                </div>
-            {% endif %}
-
-            <!-- Button -->
-            <button type="submit"
-                class="w-full bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-lg font-medium transition duration-200 shadow-md hover:shadow-lg">
-                Login
-            </button>
-        </form>
-    </div>
-
-    <!-- Footer -->
-    <p class="text-center text-xs text-gray-400 mt-6">
-        © 2026 Purandar Airport Project
-    </p>
-
-</div>
-
-<!-- JS -->
 <script>
     function togglePassword() {
-        const password = document.getElementById("password");
-        password.type = password.type === "password" ? "text" : "password";
+        const passwordField = document.getElementById('password-field');
+        const eyeIcon = document.getElementById('eye-icon');
+        const eyeOffIcon = document.getElementById('eye-off-icon');
+        
+        if (passwordField.type === 'password') {
+            passwordField.type = 'text';
+            eyeIcon.classList.remove('block');
+            eyeIcon.classList.add('hidden');
+            eyeOffIcon.classList.remove('hidden');
+            eyeOffIcon.classList.add('block');
+        } else {
+            passwordField.type = 'password';
+            eyeIcon.classList.remove('hidden');
+            eyeIcon.classList.add('block');
+            eyeOffIcon.classList.remove('block');
+            eyeOffIcon.classList.add('hidden');
+        }
     }
 </script>
-
-
 </body>
 </html>
