@@ -123,21 +123,6 @@
                         </div>
                     </div>
                     <div class="grid grid-cols-1 gap-3 md:grid-cols-2 xl:flex xl:flex-col">
-                        <details id="assetClassificationDetails"
-                            class="group rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 overflow-hidden">
-                            <summary class="flex cursor-pointer items-center justify-between p-4 list-none">
-                                <div class="flex items-center gap-3">
-                                    <span class="material-symbols-outlined text-primary">landscape</span>
-                                    <p class="text-slate-900 dark:text-white text-sm font-semibold">Asset Classification
-                                    </p>
-                                </div>
-                                <span
-                                    class="material-symbols-outlined group-open:rotate-180 transition-transform text-slate-400">expand_more</span>
-                            </summary>
-                            <div id="landClassificationList" class="px-4 pb-4 flex flex-col gap-2">
-                                <!-- Land classification will be loaded dynamically -->
-                            </div>
-                        </details>
                         <details id="assetLayersDetails"
                             class="group rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 overflow-hidden">
                             <summary class="flex cursor-pointer items-center justify-between p-4 list-none">
@@ -234,19 +219,27 @@
                         <div id="filterDocsList" class="px-4 pb-4 flex flex-col gap-1 max-h-48 overflow-y-auto">
                             <p class="text-[10px] text-slate-400 text-center py-3">Select a filter to view documents</p>
                         </div>
-                    </details>
+                    </details>  
 
-                    <details id="analyticsClassificationDetails"
-                        class="group rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 overflow-hidden">
-                        <summary class="flex cursor-pointer items-center justify-between p-4 list-none">
-                            <p class="text-slate-700 dark:text-slate-300 text-xs font-bold uppercase">Asset Classification</p>
-                            <span
-                                class="material-symbols-outlined group-open:rotate-180 transition-transform text-slate-400">expand_more</span>
-                        </summary>
-                        <div id="assetClassificationAnalyticsList" class="px-4 pb-4 flex flex-col gap-1">
-                            <p class="text-[10px] text-slate-400 text-center py-2">No data available</p>
-                        </div>
-                    </details>
+                    <details id="assetClassificationAnalyticsDetails"
+                            class="group rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 overflow-hidden"
+                            open>
+                            <summary class="flex cursor-pointer items-center justify-between p-4 list-none">
+                                <div class="flex items-center gap-3">
+                                    <span class="material-symbols-outlined text-primary">landscape</span>
+                                    <p class="text-slate-900 dark:text-white text-sm font-semibold">Asset Classification
+                                    </p>
+                                </div>
+                                <span
+                                    class="material-symbols-outlined group-open:rotate-180 transition-transform text-slate-400">expand_more</span>
+                            </summary>
+                            <div id="assetClassificationAnalyticsList" class="px-4 pb-4 flex flex-col gap-2">
+                                <!-- Land classification will be loaded dynamically -->
+                            </div>
+                        </details>
+                        
+
+                   
 
                     <details id="analyticsDistributionDetails"
                         class="group rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 overflow-hidden">
