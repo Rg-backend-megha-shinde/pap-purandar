@@ -4444,8 +4444,8 @@
                     field.removeAttribute('readonly');
                 }
                 if (!wasReadonly && !field.disabled) {
-                    field.min = tomorrowIsoDate;
-                    field.removeAttribute('max');
+                    field.max = todayIsoDate;
+                    field.removeAttribute('min');
                 }
                 if (field.value) {
                     field.value = normalizeDateInputValue(field.value);
@@ -4457,12 +4457,12 @@
             if (!scope) return true;
             const fields = Array.from(scope.querySelectorAll('input[type="date"]'))
                 .filter((field) => !field.disabled && !field.readOnly && field.value);
-            const invalidField = fields.find((field) => normalizeDateInputValue(field.value) <= todayIsoDate);
+            const invalidField = fields.find((field) => normalizeDateInputValue(field.value) > todayIsoDate);
             if (!invalidField) return true;
 
             invalidField.focus();
             invalidField.reportValidity?.();
-            alert('दिनांक उद्यापासून पुढील निवडा. आजची किंवा मागील दिनांक निवडता येणार नाही.');
+            alert('भविष्यातील दिनांक निवडता येणार नाही. कृपया आजची किंवा मागील दिनांक निवडा.');
             return false;
         }
 
