@@ -164,6 +164,29 @@
         display: none !important;
     }
 
+    /* Tab 5: कलम ३२(५) notice yes/no CSS-only fallback. */
+    #pcSection32NoticeWrap:has(input[name="section32_notice_given"][value="no"]:checked) #pcSection32NoticeYesFields,
+    #pcSection32NoticeWrap:has(input[name="section32_notice_given"][value="no"]:checked) #pcSection32NoticeGenerateBtnWrap {
+        display: none !important;
+    }
+
+    #pcSection32NoticeWrap:has(input[name="section32_notice_given"][value="no"]:checked) #pcSection32NoticeNoFields {
+        display: block !important;
+    }
+
+    #pcSection32NoticeWrap:has(input[name="section32_notice_given"][value="yes"]:checked) #pcSection32NoticeYesFields,
+    #pcSection32NoticeWrap:has(input[name="section32_notice_given"][value="yes"]:checked) #pcSection32NoticeGenerateBtnWrap {
+        display: block !important;
+    }
+
+    #pcSection32NoticeWrap:has(input[name="section32_notice_given"][value="yes"]:checked) #pcSection32NoticeYesFields {
+        display: block !important;
+    }
+
+    #pcSection32NoticeWrap:has(input[name="section32_notice_given"][value="yes"]:checked) #pcSection32NoticeNoFields {
+        display: none !important;
+    }
+
     /* Tab 4: demarcation yes/no fallback, independent of JS timing. */
     [data-pc-panel="4"]:has(input[name="demarcation_done"][value="yes"]:checked) #pcDemarcationYesFields {
         display: block !important;
@@ -2437,26 +2460,43 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="pc-section mt-6">
-                            <div class="space-y-5 ">
+                      <div class="pc-section mt-6" id="pcSection32NoticeWrap">
+                            <div class="space-y-5">
                                 <h3 class="mb-4 text-lg font-bold text-[#244271]">कलम ३२(५) अन्वये नोटीस</h3>
+                                
+                                <!-- १. रेडिओ बटन्स चा पर्याय -->
                                 <div class="grid gap-5 md:grid-cols-[300px_minmax(0,1fr)] md:items-end">
                                     <div>
-                                        <label class="pc-label">नोटीस बजावण्याचा दिनांक</label>
-                                        <input class="pc-input pc-date-input" name="section325_notice_date" type="date"
-                                            placeholder="dd-mm-yyyy">
-                                    </div>
-                                    <div>
-                                        <label class="pc-label">तामील प्रत</label>
-                                        <input class="pc-upload" name="section325_notice_file" type="file">
-                                        <a class="mt-2 hidden text-xs font-semibold text-[#125fcb] underline"
-                                            data-pc-doc-link-for="section325_notice_file" target="_blank"
-                                            rel="noopener"></a>
-                                        <button type="button" class="mt-2 hidden rounded-full px-2 text-sm font-bold text-[#d33]" data-pc-doc-delete-for="section325_notice_file" title="Remove">&times;</button>
+                                        <label class="pc-label">नोटीस दिली आहे?</label>
+                                        <div class="pc-question-radios">
+                                            <label><input type="radio" name="section32_notice_given" value="yes" checked onchange="window.pcToggleSection32NoticeFields && window.pcToggleSection32NoticeFields()"> होय</label>
+                                            <label><input type="radio" name="section32_notice_given" value="no" onchange="window.pcToggleSection32NoticeFields && window.pcToggleSection32NoticeFields()"> नाही</label>
+                                        </div>
                                     </div>
                                 </div>
-                                <div class="flex justify-end">
 
+                                <!-- २. 'होय' निवडल्यावर दिसणारा भाग -->
+                                <div id="pcSection32NoticeYesFields" class="space-y-5">
+                                    <div class="grid gap-5 md:grid-cols-[300px_minmax(0,1fr)] md:items-end">
+                                        <div>
+                                            <label class="pc-label">नोटीस बजावण्याचा दिनांक</label>
+                                            <input class="pc-input pc-date-input" name="section325_notice_date" type="date" placeholder="dd-mm-yyyy">
+                                        </div>
+                                        <div>
+                                            <label class="pc-label">तामील प्रत</label>
+                                            <input class="pc-upload" name="section325_notice_file" type="file">
+                                            <a class="mt-2 hidden text-xs font-semibold text-[#125fcb] underline" data-pc-doc-link-for="section325_notice_file" target="_blank" rel="noopener"></a>
+                                            <button type="button" class="mt-2 hidden rounded-full px-2 text-sm font-bold text-[#d33]" data-pc-doc-delete-for="section325_notice_file" title="Remove">&times;</button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- ३. 'नाही' निवडल्यावर दिसणारा भाग -->
+                                <div id="pcSection32NoticeNoFields" class="mt-4 hidden">
+                                    <p class="pc-label">नोटीस देण्यात आली नाही.</p>
+                                </div>
+
+                                <div id="pcSection32NoticeGenerateBtnWrap" class="flex justify-end">
                                     <button type="button" class="pc-generate-notice-btn">Generate Notice</button>
                                 </div>
                             </div>
@@ -2476,7 +2516,7 @@
 
                     <div class="pc-section">
                         <div class="space-y-5 ">
-                            <div>
+                            <div id="pcTab6FastCalcTypeWrap">
                                 <h3 class="mb-4 text-lg font-bold text-[#244271]">शिघ्रसिद्ध गणणाचा प्रकार</h3>
                                 <select class="pc-input max-w-md" id="pcFastCalcType" name="fast_calc_type">
                                     <option value="">शिघ्रसिद्ध गणणाचा प्रकार निवडा</option>
@@ -2485,7 +2525,7 @@
                                     <option value="nagari">नागरी</option>
                                 </select>
                             </div>
-                            <div>
+                            <div id="pcTab6ZoneDakhlaWrap">
                                 <h3 class="mb-4 text-lg font-bold text-[#244271]">झोन दाखला माहिती</h3>
                                 <div class="flex flex-wrap items-center gap-4">
                                     <input class="pc-input min-w-[280px]" id="pcSec12ZoneDetails" type="text"
@@ -2502,7 +2542,7 @@
                                     </div>
                                 </div>
                             </div>
-                            <div>
+                            <div id="pcTab6KharediVikriWrap">
                                 <h3 class="mb-4 text-lg font-bold text-[#244271]">दर निश्चितीसाठी खरेदी विक्री तपशील
                                 </h3>
                                 <div class="flex flex-wrap items-center gap-4">
@@ -2520,7 +2560,7 @@
                                     </div>
                                 </div>
                             </div>
-                            <div>
+                            <div id="pcTab6JameenMulyankanWrap">
                                 <h3 class="mb-4 text-lg font-bold text-[#244271]">जमीन मूल्यांकन</h3>
                                 <div class="grid gap-4 md:grid-cols-3 md:items-end">
                                     <div><label class="pc-label">प्राधिकृत अधिकारी यांचा प्रस्ताव क्रमांक</label><input
@@ -2539,7 +2579,7 @@
                                     </div>
                                 </div>
                             </div>
-                            <div>
+                            <div id="pcTab6NagarRachanaWrap">
                                 <h3 class="mb-4 text-lg font-bold text-[#244271]">नगर रचना विभागाचे अभिप्राय</h3>
                                 <div class="grid gap-4 md:grid-cols-3 md:items-end">
                                     <div><label class="pc-label">पत्र क्रमांक</label><input class="pc-input"
@@ -8693,6 +8733,17 @@
         }
         window.pcToggleObjectionReportFields = toggleObjectionReportFields;
 
+        function toggleSection32NoticeFields() {
+            const isNo = Boolean(document.querySelector('input[name="section32_notice_given"][value="no"]:checked'));
+            const yesFields = document.getElementById('pcSection32NoticeYesFields');
+            const noFields = document.getElementById('pcSection32NoticeNoFields');
+            const generateBtnWrap = document.getElementById('pcSection32NoticeGenerateBtnWrap');
+            if (yesFields) yesFields.style.display = isNo ? 'none' : '';
+            if (noFields) noFields.style.display = isNo ? '' : 'none';
+            if (generateBtnWrap) generateBtnWrap.style.display = isNo ? 'none' : '';
+        }
+        window.pcToggleSection32NoticeFields = toggleSection32NoticeFields;
+
         function restoreSavedProcessChartRadios(stepData = {}) {
             restoreSavedRadioValues(stepData, 2, ['survey_in_notification']);
             restoreSavedRadioValues(stepData, 3, [
@@ -8703,7 +8754,8 @@
             toggleSection323NoticeFields();
             toggleObjectionReportFields();
             toggleJointSurveyDoneFields();
-            restoreSavedRadioValues(stepData, 5, ['group_in_clause_one_included']);
+            restoreSavedRadioValues(stepData, 5, ['group_in_clause_one_included', 'section32_notice_given']);
+            toggleSection32NoticeFields();
             restoreSavedRadioValues(stepData, 8, ['landholder_residence_affected', 'interested_in_10_percent_plot']);
             restoreSavedRadioValues(stepData, 9, ['consent_submitted']);
             restoreSavedRadioValues(stepData, 12, [
@@ -10752,6 +10804,62 @@
             }
         }
 
+        /**
+         * Show or hide the 5 sub-sections in Tab 6 based on the yes/no toggle
+         * answers recorded in Village Info tabs 4 and 5.
+         *
+         * Mapping (village_info toggle → tab-6 wrapper id):
+         *   sec7  (जमीन मूल्यांकन)              → pcTab6JameenMulyankanWrap
+         *   sec8  (नगर रचना विभागाचे अभिप्राय)  → pcTab6NagarRachanaWrap
+         *   sec9  (झोन दाखला माहिती)             → pcTab6ZoneDakhlaWrap + pcTab6FastCalcTypeWrap
+         *   sec10 (दर निश्चितीसाठी खरेदी विक्री) → pcTab6KharediVikriWrap
+         *
+         * A section is shown when village_info has ANY data for it (answer was होय),
+         * and hidden when there is no data (answer was नाही).
+         */
+        function applyTab6VisibilityFromVillageInfo(villageDataPayload) {
+            const villageData = villageDataPayload?.data || {};
+            const files = villageDataPayload?.files || {};
+
+            // sec7 → जमीन मूल्यांकन
+            const hasJameenMulyankan = Boolean(
+                (villageData.sec10_prastaav_kramank || '').trim()
+                || (villageData.sec10_date || '').trim()
+                || files.sec10_files?.length
+            );
+            const jameenWrap = document.getElementById('pcTab6JameenMulyankanWrap');
+            if (jameenWrap) jameenWrap.classList.toggle('hidden', !hasJameenMulyankan);
+
+            // sec8 → नगर रचना विभागाचे अभिप्राय
+            const hasNagarRachana = Boolean(
+                (villageData.sec11_patra_kramank || '').trim()
+                || (villageData.sec11_date || '').trim()
+                || files.sec11_files?.length
+            );
+            const nagarWrap = document.getElementById('pcTab6NagarRachanaWrap');
+            if (nagarWrap) nagarWrap.classList.toggle('hidden', !hasNagarRachana);
+
+            // sec9 → झोन दाखला माहिती (and शिघ्रसिद्ध गणणाचा प्रकार which depends on it)
+            const hasZone = Boolean(
+                (villageData.sec12_zone_details || '').trim()
+                || (villageData.sec12_date || '').trim()
+                || files.sec12_files?.length
+            );
+            const zoneWrap = document.getElementById('pcTab6ZoneDakhlaWrap');
+            if (zoneWrap) zoneWrap.classList.toggle('hidden', !hasZone);
+
+            const fastCalcWrap = document.getElementById('pcTab6FastCalcTypeWrap');
+            if (fastCalcWrap) fastCalcWrap.classList.toggle('hidden', !hasZone);
+
+            // sec10 → दर निश्चितीसाठी खरेदी विक्री तपशील
+            const hasKharediVikri = Boolean(
+                (villageData.sec13_kharedi_vikri_details || '').trim()
+                || files.sec13_files?.length
+            );
+            const kharediWrap = document.getElementById('pcTab6KharediVikriWrap');
+            if (kharediWrap) kharediWrap.classList.toggle('hidden', !hasKharediVikri);
+        }
+
         function applyValuationInfoPrefill(villageDataPayload) {
             const villageData = villageDataPayload?.data || {};
 
@@ -10789,6 +10897,9 @@
             if (villageDataPayload?.files?.sec11_files?.length) {
                 currentVillageFiles.sec11_files = villageDataPayload.files.sec11_files;
             }
+
+            // Apply tab 6 section visibility based on village info yes/no answers
+            applyTab6VisibilityFromVillageInfo(villageDataPayload);
         }
 
         function applyCommitteeInfoPrefill(villageDataPayload) {

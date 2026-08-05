@@ -909,6 +909,7 @@ class VillageData(models.Model):
     sec6_date = models.DateField(null=True, blank=True)
     sec6_parishisht16_files = models.TextField(blank=True)
     sec6_nakasha_files = models.TextField(blank=True)
+    sec6_rows = models.JSONField(default=list, blank=True)
 
     # --- ७. कलम 17 सुनावणी निर्णय ---
     sec7_aakshep_details = models.TextField(blank=True)
