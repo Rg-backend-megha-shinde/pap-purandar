@@ -923,22 +923,26 @@ class VillageData(models.Model):
     sec9_paper2_date = models.DateField(null=True, blank=True)
     sec9_paper2_files = models.TextField(blank=True)
 
-    # --- १०. जमीन मूल्यांकन ---
+    # --- १०. जमीन मूल्यांकन (toggle: होय/नाही) ---
+    sec7_toggle = models.CharField(max_length=10, blank=True, default='nahi')
     sec10_prastaav_kramank = models.TextField(blank=True)
     sec10_date = models.DateField(null=True, blank=True)
     sec10_files = models.TextField(blank=True)
 
-    # --- ११. नगर रचना विभागाचे अभिप्राय ---
+    # --- ११. नगर रचना विभागाचे अभिप्राय (toggle: होय/नाही) ---
+    sec8_toggle = models.CharField(max_length=10, blank=True, default='nahi')
     sec11_patra_kramank = models.TextField(blank=True)
     sec11_date = models.DateField(null=True, blank=True)
     sec11_files = models.TextField(blank=True)
 
-    # --- १२. झोन दाखला माहिती ---
+    # --- १२. झोन दाखला माहिती (toggle: होय/नाही) ---
+    sec9_toggle = models.CharField(max_length=10, blank=True, default='nahi')
     sec12_zone_details = models.TextField(blank=True)
     sec12_date = models.DateField(null=True, blank=True)
     sec12_files = models.TextField(blank=True)
 
-    # --- १३. दर निश्चितीसाठी खरेदी विक्री तपशील ---
+    # --- १३. दर निश्चितीसाठी खरेदी विक्री तपशील (toggle: होय/नाही) ---
+    sec10_toggle = models.CharField(max_length=10, blank=True, default='nahi')
     sec13_kharedi_vikri_details = models.TextField(blank=True)
     sec13_files = models.TextField(blank=True)
     sec13_rows = models.JSONField(default=list, blank=True)

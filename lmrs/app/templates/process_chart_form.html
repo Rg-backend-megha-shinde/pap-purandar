@@ -10805,59 +10805,81 @@
         }
 
         /**
-         * Show or hide the 5 sub-sections in Tab 6 based on the yes/no toggle
-         * answers recorded in Village Info tabs 4 and 5.
+         * Show or hide the 5 sub-sections in Tab 6 based on the Village Info data.
          *
-         * Mapping (village_info toggle → tab-6 wrapper id):
-         *   sec7  (जमीन मूल्यांकन)              → pcTab6JameenMulyankanWrap
-         *   sec8  (नगर रचना विभागाचे अभिप्राय)  → pcTab6NagarRachanaWrap
-         *   sec9  (झोन दाखला माहिती)             → pcTab6ZoneDakhlaWrap + pcTab6FastCalcTypeWrap
-         *   sec10 (दर निश्चितीसाठी खरेदी विक्री) → pcTab6KharediVikriWrap
+         * Accepts the flat `villageData` object (villageDataPayload.data) directly.
+         * A section is shown when its corresponding Village Info toggle is 'hoy' / true
+         * OR when its data field contains a non-empty string.  Hidden otherwise.
          *
-         * A section is shown when village_info has ANY data for it (answer was होय),
-         * and hidden when there is no data (answer was नाही).
+         * Mapping:
+         *   #pcTab6FastCalcTypeWrap   → fast_calc_type | village_type
+         *   #pcTab6ZoneDakhlaWrap     → sec9_toggle === 'hoy' | sec12_zone_details
+         *   #pcTab6KharediVikriWrap   → sec10_toggle === 'hoy' | sec13_kharedi_vikri_details
+         *   #pcTab6JameenMulyankanWrap→ sec7_toggle === 'hoy' | sec10_prastaav_kramank
+         *   #pcTab6NagarRachanaWrap   → sec8_toggle === 'hoy' | sec11_patra_kramank
+         */
+        function applyTab6Visibility(villageData) {
+            /**
+             * Helper: returns true when a toggle value is 'hoy' (or boolean true)
+             * or when any of the supplied string fields are non-empty AND no
+             * explicit 'nahi' was saved.
+             * 'nahi' always wins — explicit override to hide regardless of data.
+             */
+            function shouldShow(toggle, ...dataFields) {
+                if (toggle === 'nahi') return false;
+                if (toggle === 'hoy' || toggle === true) return true;
+                // No toggle saved yet — fall back to data presence
+                return dataFields.some((v) => String(v || '').trim() !== '');
+            }
+
+            /**
+             * Apply visibility to a wrapper element using both .style.display
+             * and the Tailwind `hidden` class so either mechanism works.
+             */
+            function setVisible(el, visible) {
+                if (!el) return;
+                el.style.display = visible ? 'block' : 'none';
+                el.classList.toggle('hidden', !visible);
+            }
+
+            // #pcTab6FastCalcTypeWrap: show if fast_calc_type or village_type has value
+            setVisible(
+                document.getElementById('pcTab6FastCalcTypeWrap'),
+                shouldShow(null, villageData.fast_calc_type, villageData.village_type)
+            );
+
+            // #pcTab6ZoneDakhlaWrap: show if sec9_toggle === 'hoy' OR sec12_zone_details has value
+            setVisible(
+                document.getElementById('pcTab6ZoneDakhlaWrap'),
+                shouldShow(villageData.sec9_toggle, villageData.sec12_zone_details)
+            );
+
+            // #pcTab6KharediVikriWrap: show if sec10_toggle === 'hoy' OR sec13_kharedi_vikri_details has value
+            setVisible(
+                document.getElementById('pcTab6KharediVikriWrap'),
+                shouldShow(villageData.sec10_toggle, villageData.sec13_kharedi_vikri_details)
+            );
+
+            // #pcTab6JameenMulyankanWrap: show if sec7_toggle === 'hoy' OR sec10_prastaav_kramank has value
+            setVisible(
+                document.getElementById('pcTab6JameenMulyankanWrap'),
+                shouldShow(villageData.sec7_toggle, villageData.sec10_prastaav_kramank)
+            );
+
+            // #pcTab6NagarRachanaWrap: show if sec8_toggle === 'hoy' OR sec11_patra_kramank has value
+            setVisible(
+                document.getElementById('pcTab6NagarRachanaWrap'),
+                shouldShow(villageData.sec8_toggle, villageData.sec11_patra_kramank)
+            );
+        }
+
+        /**
+         * Adapter: accepts a villageDataPayload envelope (with a .data sub-object)
+         * and delegates to applyTab6Visibility with the flat data object.
+         * Kept for internal call-sites that pass the full payload envelope.
          */
         function applyTab6VisibilityFromVillageInfo(villageDataPayload) {
-            const villageData = villageDataPayload?.data || {};
-            const files = villageDataPayload?.files || {};
-
-            // sec7 → जमीन मूल्यांकन
-            const hasJameenMulyankan = Boolean(
-                (villageData.sec10_prastaav_kramank || '').trim()
-                || (villageData.sec10_date || '').trim()
-                || files.sec10_files?.length
-            );
-            const jameenWrap = document.getElementById('pcTab6JameenMulyankanWrap');
-            if (jameenWrap) jameenWrap.classList.toggle('hidden', !hasJameenMulyankan);
-
-            // sec8 → नगर रचना विभागाचे अभिप्राय
-            const hasNagarRachana = Boolean(
-                (villageData.sec11_patra_kramank || '').trim()
-                || (villageData.sec11_date || '').trim()
-                || files.sec11_files?.length
-            );
-            const nagarWrap = document.getElementById('pcTab6NagarRachanaWrap');
-            if (nagarWrap) nagarWrap.classList.toggle('hidden', !hasNagarRachana);
-
-            // sec9 → झोन दाखला माहिती (and शिघ्रसिद्ध गणणाचा प्रकार which depends on it)
-            const hasZone = Boolean(
-                (villageData.sec12_zone_details || '').trim()
-                || (villageData.sec12_date || '').trim()
-                || files.sec12_files?.length
-            );
-            const zoneWrap = document.getElementById('pcTab6ZoneDakhlaWrap');
-            if (zoneWrap) zoneWrap.classList.toggle('hidden', !hasZone);
-
-            const fastCalcWrap = document.getElementById('pcTab6FastCalcTypeWrap');
-            if (fastCalcWrap) fastCalcWrap.classList.toggle('hidden', !hasZone);
-
-            // sec10 → दर निश्चितीसाठी खरेदी विक्री तपशील
-            const hasKharediVikri = Boolean(
-                (villageData.sec13_kharedi_vikri_details || '').trim()
-                || files.sec13_files?.length
-            );
-            const kharediWrap = document.getElementById('pcTab6KharediVikriWrap');
-            if (kharediWrap) kharediWrap.classList.toggle('hidden', !hasKharediVikri);
+            applyTab6Visibility(villageDataPayload?.data || {});
         }
 
         function applyValuationInfoPrefill(villageDataPayload) {
@@ -10898,8 +10920,8 @@
                 currentVillageFiles.sec11_files = villageDataPayload.files.sec11_files;
             }
 
-            // Apply tab 6 section visibility based on village info yes/no answers
-            applyTab6VisibilityFromVillageInfo(villageDataPayload);
+            // Apply tab 6 section visibility based on village info toggles and data fields
+            applyTab6Visibility(villageData);
         }
 
         function applyCommitteeInfoPrefill(villageDataPayload) {

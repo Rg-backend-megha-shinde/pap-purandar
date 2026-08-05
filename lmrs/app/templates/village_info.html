@@ -3853,49 +3853,37 @@
         }
 
         function updateSectionTogglesFromData(values, filesMap) {
-            // sec7-toggle (जमीन मूल्यांकन): controls sec7-content (sec10_prastaav_kramank, sec10_date, sec10_files)
-            const sec7HasData = !!(values.sec10_prastaav_kramank || values.sec10_date || (filesMap && filesMap.sec10_files && filesMap.sec10_files.length));
-            const sec7Val = sec7HasData ? 'hoy' : 'nahi';
-            const sec7Radio = document.querySelector(`input[name="sec7-toggle"][value="${sec7Val}"]`);
-            if (sec7Radio) {
-                sec7Radio.checked = true;
-                const targetId = sec7Radio.getAttribute('data-target');
-                const content = document.getElementById(targetId);
-                if (content) content.style.display = sec7HasData ? 'block' : 'none';
+            // Prefer the explicitly saved toggle value from the API response.
+            // Fall back to inferring from data fields only when the toggle was never saved.
+            function resolveToggle(savedToggle, hasData) {
+                if (savedToggle === 'hoy' || savedToggle === 'nahi') return savedToggle;
+                return hasData ? 'hoy' : 'nahi';
             }
 
-            // sec8-toggle (नगर रचना विभागाचे अभिप्राय): controls sec8-content (sec11_patra_kramank, sec11_date, sec11_files)
-            const sec8HasData = !!(values.sec11_patra_kramank || values.sec11_date || (filesMap && filesMap.sec11_files && filesMap.sec11_files.length));
-            const sec8Val = sec8HasData ? 'hoy' : 'nahi';
-            const sec8Radio = document.querySelector(`input[name="sec8-toggle"][value="${sec8Val}"]`);
-            if (sec8Radio) {
-                sec8Radio.checked = true;
-                const targetId = sec8Radio.getAttribute('data-target');
-                const content = document.getElementById(targetId);
-                if (content) content.style.display = sec8HasData ? 'block' : 'none';
+            function applyToggle(radioName, val) {
+                const radio = document.querySelector(`input[name="${radioName}"][value="${val}"]`);
+                if (radio) {
+                    radio.checked = true;
+                    const content = document.getElementById(radio.getAttribute('data-target'));
+                    if (content) content.style.display = val === 'hoy' ? 'block' : 'none';
+                }
             }
 
-            // sec9-toggle (झोन दाखला माहिती): controls sec9-content (sec12_zone_details, sec12_date, sec12_files)
-            const sec9HasData = !!(values.sec12_zone_details || values.sec12_date || (filesMap && filesMap.sec12_files && filesMap.sec12_files.length));
-            const sec9Val = sec9HasData ? 'hoy' : 'nahi';
-            const sec9Radio = document.querySelector(`input[name="sec9-toggle"][value="${sec9Val}"]`);
-            if (sec9Radio) {
-                sec9Radio.checked = true;
-                const targetId = sec9Radio.getAttribute('data-target');
-                const content = document.getElementById(targetId);
-                if (content) content.style.display = sec9HasData ? 'block' : 'none';
-            }
+            // sec7-toggle (जमीन मूल्यांकन)
+            const sec7HasData = !!(values.sec10_prastaav_kramank || values.sec10_date || filesMap?.sec10_files?.length);
+            applyToggle('sec7-toggle', resolveToggle(values.sec7_toggle, sec7HasData));
 
-            // sec10-toggle (दर निश्चितीसाठी खरेदी विक्री तपशील): controls sec10-content (sec13_kharedi_vikri_details, sec13_files)
-            const sec10HasData = !!(values.sec13_kharedi_vikri_details || (filesMap && filesMap.sec13_files && filesMap.sec13_files.length));
-            const sec10Val = sec10HasData ? 'hoy' : 'nahi';
-            const sec10Radio = document.querySelector(`input[name="sec10-toggle"][value="${sec10Val}"]`);
-            if (sec10Radio) {
-                sec10Radio.checked = true;
-                const targetId = sec10Radio.getAttribute('data-target');
-                const content = document.getElementById(targetId);
-                if (content) content.style.display = sec10HasData ? 'block' : 'none';
-            }
+            // sec8-toggle (नगर रचना विभागाचे अभिप्राय)
+            const sec8HasData = !!(values.sec11_patra_kramank || values.sec11_date || filesMap?.sec11_files?.length);
+            applyToggle('sec8-toggle', resolveToggle(values.sec8_toggle, sec8HasData));
+
+            // sec9-toggle (झोन दाखला माहिती)
+            const sec9HasData = !!(values.sec12_zone_details || values.sec12_date || filesMap?.sec12_files?.length);
+            applyToggle('sec9-toggle', resolveToggle(values.sec9_toggle, sec9HasData));
+
+            // sec10-toggle (दर निश्चितीसाठी खरेदी विक्री तपशील)
+            const sec10HasData = !!(values.sec13_kharedi_vikri_details || filesMap?.sec13_files?.length);
+            applyToggle('sec10-toggle', resolveToggle(values.sec10_toggle, sec10HasData));
         }
 
         async function loadVillageData() {
@@ -4928,6 +4916,13 @@
             formData.append('taluka', taluka);
             formData.append('village', village);
             formData.append('final_submit', goToList ? '1' : '0');
+
+            // Persist the yes/no toggle answers for sections 7–10 so the backend
+            // stores them and returns them in the API response for Tab 6 visibility.
+            ['sec7-toggle', 'sec8-toggle', 'sec9-toggle', 'sec10-toggle'].forEach((name) => {
+                const checked = document.querySelector(`input[name="${name}"]:checked`);
+                if (checked) formData.append(name.replace('-', '_'), checked.value);
+            });
 
             for (const [key, el] of Object.entries(fieldMap)) {
                 if (!el) continue;

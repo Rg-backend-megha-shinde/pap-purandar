@@ -5021,6 +5021,7 @@ _VILLAGE_SCALAR_FIELDS = [
     'sec5_prastaav_kramank', 'sec5_date',
     'sec6_register_number', 'sec6_date',
     'sec7_aakshep_details',
+    'sec7_toggle', 'sec8_toggle', 'sec9_toggle', 'sec10_toggle',
     'sec9_paper1_name', 'sec9_paper1_date',
     'sec9_paper2_name', 'sec9_paper2_date',
     'sec10_prastaav_kramank', 'sec10_date',
