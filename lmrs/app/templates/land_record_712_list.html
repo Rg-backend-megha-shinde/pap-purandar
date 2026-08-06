@@ -41,25 +41,71 @@
         }
     }
     #lr712Table {
-        border-collapse: collapse;
+        border-collapse: collapse !important;
+        width: 100%;
+        color: #2a3f62;
+    }
+    #lr712Table thead {
+        background-color: #eef5ff;
     }
     #lr712Table thead th {
-        font-weight: 700;
-        color: #000;
-        border-bottom: 1px solid #bdbdbd;
-        padding: 10px 10px;
+        font-weight: 600;
+        color: #2a3f62;
+        border: 1px solid #d7e5f6;
+        padding: 8px 12px;
+        text-align: center !important;
+        vertical-align: middle;
         white-space: nowrap;
     }
     #lr712Table tbody td {
-        border-bottom: 1px solid #c9c9c9;
-        padding: 9px 10px;
+        border: 1px solid #d7e5f6;
+        padding: 8px 12px;
+        text-align: center !important;
         vertical-align: middle;
     }
-    #lr712Table tbody tr:nth-child(even) {
-        background: #e5e7eb;
+    #lr712Table tbody tr {
+        background: #ffffff !important;
     }
-    #lr712Table tbody tr:nth-child(odd) {
-        background: #f3f4f6;
+    #lr712Table tbody tr:hover {
+        background: #f8fbff !important;
+    }
+    .lr-action-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 34px;
+        height: 34px;
+        padding: 0;
+        border-radius: 0.55rem;
+        border: 1px solid;
+        font-size: 0.9rem;
+        font-weight: 600;
+        text-decoration: none;
+    }
+    .lr-action-btn svg {
+        width: 17px;
+        height: 17px;
+    }
+    .lr-action-edit {
+        border-color: #bfdbfe;
+        background: #eff6ff;
+        color: #2563eb;
+    }
+    .lr-action-delete {
+        border-color: #fecaca;
+        background: #fef2f2;
+        color: #dc2626;
+    }
+    .lr-list-controls select,
+    .lr-list-controls input {
+        border: 1px solid #cbd5e1;
+        border-radius: 0.4rem;
+        background: #fff;
+        color: #2a3f62;
+        padding: 0.45rem 0.75rem;
+        pointer-events: auto !important;
+        user-select: text;
+        cursor: text;
     }
 </style>
 
@@ -85,16 +131,16 @@
         
         <div class="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
             <button id="bulkDeleteBtn" type="submit" form="bulkDeleteForm" disabled
-               class="bg-red-400 text-white px-4 py-2 rounded flex items-center justify-center gap-2 opacity-60 cursor-not-allowed">
+               class="rounded-xl bg-red-400 text-white px-4 py-2 text-sm font-semibold flex items-center justify-center gap-2 opacity-60 cursor-not-allowed">
                 निवडलेले हटवा
             </button>
             <a href="{% url 'download_all_land_record_712_csv' %}"
-               class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded flex items-center justify-center gap-2">
-                <span class="text-lg">⬇</span> CSV डाउनलोड
+               class="rounded-xl bg-green-600 hover:bg-green-700 text-white px-4 py-2 text-sm font-semibold flex items-center justify-center gap-2">
+                ⬇️ CSV डाउनलोड
             </a>
             
-            <a href="/tools/712/" class="bg-gray-800 hover:bg-gray-900 text-white px-4 py-2 rounded flex items-center justify-center gap-2">
-                <span class="text-lg">+</span> नवीन ७/१२ नोंद
+            <a href="/tools/712/" class="rounded-xl bg-[#125fcb] hover:bg-blue-700 text-white px-4 py-2 text-sm font-semibold flex items-center justify-center gap-2 shadow-[0_10px_24px_rgba(18,95,203,0.2)]">
+                ➕ नवीन ७/१२ नोंद
             </a>
         </div>
     </div>
@@ -143,8 +189,8 @@
         </div>
         </div>
     </div>
-    <div class="mb-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-        <div class="flex items-center gap-2 text-sm">
+    <div class="mb-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 lr-list-controls">
+        <div class="flex items-center gap-2 text-sm font-semibold text-[#4a6178]">
             <label for="per_page">दाखवा</label>
             <select id="per_page" name="per_page" class="rounded border border-gray-300 px-2 py-1">
                 <option value="10" {% if per_page_value == '10' %}selected{% endif %}>10</option>
@@ -155,58 +201,58 @@
             </select>
             <span>नोंदी</span>
         </div>
-        <div class="flex items-center gap-2 text-sm">
+        <div class="flex items-center gap-2 text-sm font-semibold text-[#4a6178]">
             <label for="listSearchInput">शोधा:</label>
             <input id="listSearchInput" type="search" value="{{ search_query }}" class="border border-gray-300 rounded px-3 py-1.5 text-sm" placeholder="Search ७/१२ उतारा नोंद re">
         </div>
     </div>
     <form id="bulkDeleteForm" method="post" action="{% url 'delete_selected_land_record_712' %}">
         {% csrf_token %}
-    <div class="overflow-x-auto">
-        <table id="lr712Table" class="display w-full text-sm text-left" style="width:100%;">
-            <thead>
+    <div class="overflow-x-auto rounded-xl border border-[#d7e5f6] bg-white">
+        <table id="lr712Table" class="w-full border-collapse text-sm text-[#2a3f62]" style="width:100%;">
+            <thead class="bg-[#eef5ff]">
                 <tr>
-                    <th><input id="selectAllRows" type="checkbox" class="h-4 w-4"></th>
-                    <th>ID</th>
-                    <th>जिल्हा</th>
-                    <th>तालुका</th>
-                    <th>गाव</th>
-                    <th>गट क्रमांक</th>
-                    <th>खाता नं</th>
-                    <th>PUID/ULIP नं</th>
-                    <th>जिरायत</th>
-                    <th>बागायत</th>
-                    <th>पोटखराब</th>
-                    <th>एकूण क्षेत्र</th>
-                    <th>आकारणी</th>
-                    <th>खाता क्षेत्र</th>
-                    <th>आकार</th>
-                    <th>भोगवटादारांचे नांव</th>
-                    <th>कुळ, खंड व इतर अधिकार</th>
-                    <th>दस्तऐवज</th>
-                    <th>Updated</th>
-                    <th>Actions</th>
+                    <th class="border border-[#d7e5f6] px-3 py-2 text-center font-semibold"><input id="selectAllRows" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"></th>
+                    <th class="border border-[#d7e5f6] px-3 py-2 text-center font-semibold">ID</th>
+                    <th class="border border-[#d7e5f6] px-3 py-2 text-center font-semibold">जिल्हा</th>
+                    <th class="border border-[#d7e5f6] px-3 py-2 text-center font-semibold">तालुका</th>
+                    <th class="border border-[#d7e5f6] px-3 py-2 text-center font-semibold">गाव</th>
+                    <th class="border border-[#d7e5f6] px-3 py-2 text-center font-semibold">गट क्रमांक</th>
+                    <th class="border border-[#d7e5f6] px-3 py-2 text-center font-semibold">खाता नं</th>
+                    <th class="border border-[#d7e5f6] px-3 py-2 text-center font-semibold">PUID/ULIP नं</th>
+                    <th class="border border-[#d7e5f6] px-3 py-2 text-center font-semibold">जिरायत</th>
+                    <th class="border border-[#d7e5f6] px-3 py-2 text-center font-semibold">बागायत</th>
+                    <th class="border border-[#d7e5f6] px-3 py-2 text-center font-semibold">पोटखराब</th>
+                    <th class="border border-[#d7e5f6] px-3 py-2 text-center font-semibold">एकूण क्षेत्र</th>
+                    <th class="border border-[#d7e5f6] px-3 py-2 text-center font-semibold">आकारणी</th>
+                    <th class="border border-[#d7e5f6] px-3 py-2 text-center font-semibold">खाता क्षेत्र</th>
+                    <th class="border border-[#d7e5f6] px-3 py-2 text-center font-semibold">आकार</th>
+                    <th class="border border-[#d7e5f6] px-3 py-2 text-center font-semibold">भोगवटादारांचे नांव</th>
+                    <th class="border border-[#d7e5f6] px-3 py-2 text-center font-semibold">कुळ, खंड व इतर अधिकार</th>
+                    <th class="border border-[#d7e5f6] px-3 py-2 text-center font-semibold">दस्तऐवज</th>
+                    <th class="border border-[#d7e5f6] px-3 py-2 text-center font-semibold">Updated</th>
+                    <th class="border border-[#d7e5f6] px-3 py-2 text-center font-semibold">Actions</th>
                 </tr>
             </thead>
-            <tbody>
+            <tbody class="bg-white">
                 {% for item in records %}
                 <tr>
-                    <td><input type="checkbox" name="selected_ids" value="{{ item.id }}" class="rowSelect h-4 w-4"></td>
-                    <td>{{ item.id }}</td>
-                    <td>{{ item.district_mr|default:"उपलब्ध नाही" }}</td>
-                    <td>{{ item.taluka_mr|default:"उपलब्ध नाही" }}</td>
-                    <td>{{ item.village_mr|default:"उपलब्ध नाही" }}</td>
-                    <td>{{ item.gut_number|default:"उपलब्ध नाही" }}</td>
-                    <td>{{ item.khata_number|default:"उपलब्ध नाही" }}</td>
-                    <td>{{ item.puid_ulip_no|default:"उपलब्ध नाही" }}</td>
-                    <td>{{ item.jirayit|default:"उपलब्ध नाही" }}</td>
-                    <td>{{ item.bagayat|default:"उपलब्ध नाही" }}</td>
-                    <td>{{ item.potkharaba|default:"उपलब्ध नाही" }}</td>
-                    <td>{{ item.total_area|default:"उपलब्ध नाही" }}</td>
-                    <td>{{ item.aakarni|default:"उपलब्ध नाही" }}</td>
-                    <td>{{ item.khata_area|default:"उपलब्ध नाही" }}</td>
-                    <td>{{ item.aakar|default:"उपलब्ध नाही" }}</td>
-                    <td>
+                    <td class="border border-[#d7e5f6] px-3 py-2 text-center"><input type="checkbox" name="selected_ids" value="{{ item.id }}" class="rowSelect h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"></td>
+                    <td class="border border-[#d7e5f6] px-3 py-2 text-center">{{ item.id }}</td>
+                    <td class="border border-[#d7e5f6] px-3 py-2 text-center">{{ item.district_mr|default:"उपलब्ध नाही" }}</td>
+                    <td class="border border-[#d7e5f6] px-3 py-2 text-center">{{ item.taluka_mr|default:"उपलब्ध नाही" }}</td>
+                    <td class="border border-[#d7e5f6] px-3 py-2 text-center">{{ item.village_mr|default:"उपलब्ध नाही" }}</td>
+                    <td class="border border-[#d7e5f6] px-3 py-2 text-center">{{ item.gut_number|default:"उपलब्ध नाही" }}</td>
+                    <td class="border border-[#d7e5f6] px-3 py-2 text-center">{{ item.khata_number|default:"उपलब्ध नाही" }}</td>
+                    <td class="border border-[#d7e5f6] px-3 py-2 text-center">{{ item.puid_ulip_no|default:"उपलब्ध नाही" }}</td>
+                    <td class="border border-[#d7e5f6] px-3 py-2 text-center">{{ item.jirayit|default:"उपलब्ध नाही" }}</td>
+                    <td class="border border-[#d7e5f6] px-3 py-2 text-center">{{ item.bagayat|default:"उपलब्ध नाही" }}</td>
+                    <td class="border border-[#d7e5f6] px-3 py-2 text-center">{{ item.potkharaba|default:"उपलब्ध नाही" }}</td>
+                    <td class="border border-[#d7e5f6] px-3 py-2 text-center">{{ item.total_area|default:"उपलब्ध नाही" }}</td>
+                    <td class="border border-[#d7e5f6] px-3 py-2 text-center">{{ item.aakarni|default:"उपलब्ध नाही" }}</td>
+                    <td class="border border-[#d7e5f6] px-3 py-2 text-center">{{ item.khata_area|default:"उपलब्ध नाही" }}</td>
+                    <td class="border border-[#d7e5f6] px-3 py-2 text-center">{{ item.aakar|default:"उपलब्ध नाही" }}</td>
+                    <td class="border border-[#d7e5f6] px-3 py-2 text-center">
                         {% if item.holder_name %}
                             {% if item.holder_name|length > 45 %}
                                 <button
@@ -222,7 +268,7 @@
                             उपलब्ध नाही
                         {% endif %}
                     </td>
-                    <td>
+                    <td class="border border-[#d7e5f6] px-3 py-2 text-center">
                         {% if item.kul_khand_other_rights %}
                             <button
                                 type="button"
@@ -234,12 +280,12 @@
                             उपलब्ध नाही
                         {% endif %}
                     </td>
-                    <td>
+                    <td class="border border-[#d7e5f6] px-3 py-2 text-center">
                         {% if include_document_preview %}
                             {% if item.document_712 %}
                                 <button
                                     type="button"
-                                    class="view-712-doc-btn text-blue-600 hover:text-blue-800 hover:underline text-xs font-medium flex items-center gap-1"
+                                    class="view-712-doc-btn text-blue-600 hover:text-blue-800 hover:underline text-xs font-medium flex items-center gap-1 justify-center mx-auto"
                                     data-file-url="{{ item.document_712.url }}"
                                     data-file-name="{{ item.original_document_name|default:item.document_712.name|escapejs }}"
                                     data-file-date="{{ item.updated_at|date:'d/m/Y H:i' }}">
@@ -256,22 +302,23 @@
                             <span class="text-xs text-gray-500">Open in edit</span>
                         {% endif %}
                     </td>
-                    <td>
+                    <td class="border border-[#d7e5f6] px-3 py-2 text-center">
                         <div class="text-xs text-gray-600">
                             <div>{{ item.updated_at|date:"d M Y, h:i a" }}</div>
                             <div class="text-gray-500">Updated by {{ item.user.username }}</div>
                         </div>
                     </td>
-                    <td style="white-space: nowrap;">
-                        <a href="{% url 'edit_land_record_712' item.id %}" title="Edit" style="display:inline-flex; align-items:center; justify-content:center;
-              width:32px; height:32px; background:#2563eb; color:white;
-              border-radius:6px; margin-right:6px; text-decoration:none;">
-                            ✏️
+                    <td class="border border-[#d7e5f6] px-3 py-2 text-center whitespace-nowrap">
+                        <a href="{% url 'edit_land_record_712' item.id %}" title="Edit" aria-label="Edit" class="lr-action-btn lr-action-edit mr-2">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16.862 4.487l1.651-1.651a1.875 1.875 0 112.652 2.652L9.75 16.903 5.25 18l1.097-4.5L16.862 4.487z"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.5 7.125L16.875 4.5"></path>
+                            </svg>
                         </a>
-                        <a href="{% url 'delete_land_record_712' item.id %}" title="Delete" style="display:inline-flex; align-items:center; justify-content:center;
-              width:32px; height:32px; background:#dc2626; color:white;
-              border-radius:6px; text-decoration:none;" onclick="return confirm('तुम्हाला ही नोंद हटवायची आहे का?');">
-                            🗑️
+                        <a href="{% url 'delete_land_record_712' item.id %}" title="Delete" aria-label="Delete" class="lr-action-btn lr-action-delete" onclick="return confirm('तुम्हाला ही नोंद हटवायची आहे का?');">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673A2.25 2.25 0 0115.916 21H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"></path>
+                            </svg>
                         </a>
                     </td>
                 </tr>
@@ -280,31 +327,31 @@
         </table>
     </div>
     </form>
-    <div class="mt-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-sm">
+    <div class="mt-4 flex flex-col gap-3 text-sm text-[#4a6178] sm:flex-row sm:items-center sm:justify-between">
         <div>{{ total_records }} पैकी {{ start_index }} ते {{ end_index }} नोंदी दर्शवत आहे</div>
-        <div class="flex items-center gap-2">
+        <div class="flex flex-wrap items-center gap-1">
             {% if page_obj and page_obj.has_previous %}
-                <a href="?page={{ page_obj.previous_page_number }}{% if query_string %}&{{ query_string }}{% endif %}" class="px-2 py-1 hover:underline">मागील</a>
+                <a href="?page={{ page_obj.previous_page_number }}{% if query_string %}&{{ query_string }}{% endif %}" class="rounded-md border border-slate-300 px-3 py-1.5 hover:bg-slate-50">मागील</a>
             {% else %}
-                <span class="px-2 py-1 text-gray-400">मागील</span>
+                <span class="rounded-md border border-slate-200 px-3 py-1.5 text-slate-400">मागील</span>
             {% endif %}
 
             {% for page_no in page_links %}
                 {% if page_no %}
                     {% if page_no == current_page %}
-                        <span class="px-2 py-1 font-semibold">{{ page_no }}</span>
+                        <span class="rounded-md bg-[#125fcb] px-3 py-1.5 font-semibold text-white">{{ page_no }}</span>
                     {% else %}
-                        <a href="?page={{ page_no }}{% if query_string %}&{{ query_string }}{% endif %}" class="px-2 py-1 hover:underline">{{ page_no }}</a>
+                        <a href="?page={{ page_no }}{% if query_string %}&{{ query_string }}{% endif %}" class="rounded-md border border-slate-300 px-3 py-1.5 hover:bg-slate-50">{{ page_no }}</a>
                     {% endif %}
                 {% else %}
-                    <span class="px-1 py-1 text-gray-500">...</span>
+                    <span class="px-2 py-1.5 text-gray-500">...</span>
                 {% endif %}
             {% endfor %}
 
             {% if page_obj and page_obj.has_next %}
-                <a href="?page={{ page_obj.next_page_number }}{% if query_string %}&{{ query_string }}{% endif %}" class="px-2 py-1 hover:underline">पुढील</a>
+                <a href="?page={{ page_obj.next_page_number }}{% if query_string %}&{{ query_string }}{% endif %}" class="rounded-md border border-slate-300 px-3 py-1.5 hover:bg-slate-50">पुढील</a>
             {% else %}
-                <span class="px-2 py-1 text-gray-400">पुढील</span>
+                <span class="rounded-md border border-slate-200 px-3 py-1.5 text-slate-400">पुढील</span>
             {% endif %}
         </div>
     </div>

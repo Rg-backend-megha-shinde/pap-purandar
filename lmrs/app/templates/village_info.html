@@ -383,6 +383,34 @@
                 width: 100%;
             }
         }
+        .vi-action-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 34px;
+            height: 34px;
+            padding: 0;
+            border-radius: 0.55rem;
+            border: 1px solid;
+            font-size: 0.9rem;
+            font-weight: 600;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        .vi-action-btn svg {
+            width: 17px;
+            height: 17px;
+        }
+        .vi-action-edit {
+            border-color: #bfdbfe;
+            background: #eff6ff;
+            color: #2563eb;
+        }
+        .vi-action-delete {
+            border-color: #fecaca;
+            background: #fef2f2;
+            color: #dc2626;
+        }
     </style>
     <div class="w-full px-2 sm:px-3 md:px-4 py-4">
         <div id="vi-toast-host" class="vi-toast-host"></div>
@@ -2277,10 +2305,19 @@
                             : '<button type="button" class="rounded-lg border border-[#fde68a] bg-[#fffbeb] px-3 py-1 text-xs font-semibold text-[#92400e]" disabled>Draft</button>'}
                     </td>
                     <td class="border border-[#d7e5f6] px-3 py-2 text-center align-middle">${formatUpdatedCell(row)}</td>
-                    <td class="border border-[#d7e5f6] px-3 py-2 text-center align-middle">
+                    <td class="border border-[#d7e5f6] px-3 py-2 text-center align-middle whitespace-nowrap">
                         <div class="flex items-center justify-center gap-2">
-                            <button type="button" class="vi-edit-row rounded-lg border border-[#c6d9f2] bg-white px-3 py-1 text-xs font-semibold text-[#125fcb] hover:bg-[#eef5ff]">Edit</button>
-                            <button type="button" class="vi-delete-row rounded-lg border border-[#f3c7cf] bg-[#fff5f7] px-3 py-1 text-xs font-semibold text-[#c12e49] hover:bg-[#ffecef]">Delete</button>
+                            <button type="button" class="vi-edit-row vi-action-btn vi-action-edit" title="Edit" aria-label="Edit">
+                                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16.862 4.487l1.651-1.651a1.875 1.875 0 112.652 2.652L9.75 16.903 5.25 18l1.097-4.5L16.862 4.487z"></path>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.5 7.125L16.875 4.5"></path>
+                                </svg>
+                            </button>
+                            <button type="button" class="vi-delete-row vi-action-btn vi-action-delete" title="Delete" aria-label="Delete">
+                                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673A2.25 2.25 0 0115.916 21H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"></path>
+                                </svg>
+                            </button>
                         </div>
                     </td>
                 </tr>
