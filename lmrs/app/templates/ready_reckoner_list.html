@@ -34,19 +34,98 @@
         border-color: #cad8ea;
         box-shadow: 0 1px 3px rgba(18, 95, 203, 0.15);
     }
+    .rr-list-controls {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        margin-bottom: 1rem;
+        padding: 10px;
+    }
+    .rr-list-controls .dataTables_length,
+    .rr-list-shell .dataTables_wrapper .dataTables_filter {
+        margin: 0;
+        position: relative;
+        z-index: 20;
+        pointer-events: auto;
+    }
+    .rr-list-controls .dataTables_length label,
+    .rr-list-shell .dataTables_wrapper .dataTables_filter label {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: #4a6178;
+        font-size: 0.95rem;
+        font-weight: 500;
+    }
+    .rr-list-controls .dataTables_length select,
+    .rr-list-shell .dataTables_wrapper .dataTables_filter input {
+        border: 1px solid #cbd5e1;
+        border-radius: 0.4rem;
+        background: #fff;
+        color: #2a3f62;
+        padding: 0.45rem 0.75rem;
+        pointer-events: auto !important;
+        user-select: text;
+        cursor: text;
+    }
     @media (max-width: 640px) {
         .tool-tab-link {
             padding: 0.6rem 0.85rem;
             font-size: 0.85rem;
         }
-        #readyReckonerTable_wrapper .dataTables_filter,
-        #readyReckonerTable_wrapper .dataTables_length {
+        .rr-list-controls {
+            align-items: stretch;
+            flex-direction: column;
+        }
+        .rr-list-shell .dataTables_wrapper .dataTables_filter label {
+            justify-content: space-between;
+        }
+        .rr-list-shell .dataTables_wrapper .dataTables_filter input {
+            min-width: 0;
             width: 100%;
         }
-        #readyReckonerTable_wrapper .dataTables_filter input,
-        #readyReckonerTable_wrapper .dataTables_length select {
-            width: 100%;
-        }
+    }
+    .rr-list-shell .dataTables_wrapper .dataTables_info,
+    .rr-list-shell .dataTables_wrapper .dataTables_paginate {
+        margin-top: 1rem;
+        color: #4a6178 !important;
+        font-size: 0.95rem;
+    }
+    .rr-list-shell .dataTables_wrapper .paginate_button {
+        border-radius: 0.8rem !important;
+    }
+    .rr-list-shell table.dataTable thead th,
+    .rr-list-shell table.dataTable thead td {
+        text-align: center !important;
+        vertical-align: middle;
+    }
+    .rr-action-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 34px;
+        height: 34px;
+        padding: 0;
+        border-radius: 0.55rem;
+        border: 1px solid;
+        font-size: 0.9rem;
+        font-weight: 600;
+        text-decoration: none;
+    }
+    .rr-action-btn svg {
+        width: 17px;
+        height: 17px;
+    }
+    .rr-action-edit {
+        border-color: #bfdbfe;
+        background: #eff6ff;
+        color: #2563eb;
+    }
+    .rr-action-delete {
+        border-color: #fecaca;
+        background: #fef2f2;
+        color: #dc2626;
     }
 </style>
 
@@ -64,7 +143,7 @@
         </nav>
     </div>
 
-    <div class="rounded-2xl border border-[#d7e5f6] bg-[#fbfdff] p-3 sm:p-4 md:p-5">
+    <div class="rr-list-shell rounded-2xl border border-[#d7e5f6] bg-[#fbfdff] p-3 sm:p-4 md:p-5">
     <div class="flex flex-col md:flex-row justify-between md:items-center mb-4 gap-3">
         <h2 class="text-xl font-bold">
             रेडी रेकनर नोंदी
@@ -75,16 +154,16 @@
                     form="bulkDeleteReadyReckonerForm"
                     id="bulkDeleteReadyReckonerBtn"
                     disabled
-                    class="bg-red-600 text-white px-4 py-2 rounded flex items-center justify-center gap-2 opacity-50 cursor-not-allowed">
+                    class="rounded-xl bg-red-600 text-white px-4 py-2 text-sm font-semibold flex items-center justify-center gap-2 opacity-50 cursor-not-allowed">
                 निवडलेले हटवा <span id="selectedReadyReckonerCount" class="hidden">(0)</span>
             </button>
             <a href="{% url 'download_all_ready_reckoner_csv' %}"
-               class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded text-center">
+               class="rounded-xl bg-green-600 hover:bg-green-700 text-white px-4 py-2 text-sm font-semibold text-center">
                 ⬇️ डाउनलोड
             </a>
 
             <a href="/tools/ready-reckoner/"
-               class="bg-gray-800 hover:bg-gray-900 text-white px-4 py-2 rounded text-center">
+               class="rounded-xl bg-[#125fcb] px-4 py-2 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(18,95,203,0.2)] text-center">
                 ➕ नवीन रेडी रेकनर नोंद
             </a>
         </div>
@@ -131,38 +210,38 @@
 
     <form id="bulkDeleteReadyReckonerForm" method="POST" action="{% url 'delete_selected_ready_reckoner' %}">
         {% csrf_token %}
-    <div class="overflow-x-auto">
-        <table id="readyReckonerTable" class="display w-full text-sm text-left" style="width:100%;">
-            <thead>
+    <div class="overflow-x-auto rounded-xl border border-[#d7e5f6] bg-white">
+        <table id="readyReckonerTable" class="w-full border-collapse text-sm text-[#2a3f62]" style="width:100%;">
+            <thead class="bg-[#eef5ff]">
                 <tr>
-                    <th>
+                    <th class="border border-[#d7e5f6] px-3 py-2 text-center font-semibold">
                         <input type="checkbox" id="selectAllReadyReckonerRows" class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" aria-label="Select all ready reckoner records">
                     </th>
-                    <th>ID</th>
-                    <th>जिल्हा</th>
-                    <th>तालुका</th>
-                    <th>गाव</th>
-                    <th>वर्ष</th>
-                    <th>मूल्यदरसाठी गावचा प्रकार</th>
-                    <th>मूल्यांकन प्रकार व दर</th>
-                    <th>दस्तऐवज</th>
-                    <th>Updated</th>
-                    <th>Actions</th>
+                    <th class="border border-[#d7e5f6] px-3 py-2 text-center font-semibold">ID</th>
+                    <th class="border border-[#d7e5f6] px-3 py-2 text-center font-semibold">जिल्हा</th>
+                    <th class="border border-[#d7e5f6] px-3 py-2 text-center font-semibold">तालुका</th>
+                    <th class="border border-[#d7e5f6] px-3 py-2 text-center font-semibold">गाव</th>
+                    <th class="border border-[#d7e5f6] px-3 py-2 text-center font-semibold">वर्ष</th>
+                    <th class="border border-[#d7e5f6] px-3 py-2 text-center font-semibold">मूल्यदरसाठी गावचा प्रकार</th>
+                    <th class="border border-[#d7e5f6] px-3 py-2 text-center font-semibold">मूल्यांकन प्रकार व दर</th>
+                    <th class="border border-[#d7e5f6] px-3 py-2 text-center font-semibold">दस्तऐवज</th>
+                    <th class="border border-[#d7e5f6] px-3 py-2 text-center font-semibold">Updated</th>
+                    <th class="border border-[#d7e5f6] px-3 py-2 text-center font-semibold">Actions</th>
                 </tr>
             </thead>
 
-            <tbody>
+            <tbody class="bg-white">
                 {% for group in groups %}
                 <tr>
-                    <td>
+                    <td class="border border-[#d7e5f6] px-3 py-2 text-center">
                         <input type="checkbox" name="selected_ids" value="{{ group.anchor.id }}" class="row-select-rr h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" aria-label="Select ready reckoner record {{ group.anchor.id }}">
                     </td>
-                    <td>{{ group.anchor.id }}</td>
-                    <td>{{ group.district_mr }}</td>
-                    <td>{{ group.taluka_mr }}</td>
-                    <td>{{ group.village_mr }}</td>
-                    <td>{{ group.year }}</td>
-                    <td>
+                    <td class="border border-[#d7e5f6] px-3 py-2 text-center">{{ group.anchor.id }}</td>
+                    <td class="border border-[#d7e5f6] px-3 py-2 text-center">{{ group.district_mr }}</td>
+                    <td class="border border-[#d7e5f6] px-3 py-2 text-center">{{ group.taluka_mr }}</td>
+                    <td class="border border-[#d7e5f6] px-3 py-2 text-center">{{ group.village_mr }}</td>
+                    <td class="border border-[#d7e5f6] px-3 py-2 text-center">{{ group.year }}</td>
+                    <td class="border border-[#d7e5f6] px-3 py-2 text-center">
                         {% with first_rate=group.anchor.rates.first %}
                             {% if first_rate and first_rate.village_type == 'gramin' %}
                                 <span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded">ग्रामीण</span>
@@ -173,8 +252,8 @@
                             {% endif %}
                         {% endwith %}
                     </td>
-                    <td>
-                        <button data-rate-group-id="{{ group.anchor.id }}" class="view-rates-btn text-blue-600 hover:text-blue-800 hover:underline text-xs font-medium flex items-center gap-1">
+                    <td class="border border-[#d7e5f6] px-3 py-2 text-center">
+                        <button data-rate-group-id="{{ group.anchor.id }}" class="view-rates-btn text-blue-600 hover:text-blue-800 hover:underline text-xs font-medium flex items-center gap-1 justify-center mx-auto">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
@@ -207,8 +286,8 @@
                         }
                         </script>
                     </td>
-                    <td>
-                        <button data-record-id="{{ group.anchor.id }}" class="view-docs-btn text-blue-600 hover:text-blue-800 hover:underline text-xs font-medium flex items-center gap-1">
+                    <td class="border border-[#d7e5f6] px-3 py-2 text-center">
+                        <button data-record-id="{{ group.anchor.id }}" class="view-docs-btn text-blue-600 hover:text-blue-800 hover:underline text-xs font-medium flex items-center gap-1 justify-center mx-auto">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
@@ -224,24 +303,23 @@
                         [{% for doc_master in group.all_docs %}{% for attachment in doc_master.attachments.all %}{"url":"{{ attachment.file.url }}","name":"{{ attachment.file.name|escapejs }}","date":"{{ attachment.uploaded_at|date:'d/m/Y H:i' }}","size":{{ attachment.safe_file_size }}}{% if not forloop.last or not forloop.parentloop.last %},{% endif %}{% endfor %}{% endfor %}]
                         </script>
                     </td>
-                    <td>
+                    <td class="border border-[#d7e5f6] px-3 py-2 text-center">
                         <div class="text-xs text-gray-600">
                             <div>{{ group.anchor.updated_at|date:"d M Y, h:i a" }}</div>
                             <div class="text-gray-500">Updated by {{ group.anchor.user.username }}</div>
                         </div>
                     </td>
-                    <td style="white-space: nowrap; text-align: left;">
-                        <a href="{% url 'edit_ready_reckoner' group.anchor.id %}"
-                           title="Edit"
-                           style="display:inline-flex; align-items:center; justify-content:center; width:32px; height:32px; background:#2563eb; color:white; border-radius:6px; margin-right:6px; text-decoration:none;">
-                            ✏️
+                    <td class="border border-[#d7e5f6] px-3 py-2 text-center whitespace-nowrap">
+                        <a href="{% url 'edit_ready_reckoner' group.anchor.id %}" title="Edit" aria-label="Edit" class="rr-action-btn rr-action-edit mr-2">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16.862 4.487l1.651-1.651a1.875 1.875 0 112.652 2.652L9.75 16.903 5.25 18l1.097-4.5L16.862 4.487z"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.5 7.125L16.875 4.5"></path>
+                            </svg>
                         </a>
-
-                        <a href="{% url 'delete_ready_reckoner' group.anchor.id %}"
-                           title="Delete"
-                           style="display:inline-flex; align-items:center; justify-content:center; width:32px; height:32px; background:#dc2626; color:white; border-radius:6px; text-decoration:none;"
-                           onclick="return confirm('तुम्हाला ही नोंद हटवायची आहे का?');">
-                            🗑️
+                        <a href="{% url 'delete_ready_reckoner' group.anchor.id %}" title="Delete" aria-label="Delete" class="rr-action-btn rr-action-delete" onclick="return confirm('तुम्हाला ही नोंद हटवायची आहे का?');">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673A2.25 2.25 0 0115.916 21H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"></path>
+                            </svg>
                         </a>
                     </td>
                 </tr>
@@ -512,14 +590,10 @@
                 loadingRecords: "लोड होत आहे...",
                 processing: "प्रक्रिया करत आहे..."
             },
-            dom: '<"flex flex-col sm:flex-row justify-between items-center mb-4 gap-3"<"flex items-center gap-2"l><"flex-1"f>>rtip',
+            dom: '<"rr-list-controls"lf>rtip',
             initComplete: function() {
-                // Style the search input
-                $('.dataTables_filter input').addClass('border border-gray-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-400 focus:border-blue-400');
+                // Style the search input placeholder
                 $('.dataTables_filter input').attr('placeholder', 'Search records...');
-                
-                // Style the length select
-                $('.dataTables_length select').addClass('border border-gray-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-400');
                 
                 // Style pagination
                 $('.dataTables_paginate').addClass('mt-4');

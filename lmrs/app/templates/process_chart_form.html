@@ -164,6 +164,29 @@
         display: none !important;
     }
 
+    /* Tab 5: कलम ३२(५) notice yes/no CSS-only fallback. */
+    #pcSection32NoticeWrap:has(input[name="section32_notice_given"][value="no"]:checked) #pcSection32NoticeYesFields,
+    #pcSection32NoticeWrap:has(input[name="section32_notice_given"][value="no"]:checked) #pcSection32NoticeGenerateBtnWrap {
+        display: none !important;
+    }
+
+    #pcSection32NoticeWrap:has(input[name="section32_notice_given"][value="no"]:checked) #pcSection32NoticeNoFields {
+        display: block !important;
+    }
+
+    #pcSection32NoticeWrap:has(input[name="section32_notice_given"][value="yes"]:checked) #pcSection32NoticeYesFields,
+    #pcSection32NoticeWrap:has(input[name="section32_notice_given"][value="yes"]:checked) #pcSection32NoticeGenerateBtnWrap {
+        display: block !important;
+    }
+
+    #pcSection32NoticeWrap:has(input[name="section32_notice_given"][value="yes"]:checked) #pcSection32NoticeYesFields {
+        display: block !important;
+    }
+
+    #pcSection32NoticeWrap:has(input[name="section32_notice_given"][value="yes"]:checked) #pcSection32NoticeNoFields {
+        display: none !important;
+    }
+
     /* Tab 4: demarcation yes/no fallback, independent of JS timing. */
     [data-pc-panel="4"]:has(input[name="demarcation_done"][value="yes"]:checked) #pcDemarcationYesFields {
         display: block !important;
@@ -2085,6 +2108,24 @@
                                 </table>
                             </div>
                         </div>
+
+                        <div class="pc-section">
+                            <h3 class="mb-4 text-lg font-bold text-[#244271]">सुधारित संयुक्त मोजणी तपशील</h3>
+                            <div id="pcSec6RevisedJointMeasurementBlocks" class="space-y-4" data-pc-village-prefill></div>
+                            <p id="pcSec6RevisedJointMeasurementEmpty" class="hidden text-sm font-semibold text-[#7c8da5]">निवडलेल्या गावासाठी सुधारित संयुक्त मोजणी माहिती उपलब्ध नाही.</p>
+                        </div>
+
+                        <div class="pc-section" id="pcRevisedJointMeasurementSection" data-pc-revised-measurement-section>
+                            <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                                <div>
+                                    <h3 class="text-lg font-bold text-[#244271]">सुधारीत संयुक्त मोजणी तपशील</h3>
+                                    <p class="mt-1 text-sm font-semibold text-[#6b7d99]">सुधारीत संयुक्त मोजणी १ ते ३ वेळेस नोंदवता येईल. पुढे कोणता तपशील घ्यायचा ते चेक बॉक्सने निवडा.</p>
+                                </div>
+                                <button type="button" id="pcAddRevisedJointMeasurementBtn" class="rounded-lg bg-[#125fcb] px-4 py-2 text-sm font-semibold text-white">सुधारीत मोजणीसाठी ओळ जोडा</button>
+                            </div>
+                            <div id="pcRevisedJointMeasurementRows" class="space-y-4"></div>
+                            <p id="pcRevisedJointMeasurementEmpty" class="text-sm font-semibold text-[#7c8da5]">सुधारीत मोजणी असल्यास ओळ जोडा.</p>
+                        </div>
                     </div>
 
                     <div id="pcJointSurveyNoFields" class="pc-section hidden">
@@ -2141,7 +2182,7 @@
                             data-name-prefix="water_supply"></div>
                         <div class="mt-4">
                             <div class="pc-eye-col">
-                                <button type="button" class="pc-eye-view" aria-label="View Documents"
+                                <button type="button" id="pcSec17FilesViewBtn" class="pc-eye-view" aria-label="View Documents"
                                     title="View Documents">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                                         aria-hidden="true">
@@ -2185,7 +2226,7 @@
                             data-name-prefix="agriculture"></div>
                         <div class="mt-4">
                             <div class="pc-eye-col">
-                                <button type="button" class="pc-eye-view" aria-label="View Documents"
+                                <button type="button" id="pcSec18FilesViewBtn" class="pc-eye-view" aria-label="View Documents"
                                     title="View Documents">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                                         aria-hidden="true">
@@ -2229,7 +2270,7 @@
                             data-name-prefix="construction"></div>
                         <div class="mt-4">
                             <div class="pc-eye-col">
-                                <button type="button" class="pc-eye-view" aria-label="View Documents"
+                                <button type="button" id="pcSec19FilesViewBtn" class="pc-eye-view" aria-label="View Documents"
                                     title="View Documents">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                                         aria-hidden="true">
@@ -2273,7 +2314,7 @@
                             data-name-prefix="forest"></div>
                         <div class="mt-4">
                             <div class="pc-eye-col">
-                                <button type="button" class="pc-eye-view" aria-label="View Documents"
+                                <button type="button" id="pcSec16FilesViewBtn" class="pc-eye-view" aria-label="View Documents"
                                     title="View Documents">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                                         aria-hidden="true">
@@ -2317,7 +2358,7 @@
                             data-name-prefix="other_department"></div>
                         <div class="mt-4">
                             <div class="pc-eye-col">
-                                <button type="button" class="pc-eye-view" aria-label="View Documents"
+                                <button type="button" id="pcSec20FilesViewBtn" class="pc-eye-view" aria-label="View Documents"
                                     title="View Documents">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                                         aria-hidden="true">
@@ -2437,26 +2478,43 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="pc-section mt-6">
-                            <div class="space-y-5 ">
+                      <div class="pc-section mt-6" id="pcSection32NoticeWrap">
+                            <div class="space-y-5">
                                 <h3 class="mb-4 text-lg font-bold text-[#244271]">कलम ३२(५) अन्वये नोटीस</h3>
+                                
+                                <!-- १. रेडिओ बटन्स चा पर्याय -->
                                 <div class="grid gap-5 md:grid-cols-[300px_minmax(0,1fr)] md:items-end">
                                     <div>
-                                        <label class="pc-label">नोटीस बजावण्याचा दिनांक</label>
-                                        <input class="pc-input pc-date-input" name="section325_notice_date" type="date"
-                                            placeholder="dd-mm-yyyy">
-                                    </div>
-                                    <div>
-                                        <label class="pc-label">तामील प्रत</label>
-                                        <input class="pc-upload" name="section325_notice_file" type="file">
-                                        <a class="mt-2 hidden text-xs font-semibold text-[#125fcb] underline"
-                                            data-pc-doc-link-for="section325_notice_file" target="_blank"
-                                            rel="noopener"></a>
-                                        <button type="button" class="mt-2 hidden rounded-full px-2 text-sm font-bold text-[#d33]" data-pc-doc-delete-for="section325_notice_file" title="Remove">&times;</button>
+                                        <label class="pc-label">नोटीस दिली आहे?</label>
+                                        <div class="pc-question-radios">
+                                            <label><input type="radio" name="section32_notice_given" value="yes" checked onchange="window.pcToggleSection32NoticeFields && window.pcToggleSection32NoticeFields()"> होय</label>
+                                            <label><input type="radio" name="section32_notice_given" value="no" onchange="window.pcToggleSection32NoticeFields && window.pcToggleSection32NoticeFields()"> नाही</label>
+                                        </div>
                                     </div>
                                 </div>
-                                <div class="flex justify-end">
 
+                                <!-- २. 'होय' निवडल्यावर दिसणारा भाग -->
+                                <div id="pcSection32NoticeYesFields" class="space-y-5">
+                                    <div class="grid gap-5 md:grid-cols-[300px_minmax(0,1fr)] md:items-end">
+                                        <div>
+                                            <label class="pc-label">नोटीस बजावण्याचा दिनांक</label>
+                                            <input class="pc-input pc-date-input" name="section325_notice_date" type="date" placeholder="dd-mm-yyyy">
+                                        </div>
+                                        <div>
+                                            <label class="pc-label">तामील प्रत</label>
+                                            <input class="pc-upload" name="section325_notice_file" type="file">
+                                            <a class="mt-2 hidden text-xs font-semibold text-[#125fcb] underline" data-pc-doc-link-for="section325_notice_file" target="_blank" rel="noopener"></a>
+                                            <button type="button" class="mt-2 hidden rounded-full px-2 text-sm font-bold text-[#d33]" data-pc-doc-delete-for="section325_notice_file" title="Remove">&times;</button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- ३. 'नाही' निवडल्यावर दिसणारा भाग -->
+                                <div id="pcSection32NoticeNoFields" class="mt-4 hidden">
+                                    <p class="pc-label">नोटीस देण्यात आली नाही.</p>
+                                </div>
+
+                                <div id="pcSection32NoticeGenerateBtnWrap" class="flex justify-end">
                                     <button type="button" class="pc-generate-notice-btn">Generate Notice</button>
                                 </div>
                             </div>
@@ -2476,7 +2534,7 @@
 
                     <div class="pc-section">
                         <div class="space-y-5 ">
-                            <div>
+                            <div id="pcTab6FastCalcTypeWrap">
                                 <h3 class="mb-4 text-lg font-bold text-[#244271]">शिघ्रसिद्ध गणणाचा प्रकार</h3>
                                 <select class="pc-input max-w-md" id="pcFastCalcType" name="fast_calc_type">
                                     <option value="">शिघ्रसिद्ध गणणाचा प्रकार निवडा</option>
@@ -2485,7 +2543,7 @@
                                     <option value="nagari">नागरी</option>
                                 </select>
                             </div>
-                            <div>
+                            <div id="pcTab6ZoneDakhlaWrap">
                                 <h3 class="mb-4 text-lg font-bold text-[#244271]">झोन दाखला माहिती</h3>
                                 <div class="flex flex-wrap items-center gap-4">
                                     <input class="pc-input min-w-[280px]" id="pcSec12ZoneDetails" type="text"
@@ -2502,7 +2560,7 @@
                                     </div>
                                 </div>
                             </div>
-                            <div>
+                            <div id="pcTab6KharediVikriWrap">
                                 <h3 class="mb-4 text-lg font-bold text-[#244271]">दर निश्चितीसाठी खरेदी विक्री तपशील
                                 </h3>
                                 <div class="flex flex-wrap items-center gap-4">
@@ -2520,7 +2578,7 @@
                                     </div>
                                 </div>
                             </div>
-                            <div>
+                            <div id="pcTab6JameenMulyankanWrap">
                                 <h3 class="mb-4 text-lg font-bold text-[#244271]">जमीन मूल्यांकन</h3>
                                 <div class="grid gap-4 md:grid-cols-3 md:items-end">
                                     <div><label class="pc-label">प्राधिकृत अधिकारी यांचा प्रस्ताव क्रमांक</label><input
@@ -2539,7 +2597,7 @@
                                     </div>
                                 </div>
                             </div>
-                            <div>
+                            <div id="pcTab6NagarRachanaWrap">
                                 <h3 class="mb-4 text-lg font-bold text-[#244271]">नगर रचना विभागाचे अभिप्राय</h3>
                                 <div class="grid gap-4 md:grid-cols-3 md:items-end">
                                     <div><label class="pc-label">पत्र क्रमांक</label><input class="pc-input"
@@ -3622,6 +3680,11 @@
         const sec10FilesViewBtn = document.getElementById('pcSec10FilesViewBtn');
         const sec11FilesViewBtn = document.getElementById('pcSec11FilesViewBtn');
         const sec14FilesViewBtn = document.getElementById('pcSec14FilesViewBtn');
+        const sec16FilesViewBtn = document.getElementById('pcSec16FilesViewBtn');
+        const sec17FilesViewBtn = document.getElementById('pcSec17FilesViewBtn');
+        const sec18FilesViewBtn = document.getElementById('pcSec18FilesViewBtn');
+        const sec19FilesViewBtn = document.getElementById('pcSec19FilesViewBtn');
+        const sec20FilesViewBtn = document.getElementById('pcSec20FilesViewBtn');
         const awardFilesViewBtn = document.getElementById('pcAwardFilesViewBtn');
         const awardGenerateBtn = document.getElementById('pcAwardGenerateBtn');
         const step9FetchOwnersBtn = document.getElementById('pcStep9FetchOwnersBtn');
@@ -4139,6 +4202,8 @@
         let currentAgreementDraftHtml = '';
         let currentAgreementDraftTitle = 'draft';
         let currentJointSurveyApplyMode = 'joint';
+        let currentJointSurveyApplyTarget = 'base';
+        let currentRevisedJointSurveyBlockIndex = -1;
         let currentAssetOwnerTargetId = '';
         let currentStep10SelectedOwnerKeys = [];
         let currentSec21FileBuckets = {};
@@ -4186,6 +4251,16 @@
                     snapshot = JSON.parse(snapshot);
                 } catch (error) {
                     snapshot = {};
+                }
+            }
+
+            const revisedRows = Array.isArray(snapshot.revised_measurements) ? snapshot.revised_measurements : [];
+            const selectedRevised = revisedRows.find(item => item.forward_selected) || null;
+            if (selectedRevised) {
+                if (selectedRevised.mode === 'multi') {
+                    return String(selectedRevised.multi_common_area || '').trim();
+                } else {
+                    return String(selectedRevised.single_rows?.[0]?.acquisition_area || '').trim();
                 }
             }
 
@@ -8693,6 +8768,17 @@
         }
         window.pcToggleObjectionReportFields = toggleObjectionReportFields;
 
+        function toggleSection32NoticeFields() {
+            const isNo = Boolean(document.querySelector('input[name="section32_notice_given"][value="no"]:checked'));
+            const yesFields = document.getElementById('pcSection32NoticeYesFields');
+            const noFields = document.getElementById('pcSection32NoticeNoFields');
+            const generateBtnWrap = document.getElementById('pcSection32NoticeGenerateBtnWrap');
+            if (yesFields) yesFields.style.display = isNo ? 'none' : '';
+            if (noFields) noFields.style.display = isNo ? '' : 'none';
+            if (generateBtnWrap) generateBtnWrap.style.display = isNo ? 'none' : '';
+        }
+        window.pcToggleSection32NoticeFields = toggleSection32NoticeFields;
+
         function restoreSavedProcessChartRadios(stepData = {}) {
             restoreSavedRadioValues(stepData, 2, ['survey_in_notification']);
             restoreSavedRadioValues(stepData, 3, [
@@ -8703,7 +8789,8 @@
             toggleSection323NoticeFields();
             toggleObjectionReportFields();
             toggleJointSurveyDoneFields();
-            restoreSavedRadioValues(stepData, 5, ['group_in_clause_one_included']);
+            restoreSavedRadioValues(stepData, 5, ['group_in_clause_one_included', 'section32_notice_given']);
+            toggleSection32NoticeFields();
             restoreSavedRadioValues(stepData, 8, ['landholder_residence_affected', 'interested_in_10_percent_plot']);
             restoreSavedRadioValues(stepData, 9, ['consent_submitted']);
             restoreSavedRadioValues(stepData, 12, [
@@ -9289,6 +9376,7 @@
                 multi_rows: tableMode === 'multi' ? collectMultiKhataOwnerRows() : [],
                 multi_common_area: tableMode === 'multi' ? getMultiKhataCommonAreaValue() : '',
                 selected_keys: getSelectedJointSurveyKeys(),
+                revised_measurements: collectRevisedJointMeasurementRows(),
             };
         }
         function restoreTab4Snapshot(snapshot = {}) {
@@ -9318,7 +9406,7 @@
             }
             const hasData = [...singleRows, ...multiRows].some((row) =>
                 Object.values(row || {}).some((value) => String(value || '').trim())
-            ) || String(snapshot.multi_common_area || '').trim() || String(snapshot.not_done_reason || '').trim();
+            ) || String(snapshot.multi_common_area || '').trim() || String(snapshot.not_done_reason || '').trim() || (Array.isArray(snapshot.revised_measurements) && snapshot.revised_measurements.length > 0);
             if (!hasData) return false;
 
             singleBody.innerHTML = singleRows.length
@@ -9330,11 +9418,16 @@
                 setSelectedJointSurveyKeys(snapshot.selected_keys);
             }
             setJointSurveyOwnerTableMode(tableMode);
+            renderRevisedJointMeasurementRows(snapshot.revised_measurements || []);
             renderAcquisitionDetailTable(currentProcessChartPrefill);
             return true;
         }
 
         function collectTab4AcquisitionOwnerRows() {
+            if (getJointSurveyDoneValue() !== 'yes') return [];
+            const selectedRevised = collectSelectedRevisedJointMeasurement();
+            if (selectedRevised) return rowsFromRevisedJointMeasurement(selectedRevised);
+
             const rows = [];
             const singleBody = document.getElementById('pcSingleKhataOwnersBody');
             singleBody?.querySelectorAll('tr').forEach((row, index) => {
@@ -9370,6 +9463,9 @@
         }
 
         function collectTab4OwnerRows() {
+            const selectedRevised = collectSelectedRevisedJointMeasurement();
+            if (selectedRevised) return rowsFromRevisedJointMeasurement(selectedRevised);
+
             const rows = [];
             const singleBody = document.getElementById('pcSingleKhataOwnersBody');
             singleBody?.querySelectorAll('tr').forEach((row, index) => {
@@ -9412,6 +9508,345 @@
             return collectTab4AcquisitionOwnerRows().filter((row) =>
                 step10Lookup.has(normalizeOwnerLookupName(row.owner_name || ''))
             );
+        }
+
+        function tab1OwnerContactLookup() {
+            const lookup = new Map();
+            collectStep1OwnerRows(currentProcessChartPrefill).forEach((row) => {
+                const ownerKey = normalizeOwnerName(row.owner_name);
+                const khataKey = String(row.khata_number || '').trim().toLowerCase();
+                const contact = {
+                    mobile_number: row.mobile_number || '',
+                    address: row.address || '',
+                };
+                if (ownerKey && !lookup.has(`name:${ownerKey}`)) lookup.set(`name:${ownerKey}`, contact);
+                if (khataKey && ownerKey && !lookup.has(`khata_name:${khataKey}:${ownerKey}`)) {
+                    lookup.set(`khata_name:${khataKey}:${ownerKey}`, contact);
+                }
+            });
+            return lookup;
+        }
+
+        function hydrateOwnerContactFromTab1(row = {}, lookup = tab1OwnerContactLookup()) {
+            const ownerKey = normalizeOwnerName(row.owner_name);
+            const khataKey = String(row.khata_number || '').trim().toLowerCase();
+            const contact = lookup.get(`khata_name:${khataKey}:${ownerKey}`) || lookup.get(`name:${ownerKey}`) || {};
+            return {
+                ...row,
+                mobile_number: row.mobile_number || contact.mobile_number || '',
+                address: row.address || contact.address || '',
+            };
+        }
+
+        function buildRevisedSingleKhataOwnerRow(row = {}) {
+            return `
+                <tr>
+                    <td><input class="pc-input pc-revised-single-owner-name" type="text" value="${escapeHtml(row.owner_name || '')}"></td>
+                    <td><input class="pc-input pc-revised-single-mobile-number" type="tel" inputmode="numeric" maxlength="10" pattern="[0-9]{10}" value="${escapeHtml(row.mobile_number || '')}"></td>
+                    <td><input class="pc-input pc-revised-single-address" type="text" value="${escapeHtml(row.address || '')}"></td>
+                    <td>
+                        <div class="flex items-center gap-2">
+                            <input class="pc-input pc-revised-single-acquisition-area" type="text" value="${escapeHtml(row.acquisition_area || '')}">
+                            <button type="button" class="pc-revised-add-single-row rounded-md border border-[#d4deec] px-2 py-1 text-xs font-semibold text-[#125fcb]">+</button>
+                            <button type="button" class="pc-revised-remove-single-row rounded-md border border-[#d4deec] px-2 py-1 text-xs text-[#5d7293]">×</button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }
+
+        function buildRevisedMultiKhataOwnerRows(rows = [], sharedAreaValue = '') {
+            const finalRows = rows.length ? rows : [{}];
+            return finalRows.map((row, index) => `
+                <tr>
+                    <td><input class="pc-input pc-revised-multi-owner-name" type="text" value="${escapeHtml(row.owner_name || '')}"></td>
+                    <td><input class="pc-input pc-revised-multi-mobile-number" type="tel" inputmode="numeric" maxlength="10" pattern="[0-9]{10}" value="${escapeHtml(row.mobile_number || '')}"></td>
+                    <td><input class="pc-input pc-revised-multi-address" type="text" value="${escapeHtml(row.address || '')}"></td>
+                    ${index === 0 ? `
+                        <td rowspan="${finalRows.length}" class="align-top">
+                            <div class="space-y-2">
+                                <input class="pc-input pc-revised-multi-common-area" type="text" value="${escapeHtml(sharedAreaValue || '')}">
+                                <div class="flex justify-end gap-2">
+                                    <button type="button" class="pc-revised-add-multi-row rounded-md border border-[#d4deec] px-2 py-1 text-xs font-semibold text-[#125fcb]">+</button>
+                                    <button type="button" class="pc-revised-remove-multi-row rounded-md border border-[#d4deec] px-2 py-1 text-xs text-[#5d7293]">×</button>
+                                </div>
+                            </div>
+                        </td>
+                    ` : ''}
+                </tr>
+            `).join('');
+        }
+
+        function revisedJointMeasurementMode(block) {
+            return block?.querySelector('.pc-revised-joint-mode-radio:checked')?.value === 'multi' ? 'multi' : 'single';
+        }
+
+        function toggleRevisedJointMeasurementTables(block) {
+            if (!block) return;
+            const mode = revisedJointMeasurementMode(block);
+            block.querySelector('[data-revised-single-section]')?.classList.toggle('hidden', mode !== 'single');
+            block.querySelector('[data-revised-multi-section]')?.classList.toggle('hidden', mode !== 'multi');
+        }
+
+        function syncRevisedSingleRowButtons(block) {
+            const rows = Array.from(block?.querySelectorAll('.pc-revised-single-body tr') || []);
+            rows.forEach((row, index) => row.querySelector('.pc-revised-add-single-row')?.classList.toggle('hidden', index !== rows.length - 1));
+        }
+
+        function revisedJointMeasurementBlocks() {
+            return Array.from(document.querySelectorAll('#pcRevisedJointMeasurementRows [data-revised-joint-measurement-block]'));
+        }
+
+        function revisedJointMeasurementBlockIndex(block) {
+            return revisedJointMeasurementBlocks().indexOf(block);
+        }
+
+        function setSelectedRevisedJointMeasurementBlock(block) {
+            if (!block) return;
+            document.querySelectorAll('.pc-revised-joint-forward-checkbox').forEach((checkbox) => {
+                checkbox.checked = checkbox.closest('[data-revised-joint-measurement-block]') === block;
+            });
+        }
+
+        function normalizeRevisedJointMeasurementRows(rows = []) {
+            const finalRows = Array.isArray(rows) ? rows : [];
+            const selectedIndex = finalRows.findIndex((item) => item?.forward_selected);
+            if (finalRows.length && selectedIndex < 0) finalRows[0].forward_selected = true;
+            if (selectedIndex >= 0) {
+                finalRows.forEach((item, index) => {
+                    item.forward_selected = index === selectedIndex;
+                });
+            }
+            return finalRows;
+        }
+
+        function revisedJointMeasurementBlockHtml(item = {}, index = 0) {
+            const mode = item.mode === 'multi' ? 'multi' : 'single';
+            return `
+                <div class="rounded-xl border border-[#d7e5f6] bg-[#f8fbff] p-4" data-revised-joint-measurement-block>
+                    <div class="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                        <div class="flex flex-wrap items-center gap-4">
+                            <h4 class="text-base font-bold text-[#244271]">सुधारीत मोजणी ${index + 1}</h4>
+                            <label class="inline-flex items-center gap-2 text-sm font-bold text-[#0f766e]">
+                                <input type="checkbox" class="pc-revised-joint-forward-checkbox h-4 w-4 accent-[#0f766e]" ${item.forward_selected ? 'checked' : ''}>
+                                पुढे हा तपशील घ्या
+                            </label>
+                        </div>
+                        <div class="flex flex-wrap gap-2">
+                            <button type="button" class="pc-fetch-revised-joint-names rounded-lg bg-[#0f766e] px-3 py-2 text-sm font-semibold text-white">7/12 मधून नावे भरा</button>
+                            <button type="button" class="pc-remove-revised-joint-measurement rounded-lg border border-[#d4deec] px-3 py-2 text-sm font-semibold text-[#5d7293]">काढा</button>
+                        </div>
+                    </div>
+                    <div class="mb-4 flex flex-wrap gap-4 text-sm font-semibold text-[#244271]">
+                        <label class="inline-flex items-center gap-2">
+                            <input type="radio" class="pc-revised-joint-mode-radio" name="pc_revised_joint_mode_${index}" value="single" ${mode === 'single' ? 'checked' : ''}>
+                            स्वतंत्र क्षेत्र
+                        </label>
+                        <label class="inline-flex items-center gap-2">
+                            <input type="radio" class="pc-revised-joint-mode-radio" name="pc_revised_joint_mode_${index}" value="multi" ${mode === 'multi' ? 'checked' : ''}>
+                            सामाईक क्षेत्र
+                        </label>
+                    </div>
+                    <div data-revised-single-section class="${mode === 'single' ? '' : 'hidden'}">
+                        <div class="overflow-x-auto">
+                            <table class="pc-table">
+                                <thead><tr><th>बाधीत भूधारकाचे नाव</th><th>मोबाईल नंबर</th><th>पत्ता</th><th>संपादन करावयाचे क्षेत्र(हे. आर. चौमी )</th></tr></thead>
+                                <tbody class="pc-revised-single-body">${(item.single_rows || [{}]).map((row) => buildRevisedSingleKhataOwnerRow(row)).join('')}</tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div data-revised-multi-section class="${mode === 'multi' ? '' : 'hidden'}">
+                        <div class="overflow-x-auto">
+                            <table class="pc-table">
+                                <thead><tr><th>बाधीत भूधारकाचे नाव</th><th>मोबाईल नंबर</th><th>पत्ता</th><th>संपादन करावयाचे क्षेत्र(हे. आर. चौमी )</th></tr></thead>
+                                <tbody class="pc-revised-multi-body">${buildRevisedMultiKhataOwnerRows(item.multi_rows || [{}], item.multi_common_area || '')}</tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function validateRevisedJointMeasurementAreas({ report = false } = {}) {
+            if (getJointSurveyDoneValue() !== 'yes') return true;
+            for (const block of revisedJointMeasurementBlocks()) {
+                const blockTitle = block.querySelector('h4')?.textContent?.trim() || 'सुधारीत मोजणी';
+                if (revisedJointMeasurementMode(block) === 'multi') {
+                    const hasOwner = Array.from(block.querySelectorAll('.pc-revised-multi-owner-name'))
+                        .some((field) => String(field.value || '').trim());
+                    const areaField = block.querySelector('.pc-revised-multi-common-area');
+                    if (hasOwner && !String(areaField?.value || '').trim()) {
+                        if (report) {
+                            alert(`${blockTitle} मध्ये संपादन क्षेत्र भरणे आवश्यक आहे. क्षेत्र नसेल तर ही नोंद काढा.`);
+                            areaField?.focus();
+                        }
+                        return false;
+                    }
+                    continue;
+                }
+                for (const row of block.querySelectorAll('.pc-revised-single-body tr')) {
+                    const ownerField = row.querySelector('.pc-revised-single-owner-name');
+                    const areaField = row.querySelector('.pc-revised-single-acquisition-area');
+                    if (String(ownerField?.value || '').trim() && !String(areaField?.value || '').trim()) {
+                        if (report) {
+                            alert(`${blockTitle} मध्ये ${ownerField.value.trim()} यांचे संपादन क्षेत्र भरणे आवश्यक आहे. क्षेत्र नसेल तर ही ओळ काढा.`);
+                            areaField?.focus();
+                        }
+                        return false;
+                    }
+                }
+            }
+            return true;
+        }
+
+        function collectRevisedSourceSingleRows() {
+            const rows = Array.from(document.querySelectorAll('#pcSingleKhataOwnersBody tr')).map((row) => {
+                const inputs = row.querySelectorAll('input');
+                return {
+                    owner_name: inputs[0]?.value || '',
+                    mobile_number: inputs[1]?.value || '',
+                    address: inputs[2]?.value || '',
+                    acquisition_area: inputs[3]?.value || '',
+                };
+            }).filter((row) => Object.values(row).some((value) => String(value || '').trim()));
+            return rows.length ? rows : [{}];
+        }
+
+        function collectRevisedSourceMultiRows() {
+            const rows = Array.from(document.querySelectorAll('#pcMultiKhataOwnersBody tr')).map((row) => {
+                const inputs = row.querySelectorAll('input');
+                return {
+                    owner_name: inputs[0]?.value || '',
+                    mobile_number: inputs[1]?.value || '',
+                    address: inputs[2]?.value || '',
+                };
+            }).filter((row) => Object.values(row).some((value) => String(value || '').trim()));
+            return rows.length ? rows : [{}];
+        }
+
+        function collectRevisedJointMeasurementRows() {
+            const blocks = Array.from(document.querySelectorAll('#pcRevisedJointMeasurementRows [data-revised-joint-measurement-block]'));
+            return blocks.map((block) => {
+                const singleRows = Array.from(block.querySelectorAll('.pc-revised-single-body tr')).map((row) => ({
+                    owner_name: row.querySelector('.pc-revised-single-owner-name')?.value || '',
+                    mobile_number: row.querySelector('.pc-revised-single-mobile-number')?.value || '',
+                    address: row.querySelector('.pc-revised-single-address')?.value || '',
+                    acquisition_area: row.querySelector('.pc-revised-single-acquisition-area')?.value || '',
+                }));
+                const multiRows = Array.from(block.querySelectorAll('.pc-revised-multi-body tr')).map((row) => ({
+                    owner_name: row.querySelector('.pc-revised-multi-owner-name')?.value || '',
+                    mobile_number: row.querySelector('.pc-revised-multi-mobile-number')?.value || '',
+                    address: row.querySelector('.pc-revised-multi-address')?.value || '',
+                }));
+                return {
+                    mode: revisedJointMeasurementMode(block),
+                    forward_selected: Boolean(block.querySelector('.pc-revised-joint-forward-checkbox')?.checked),
+                    single_rows: singleRows,
+                    multi_rows: multiRows,
+                    multi_common_area: block.querySelector('.pc-revised-multi-common-area')?.value || '',
+                };
+            });
+        }
+
+        function collectSelectedRevisedJointMeasurement() {
+            const rows = collectRevisedJointMeasurementRows();
+            return rows.find((item) => item.forward_selected) || rows[0] || null;
+        }
+
+        function rowsFromRevisedJointMeasurement(item = {}) {
+            const rows = [];
+            if (item.mode === 'multi') {
+                const multiArea = item.multi_common_area || '';
+                (item.multi_rows || []).forEach((row, index) => {
+                    const ownerName = String(row.owner_name || '').trim();
+                    if (!ownerName || !multiArea) return;
+                    rows.push({ source: 'revised_multi', rowIndex: index, owner_name: ownerName, acquisition_area: multiArea });
+                });
+                return rows;
+            }
+            (item.single_rows || []).forEach((row, index) => {
+                const ownerName = String(row.owner_name || '').trim();
+                const acquisitionArea = String(row.acquisition_area || '').trim();
+                if (!ownerName || !acquisitionArea) return;
+                rows.push({ source: 'revised_single', rowIndex: index, owner_name: ownerName, acquisition_area: acquisitionArea });
+            });
+            return rows;
+        }
+
+        function renderRevisedJointMeasurementRows(rows = []) {
+            const container = document.getElementById('pcRevisedJointMeasurementRows');
+            const empty = document.getElementById('pcRevisedJointMeasurementEmpty');
+            if (!container) return;
+            const finalRows = normalizeRevisedJointMeasurementRows(rows);
+            container.innerHTML = finalRows.map((item, index) => revisedJointMeasurementBlockHtml(item, index)).join('');
+            container.querySelectorAll('[data-revised-joint-measurement-block]').forEach((block) => {
+                syncRevisedSingleRowButtons(block);
+                toggleRevisedJointMeasurementTables(block);
+            });
+            empty?.classList.toggle('hidden', finalRows.length > 0);
+            document.getElementById('pcAddRevisedJointMeasurementBtn')?.classList.remove('hidden');
+        }
+
+        function addRevisedJointMeasurementRow(item = null) {
+            const rows = collectRevisedJointMeasurementRows();
+            rows.push(item || {
+                mode: getJointSurveyOwnerTableMode(),
+                forward_selected: rows.length === 0,
+                single_rows: collectRevisedSourceSingleRows(),
+                multi_rows: collectRevisedSourceMultiRows(),
+                multi_common_area: getMultiKhataCommonAreaValue(),
+            });
+            renderRevisedJointMeasurementRows(rows);
+            refreshTab4AfterRevisedMeasurementChange();
+        }
+
+        function renderRevisedMultiKhataRows(block, rows = [], sharedAreaValue = '') {
+            const body = block?.querySelector('.pc-revised-multi-body');
+            if (!body) return;
+            body.innerHTML = buildRevisedMultiKhataOwnerRows(rows.length ? rows : [{}], sharedAreaValue);
+        }
+
+        function refreshTab4AfterRevisedMeasurementChange() {
+            renderAcquisitionDetailTable(currentProcessChartPrefill);
+            updateStep10AadhaarFromOwner(currentProcessChartPrefill);
+            updateCompensationFields(currentProcessChartPrefill);
+            updateProcessChartCaseSummary?.();
+        }
+
+        function collectRevisedJointMeasurementOwnerNames(block) {
+            const selector = revisedJointMeasurementMode(block) === 'multi'
+                ? '.pc-revised-multi-owner-name'
+                : '.pc-revised-single-owner-name';
+            return Array.from(block?.querySelectorAll(selector) || [])
+                .map((field) => normalizeOwnerName(field.value))
+                .filter(Boolean);
+        }
+
+        function selectedJointSurveyKeysForModal(rows = []) {
+            if (currentJointSurveyApplyTarget !== 'revised') return new Set(getSelectedJointSurveyKeys());
+            const block = revisedJointMeasurementBlocks()[currentRevisedJointSurveyBlockIndex];
+            const selectedNames = new Set(collectRevisedJointMeasurementOwnerNames(block));
+            return new Set(rows
+                .filter((row) => selectedNames.has(normalizeOwnerName(row.owner_name)))
+                .map((row) => buildJointSurveyRowKey(row)));
+        }
+
+        function populateRevisedJointMeasurementBlock(block, selectedRows = []) {
+            if (!block) return;
+            const hydratedRows = selectedRows.map((row) => hydrateOwnerContactFromTab1(row));
+            setSelectedRevisedJointMeasurementBlock(block);
+            if (revisedJointMeasurementMode(block) === 'multi') {
+                renderRevisedMultiKhataRows(block, hydratedRows, block.querySelector('.pc-revised-multi-common-area')?.value || '');
+            } else {
+                const singleBody = block.querySelector('.pc-revised-single-body');
+                if (singleBody) {
+                    singleBody.innerHTML = (hydratedRows.length ? hydratedRows : [{}])
+                        .map((row) => buildRevisedSingleKhataOwnerRow(row))
+                        .join('');
+                }
+                syncRevisedSingleRowButtons(block);
+            }
+            refreshTab4AfterRevisedMeasurementChange();
         }
 
         function renderMultiKhataOwnerRows(rows = [], sharedAreaValue = null) {
@@ -9663,6 +10098,8 @@
             if (!jointSurveyNamesModal || !jointSurveySingleNamesList || !jointSurveyMultiNamesList) return;
             currentJointSurveyApplyMode = options.mode || 'joint';
             currentAssetOwnerTargetId = options.targetId || '';
+            currentJointSurveyApplyTarget = options.target === 'revised' ? 'revised' : 'base';
+            currentRevisedJointSurveyBlockIndex = currentJointSurveyApplyTarget === 'revised' ? Number(options.blockIndex ?? -1) : -1;
             setJointSurveyModalSectionMode(currentJointSurveyApplyMode);
             if (currentJointSurveyApplyMode === 'step9') {
                 const rows = collectTab4AcquisitionOwnerRows(prefill);
@@ -9763,27 +10200,31 @@
                 return;
             }
             if (currentJointSurveyApplyMode === 'step10') {
-                const rows = collectTab4AcquisitionOwnerRows();
-                const cardKeys = getSelectedStep10OwnerRowKeysFromCards(rows);
-                const selectedKeys = new Set(cardKeys.length ? cardKeys : currentStep10SelectedOwnerKeys);
-                jointSurveySingleNamesList.innerHTML = rows.length
+                // Show only names that were selected/entered in Tab 9 (खातेदार / बँक तपशील)
+                const tab9Names = getStep9PaymentOwnerNamesFromRows();
+                const selectedCardNames = new Set(
+                    getStep10OwnerCardValues()
+                        .map((v) => normalizeOwnerLookupName(v.owner_name || ''))
+                        .filter(Boolean)
+                );
+                jointSurveySingleNamesList.innerHTML = tab9Names.length
                     ? `
                         <label class="mb-3 flex items-center gap-2 rounded border border-[#dbe8f8] bg-white px-3 py-2 text-sm font-semibold text-[#244271]">
                             <input type="checkbox" class="pc-joint-survey-select-all-single">
                             <span>सर्व निवडा</span>
                         </label>
-                        ${rows.map((row, index) => {
-                        const rowKey = buildArbitrationOwnerRowKey(row);
+                        ${tab9Names.map((name, index) => {
+                        const isChecked = selectedCardNames.has(normalizeOwnerLookupName(name));
                         return `
                             <label class="flex items-center gap-3 rounded border border-[#dbe8f8] bg-[#f8fbff] px-3 py-3">
-                                <input type="checkbox" class="pc-joint-survey-name-checkbox" data-group-type="step10-tab4" data-row-index="${index}" data-row-key="${escapeHtml(rowKey)}" ${selectedKeys.has(rowKey) ? 'checked' : ''}>
-                                <span class="text-sm text-[#244271]">${escapeHtml(row.owner_name || '')}</span>
+                                <input type="checkbox" class="pc-joint-survey-name-checkbox" data-group-type="step10-tab9" data-row-index="${index}" data-owner-name="${escapeHtml(name)}" ${isChecked ? 'checked' : ''}>
+                                <span class="text-sm text-[#244271]">${escapeHtml(name)}</span>
                             </label>
                         `;
                     }).join('')}`
-                    : '<div class="rounded border border-dashed border-[#d6e3f5] px-3 py-3 text-sm text-[#6b7d99]">टॅब 4 मध्ये संपादन क्षेत्र भरलेली भूधारक नावे उपलब्ध नाहीत.</div>';
+                    : '<div class="rounded border border-dashed border-[#d6e3f5] px-3 py-3 text-sm text-[#6b7d99]">टॅब 9 मध्ये खातेदाराची नावे भरलेली नाहीत. आधी टॅब 9 मध्ये नावे भरा.</div>';
                 const selectAll = jointSurveySingleNamesList.querySelector('.pc-joint-survey-select-all-single');
-                const checkboxes = Array.from(jointSurveySingleNamesList.querySelectorAll('.pc-joint-survey-name-checkbox[data-group-type="step10-tab4"]'));
+                const checkboxes = Array.from(jointSurveySingleNamesList.querySelectorAll('.pc-joint-survey-name-checkbox[data-group-type="step10-tab9"]'));
                 if (selectAll instanceof HTMLInputElement) {
                     selectAll.checked = checkboxes.length > 0 && checkboxes.every((checkbox) => checkbox.checked);
                 }
@@ -9794,7 +10235,7 @@
             }
             if (currentJointSurveyApplyMode === 'joint_single' || currentJointSurveyApplyMode === 'joint_multi') {
                 const rows = collectJointSurveyFlatOwnerRows(prefill);
-                const selectedKeys = new Set(getSelectedJointSurveyKeys());
+                const selectedKeys = selectedJointSurveyKeysForModal(rows);
                 jointSurveySingleNamesList.innerHTML = rows.length
                     ? currentJointSurveyApplyMode === 'joint_single'
                         ? rows.map((row, index) => {
@@ -9896,6 +10337,8 @@
             document.body.style.overflow = '';
             currentJointSurveyApplyMode = 'joint';
             currentAssetOwnerTargetId = '';
+            currentJointSurveyApplyTarget = 'base';
+            currentRevisedJointSurveyBlockIndex = -1;
             setJointSurveyModalSectionMode('default');
         }
 
@@ -9984,11 +10427,18 @@
                 const groupType = checkbox.getAttribute('data-group-type');
                 const groupIndex = Number.parseInt(checkbox.getAttribute('data-group-index') || '-1', 10);
                 const rowIndex = Number.parseInt(checkbox.getAttribute('data-row-index') || '-1', 10);
-                const row = groupType === 'step10-tab4'
-                    ? tab4Rows[rowIndex]
-                    : groupType === 'single'
-                        ? singleGroups[groupIndex]?.rows?.[rowIndex]
-                        : multiGroups[groupIndex]?.rows?.[rowIndex];
+                let row;
+                if (groupType === 'step10-tab9') {
+                    // Names sourced from Tab 9 — use data-owner-name directly
+                    const ownerName = checkbox.getAttribute('data-owner-name') || '';
+                    row = ownerName ? { owner_name: ownerName } : null;
+                } else if (groupType === 'step10-tab4') {
+                    row = tab4Rows[rowIndex];
+                } else if (groupType === 'single') {
+                    row = singleGroups[groupIndex]?.rows?.[rowIndex];
+                } else {
+                    row = multiGroups[groupIndex]?.rows?.[rowIndex];
+                }
                 const ownerName = String(row?.owner_name || '').trim();
                 if (ownerName) {
                     selectedRows.push(row);
@@ -10107,6 +10557,21 @@
         }
 
         function applySelectedJointSurveyNames(prefill = currentProcessChartPrefill, options = {}) {
+            if (currentJointSurveyApplyTarget === 'revised') {
+                const selectedKeys = currentJointSurveyApplyMode === 'joint_single'
+                    ? [document.querySelector('.pc-joint-survey-name-radio[data-group-type="tab1-owner-single"]:checked')?.getAttribute('data-row-key') || ''].filter(Boolean)
+                    : Array.from(document.querySelectorAll('.pc-joint-survey-name-checkbox[data-group-type="tab1-owner"]:checked'))
+                        .map((checkbox) => checkbox.getAttribute('data-row-key') || '')
+                        .filter(Boolean);
+                const selectedKeySet = new Set(selectedKeys);
+                const selectedRows = collectJointSurveyFlatOwnerRows(prefill)
+                    .filter((row) => selectedKeySet.has(buildJointSurveyRowKey(row)));
+
+                const block = revisedJointMeasurementBlocks()[currentRevisedJointSurveyBlockIndex];
+                populateRevisedJointMeasurementBlock(block, selectedRows);
+                closeJointSurveyNamesModal();
+                return;
+            }
             if (currentJointSurveyApplyMode === 'asset') {
                 populateAssetOwnerFieldFromSelection(prefill, currentAssetOwnerTargetId);
                 return;
@@ -10752,6 +11217,84 @@
             }
         }
 
+        /**
+         * Show or hide the 5 sub-sections in Tab 6 based on the Village Info data.
+         *
+         * Accepts the flat `villageData` object (villageDataPayload.data) directly.
+         * A section is shown when its corresponding Village Info toggle is 'hoy' / true
+         * OR when its data field contains a non-empty string.  Hidden otherwise.
+         *
+         * Mapping:
+         *   #pcTab6FastCalcTypeWrap   → fast_calc_type | village_type
+         *   #pcTab6ZoneDakhlaWrap     → sec9_toggle === 'hoy' | sec12_zone_details
+         *   #pcTab6KharediVikriWrap   → sec10_toggle === 'hoy' | sec13_kharedi_vikri_details
+         *   #pcTab6JameenMulyankanWrap→ sec7_toggle === 'hoy' | sec10_prastaav_kramank
+         *   #pcTab6NagarRachanaWrap   → sec8_toggle === 'hoy' | sec11_patra_kramank
+         */
+        function applyTab6Visibility(villageData) {
+            /**
+             * Helper: returns true when a toggle value is 'hoy' (or boolean true)
+             * or when any of the supplied string fields are non-empty AND no
+             * explicit 'nahi' was saved.
+             * 'nahi' always wins — explicit override to hide regardless of data.
+             */
+            function shouldShow(toggle, ...dataFields) {
+                if (toggle === 'nahi') return false;
+                if (toggle === 'hoy' || toggle === true) return true;
+                // No toggle saved yet — fall back to data presence
+                return dataFields.some((v) => String(v || '').trim() !== '');
+            }
+
+            /**
+             * Apply visibility to a wrapper element using both .style.display
+             * and the Tailwind `hidden` class so either mechanism works.
+             */
+            function setVisible(el, visible) {
+                if (!el) return;
+                el.style.display = visible ? 'block' : 'none';
+                el.classList.toggle('hidden', !visible);
+            }
+
+            // #pcTab6FastCalcTypeWrap: show if fast_calc_type or village_type has value
+            setVisible(
+                document.getElementById('pcTab6FastCalcTypeWrap'),
+                shouldShow(null, villageData.fast_calc_type, villageData.village_type)
+            );
+
+            // #pcTab6ZoneDakhlaWrap: show if sec9_toggle === 'hoy' OR sec12_zone_details has value
+            setVisible(
+                document.getElementById('pcTab6ZoneDakhlaWrap'),
+                shouldShow(villageData.sec9_toggle, villageData.sec12_zone_details)
+            );
+
+            // #pcTab6KharediVikriWrap: show if sec10_toggle === 'hoy' OR sec13_kharedi_vikri_details has value
+            setVisible(
+                document.getElementById('pcTab6KharediVikriWrap'),
+                shouldShow(villageData.sec10_toggle, villageData.sec13_kharedi_vikri_details)
+            );
+
+            // #pcTab6JameenMulyankanWrap: show if sec7_toggle === 'hoy' OR sec10_prastaav_kramank has value
+            setVisible(
+                document.getElementById('pcTab6JameenMulyankanWrap'),
+                shouldShow(villageData.sec7_toggle, villageData.sec10_prastaav_kramank)
+            );
+
+            // #pcTab6NagarRachanaWrap: show if sec8_toggle === 'hoy' OR sec11_patra_kramank has value
+            setVisible(
+                document.getElementById('pcTab6NagarRachanaWrap'),
+                shouldShow(villageData.sec8_toggle, villageData.sec11_patra_kramank)
+            );
+        }
+
+        /**
+         * Adapter: accepts a villageDataPayload envelope (with a .data sub-object)
+         * and delegates to applyTab6Visibility with the flat data object.
+         * Kept for internal call-sites that pass the full payload envelope.
+         */
+        function applyTab6VisibilityFromVillageInfo(villageDataPayload) {
+            applyTab6Visibility(villageDataPayload?.data || {});
+        }
+
         function applyValuationInfoPrefill(villageDataPayload) {
             const villageData = villageDataPayload?.data || {};
 
@@ -10789,6 +11332,9 @@
             if (villageDataPayload?.files?.sec11_files?.length) {
                 currentVillageFiles.sec11_files = villageDataPayload.files.sec11_files;
             }
+
+            // Apply tab 6 section visibility based on village info toggles and data fields
+            applyTab6Visibility(villageData);
         }
 
         function applyCommitteeInfoPrefill(villageDataPayload) {
@@ -11027,6 +11573,19 @@
         }
 
         function getSelectedTab4AcquisitionArea() {
+            const selectedRevised = collectSelectedRevisedJointMeasurement();
+            if (selectedRevised) {
+                if (selectedRevised.mode === 'multi') {
+                    const multiSharedArea = Number.parseFloat(String(selectedRevised.multi_common_area || '').replace(/,/g, '').trim());
+                    return Number.isFinite(multiSharedArea) ? multiSharedArea : 0;
+                } else {
+                    const singleAreas = (selectedRevised.single_rows || [])
+                        .map((row) => Number.parseFloat(String(row.acquisition_area || '').replace(/,/g, '').trim()))
+                        .filter((value) => Number.isFinite(value) && value > 0);
+                    return singleAreas.length ? singleAreas[0] : 0;
+                }
+            }
+
             const singleBody = document.getElementById('pcSingleKhataOwnersBody');
             const multiBody = document.getElementById('pcMultiKhataOwnersBody');
 
@@ -11805,6 +12364,89 @@
             renderVillageAwardFileState(files);
         }
 
+        // ── Tab 4: सुधारित संयुक्त मोजणी तपशील — prefill from Village Info Tab 2 ──────
+        function renderVillageSec6Blocks(villageDataPayload) {
+            const container = document.getElementById('pcSec6RevisedJointMeasurementBlocks');
+            const emptyMsg = document.getElementById('pcSec6RevisedJointMeasurementEmpty');
+            if (!container) return;
+
+            // sec6_rows lives directly on the payload (already normalised by the API)
+            const rows = Array.isArray(villageDataPayload?.sec6_rows) ? villageDataPayload.sec6_rows : [];
+            const validRows = rows.filter((row) =>
+                row && typeof row === 'object' && (
+                    String(row.register_number || '').trim() ||
+                    String(row.date || '').trim() ||
+                    (Array.isArray(row.files?.parishisht16_files) && row.files.parishisht16_files.length) ||
+                    (Array.isArray(row.files?.nakasha_files) && row.files.nakasha_files.length)
+                )
+            );
+
+            // Toggle empty message
+            if (emptyMsg) {
+                emptyMsg.classList.toggle('hidden', validRows.length > 0);
+            }
+
+            if (!validRows.length) {
+                container.innerHTML = '';
+                return;
+            }
+
+            container.innerHTML = validRows.map((row, index) => {
+                const registerNumber = escapeHtml(row.register_number || '');
+                const date = escapeHtml(normalizeDateInputValue(row.date || ''));
+                const parishisht16Files = Array.isArray(row.files?.parishisht16_files) ? row.files.parishisht16_files : [];
+                const nakashaFiles = Array.isArray(row.files?.nakasha_files) ? row.files.nakasha_files : [];
+
+                const buildFileLinks = (files) => {
+                    if (!files.length) return '<span class="text-sm text-[#9aabb8]">—</span>';
+                    return files.map((f) => `
+                        <a href="${escapeHtml(f.url || '#')}" target="_blank" rel="noopener"
+                           class="inline-flex items-center gap-1.5 rounded-lg border border-[#b9d0ef] bg-white px-3 py-1.5 text-xs font-semibold text-[#125fcb] hover:bg-[#eef5ff] hover:underline">
+                            <svg class="h-3.5 w-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/>
+                                <circle cx="12" cy="12" r="3"/>
+                            </svg>
+                            ${escapeHtml(f.name || 'प्रत पहा')}
+                        </a>`).join('');
+                };
+
+                return `
+                    <div class="rounded-xl border border-[#c5d8f0] bg-white p-4">
+                        <div class="mb-3 flex items-center gap-2">
+                            <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#125fcb] text-xs font-bold text-white">${index + 1}</span>
+                            <span class="text-sm font-bold text-[#244271]">सुधारित संयुक्त मोजणी ${index + 1}</span>
+                        </div>
+                        <div class="grid gap-4 md:grid-cols-2">
+                            <div>
+                                <p class="mb-1 text-xs font-semibold text-[#6b7d99]">सुधारित मोजणी प्राप्त पत्र क्रमांक</p>
+                                <p class="rounded-lg border border-[#d3deeb] bg-[#f8fbff] px-3 py-2 text-sm font-semibold text-[#2a3f62]">
+                                    ${registerNumber || '<span class="text-[#9aabb8]">—</span>'}
+                                </p>
+                            </div>
+                            <div>
+                                <p class="mb-1 text-xs font-semibold text-[#6b7d99]">सुधारित संयुक्त मोजणी दिनांक</p>
+                                <p class="rounded-lg border border-[#d3deeb] bg-[#f8fbff] px-3 py-2 text-sm font-semibold text-[#2a3f62]">
+                                    ${date
+                                        ? (() => {
+                                            const m = date.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+                                            return m ? `${m[3]}/${m[2]}/${m[1]}` : date;
+                                          })()
+                                        : '<span class="text-[#9aabb8]">—</span>'}
+                                </p>
+                            </div>
+                            <div>
+                                <p class="mb-1 text-xs font-semibold text-[#6b7d99]">सुधारित परिशिष्ट 16</p>
+                                <div class="flex flex-wrap gap-2">${buildFileLinks(parishisht16Files)}</div>
+                            </div>
+                            <div>
+                                <p class="mb-1 text-xs font-semibold text-[#6b7d99]">सुधारित संयुक्त मोजणी नकाशा</p>
+                                <div class="flex flex-wrap gap-2">${buildFileLinks(nakashaFiles)}</div>
+                            </div>
+                        </div>
+                    </div>`;
+            }).join('');
+        }
+
         function applyVillageDataPrefill(villageDataPayload) {
             const villageData = villageDataPayload?.data || {};
             const sec3Rows = Array.isArray(villageDataPayload?.sec3_rows) ? villageDataPayload.sec3_rows : [];
@@ -11888,6 +12530,7 @@
             applyCommitteeInfoPrefill(villageDataPayload);
             applyAwardPrefill(villageDataPayload);
             renderCommitteeRateRows(villageDataPayload);
+            renderVillageSec6Blocks(villageDataPayload);
             renderAcquisitionDetailTable(currentProcessChartPrefill);
             applyCompensationPrefill(currentProcessChartPrefill);
         }
@@ -15422,6 +16065,9 @@
             if (!validateFutureDateInputs(validationScope)) {
                 return { success: false, error: 'Invalid date.' };
             }
+            if (currentStep === 4 && !validateRevisedJointMeasurementAreas({ report: true })) {
+                return { success: false, error: 'Revised joint measurement areas are incomplete.' };
+            }
             if (statusValue === 'submitted' && !validateAgreementCapturesForFinalSubmit()) {
                 return { success: false, error: 'Agreement captures are required.' };
             }
@@ -16260,6 +16906,125 @@
             setJointSurveyOwnerTableMode('multi');
             appendMultiKhataOwnerRow();
         });
+
+        // ── Revised Joint Measurement ─────────────────────────────────────
+        document.getElementById('pcAddRevisedJointMeasurementBtn')?.addEventListener('click', () => {
+            addRevisedJointMeasurementRow();
+        });
+
+        const revisedJointMeasurementContainer = document.getElementById('pcRevisedJointMeasurementRows');
+        revisedJointMeasurementContainer?.addEventListener('click', (event) => {
+            // Remove entire block
+            const removeBlockBtn = event.target.closest('.pc-remove-revised-joint-measurement');
+            if (removeBlockBtn) {
+                const block = removeBlockBtn.closest('[data-revised-joint-measurement-block]');
+                if (block) {
+                    const rows = collectRevisedJointMeasurementRows();
+                    const index = revisedJointMeasurementBlockIndex(block);
+                    rows.splice(index, 1);
+                    renderRevisedJointMeasurementRows(rows);
+                    refreshTab4AfterRevisedMeasurementChange();
+                }
+                return;
+            }
+
+            // Open names modal for a specific revised block
+            const fetchNamesBtn = event.target.closest('.pc-fetch-revised-joint-names');
+            if (fetchNamesBtn) {
+                const block = fetchNamesBtn.closest('[data-revised-joint-measurement-block]');
+                const blockIdx = revisedJointMeasurementBlockIndex(block);
+                const mode = revisedJointMeasurementMode(block) === 'multi' ? 'joint_multi' : 'joint_single';
+                openJointSurveyNamesModal(currentProcessChartPrefill, {
+                    mode,
+                    target: 'revised',
+                    blockIndex: blockIdx,
+                });
+                return;
+            }
+
+            // Add a row to a single-mode block
+            const addSingleRowBtn = event.target.closest('.pc-revised-add-single-row');
+            if (addSingleRowBtn) {
+                const body = addSingleRowBtn.closest('.pc-revised-single-body');
+                body?.insertAdjacentHTML('beforeend', buildRevisedSingleKhataOwnerRow());
+                const block = addSingleRowBtn.closest('[data-revised-joint-measurement-block]');
+                syncRevisedSingleRowButtons(block);
+                return;
+            }
+
+            // Remove a row from a single-mode block
+            const removeSingleRowBtn = event.target.closest('.pc-revised-remove-single-row');
+            if (removeSingleRowBtn) {
+                const row = removeSingleRowBtn.closest('tr');
+                const block = removeSingleRowBtn.closest('[data-revised-joint-measurement-block]');
+                if (row && block) {
+                    const allRows = block.querySelectorAll('.pc-revised-single-body tr');
+                    if (allRows.length > 1) row.remove();
+                    else row.querySelectorAll('input').forEach((input) => { input.value = ''; });
+                    syncRevisedSingleRowButtons(block);
+                    refreshTab4AfterRevisedMeasurementChange();
+                }
+                return;
+            }
+
+            // Add a row to a multi-mode block
+            const addMultiRowBtn = event.target.closest('.pc-revised-add-multi-row');
+            if (addMultiRowBtn) {
+                const block = addMultiRowBtn.closest('[data-revised-joint-measurement-block]');
+                const multiRows = Array.from(block?.querySelectorAll('.pc-revised-multi-body tr') || []).map((r) => ({
+                    owner_name: r.querySelector('.pc-revised-multi-owner-name')?.value || '',
+                    mobile_number: r.querySelector('.pc-revised-multi-mobile-number')?.value || '',
+                    address: r.querySelector('.pc-revised-multi-address')?.value || '',
+                }));
+                multiRows.push({});
+                const sharedArea = block?.querySelector('.pc-revised-multi-common-area')?.value || '';
+                renderRevisedMultiKhataRows(block, multiRows, sharedArea);
+                return;
+            }
+
+            // Remove a row from a multi-mode block
+            const removeMultiRowBtn = event.target.closest('.pc-revised-remove-multi-row');
+            if (removeMultiRowBtn) {
+                const block = removeMultiRowBtn.closest('[data-revised-joint-measurement-block]');
+                const multiRows = Array.from(block?.querySelectorAll('.pc-revised-multi-body tr') || []).map((r) => ({
+                    owner_name: r.querySelector('.pc-revised-multi-owner-name')?.value || '',
+                    mobile_number: r.querySelector('.pc-revised-multi-mobile-number')?.value || '',
+                    address: r.querySelector('.pc-revised-multi-address')?.value || '',
+                }));
+                if (multiRows.length > 1) multiRows.pop();
+                else multiRows[0] = {};
+                const sharedArea = block?.querySelector('.pc-revised-multi-common-area')?.value || '';
+                renderRevisedMultiKhataRows(block, multiRows, sharedArea);
+                refreshTab4AfterRevisedMeasurementChange();
+                return;
+            }
+        });
+
+        revisedJointMeasurementContainer?.addEventListener('change', (event) => {
+            // Mode radio changed — toggle single/multi tables
+            if (event.target instanceof HTMLInputElement && event.target.classList.contains('pc-revised-joint-mode-radio')) {
+                const block = event.target.closest('[data-revised-joint-measurement-block]');
+                toggleRevisedJointMeasurementTables(block);
+                refreshTab4AfterRevisedMeasurementChange();
+                return;
+            }
+            // forward_selected checkbox
+            if (event.target instanceof HTMLInputElement && event.target.classList.contains('pc-revised-joint-forward-checkbox')) {
+                if (event.target.checked) {
+                    // Uncheck all others
+                    revisedJointMeasurementContainer.querySelectorAll('.pc-revised-joint-forward-checkbox').forEach((cb) => {
+                        if (cb !== event.target) cb.checked = false;
+                    });
+                }
+                refreshTab4AfterRevisedMeasurementChange();
+            }
+        });
+
+        revisedJointMeasurementContainer?.addEventListener('input', (event) => {
+            if (event.target instanceof HTMLInputElement) {
+                refreshTab4AfterRevisedMeasurementChange();
+            }
+        });
         document.querySelectorAll('[data-repeatable-asset-rows]').forEach((container) => {
             container.addEventListener('click', (event) => {
                 const addBtn = event.target.closest('.pc-inline-add-asset-row');
@@ -16331,6 +17096,31 @@
         sec10FilesViewBtn?.addEventListener('click', () => openFilesModal(currentVillageFiles.sec10_files || []));
         sec11FilesViewBtn?.addEventListener('click', () => openFilesModal(currentVillageFiles.sec11_files || []));
         sec14FilesViewBtn?.addEventListener('click', () => openFilesModal(currentVillageFiles.sec14_files || []));
+        sec17FilesViewBtn?.addEventListener('click', () => {
+            const rows = currentProcessChartPrefill?.village_data?.sec17_rows || [];
+            const files = rows.flatMap((row) => Array.isArray(row?.files) ? row.files : []).filter((f) => f?.url);
+            openFilesModal(files.length ? files : (currentVillageFiles.sec17_files || []));
+        });
+        sec18FilesViewBtn?.addEventListener('click', () => {
+            const rows = currentProcessChartPrefill?.village_data?.sec18_rows || [];
+            const files = rows.flatMap((row) => Array.isArray(row?.files) ? row.files : []).filter((f) => f?.url);
+            openFilesModal(files.length ? files : (currentVillageFiles.sec18_files || []));
+        });
+        sec19FilesViewBtn?.addEventListener('click', () => {
+            const rows = currentProcessChartPrefill?.village_data?.sec19_rows || [];
+            const files = rows.flatMap((row) => Array.isArray(row?.files) ? row.files : []).filter((f) => f?.url);
+            openFilesModal(files.length ? files : (currentVillageFiles.sec19_files || []));
+        });
+        sec16FilesViewBtn?.addEventListener('click', () => {
+            const rows = currentProcessChartPrefill?.village_data?.sec16_rows || [];
+            const files = rows.flatMap((row) => Array.isArray(row?.files) ? row.files : []).filter((f) => f?.url);
+            openFilesModal(files.length ? files : (currentVillageFiles.sec16_files || []));
+        });
+        sec20FilesViewBtn?.addEventListener('click', () => {
+            const rows = currentProcessChartPrefill?.village_data?.sec20_rows || [];
+            const files = rows.flatMap((row) => Array.isArray(row?.files) ? row.files : []).filter((f) => f?.url);
+            openFilesModal(files.length ? files : (currentVillageFiles.sec20_files || []));
+        });
         awardFilesViewBtn?.addEventListener('click', () => openFilesModal(currentVillageFiles.sec23_files || []));
         closeFilesModalBtn?.addEventListener('click', closeFilesModal);
         closeFilesModalFooterBtn?.addEventListener('click', closeFilesModal);
@@ -16484,7 +17274,7 @@
             const target = event.target;
             if (!(target instanceof HTMLInputElement)) return;
             if (currentJointSurveyApplyMode === 'step10' && target.classList.contains('pc-joint-survey-name-checkbox')) {
-                const step10Checkboxes = Array.from(jointSurveyNamesModal.querySelectorAll('.pc-joint-survey-name-checkbox[data-group-type="step10-tab4"]'))
+                const step10Checkboxes = Array.from(jointSurveyNamesModal.querySelectorAll('.pc-joint-survey-name-checkbox[data-group-type="step10-tab9"]'))
                     .filter((checkbox) => checkbox instanceof HTMLInputElement);
                 const selectAllCheckbox = jointSurveyNamesModal.querySelector('.pc-joint-survey-select-all-single');
                 if (selectAllCheckbox instanceof HTMLInputElement) {
@@ -16508,7 +17298,7 @@
                 if (currentJointSurveyApplyMode === 'joint_single' || currentJointSurveyApplyMode === 'joint_multi') {
                     selector = '.pc-joint-survey-name-checkbox[data-group-type="tab1-owner"]';
                 } else if (currentJointSurveyApplyMode === 'step10') {
-                    selector = '.pc-joint-survey-name-checkbox[data-group-type="step10-tab4"]';
+                    selector = '.pc-joint-survey-name-checkbox[data-group-type="step10-tab9"]';
                 } else if (currentJointSurveyApplyMode === 'agreement_owner_capture') {
                     selector = '.pc-joint-survey-name-checkbox[data-group-type="agreement-owner"]';
                 }

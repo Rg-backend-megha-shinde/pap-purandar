@@ -1,4 +1,4 @@
-﻿from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect
 from django.http import JsonResponse, HttpResponse
 from django.urls import reverse
 from django.db import connection, transaction, ProgrammingError, OperationalError
@@ -5021,6 +5021,7 @@ _VILLAGE_SCALAR_FIELDS = [
     'sec5_prastaav_kramank', 'sec5_date',
     'sec6_register_number', 'sec6_date',
     'sec7_aakshep_details',
+    'sec7_toggle', 'sec8_toggle', 'sec9_toggle', 'sec10_toggle',
     'sec9_paper1_name', 'sec9_paper1_date',
     'sec9_paper2_name', 'sec9_paper2_date',
     'sec10_prastaav_kramank', 'sec10_date',
@@ -6694,6 +6695,29 @@ def _serialize_village_data_for_process_chart(village_data):
             },
         }]
 
+    sec6_file_maps = {}
+    for key, files in files_map.items():
+        match = re.match(r'^sec6_row_(\d+)_(parishisht16|nakasha)$', key or '')
+        if not match:
+            continue
+        row_index = int(match.group(1))
+        bucket = match.group(2)
+        sec6_file_maps.setdefault(row_index, {'parishisht16_files': [], 'nakasha_files': []})
+        sec6_file_maps[row_index][f'{bucket}_files'] = files
+
+    sec6_rows = []
+    for index, row in enumerate(village_data.sec6_rows or []):
+        row_payload = row.copy() if isinstance(row, dict) else {}
+        existing_files = row_payload.get('files') if isinstance(row_payload.get('files'), dict) else {}
+        sec6_rows.append({
+            'register_number': row_payload.get('register_number') or '',
+            'date': row_payload.get('date') or '',
+            'files': {
+                'parishisht16_files': sec6_file_maps.get(index, {}).get('parishisht16_files', existing_files.get('parishisht16_files') or []),
+                'nakasha_files': sec6_file_maps.get(index, {}).get('nakasha_files', existing_files.get('nakasha_files') or []),
+            },
+        })
+
     related_section_rows = {}
     for sec_code, cfg in _RELATED_SECTION_ROW_CONFIG.items():
         json_field = cfg.get('json')
@@ -6797,6 +6821,7 @@ def _serialize_village_data_for_process_chart(village_data):
         'files': files_map,
         'notified_area_rows': village_data.notified_area_rows or [],
         'sec3_rows': sec3_rows,
+        'sec6_rows': sec6_rows,
         'sec4_rows': sec4_rows,
         'sec8_rows': sec8_rows,
         'sec21_rows': sec21_rows,
@@ -7925,6 +7950,64 @@ def village_info(request):
         village_data.sec21_rows = sec21_rows
         village_data.save(update_fields=['sec21_rows', 'updated_at'])
 
+        # Section 6 repeatable rows with two file buckets per row.
+        sec6_rows_payload_raw = request.POST.get('sec6_rows_json')
+        sec6_rows = []
+        if sec6_rows_payload_raw:
+            try:
+                parsed_sec6 = json.loads(sec6_rows_payload_raw)
+                if isinstance(parsed_sec6, list):
+                    for row in parsed_sec6:
+                        if not isinstance(row, dict):
+                            continue
+                        sec6_rows.append({
+                            'register_number': (row.get('register_number') or '').strip(),
+                            'date': (row.get('date') or '').strip(),
+                            'files': {'parishisht16_files': [], 'nakasha_files': []},
+                        })
+            except (TypeError, ValueError, json.JSONDecodeError):
+                sec6_rows = []
+        village_data.sec6_rows = sec6_rows
+        village_data.save(update_fields=['sec6_rows', 'updated_at'])
+
+        existing_sec6_files = VillageDataFile.objects.filter(
+            village_data=village_data,
+            field_key__startswith='sec6_row_'
+        )
+        for old in existing_sec6_files:
+            key = old.field_key or ''
+            m = re.match(r'^sec6_row_(\d+)_(parishisht16|nakasha)$', key)
+            if not m:
+                continue
+            old_index = int(m.group(1))
+            if old_index >= len(sec6_rows):
+                if old.file:
+                    old.file.delete(save=False)
+                old.delete()
+
+        for i in range(len(sec6_rows)):
+            parishisht_key = f'sec6_row_{i}_parishisht16'
+            nakasha_key = f'sec6_row_{i}_nakasha'
+            for f in request.FILES.getlist(f'sec6_parishisht16_files_{i}'):
+                VillageDataFile.objects.create(village_data=village_data, field_key=parishisht_key, file=f)
+            for f in request.FILES.getlist(f'sec6_nakasha_files_{i}'):
+                VillageDataFile.objects.create(village_data=village_data, field_key=nakasha_key, file=f)
+
+            parishisht_files = VillageDataFile.objects.filter(village_data=village_data, field_key=parishisht_key)
+            nakasha_files = VillageDataFile.objects.filter(village_data=village_data, field_key=nakasha_key)
+            sec6_rows[i]['files'] = {
+                'parishisht16_files': [
+                    {'id': rf.id, 'url': rf.file.url, 'name': rf.file.name.split('/')[-1]}
+                    for rf in parishisht_files
+                ],
+                'nakasha_files': [
+                    {'id': rf.id, 'url': rf.file.url, 'name': rf.file.name.split('/')[-1]}
+                    for rf in nakasha_files
+                ],
+            }
+        village_data.sec6_rows = sec6_rows
+        village_data.save(update_fields=['sec6_rows', 'updated_at'])
+
         # Section 25 map rows with per-row files.
         sec25_rows = village_data.sec25_map_rows or []
         existing_sec25_files = VillageDataFile.objects.filter(
@@ -8299,6 +8382,7 @@ def get_village_info_data(request):
         val = getattr(village_data, f)
         data[f] = val.isoformat() if hasattr(val, 'isoformat') and val else (val or '')
     data['sec1_admin_approvals'] = village_data.sec1_admin_approvals or []
+    data['sec6_rows'] = village_data.sec6_rows or []
     sec3_rows = village_data.sec3_rows or []
     if not sec3_rows:
         sec3_rows = [{
@@ -8374,6 +8458,31 @@ def get_village_info_data(request):
             'files': {'prastaav_files': [], 'karyavrutant_files': []},
         }]
     data['sec21_rows'] = normalized_sec21_rows
+
+    sec6_data_rows = data.get('sec6_rows') or []
+    sec6_file_maps = {}
+    for key, files in files_map.items():
+        m = re.match(r'^sec6_row_(\d+)_(parishisht16|nakasha)$', key or '')
+        if not m:
+            continue
+        idx = int(m.group(1))
+        bucket = m.group(2)
+        sec6_file_maps.setdefault(idx, {'parishisht16_files': [], 'nakasha_files': []})
+        sec6_file_maps[idx][f'{bucket}_files'] = files
+    normalized_sec6_rows = []
+    for idx, row in enumerate(sec6_data_rows):
+        if not isinstance(row, dict):
+            row = {}
+        existing_files = row.get('files') if isinstance(row.get('files'), dict) else {}
+        normalized_sec6_rows.append({
+            'register_number': row.get('register_number') or '',
+            'date': row.get('date') or '',
+            'files': {
+                'parishisht16_files': sec6_file_maps.get(idx, {}).get('parishisht16_files', existing_files.get('parishisht16_files') or []),
+                'nakasha_files': sec6_file_maps.get(idx, {}).get('nakasha_files', existing_files.get('nakasha_files') or []),
+            }
+        })
+    data['sec6_rows'] = normalized_sec6_rows
 
     sec25_rows = data.get('sec25_map_rows') or []
     sec25_file_map = {}
