@@ -2108,6 +2108,24 @@
                                 </table>
                             </div>
                         </div>
+
+                        <div class="pc-section">
+                            <h3 class="mb-4 text-lg font-bold text-[#244271]">सुधारित संयुक्त मोजणी तपशील</h3>
+                            <div id="pcSec6RevisedJointMeasurementBlocks" class="space-y-4" data-pc-village-prefill></div>
+                            <p id="pcSec6RevisedJointMeasurementEmpty" class="hidden text-sm font-semibold text-[#7c8da5]">निवडलेल्या गावासाठी सुधारित संयुक्त मोजणी माहिती उपलब्ध नाही.</p>
+                        </div>
+
+                        <div class="pc-section" id="pcRevisedJointMeasurementSection" data-pc-revised-measurement-section>
+                            <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                                <div>
+                                    <h3 class="text-lg font-bold text-[#244271]">सुधारीत संयुक्त मोजणी तपशील</h3>
+                                    <p class="mt-1 text-sm font-semibold text-[#6b7d99]">सुधारीत संयुक्त मोजणी १ ते ३ वेळेस नोंदवता येईल. पुढे कोणता तपशील घ्यायचा ते चेक बॉक्सने निवडा.</p>
+                                </div>
+                                <button type="button" id="pcAddRevisedJointMeasurementBtn" class="rounded-lg bg-[#125fcb] px-4 py-2 text-sm font-semibold text-white">सुधारीत मोजणीसाठी ओळ जोडा</button>
+                            </div>
+                            <div id="pcRevisedJointMeasurementRows" class="space-y-4"></div>
+                            <p id="pcRevisedJointMeasurementEmpty" class="text-sm font-semibold text-[#7c8da5]">सुधारीत मोजणी असल्यास ओळ जोडा.</p>
+                        </div>
                     </div>
 
                     <div id="pcJointSurveyNoFields" class="pc-section hidden">
@@ -4184,6 +4202,8 @@
         let currentAgreementDraftHtml = '';
         let currentAgreementDraftTitle = 'draft';
         let currentJointSurveyApplyMode = 'joint';
+        let currentJointSurveyApplyTarget = 'base';
+        let currentRevisedJointSurveyBlockIndex = -1;
         let currentAssetOwnerTargetId = '';
         let currentStep10SelectedOwnerKeys = [];
         let currentSec21FileBuckets = {};
@@ -4231,6 +4251,16 @@
                     snapshot = JSON.parse(snapshot);
                 } catch (error) {
                     snapshot = {};
+                }
+            }
+
+            const revisedRows = Array.isArray(snapshot.revised_measurements) ? snapshot.revised_measurements : [];
+            const selectedRevised = revisedRows.find(item => item.forward_selected) || null;
+            if (selectedRevised) {
+                if (selectedRevised.mode === 'multi') {
+                    return String(selectedRevised.multi_common_area || '').trim();
+                } else {
+                    return String(selectedRevised.single_rows?.[0]?.acquisition_area || '').trim();
                 }
             }
 
@@ -9346,6 +9376,7 @@
                 multi_rows: tableMode === 'multi' ? collectMultiKhataOwnerRows() : [],
                 multi_common_area: tableMode === 'multi' ? getMultiKhataCommonAreaValue() : '',
                 selected_keys: getSelectedJointSurveyKeys(),
+                revised_measurements: collectRevisedJointMeasurementRows(),
             };
         }
         function restoreTab4Snapshot(snapshot = {}) {
@@ -9375,7 +9406,7 @@
             }
             const hasData = [...singleRows, ...multiRows].some((row) =>
                 Object.values(row || {}).some((value) => String(value || '').trim())
-            ) || String(snapshot.multi_common_area || '').trim() || String(snapshot.not_done_reason || '').trim();
+            ) || String(snapshot.multi_common_area || '').trim() || String(snapshot.not_done_reason || '').trim() || (Array.isArray(snapshot.revised_measurements) && snapshot.revised_measurements.length > 0);
             if (!hasData) return false;
 
             singleBody.innerHTML = singleRows.length
@@ -9387,11 +9418,16 @@
                 setSelectedJointSurveyKeys(snapshot.selected_keys);
             }
             setJointSurveyOwnerTableMode(tableMode);
+            renderRevisedJointMeasurementRows(snapshot.revised_measurements || []);
             renderAcquisitionDetailTable(currentProcessChartPrefill);
             return true;
         }
 
         function collectTab4AcquisitionOwnerRows() {
+            if (getJointSurveyDoneValue() !== 'yes') return [];
+            const selectedRevised = collectSelectedRevisedJointMeasurement();
+            if (selectedRevised) return rowsFromRevisedJointMeasurement(selectedRevised);
+
             const rows = [];
             const singleBody = document.getElementById('pcSingleKhataOwnersBody');
             singleBody?.querySelectorAll('tr').forEach((row, index) => {
@@ -9427,6 +9463,9 @@
         }
 
         function collectTab4OwnerRows() {
+            const selectedRevised = collectSelectedRevisedJointMeasurement();
+            if (selectedRevised) return rowsFromRevisedJointMeasurement(selectedRevised);
+
             const rows = [];
             const singleBody = document.getElementById('pcSingleKhataOwnersBody');
             singleBody?.querySelectorAll('tr').forEach((row, index) => {
@@ -9469,6 +9508,345 @@
             return collectTab4AcquisitionOwnerRows().filter((row) =>
                 step10Lookup.has(normalizeOwnerLookupName(row.owner_name || ''))
             );
+        }
+
+        function tab1OwnerContactLookup() {
+            const lookup = new Map();
+            collectStep1OwnerRows(currentProcessChartPrefill).forEach((row) => {
+                const ownerKey = normalizeOwnerName(row.owner_name);
+                const khataKey = String(row.khata_number || '').trim().toLowerCase();
+                const contact = {
+                    mobile_number: row.mobile_number || '',
+                    address: row.address || '',
+                };
+                if (ownerKey && !lookup.has(`name:${ownerKey}`)) lookup.set(`name:${ownerKey}`, contact);
+                if (khataKey && ownerKey && !lookup.has(`khata_name:${khataKey}:${ownerKey}`)) {
+                    lookup.set(`khata_name:${khataKey}:${ownerKey}`, contact);
+                }
+            });
+            return lookup;
+        }
+
+        function hydrateOwnerContactFromTab1(row = {}, lookup = tab1OwnerContactLookup()) {
+            const ownerKey = normalizeOwnerName(row.owner_name);
+            const khataKey = String(row.khata_number || '').trim().toLowerCase();
+            const contact = lookup.get(`khata_name:${khataKey}:${ownerKey}`) || lookup.get(`name:${ownerKey}`) || {};
+            return {
+                ...row,
+                mobile_number: row.mobile_number || contact.mobile_number || '',
+                address: row.address || contact.address || '',
+            };
+        }
+
+        function buildRevisedSingleKhataOwnerRow(row = {}) {
+            return `
+                <tr>
+                    <td><input class="pc-input pc-revised-single-owner-name" type="text" value="${escapeHtml(row.owner_name || '')}"></td>
+                    <td><input class="pc-input pc-revised-single-mobile-number" type="tel" inputmode="numeric" maxlength="10" pattern="[0-9]{10}" value="${escapeHtml(row.mobile_number || '')}"></td>
+                    <td><input class="pc-input pc-revised-single-address" type="text" value="${escapeHtml(row.address || '')}"></td>
+                    <td>
+                        <div class="flex items-center gap-2">
+                            <input class="pc-input pc-revised-single-acquisition-area" type="text" value="${escapeHtml(row.acquisition_area || '')}">
+                            <button type="button" class="pc-revised-add-single-row rounded-md border border-[#d4deec] px-2 py-1 text-xs font-semibold text-[#125fcb]">+</button>
+                            <button type="button" class="pc-revised-remove-single-row rounded-md border border-[#d4deec] px-2 py-1 text-xs text-[#5d7293]">×</button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }
+
+        function buildRevisedMultiKhataOwnerRows(rows = [], sharedAreaValue = '') {
+            const finalRows = rows.length ? rows : [{}];
+            return finalRows.map((row, index) => `
+                <tr>
+                    <td><input class="pc-input pc-revised-multi-owner-name" type="text" value="${escapeHtml(row.owner_name || '')}"></td>
+                    <td><input class="pc-input pc-revised-multi-mobile-number" type="tel" inputmode="numeric" maxlength="10" pattern="[0-9]{10}" value="${escapeHtml(row.mobile_number || '')}"></td>
+                    <td><input class="pc-input pc-revised-multi-address" type="text" value="${escapeHtml(row.address || '')}"></td>
+                    ${index === 0 ? `
+                        <td rowspan="${finalRows.length}" class="align-top">
+                            <div class="space-y-2">
+                                <input class="pc-input pc-revised-multi-common-area" type="text" value="${escapeHtml(sharedAreaValue || '')}">
+                                <div class="flex justify-end gap-2">
+                                    <button type="button" class="pc-revised-add-multi-row rounded-md border border-[#d4deec] px-2 py-1 text-xs font-semibold text-[#125fcb]">+</button>
+                                    <button type="button" class="pc-revised-remove-multi-row rounded-md border border-[#d4deec] px-2 py-1 text-xs text-[#5d7293]">×</button>
+                                </div>
+                            </div>
+                        </td>
+                    ` : ''}
+                </tr>
+            `).join('');
+        }
+
+        function revisedJointMeasurementMode(block) {
+            return block?.querySelector('.pc-revised-joint-mode-radio:checked')?.value === 'multi' ? 'multi' : 'single';
+        }
+
+        function toggleRevisedJointMeasurementTables(block) {
+            if (!block) return;
+            const mode = revisedJointMeasurementMode(block);
+            block.querySelector('[data-revised-single-section]')?.classList.toggle('hidden', mode !== 'single');
+            block.querySelector('[data-revised-multi-section]')?.classList.toggle('hidden', mode !== 'multi');
+        }
+
+        function syncRevisedSingleRowButtons(block) {
+            const rows = Array.from(block?.querySelectorAll('.pc-revised-single-body tr') || []);
+            rows.forEach((row, index) => row.querySelector('.pc-revised-add-single-row')?.classList.toggle('hidden', index !== rows.length - 1));
+        }
+
+        function revisedJointMeasurementBlocks() {
+            return Array.from(document.querySelectorAll('#pcRevisedJointMeasurementRows [data-revised-joint-measurement-block]'));
+        }
+
+        function revisedJointMeasurementBlockIndex(block) {
+            return revisedJointMeasurementBlocks().indexOf(block);
+        }
+
+        function setSelectedRevisedJointMeasurementBlock(block) {
+            if (!block) return;
+            document.querySelectorAll('.pc-revised-joint-forward-checkbox').forEach((checkbox) => {
+                checkbox.checked = checkbox.closest('[data-revised-joint-measurement-block]') === block;
+            });
+        }
+
+        function normalizeRevisedJointMeasurementRows(rows = []) {
+            const finalRows = Array.isArray(rows) ? rows : [];
+            const selectedIndex = finalRows.findIndex((item) => item?.forward_selected);
+            if (finalRows.length && selectedIndex < 0) finalRows[0].forward_selected = true;
+            if (selectedIndex >= 0) {
+                finalRows.forEach((item, index) => {
+                    item.forward_selected = index === selectedIndex;
+                });
+            }
+            return finalRows;
+        }
+
+        function revisedJointMeasurementBlockHtml(item = {}, index = 0) {
+            const mode = item.mode === 'multi' ? 'multi' : 'single';
+            return `
+                <div class="rounded-xl border border-[#d7e5f6] bg-[#f8fbff] p-4" data-revised-joint-measurement-block>
+                    <div class="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                        <div class="flex flex-wrap items-center gap-4">
+                            <h4 class="text-base font-bold text-[#244271]">सुधारीत मोजणी ${index + 1}</h4>
+                            <label class="inline-flex items-center gap-2 text-sm font-bold text-[#0f766e]">
+                                <input type="checkbox" class="pc-revised-joint-forward-checkbox h-4 w-4 accent-[#0f766e]" ${item.forward_selected ? 'checked' : ''}>
+                                पुढे हा तपशील घ्या
+                            </label>
+                        </div>
+                        <div class="flex flex-wrap gap-2">
+                            <button type="button" class="pc-fetch-revised-joint-names rounded-lg bg-[#0f766e] px-3 py-2 text-sm font-semibold text-white">7/12 मधून नावे भरा</button>
+                            <button type="button" class="pc-remove-revised-joint-measurement rounded-lg border border-[#d4deec] px-3 py-2 text-sm font-semibold text-[#5d7293]">काढा</button>
+                        </div>
+                    </div>
+                    <div class="mb-4 flex flex-wrap gap-4 text-sm font-semibold text-[#244271]">
+                        <label class="inline-flex items-center gap-2">
+                            <input type="radio" class="pc-revised-joint-mode-radio" name="pc_revised_joint_mode_${index}" value="single" ${mode === 'single' ? 'checked' : ''}>
+                            स्वतंत्र क्षेत्र
+                        </label>
+                        <label class="inline-flex items-center gap-2">
+                            <input type="radio" class="pc-revised-joint-mode-radio" name="pc_revised_joint_mode_${index}" value="multi" ${mode === 'multi' ? 'checked' : ''}>
+                            सामाईक क्षेत्र
+                        </label>
+                    </div>
+                    <div data-revised-single-section class="${mode === 'single' ? '' : 'hidden'}">
+                        <div class="overflow-x-auto">
+                            <table class="pc-table">
+                                <thead><tr><th>बाधीत भूधारकाचे नाव</th><th>मोबाईल नंबर</th><th>पत्ता</th><th>संपादन करावयाचे क्षेत्र(हे. आर. चौमी )</th></tr></thead>
+                                <tbody class="pc-revised-single-body">${(item.single_rows || [{}]).map((row) => buildRevisedSingleKhataOwnerRow(row)).join('')}</tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div data-revised-multi-section class="${mode === 'multi' ? '' : 'hidden'}">
+                        <div class="overflow-x-auto">
+                            <table class="pc-table">
+                                <thead><tr><th>बाधीत भूधारकाचे नाव</th><th>मोबाईल नंबर</th><th>पत्ता</th><th>संपादन करावयाचे क्षेत्र(हे. आर. चौमी )</th></tr></thead>
+                                <tbody class="pc-revised-multi-body">${buildRevisedMultiKhataOwnerRows(item.multi_rows || [{}], item.multi_common_area || '')}</tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function validateRevisedJointMeasurementAreas({ report = false } = {}) {
+            if (getJointSurveyDoneValue() !== 'yes') return true;
+            for (const block of revisedJointMeasurementBlocks()) {
+                const blockTitle = block.querySelector('h4')?.textContent?.trim() || 'सुधारीत मोजणी';
+                if (revisedJointMeasurementMode(block) === 'multi') {
+                    const hasOwner = Array.from(block.querySelectorAll('.pc-revised-multi-owner-name'))
+                        .some((field) => String(field.value || '').trim());
+                    const areaField = block.querySelector('.pc-revised-multi-common-area');
+                    if (hasOwner && !String(areaField?.value || '').trim()) {
+                        if (report) {
+                            alert(`${blockTitle} मध्ये संपादन क्षेत्र भरणे आवश्यक आहे. क्षेत्र नसेल तर ही नोंद काढा.`);
+                            areaField?.focus();
+                        }
+                        return false;
+                    }
+                    continue;
+                }
+                for (const row of block.querySelectorAll('.pc-revised-single-body tr')) {
+                    const ownerField = row.querySelector('.pc-revised-single-owner-name');
+                    const areaField = row.querySelector('.pc-revised-single-acquisition-area');
+                    if (String(ownerField?.value || '').trim() && !String(areaField?.value || '').trim()) {
+                        if (report) {
+                            alert(`${blockTitle} मध्ये ${ownerField.value.trim()} यांचे संपादन क्षेत्र भरणे आवश्यक आहे. क्षेत्र नसेल तर ही ओळ काढा.`);
+                            areaField?.focus();
+                        }
+                        return false;
+                    }
+                }
+            }
+            return true;
+        }
+
+        function collectRevisedSourceSingleRows() {
+            const rows = Array.from(document.querySelectorAll('#pcSingleKhataOwnersBody tr')).map((row) => {
+                const inputs = row.querySelectorAll('input');
+                return {
+                    owner_name: inputs[0]?.value || '',
+                    mobile_number: inputs[1]?.value || '',
+                    address: inputs[2]?.value || '',
+                    acquisition_area: inputs[3]?.value || '',
+                };
+            }).filter((row) => Object.values(row).some((value) => String(value || '').trim()));
+            return rows.length ? rows : [{}];
+        }
+
+        function collectRevisedSourceMultiRows() {
+            const rows = Array.from(document.querySelectorAll('#pcMultiKhataOwnersBody tr')).map((row) => {
+                const inputs = row.querySelectorAll('input');
+                return {
+                    owner_name: inputs[0]?.value || '',
+                    mobile_number: inputs[1]?.value || '',
+                    address: inputs[2]?.value || '',
+                };
+            }).filter((row) => Object.values(row).some((value) => String(value || '').trim()));
+            return rows.length ? rows : [{}];
+        }
+
+        function collectRevisedJointMeasurementRows() {
+            const blocks = Array.from(document.querySelectorAll('#pcRevisedJointMeasurementRows [data-revised-joint-measurement-block]'));
+            return blocks.map((block) => {
+                const singleRows = Array.from(block.querySelectorAll('.pc-revised-single-body tr')).map((row) => ({
+                    owner_name: row.querySelector('.pc-revised-single-owner-name')?.value || '',
+                    mobile_number: row.querySelector('.pc-revised-single-mobile-number')?.value || '',
+                    address: row.querySelector('.pc-revised-single-address')?.value || '',
+                    acquisition_area: row.querySelector('.pc-revised-single-acquisition-area')?.value || '',
+                }));
+                const multiRows = Array.from(block.querySelectorAll('.pc-revised-multi-body tr')).map((row) => ({
+                    owner_name: row.querySelector('.pc-revised-multi-owner-name')?.value || '',
+                    mobile_number: row.querySelector('.pc-revised-multi-mobile-number')?.value || '',
+                    address: row.querySelector('.pc-revised-multi-address')?.value || '',
+                }));
+                return {
+                    mode: revisedJointMeasurementMode(block),
+                    forward_selected: Boolean(block.querySelector('.pc-revised-joint-forward-checkbox')?.checked),
+                    single_rows: singleRows,
+                    multi_rows: multiRows,
+                    multi_common_area: block.querySelector('.pc-revised-multi-common-area')?.value || '',
+                };
+            });
+        }
+
+        function collectSelectedRevisedJointMeasurement() {
+            const rows = collectRevisedJointMeasurementRows();
+            return rows.find((item) => item.forward_selected) || rows[0] || null;
+        }
+
+        function rowsFromRevisedJointMeasurement(item = {}) {
+            const rows = [];
+            if (item.mode === 'multi') {
+                const multiArea = item.multi_common_area || '';
+                (item.multi_rows || []).forEach((row, index) => {
+                    const ownerName = String(row.owner_name || '').trim();
+                    if (!ownerName || !multiArea) return;
+                    rows.push({ source: 'revised_multi', rowIndex: index, owner_name: ownerName, acquisition_area: multiArea });
+                });
+                return rows;
+            }
+            (item.single_rows || []).forEach((row, index) => {
+                const ownerName = String(row.owner_name || '').trim();
+                const acquisitionArea = String(row.acquisition_area || '').trim();
+                if (!ownerName || !acquisitionArea) return;
+                rows.push({ source: 'revised_single', rowIndex: index, owner_name: ownerName, acquisition_area: acquisitionArea });
+            });
+            return rows;
+        }
+
+        function renderRevisedJointMeasurementRows(rows = []) {
+            const container = document.getElementById('pcRevisedJointMeasurementRows');
+            const empty = document.getElementById('pcRevisedJointMeasurementEmpty');
+            if (!container) return;
+            const finalRows = normalizeRevisedJointMeasurementRows(rows);
+            container.innerHTML = finalRows.map((item, index) => revisedJointMeasurementBlockHtml(item, index)).join('');
+            container.querySelectorAll('[data-revised-joint-measurement-block]').forEach((block) => {
+                syncRevisedSingleRowButtons(block);
+                toggleRevisedJointMeasurementTables(block);
+            });
+            empty?.classList.toggle('hidden', finalRows.length > 0);
+            document.getElementById('pcAddRevisedJointMeasurementBtn')?.classList.remove('hidden');
+        }
+
+        function addRevisedJointMeasurementRow(item = null) {
+            const rows = collectRevisedJointMeasurementRows();
+            rows.push(item || {
+                mode: getJointSurveyOwnerTableMode(),
+                forward_selected: rows.length === 0,
+                single_rows: collectRevisedSourceSingleRows(),
+                multi_rows: collectRevisedSourceMultiRows(),
+                multi_common_area: getMultiKhataCommonAreaValue(),
+            });
+            renderRevisedJointMeasurementRows(rows);
+            refreshTab4AfterRevisedMeasurementChange();
+        }
+
+        function renderRevisedMultiKhataRows(block, rows = [], sharedAreaValue = '') {
+            const body = block?.querySelector('.pc-revised-multi-body');
+            if (!body) return;
+            body.innerHTML = buildRevisedMultiKhataOwnerRows(rows.length ? rows : [{}], sharedAreaValue);
+        }
+
+        function refreshTab4AfterRevisedMeasurementChange() {
+            renderAcquisitionDetailTable(currentProcessChartPrefill);
+            updateStep10AadhaarFromOwner(currentProcessChartPrefill);
+            updateCompensationFields(currentProcessChartPrefill);
+            updateProcessChartCaseSummary?.();
+        }
+
+        function collectRevisedJointMeasurementOwnerNames(block) {
+            const selector = revisedJointMeasurementMode(block) === 'multi'
+                ? '.pc-revised-multi-owner-name'
+                : '.pc-revised-single-owner-name';
+            return Array.from(block?.querySelectorAll(selector) || [])
+                .map((field) => normalizeOwnerName(field.value))
+                .filter(Boolean);
+        }
+
+        function selectedJointSurveyKeysForModal(rows = []) {
+            if (currentJointSurveyApplyTarget !== 'revised') return new Set(getSelectedJointSurveyKeys());
+            const block = revisedJointMeasurementBlocks()[currentRevisedJointSurveyBlockIndex];
+            const selectedNames = new Set(collectRevisedJointMeasurementOwnerNames(block));
+            return new Set(rows
+                .filter((row) => selectedNames.has(normalizeOwnerName(row.owner_name)))
+                .map((row) => buildJointSurveyRowKey(row)));
+        }
+
+        function populateRevisedJointMeasurementBlock(block, selectedRows = []) {
+            if (!block) return;
+            const hydratedRows = selectedRows.map((row) => hydrateOwnerContactFromTab1(row));
+            setSelectedRevisedJointMeasurementBlock(block);
+            if (revisedJointMeasurementMode(block) === 'multi') {
+                renderRevisedMultiKhataRows(block, hydratedRows, block.querySelector('.pc-revised-multi-common-area')?.value || '');
+            } else {
+                const singleBody = block.querySelector('.pc-revised-single-body');
+                if (singleBody) {
+                    singleBody.innerHTML = (hydratedRows.length ? hydratedRows : [{}])
+                        .map((row) => buildRevisedSingleKhataOwnerRow(row))
+                        .join('');
+                }
+                syncRevisedSingleRowButtons(block);
+            }
+            refreshTab4AfterRevisedMeasurementChange();
         }
 
         function renderMultiKhataOwnerRows(rows = [], sharedAreaValue = null) {
@@ -9720,6 +10098,8 @@
             if (!jointSurveyNamesModal || !jointSurveySingleNamesList || !jointSurveyMultiNamesList) return;
             currentJointSurveyApplyMode = options.mode || 'joint';
             currentAssetOwnerTargetId = options.targetId || '';
+            currentJointSurveyApplyTarget = options.target === 'revised' ? 'revised' : 'base';
+            currentRevisedJointSurveyBlockIndex = currentJointSurveyApplyTarget === 'revised' ? Number(options.blockIndex ?? -1) : -1;
             setJointSurveyModalSectionMode(currentJointSurveyApplyMode);
             if (currentJointSurveyApplyMode === 'step9') {
                 const rows = collectTab4AcquisitionOwnerRows(prefill);
@@ -9855,7 +10235,7 @@
             }
             if (currentJointSurveyApplyMode === 'joint_single' || currentJointSurveyApplyMode === 'joint_multi') {
                 const rows = collectJointSurveyFlatOwnerRows(prefill);
-                const selectedKeys = new Set(getSelectedJointSurveyKeys());
+                const selectedKeys = selectedJointSurveyKeysForModal(rows);
                 jointSurveySingleNamesList.innerHTML = rows.length
                     ? currentJointSurveyApplyMode === 'joint_single'
                         ? rows.map((row, index) => {
@@ -9957,6 +10337,8 @@
             document.body.style.overflow = '';
             currentJointSurveyApplyMode = 'joint';
             currentAssetOwnerTargetId = '';
+            currentJointSurveyApplyTarget = 'base';
+            currentRevisedJointSurveyBlockIndex = -1;
             setJointSurveyModalSectionMode('default');
         }
 
@@ -10175,6 +10557,21 @@
         }
 
         function applySelectedJointSurveyNames(prefill = currentProcessChartPrefill, options = {}) {
+            if (currentJointSurveyApplyTarget === 'revised') {
+                const selectedKeys = currentJointSurveyApplyMode === 'joint_single'
+                    ? [document.querySelector('.pc-joint-survey-name-radio[data-group-type="tab1-owner-single"]:checked')?.getAttribute('data-row-key') || ''].filter(Boolean)
+                    : Array.from(document.querySelectorAll('.pc-joint-survey-name-checkbox[data-group-type="tab1-owner"]:checked'))
+                        .map((checkbox) => checkbox.getAttribute('data-row-key') || '')
+                        .filter(Boolean);
+                const selectedKeySet = new Set(selectedKeys);
+                const selectedRows = collectJointSurveyFlatOwnerRows(prefill)
+                    .filter((row) => selectedKeySet.has(buildJointSurveyRowKey(row)));
+
+                const block = revisedJointMeasurementBlocks()[currentRevisedJointSurveyBlockIndex];
+                populateRevisedJointMeasurementBlock(block, selectedRows);
+                closeJointSurveyNamesModal();
+                return;
+            }
             if (currentJointSurveyApplyMode === 'asset') {
                 populateAssetOwnerFieldFromSelection(prefill, currentAssetOwnerTargetId);
                 return;
@@ -11176,6 +11573,19 @@
         }
 
         function getSelectedTab4AcquisitionArea() {
+            const selectedRevised = collectSelectedRevisedJointMeasurement();
+            if (selectedRevised) {
+                if (selectedRevised.mode === 'multi') {
+                    const multiSharedArea = Number.parseFloat(String(selectedRevised.multi_common_area || '').replace(/,/g, '').trim());
+                    return Number.isFinite(multiSharedArea) ? multiSharedArea : 0;
+                } else {
+                    const singleAreas = (selectedRevised.single_rows || [])
+                        .map((row) => Number.parseFloat(String(row.acquisition_area || '').replace(/,/g, '').trim()))
+                        .filter((value) => Number.isFinite(value) && value > 0);
+                    return singleAreas.length ? singleAreas[0] : 0;
+                }
+            }
+
             const singleBody = document.getElementById('pcSingleKhataOwnersBody');
             const multiBody = document.getElementById('pcMultiKhataOwnersBody');
 
@@ -11954,6 +12364,89 @@
             renderVillageAwardFileState(files);
         }
 
+        // ── Tab 4: सुधारित संयुक्त मोजणी तपशील — prefill from Village Info Tab 2 ──────
+        function renderVillageSec6Blocks(villageDataPayload) {
+            const container = document.getElementById('pcSec6RevisedJointMeasurementBlocks');
+            const emptyMsg = document.getElementById('pcSec6RevisedJointMeasurementEmpty');
+            if (!container) return;
+
+            // sec6_rows lives directly on the payload (already normalised by the API)
+            const rows = Array.isArray(villageDataPayload?.sec6_rows) ? villageDataPayload.sec6_rows : [];
+            const validRows = rows.filter((row) =>
+                row && typeof row === 'object' && (
+                    String(row.register_number || '').trim() ||
+                    String(row.date || '').trim() ||
+                    (Array.isArray(row.files?.parishisht16_files) && row.files.parishisht16_files.length) ||
+                    (Array.isArray(row.files?.nakasha_files) && row.files.nakasha_files.length)
+                )
+            );
+
+            // Toggle empty message
+            if (emptyMsg) {
+                emptyMsg.classList.toggle('hidden', validRows.length > 0);
+            }
+
+            if (!validRows.length) {
+                container.innerHTML = '';
+                return;
+            }
+
+            container.innerHTML = validRows.map((row, index) => {
+                const registerNumber = escapeHtml(row.register_number || '');
+                const date = escapeHtml(normalizeDateInputValue(row.date || ''));
+                const parishisht16Files = Array.isArray(row.files?.parishisht16_files) ? row.files.parishisht16_files : [];
+                const nakashaFiles = Array.isArray(row.files?.nakasha_files) ? row.files.nakasha_files : [];
+
+                const buildFileLinks = (files) => {
+                    if (!files.length) return '<span class="text-sm text-[#9aabb8]">—</span>';
+                    return files.map((f) => `
+                        <a href="${escapeHtml(f.url || '#')}" target="_blank" rel="noopener"
+                           class="inline-flex items-center gap-1.5 rounded-lg border border-[#b9d0ef] bg-white px-3 py-1.5 text-xs font-semibold text-[#125fcb] hover:bg-[#eef5ff] hover:underline">
+                            <svg class="h-3.5 w-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/>
+                                <circle cx="12" cy="12" r="3"/>
+                            </svg>
+                            ${escapeHtml(f.name || 'प्रत पहा')}
+                        </a>`).join('');
+                };
+
+                return `
+                    <div class="rounded-xl border border-[#c5d8f0] bg-white p-4">
+                        <div class="mb-3 flex items-center gap-2">
+                            <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#125fcb] text-xs font-bold text-white">${index + 1}</span>
+                            <span class="text-sm font-bold text-[#244271]">सुधारित संयुक्त मोजणी ${index + 1}</span>
+                        </div>
+                        <div class="grid gap-4 md:grid-cols-2">
+                            <div>
+                                <p class="mb-1 text-xs font-semibold text-[#6b7d99]">सुधारित मोजणी प्राप्त पत्र क्रमांक</p>
+                                <p class="rounded-lg border border-[#d3deeb] bg-[#f8fbff] px-3 py-2 text-sm font-semibold text-[#2a3f62]">
+                                    ${registerNumber || '<span class="text-[#9aabb8]">—</span>'}
+                                </p>
+                            </div>
+                            <div>
+                                <p class="mb-1 text-xs font-semibold text-[#6b7d99]">सुधारित संयुक्त मोजणी दिनांक</p>
+                                <p class="rounded-lg border border-[#d3deeb] bg-[#f8fbff] px-3 py-2 text-sm font-semibold text-[#2a3f62]">
+                                    ${date
+                                        ? (() => {
+                                            const m = date.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+                                            return m ? `${m[3]}/${m[2]}/${m[1]}` : date;
+                                          })()
+                                        : '<span class="text-[#9aabb8]">—</span>'}
+                                </p>
+                            </div>
+                            <div>
+                                <p class="mb-1 text-xs font-semibold text-[#6b7d99]">सुधारित परिशिष्ट 16</p>
+                                <div class="flex flex-wrap gap-2">${buildFileLinks(parishisht16Files)}</div>
+                            </div>
+                            <div>
+                                <p class="mb-1 text-xs font-semibold text-[#6b7d99]">सुधारित संयुक्त मोजणी नकाशा</p>
+                                <div class="flex flex-wrap gap-2">${buildFileLinks(nakashaFiles)}</div>
+                            </div>
+                        </div>
+                    </div>`;
+            }).join('');
+        }
+
         function applyVillageDataPrefill(villageDataPayload) {
             const villageData = villageDataPayload?.data || {};
             const sec3Rows = Array.isArray(villageDataPayload?.sec3_rows) ? villageDataPayload.sec3_rows : [];
@@ -12037,6 +12530,7 @@
             applyCommitteeInfoPrefill(villageDataPayload);
             applyAwardPrefill(villageDataPayload);
             renderCommitteeRateRows(villageDataPayload);
+            renderVillageSec6Blocks(villageDataPayload);
             renderAcquisitionDetailTable(currentProcessChartPrefill);
             applyCompensationPrefill(currentProcessChartPrefill);
         }
@@ -15571,6 +16065,9 @@
             if (!validateFutureDateInputs(validationScope)) {
                 return { success: false, error: 'Invalid date.' };
             }
+            if (currentStep === 4 && !validateRevisedJointMeasurementAreas({ report: true })) {
+                return { success: false, error: 'Revised joint measurement areas are incomplete.' };
+            }
             if (statusValue === 'submitted' && !validateAgreementCapturesForFinalSubmit()) {
                 return { success: false, error: 'Agreement captures are required.' };
             }
@@ -16408,6 +16905,125 @@
         addMultiKhataOwnerRowBtn?.addEventListener('click', () => {
             setJointSurveyOwnerTableMode('multi');
             appendMultiKhataOwnerRow();
+        });
+
+        // ── Revised Joint Measurement ─────────────────────────────────────
+        document.getElementById('pcAddRevisedJointMeasurementBtn')?.addEventListener('click', () => {
+            addRevisedJointMeasurementRow();
+        });
+
+        const revisedJointMeasurementContainer = document.getElementById('pcRevisedJointMeasurementRows');
+        revisedJointMeasurementContainer?.addEventListener('click', (event) => {
+            // Remove entire block
+            const removeBlockBtn = event.target.closest('.pc-remove-revised-joint-measurement');
+            if (removeBlockBtn) {
+                const block = removeBlockBtn.closest('[data-revised-joint-measurement-block]');
+                if (block) {
+                    const rows = collectRevisedJointMeasurementRows();
+                    const index = revisedJointMeasurementBlockIndex(block);
+                    rows.splice(index, 1);
+                    renderRevisedJointMeasurementRows(rows);
+                    refreshTab4AfterRevisedMeasurementChange();
+                }
+                return;
+            }
+
+            // Open names modal for a specific revised block
+            const fetchNamesBtn = event.target.closest('.pc-fetch-revised-joint-names');
+            if (fetchNamesBtn) {
+                const block = fetchNamesBtn.closest('[data-revised-joint-measurement-block]');
+                const blockIdx = revisedJointMeasurementBlockIndex(block);
+                const mode = revisedJointMeasurementMode(block) === 'multi' ? 'joint_multi' : 'joint_single';
+                openJointSurveyNamesModal(currentProcessChartPrefill, {
+                    mode,
+                    target: 'revised',
+                    blockIndex: blockIdx,
+                });
+                return;
+            }
+
+            // Add a row to a single-mode block
+            const addSingleRowBtn = event.target.closest('.pc-revised-add-single-row');
+            if (addSingleRowBtn) {
+                const body = addSingleRowBtn.closest('.pc-revised-single-body');
+                body?.insertAdjacentHTML('beforeend', buildRevisedSingleKhataOwnerRow());
+                const block = addSingleRowBtn.closest('[data-revised-joint-measurement-block]');
+                syncRevisedSingleRowButtons(block);
+                return;
+            }
+
+            // Remove a row from a single-mode block
+            const removeSingleRowBtn = event.target.closest('.pc-revised-remove-single-row');
+            if (removeSingleRowBtn) {
+                const row = removeSingleRowBtn.closest('tr');
+                const block = removeSingleRowBtn.closest('[data-revised-joint-measurement-block]');
+                if (row && block) {
+                    const allRows = block.querySelectorAll('.pc-revised-single-body tr');
+                    if (allRows.length > 1) row.remove();
+                    else row.querySelectorAll('input').forEach((input) => { input.value = ''; });
+                    syncRevisedSingleRowButtons(block);
+                    refreshTab4AfterRevisedMeasurementChange();
+                }
+                return;
+            }
+
+            // Add a row to a multi-mode block
+            const addMultiRowBtn = event.target.closest('.pc-revised-add-multi-row');
+            if (addMultiRowBtn) {
+                const block = addMultiRowBtn.closest('[data-revised-joint-measurement-block]');
+                const multiRows = Array.from(block?.querySelectorAll('.pc-revised-multi-body tr') || []).map((r) => ({
+                    owner_name: r.querySelector('.pc-revised-multi-owner-name')?.value || '',
+                    mobile_number: r.querySelector('.pc-revised-multi-mobile-number')?.value || '',
+                    address: r.querySelector('.pc-revised-multi-address')?.value || '',
+                }));
+                multiRows.push({});
+                const sharedArea = block?.querySelector('.pc-revised-multi-common-area')?.value || '';
+                renderRevisedMultiKhataRows(block, multiRows, sharedArea);
+                return;
+            }
+
+            // Remove a row from a multi-mode block
+            const removeMultiRowBtn = event.target.closest('.pc-revised-remove-multi-row');
+            if (removeMultiRowBtn) {
+                const block = removeMultiRowBtn.closest('[data-revised-joint-measurement-block]');
+                const multiRows = Array.from(block?.querySelectorAll('.pc-revised-multi-body tr') || []).map((r) => ({
+                    owner_name: r.querySelector('.pc-revised-multi-owner-name')?.value || '',
+                    mobile_number: r.querySelector('.pc-revised-multi-mobile-number')?.value || '',
+                    address: r.querySelector('.pc-revised-multi-address')?.value || '',
+                }));
+                if (multiRows.length > 1) multiRows.pop();
+                else multiRows[0] = {};
+                const sharedArea = block?.querySelector('.pc-revised-multi-common-area')?.value || '';
+                renderRevisedMultiKhataRows(block, multiRows, sharedArea);
+                refreshTab4AfterRevisedMeasurementChange();
+                return;
+            }
+        });
+
+        revisedJointMeasurementContainer?.addEventListener('change', (event) => {
+            // Mode radio changed — toggle single/multi tables
+            if (event.target instanceof HTMLInputElement && event.target.classList.contains('pc-revised-joint-mode-radio')) {
+                const block = event.target.closest('[data-revised-joint-measurement-block]');
+                toggleRevisedJointMeasurementTables(block);
+                refreshTab4AfterRevisedMeasurementChange();
+                return;
+            }
+            // forward_selected checkbox
+            if (event.target instanceof HTMLInputElement && event.target.classList.contains('pc-revised-joint-forward-checkbox')) {
+                if (event.target.checked) {
+                    // Uncheck all others
+                    revisedJointMeasurementContainer.querySelectorAll('.pc-revised-joint-forward-checkbox').forEach((cb) => {
+                        if (cb !== event.target) cb.checked = false;
+                    });
+                }
+                refreshTab4AfterRevisedMeasurementChange();
+            }
+        });
+
+        revisedJointMeasurementContainer?.addEventListener('input', (event) => {
+            if (event.target instanceof HTMLInputElement) {
+                refreshTab4AfterRevisedMeasurementChange();
+            }
         });
         document.querySelectorAll('[data-repeatable-asset-rows]').forEach((container) => {
             container.addEventListener('click', (event) => {
