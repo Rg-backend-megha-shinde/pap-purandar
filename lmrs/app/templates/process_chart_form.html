@@ -2164,7 +2164,7 @@
                             data-name-prefix="water_supply"></div>
                         <div class="mt-4">
                             <div class="pc-eye-col">
-                                <button type="button" class="pc-eye-view" aria-label="View Documents"
+                                <button type="button" id="pcSec17FilesViewBtn" class="pc-eye-view" aria-label="View Documents"
                                     title="View Documents">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                                         aria-hidden="true">
@@ -2208,7 +2208,7 @@
                             data-name-prefix="agriculture"></div>
                         <div class="mt-4">
                             <div class="pc-eye-col">
-                                <button type="button" class="pc-eye-view" aria-label="View Documents"
+                                <button type="button" id="pcSec18FilesViewBtn" class="pc-eye-view" aria-label="View Documents"
                                     title="View Documents">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                                         aria-hidden="true">
@@ -2252,7 +2252,7 @@
                             data-name-prefix="construction"></div>
                         <div class="mt-4">
                             <div class="pc-eye-col">
-                                <button type="button" class="pc-eye-view" aria-label="View Documents"
+                                <button type="button" id="pcSec19FilesViewBtn" class="pc-eye-view" aria-label="View Documents"
                                     title="View Documents">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                                         aria-hidden="true">
@@ -2296,7 +2296,7 @@
                             data-name-prefix="forest"></div>
                         <div class="mt-4">
                             <div class="pc-eye-col">
-                                <button type="button" class="pc-eye-view" aria-label="View Documents"
+                                <button type="button" id="pcSec16FilesViewBtn" class="pc-eye-view" aria-label="View Documents"
                                     title="View Documents">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                                         aria-hidden="true">
@@ -2340,7 +2340,7 @@
                             data-name-prefix="other_department"></div>
                         <div class="mt-4">
                             <div class="pc-eye-col">
-                                <button type="button" class="pc-eye-view" aria-label="View Documents"
+                                <button type="button" id="pcSec20FilesViewBtn" class="pc-eye-view" aria-label="View Documents"
                                     title="View Documents">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                                         aria-hidden="true">
@@ -3662,6 +3662,11 @@
         const sec10FilesViewBtn = document.getElementById('pcSec10FilesViewBtn');
         const sec11FilesViewBtn = document.getElementById('pcSec11FilesViewBtn');
         const sec14FilesViewBtn = document.getElementById('pcSec14FilesViewBtn');
+        const sec16FilesViewBtn = document.getElementById('pcSec16FilesViewBtn');
+        const sec17FilesViewBtn = document.getElementById('pcSec17FilesViewBtn');
+        const sec18FilesViewBtn = document.getElementById('pcSec18FilesViewBtn');
+        const sec19FilesViewBtn = document.getElementById('pcSec19FilesViewBtn');
+        const sec20FilesViewBtn = document.getElementById('pcSec20FilesViewBtn');
         const awardFilesViewBtn = document.getElementById('pcAwardFilesViewBtn');
         const awardGenerateBtn = document.getElementById('pcAwardGenerateBtn');
         const step9FetchOwnersBtn = document.getElementById('pcStep9FetchOwnersBtn');
@@ -9815,27 +9820,31 @@
                 return;
             }
             if (currentJointSurveyApplyMode === 'step10') {
-                const rows = collectTab4AcquisitionOwnerRows();
-                const cardKeys = getSelectedStep10OwnerRowKeysFromCards(rows);
-                const selectedKeys = new Set(cardKeys.length ? cardKeys : currentStep10SelectedOwnerKeys);
-                jointSurveySingleNamesList.innerHTML = rows.length
+                // Show only names that were selected/entered in Tab 9 (खातेदार / बँक तपशील)
+                const tab9Names = getStep9PaymentOwnerNamesFromRows();
+                const selectedCardNames = new Set(
+                    getStep10OwnerCardValues()
+                        .map((v) => normalizeOwnerLookupName(v.owner_name || ''))
+                        .filter(Boolean)
+                );
+                jointSurveySingleNamesList.innerHTML = tab9Names.length
                     ? `
                         <label class="mb-3 flex items-center gap-2 rounded border border-[#dbe8f8] bg-white px-3 py-2 text-sm font-semibold text-[#244271]">
                             <input type="checkbox" class="pc-joint-survey-select-all-single">
                             <span>सर्व निवडा</span>
                         </label>
-                        ${rows.map((row, index) => {
-                        const rowKey = buildArbitrationOwnerRowKey(row);
+                        ${tab9Names.map((name, index) => {
+                        const isChecked = selectedCardNames.has(normalizeOwnerLookupName(name));
                         return `
                             <label class="flex items-center gap-3 rounded border border-[#dbe8f8] bg-[#f8fbff] px-3 py-3">
-                                <input type="checkbox" class="pc-joint-survey-name-checkbox" data-group-type="step10-tab4" data-row-index="${index}" data-row-key="${escapeHtml(rowKey)}" ${selectedKeys.has(rowKey) ? 'checked' : ''}>
-                                <span class="text-sm text-[#244271]">${escapeHtml(row.owner_name || '')}</span>
+                                <input type="checkbox" class="pc-joint-survey-name-checkbox" data-group-type="step10-tab9" data-row-index="${index}" data-owner-name="${escapeHtml(name)}" ${isChecked ? 'checked' : ''}>
+                                <span class="text-sm text-[#244271]">${escapeHtml(name)}</span>
                             </label>
                         `;
                     }).join('')}`
-                    : '<div class="rounded border border-dashed border-[#d6e3f5] px-3 py-3 text-sm text-[#6b7d99]">टॅब 4 मध्ये संपादन क्षेत्र भरलेली भूधारक नावे उपलब्ध नाहीत.</div>';
+                    : '<div class="rounded border border-dashed border-[#d6e3f5] px-3 py-3 text-sm text-[#6b7d99]">टॅब 9 मध्ये खातेदाराची नावे भरलेली नाहीत. आधी टॅब 9 मध्ये नावे भरा.</div>';
                 const selectAll = jointSurveySingleNamesList.querySelector('.pc-joint-survey-select-all-single');
-                const checkboxes = Array.from(jointSurveySingleNamesList.querySelectorAll('.pc-joint-survey-name-checkbox[data-group-type="step10-tab4"]'));
+                const checkboxes = Array.from(jointSurveySingleNamesList.querySelectorAll('.pc-joint-survey-name-checkbox[data-group-type="step10-tab9"]'));
                 if (selectAll instanceof HTMLInputElement) {
                     selectAll.checked = checkboxes.length > 0 && checkboxes.every((checkbox) => checkbox.checked);
                 }
@@ -10036,11 +10045,18 @@
                 const groupType = checkbox.getAttribute('data-group-type');
                 const groupIndex = Number.parseInt(checkbox.getAttribute('data-group-index') || '-1', 10);
                 const rowIndex = Number.parseInt(checkbox.getAttribute('data-row-index') || '-1', 10);
-                const row = groupType === 'step10-tab4'
-                    ? tab4Rows[rowIndex]
-                    : groupType === 'single'
-                        ? singleGroups[groupIndex]?.rows?.[rowIndex]
-                        : multiGroups[groupIndex]?.rows?.[rowIndex];
+                let row;
+                if (groupType === 'step10-tab9') {
+                    // Names sourced from Tab 9 — use data-owner-name directly
+                    const ownerName = checkbox.getAttribute('data-owner-name') || '';
+                    row = ownerName ? { owner_name: ownerName } : null;
+                } else if (groupType === 'step10-tab4') {
+                    row = tab4Rows[rowIndex];
+                } else if (groupType === 'single') {
+                    row = singleGroups[groupIndex]?.rows?.[rowIndex];
+                } else {
+                    row = multiGroups[groupIndex]?.rows?.[rowIndex];
+                }
                 const ownerName = String(row?.owner_name || '').trim();
                 if (ownerName) {
                     selectedRows.push(row);
@@ -16464,6 +16480,31 @@
         sec10FilesViewBtn?.addEventListener('click', () => openFilesModal(currentVillageFiles.sec10_files || []));
         sec11FilesViewBtn?.addEventListener('click', () => openFilesModal(currentVillageFiles.sec11_files || []));
         sec14FilesViewBtn?.addEventListener('click', () => openFilesModal(currentVillageFiles.sec14_files || []));
+        sec17FilesViewBtn?.addEventListener('click', () => {
+            const rows = currentProcessChartPrefill?.village_data?.sec17_rows || [];
+            const files = rows.flatMap((row) => Array.isArray(row?.files) ? row.files : []).filter((f) => f?.url);
+            openFilesModal(files.length ? files : (currentVillageFiles.sec17_files || []));
+        });
+        sec18FilesViewBtn?.addEventListener('click', () => {
+            const rows = currentProcessChartPrefill?.village_data?.sec18_rows || [];
+            const files = rows.flatMap((row) => Array.isArray(row?.files) ? row.files : []).filter((f) => f?.url);
+            openFilesModal(files.length ? files : (currentVillageFiles.sec18_files || []));
+        });
+        sec19FilesViewBtn?.addEventListener('click', () => {
+            const rows = currentProcessChartPrefill?.village_data?.sec19_rows || [];
+            const files = rows.flatMap((row) => Array.isArray(row?.files) ? row.files : []).filter((f) => f?.url);
+            openFilesModal(files.length ? files : (currentVillageFiles.sec19_files || []));
+        });
+        sec16FilesViewBtn?.addEventListener('click', () => {
+            const rows = currentProcessChartPrefill?.village_data?.sec16_rows || [];
+            const files = rows.flatMap((row) => Array.isArray(row?.files) ? row.files : []).filter((f) => f?.url);
+            openFilesModal(files.length ? files : (currentVillageFiles.sec16_files || []));
+        });
+        sec20FilesViewBtn?.addEventListener('click', () => {
+            const rows = currentProcessChartPrefill?.village_data?.sec20_rows || [];
+            const files = rows.flatMap((row) => Array.isArray(row?.files) ? row.files : []).filter((f) => f?.url);
+            openFilesModal(files.length ? files : (currentVillageFiles.sec20_files || []));
+        });
         awardFilesViewBtn?.addEventListener('click', () => openFilesModal(currentVillageFiles.sec23_files || []));
         closeFilesModalBtn?.addEventListener('click', closeFilesModal);
         closeFilesModalFooterBtn?.addEventListener('click', closeFilesModal);
@@ -16617,7 +16658,7 @@
             const target = event.target;
             if (!(target instanceof HTMLInputElement)) return;
             if (currentJointSurveyApplyMode === 'step10' && target.classList.contains('pc-joint-survey-name-checkbox')) {
-                const step10Checkboxes = Array.from(jointSurveyNamesModal.querySelectorAll('.pc-joint-survey-name-checkbox[data-group-type="step10-tab4"]'))
+                const step10Checkboxes = Array.from(jointSurveyNamesModal.querySelectorAll('.pc-joint-survey-name-checkbox[data-group-type="step10-tab9"]'))
                     .filter((checkbox) => checkbox instanceof HTMLInputElement);
                 const selectAllCheckbox = jointSurveyNamesModal.querySelector('.pc-joint-survey-select-all-single');
                 if (selectAllCheckbox instanceof HTMLInputElement) {
@@ -16641,7 +16682,7 @@
                 if (currentJointSurveyApplyMode === 'joint_single' || currentJointSurveyApplyMode === 'joint_multi') {
                     selector = '.pc-joint-survey-name-checkbox[data-group-type="tab1-owner"]';
                 } else if (currentJointSurveyApplyMode === 'step10') {
-                    selector = '.pc-joint-survey-name-checkbox[data-group-type="step10-tab4"]';
+                    selector = '.pc-joint-survey-name-checkbox[data-group-type="step10-tab9"]';
                 } else if (currentJointSurveyApplyMode === 'agreement_owner_capture') {
                     selector = '.pc-joint-survey-name-checkbox[data-group-type="agreement-owner"]';
                 }
