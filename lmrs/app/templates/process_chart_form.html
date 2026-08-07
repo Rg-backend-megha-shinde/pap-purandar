@@ -3687,6 +3687,7 @@
         const sec19FilesViewBtn = document.getElementById('pcSec19FilesViewBtn');
         const sec20FilesViewBtn = document.getElementById('pcSec20FilesViewBtn');
         const awardFilesViewBtn = document.getElementById('pcAwardFilesViewBtn');
+        const puravaniAwardDraftGenerateBtn = document.getElementById('pcPuravaniAwardDraftGenerateBtn');
         const awardGenerateBtn = document.getElementById('pcAwardGenerateBtn');
         const step9FetchOwnersBtn = document.getElementById('pcStep9FetchOwnersBtn');
         const step9AddPaymentRowBtn = document.getElementById('pcStep9AddPaymentRowBtn');
@@ -14283,6 +14284,525 @@
             `;
         }
 
+function buildPuravaniAwardDraftHtml() {
+            const prefill = currentProcessChartPrefill || {};
+            const caseData = prefill.case_data || {};
+            const landRecord = prefill.land_record || {};
+            const villageData = prefill.village_data?.data || {};
+            const sec3Rows = Array.isArray(prefill.village_data?.sec3_rows) ? prefill.village_data.sec3_rows : [];
+            const primarySec3Row = sec3Rows[0] || {};
+            const ownerRows = Array.isArray(prefill.owner_rows) ? prefill.owner_rows : [];
+            const primaryOwnerRow = ownerRows[0] || {};
+            const farmers = Array.isArray(prefill.farmers) ? prefill.farmers : [];
+            const primaryFarmer = farmers[0] || {};
+            const tab4AcquisitionRows = collectTab4AcquisitionOwnerRows();
+
+            const district = getSelectDisplayText(districtSelect) || caseData.district || '________';
+            const taluka = getSelectDisplayText(talukaSelect) || caseData.taluka || '________';
+            const village = getSelectDisplayText(villageSelect) || caseData.village || '________';
+            const gutNumber = getSelectDisplayText(gutSelect) || caseData.gut_number || landRecord.gut_number || '________';
+            const projectPurpose = caseData.project_purpose || getFieldValue('[name="project_purpose"]') || '________';
+            const awardDate = getFieldValue('#pcAwardDate') || todayIsoDate;
+            const awardDateLong = formatNoticeLongDate(awardDate) || awardDate || '________';
+            
+            const officerName = primarySec3Row.officer_name || getFieldValue('#pcSec3Rows .pc-sec3-officer-name') || '________';
+            const sec3SubdivisionName = primarySec3Row.upvibhag_name || villageData.sec3_upvibhag_name || getFieldValue('#pcSec3UpvibhagName') || '________';
+            
+            const fruitTreeAmount = getFieldValue('#pcCompensation5FruitTreeAmount');
+            const forestTreeAmount = getFieldValue('#pcCompensation5ForestTreeAmount');
+            const constructionAmount = getFieldValue('#pcCompensation5ConstructionAmount');
+            const otherAssetAmount = getFieldValue('#pcCompensation5OtherAssetAmount');
+            
+            const v1 = parseFloat(String(fruitTreeAmount||'0').replace(/,/g, '')) || 0;
+            const v2 = parseFloat(String(forestTreeAmount||'0').replace(/,/g, '')) || 0;
+            const v3 = parseFloat(String(constructionAmount||'0').replace(/,/g, '')) || 0;
+            const v4 = parseFloat(String(otherAssetAmount||'0').replace(/,/g, '')) || 0;
+            const sumVal = Math.ceil(v1 + v2 + v3 + v4);
+            const totalAssetValuation = formatNoticeAmountLatin(sumVal) || '0/-';
+            
+            const asthapanaAmount = Math.ceil(sumVal * 0.03);
+            const soisuwidhaAmount = Math.ceil(sumVal * 0.03);
+            const asthapanaStr = formatNoticeAmountLatin(asthapanaAmount) || '0/-';
+            const soisuwidhaStr = formatNoticeAmountLatin(soisuwidhaAmount) || '0/-';
+            
+            const compensation = Array.from({ length: 12 }, (_, index) => formatNoticeAmountLatin(getFieldValue(`#pcCompensation${index + 1}`)) || '0');
+            const class2DeductionAmount = Math.ceil(parseFloat(String(compensation[8]||'0').replace(/,/g, '')) || 0);
+            const class2DeductionStr = formatNoticeAmountLatin(class2DeductionAmount) || '0/-';
+            
+            const isInterestedInDevelopedPlot = document.querySelector('input[name="interested_in_10_percent_plot"]:checked')?.value === 'yes';
+            const row9DeductionAmount = isInterestedInDevelopedPlot ? Math.ceil(sumVal * 0.10) : 0;
+            const row9DeductionStr = formatNoticeAmountLatin(row9DeductionAmount) || '0/-';
+            
+            const houseDeductionStr = formatNoticeAmountLatin(getFieldValue('#pcCompensationHouse')) || '0/-';
+            const houseDeductionAmount = Math.ceil(parseFloat(String(houseDeductionStr||'0').replace(/,/g, '')) || 0);
+            
+            const finalTotalAmount = Math.ceil(Math.max(0, sumVal - class2DeductionAmount - row9DeductionAmount - houseDeductionAmount));
+            const finalTotalStr = formatNoticeAmountLatin(finalTotalAmount) || '0/-';
+            
+            const finalTotalAksari = typeof numberToMarathiWords !== 'undefined' ? numberToMarathiWords(finalTotalAmount) + ' फक्त' : '';
+
+            const applicantName = primaryOwnerRow.owner_name || primaryFarmer.farmer_name || landRecord.holder_name || getFieldValue('#pcConsentApplicantName') || '________';
+            const consentArea = tab4AcquisitionRows[0]?.acquisition_area || getFieldValue('#pcConsentArea') || '________';
+            const officeAddress = primarySec3Row.address || getFieldValue('.pc-sec3-address') || villageData.collector_office_address || '________';
+
+            const parseAmount = (value) => Number(String(value || '0').replace(/,/g, '').replace(/[^\d.-]/g, '')) || 0;
+            const acquisitionAreaHectares = typeof parseAcquisitionAreaToHectares === 'function' ? parseAcquisitionAreaToHectares(consentArea) : 0;
+            const tipaniRow2Amount = Math.ceil(acquisitionAreaHectares * 40254814);
+            const tipaniRow3Amount = Math.ceil(parseAmount(fruitTreeAmount));
+            const tipaniRow4Amount = Math.ceil(parseAmount(forestTreeAmount));
+            const tipaniRow5Amount = Math.ceil(parseAmount(constructionAmount));
+            const tipaniRow6Amount = Math.ceil(parseAmount(otherAssetAmount));
+            const tipaniRow7TotalAmount = tipaniRow2Amount + tipaniRow3Amount + tipaniRow4Amount + tipaniRow5Amount + tipaniRow6Amount;
+            
+            const tipaniRow9DeductionAmount = isInterestedInDevelopedPlot ? Math.ceil(tipaniRow7TotalAmount / 10) : 0;
+            const tipaniRow8DeductionAmount = Math.ceil(parseFloat(String(compensation[8]||'0').replace(/,/g, '')) || 0);
+            const tipaniRow10DeductionAmount = Math.ceil(parseFloat(String(houseDeductionStr||'0').replace(/,/g, '')) || 0);
+            const tipaniRow11TotalAmount = Math.ceil(Math.max(0, tipaniRow7TotalAmount - tipaniRow8DeductionAmount - tipaniRow9DeductionAmount - tipaniRow10DeductionAmount));
+            
+            const tipaniRow2Str = formatNoticeAmountLatin(tipaniRow2Amount) || '0/-';
+            const tipaniRow3Str = formatNoticeAmountLatin(tipaniRow3Amount) || '0/-';
+            const tipaniRow4Str = formatNoticeAmountLatin(tipaniRow4Amount) || '0/-';
+            const tipaniRow5Str = formatNoticeAmountLatin(tipaniRow5Amount) || '0/-';
+            const tipaniRow6Str = formatNoticeAmountLatin(tipaniRow6Amount) || '0/-';
+            const tipaniRow7TotalStr = formatNoticeAmountLatin(tipaniRow7TotalAmount) || '0/-';
+            const tipaniRow8DeductionStr = formatNoticeAmountLatin(tipaniRow8DeductionAmount) || '0/-';
+            const tipaniRow9DeductionStr = formatNoticeAmountLatin(tipaniRow9DeductionAmount) || '0/-';
+            const tipaniRow10DeductionStr = formatNoticeAmountLatin(tipaniRow10DeductionAmount) || '0/-';
+            const tipaniRow11TotalStr = formatNoticeAmountLatin(tipaniRow11TotalAmount) || '0/-';
+            const tipaniRow11TotalAksari = typeof numberToMarathiWords !== 'undefined' ? numberToMarathiWords(tipaniRow11TotalAmount) + ' फक्त' : '';
+
+            const red = (val) => `<span class="dyn">${getDisplayValue(val)}</span>`;
+            
+            const tab4Names = [...new Set(
+                collectTab4OwnerRows()
+                    .map((row) => String(row.owner_name || '').trim())
+                    .filter(Boolean)
+            )];
+            const fallbackNames = [...new Set(
+                [...ownerRows, ...farmers]
+                    .map((row) => String(row.owner_name || row.farmer_name || '').trim())
+                    .filter(Boolean)
+            )];
+            const ownerNames = tab4Names.length ? tab4Names : fallbackNames;
+            const formattedOwnerNames = ownerNames.length
+                ? (ownerNames.length === 1
+                    ? ownerNames[0]
+                    : `${ownerNames.slice(0, -1).join(', ')} आणि ${ownerNames[ownerNames.length - 1]}`)
+                : '________';
+
+            const paymentRows = getStep9PaymentRows();
+            const step10Lookup = getStep10OwnerLookup();
+            const paymentSource = paymentRows.length
+                ? paymentRows
+                : ownerNames.map((name) => {
+                    const matchedStep10 = step10Lookup.get(normalizeOwnerLookupName(name)) || {};
+                    return {
+                        owner_name: name,
+                        bank_name: matchedStep10.bank_name || '',
+                        bank_branch: matchedStep10.bank_branch || '',
+                        bank_account_number: matchedStep10.bank_account_number || '',
+                        ifsc_code: matchedStep10.ifsc_code || '',
+                        distribution_amount: '',
+                    };
+                });
+            const paymentRowsHtml = paymentSource.map((row, index) => `
+                <tr>
+                    <td>${index + 1}</td>
+                    <td style="text-align: left;"><span class="dyn">${row.owner_name || '________'}</span></td>
+                    <td><span class="dyn">${[row.bank_name, row.bank_branch].filter(Boolean).join(', ') || '________'}</span></td>
+                    <td><span class="dyn">${row.bank_account_number || '________'}</span></td>
+                    <td><span class="dyn">${row.ifsc_code || '________'}</span></td>
+                    <td><span class="dyn">${formatNoticeAmountLatin(row.distribution_amount) || '________'}</span></td>
+                </tr>
+            `).join('');
+            
+            const ccSheetRowsHtml = paymentSource.map((row, index) => `
+                <tr>
+                    <td>${index + 1}</td>
+                    <td><span class="dyn">${row.owner_name || '________'}</span></td>
+                    <td><span class="dyn">${getDisplayValue(gutNumber)}</span></td>
+                    <td><span class="dyn">${getDisplayValue(consentArea)}</span></td>
+                    <td><span class="dyn">${formatNoticeAmountLatin(row.distribution_amount) || '________'}</span></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                </tr>
+            `).join('');
+
+            return `
+<!DOCTYPE html>
+<html lang="mr">
+<head>
+    <meta charset="utf-8">
+    <title>पुरवणी संमती निवाडा</title>
+    <style>
+        @page { size: A4; margin: 10mm 14mm; }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            padding: 12mm 16mm;
+            background: #fff;
+            color: #111;
+            font-family: 'DVOT Surekh', 'Noto Serif Devanagari', 'Mangal', serif;
+            font-size: 14px;
+            line-height: 1.45;
+        }
+        .page {
+            width: auto;
+            margin: 0;
+            padding: 0;
+            background: #fff;
+            page-break-after: auto;
+            break-after: auto;
+        }
+        .page + .page { margin-top: 0; page-break-before: always; }
+        @media print {
+            body { background: none; }
+            .page { margin: 0; box-shadow: none; width: 100%; min-height: 100vh; }
+        }
+        .cover-page {
+            border: 2px solid #000;
+            padding: 30px;
+            height: 260mm;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+        .center { text-align: center; }
+        .right { text-align: right; }
+        .paragraph { margin: 0 0 8px; text-align: justify; }
+        .rule { text-align: center; margin: 5px 0 10px; font-weight: 700; letter-spacing: 0.4px; }
+        .dyn { color: #d62828; font-weight: 700; }
+        .cover-title { color: #e40000; font-size: 28px; font-weight: 700; margin-top: 40px; margin-bottom: 10px; }
+        .divider { margin: 15px 0; font-weight: 700; letter-spacing: -1px; color: #111; }
+        .purpose-box { margin: 30px 0; }
+        .acquisition-board { margin-top: auto; margin-bottom: 40px; }
+        table { width: 100%; border-collapse: collapse; margin: 8px 0 10px; table-layout: fixed; font-size: 13px; }
+        th, td { border: 1px solid #111; padding: 6px 5px; vertical-align: middle; }
+        th { text-align: center; font-weight: 700; }
+        td { text-align: center; }
+        .numbered-point { display: flex; gap: 8px; margin-bottom: 6px; text-align: justify; }
+        .numbered-point .point-no { flex: 0 0 25px; font-weight: 700; }
+    </style>
+</head>
+<body>
+    <section class="page">
+        <div class="cover-page">
+            <h1 class="cover-title">उपजिल्हाधिकारी (${red(sec3SubdivisionName)}) पुणे</h1>
+            <div class="divider">----------------------------------------------------------------------</div>
+            <p style="font-weight: 700; font-size: 18px; margin: 15px 0;">
+                मौजे ${red(village)}, ता. ${red(taluka)}, जि. ${red(district)} येथील<br>
+                ${red(projectPurpose)} या प्रकल्पासाठी<br>
+                गट क्रमांक ${red(gutNumber)} मधील संपादन क्षेत्रासंदर्भात दिनांक ${red(awardDateLong)} रोजी<br>
+                जाहीर करण्यात आलेल्या मूळ संमती निवाड्यात समाविष्ट नसलेल्या<br>
+                निगडीत घटकांचे मूल्यांकनाबाबत<br>
+                पुरवणी संमती निवाडा.
+            </p>
+            <div class="divider">----------------------------------------------------------------------</div>
+            
+            <div class="purpose-box">
+                <p style="font-weight: 700; font-size: 17px;">-: संपादनाचे प्रयोजन :-</p>
+                <p style="font-weight: 700; font-size: 17px;">${red(projectPurpose)}</p>
+            </div>
+            
+            <div class="divider">----------------------------------------------------------------------</div>
+            
+            <div class="acquisition-board">
+                <p style="font-weight: 700; font-size: 17px;">-: संपादन मंडळ :-</p>
+                <p style="font-weight: 700; font-size: 17px;">महाराष्ट्र औद्योगिक विकास महामंडळ, पुणे</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="page">
+        <p class="paragraph" style="text-align: justify; font-weight: bold; margin-top: 30px;">
+            महाराष्ट्र औद्योगिक विकास अधिनियम 1961 चे कलम 33(2) नुसार मौजे ${red(village)}, ता. ${red(taluka)}, जि. ${red(district)} येथील ${red(projectPurpose)} या प्रकल्पासाठी गट क्रमांक ${red(gutNumber)} मधील संपादन क्षेत्रासंदर्भात दिनांक ${red(awardDateLong)} रोजी जाहीर करण्यात आलेल्या मूळ संमती निवाड्यात समाविष्ट नसलेल्या निगडीत घटकांचे मूल्यांकनाबाबतचा स्वतंत्र पुरवणी संमती निवाडा.
+        </p>
+        <div class="rule">----------------------------------------------------------------------------------------------------------</div>
+        
+        <div style="text-align: right; margin-bottom: 20px;">
+            <p class="dyn" style="font-size: 16px; margin: 0 0 4px;"><strong>उपजिल्हाधिकारी (${red(sec3SubdivisionName)}) पुणे</strong></p>
+            <p class="dyn" style="margin: 0 0 4px;">यांचे कार्यालय</p>
+            <p class="dyn" style="margin: 0 0 4px;">${red(officeAddress)}</p>
+            <p class="dyn" style="margin: 0 0 4px;">शिबिर कार्यालय :-</p>
+            <p class="dyn" style="margin: 0 0 4px;">नवीन प्रशासकीय इमारत, दुसरा मजला, सासवड,</p>
+            <p class="dyn" style="margin: 0 0 4px;">ता. पुरंदर, जि. पुणे</p>
+            <p style="margin: 0 0 4px; color: #999;">------------------------------------------------------------------</p>
+            <p style="margin: 0 0 4px;">क्र. मौ. ${red(village)}/एसआर/01/${red(new Date().getFullYear())} - गट नं -${red(gutNumber)}</p>
+            <p class="dyn" style="margin: 0 0 4px;">दि. ${red(awardDateLong)}</p>
+        </div>
+
+        <p style="font-weight: bold; margin-bottom: 8px;">1) प्रस्तावना :-</p>
+        <p class="paragraph">
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;मौजे ${red(village)}, ता. ${red(taluka)}, जि. ${red(district)} येथील गट क्रमांक ${red(gutNumber)} मधील एकूण संपादित क्षेत्र ${red(consentArea)} हे.आर.चौ.मी. हे ${red(projectPurpose)} या सार्वजनिक प्रयोजनासाठी संपादित करण्यात आले आहे. सदर संपादनाबाबत बाधित भूधारक श्री./सौ. ${red(applicantName)} यांनी महाराष्ट्र औद्योगिक विकास अधिनियम, 1961 च्या कलम 33(2) अन्वये दिनांक ${red(awardDateLong)} रोजी संमती करारनामा निष्पादित करून दिला असून, त्यानुसार त्याच दिवशी संमती निवाडा जाहीर करण्यात आलेला आहे.
+        </p>
+        <p class="paragraph">
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;तथापि, त्यावेळी संपादित क्षेत्रातील फळझाडे, वनझाडे, विहिरी, बोअरवेल, पाईपलाईन, बांधकामे तसेच इतर अनुषंगिक घटकांचे अंतिम मूल्यांकन संबंधित सक्षम मूल्यांकन विभागाकडून प्राप्त झालेले नव्हते. त्यामुळे अशा घटकांचे मूल्यांकन व त्याबाबतचा मोबदला मूळ संमती निवाड्यामध्ये समाविष्ट करण्यात आलेला नव्हता.
+        </p>
+        <p class="paragraph">
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;त्यानंतर संबंधित सक्षम मूल्यांकन विभागाकडून प्राप्त झालेल्या अंतिम मूल्यांकन अहवालाच्या आधारे सदर अनुषंगिक घटकांचा मोबदला अदा करण्यासाठी बाधित भूधारक यांनी दिनांक ${red(awardDateLong)} रोजी पुरवणी संमती करारनामा निष्पादित करून दिला आहे. त्या पुरवणी संमती करारनाम्यानुसार हा पुरवणी संमती निवाडा जाहीर करण्यात येत आहे.
+        </p>
+        <p class="paragraph">
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;मूळ संमती निवाड्यामध्ये महाराष्ट्र औद्योगिक विकास अधिनियम, 1961 अन्वये प्रसिद्ध करण्यात आलेल्या अधिसूचना, संयुक्त मोजणी, सुनावणी, संपादित क्षेत्राचा तपशील तसेच इतर सर्व आवश्यक बाबींचा सविस्तर उल्लेख करण्यात आलेला असून, त्यामध्ये कोणताही बदल झालेला नसल्यामुळे त्याची पुनरावृत्ती या पुरवणी संमती निवाड्यामध्ये करण्यात आलेली नाही.
+        </p>
+        
+        <p style="font-weight: bold; margin-top: 20px; margin-bottom: 8px;">2) मोबदला निश्चितीकरण :-</p>
+        <p class="paragraph">
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;हा पुरवणी संमती निवाडा केवळ संपादित क्षेत्रातील फळझाडे, वनझाडे, विहिरी, बोअरवेल, पाईपलाईन, बांधकामे तसेच इतर अनुषंगिक घटकांचे मूल्यांकन व त्याबाबतच्या मोबदल्यापुरता मर्यादित आहे.
+        </p>
+        <p class="paragraph">
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;सदर मूल्यांकन संबंधित सक्षम शासकीय मूल्यांकन विभागाकडून करण्यात आले असून, प्राप्त अंतिम मूल्यांकनामध्ये भूमी संपादन, पुनर्वसन व पुनर्वसाहतीमध्ये उचित भरपाई मिळण्याचा व पारदर्शकतेचा हक्क अधिनियम, 2013 च्या कलम 30(1) नुसार देय असलेली 100 टक्के दिलासा रक्कम (Solatium) समाविष्ट करण्यात आलेली आहे.
+        </p>
+        <p class="paragraph">
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;त्यानुसार अंतिम देय मोबदल्याचा तपशील पुढीलप्रमाणे आहे :
+        </p>
+    </section>
+
+    <section class="page">
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 10%;">अ. क्र.</th>
+                    <th style="width: 70%;">घटक</th>
+                    <th style="width: 20%;">रक्कम (रुपये)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>1</td>
+                    <td style="text-align: left;">फळझाडांची एकूण मोबदला रक्कम रुपये (100% दिलासा रकमेसह)</td>
+                    <td><span class="dyn">${red(formatNoticeAmountLatin(fruitTreeAmount) || '0/-')}</span></td>
+                </tr>
+                <tr>
+                    <td>2</td>
+                    <td style="text-align: left;">वनझाडांची एकूण मोबदला रक्कम रुपये (100% दिलासा रकमेसह)</td>
+                    <td><span class="dyn">${red(formatNoticeAmountLatin(forestTreeAmount) || '0/-')}</span></td>
+                </tr>
+                <tr>
+                    <td>3</td>
+                    <td style="text-align: left;">बांधकामांची / ताल एकूण मोबदला रक्कम रुपये (100% दिलासा रकमेसह)</td>
+                    <td><span class="dyn">${red(formatNoticeAmountLatin(constructionAmount) || '0/-')}</span></td>
+                </tr>
+                <tr>
+                    <td>4</td>
+                    <td style="text-align: left;">पाईपलाईन / बोअरवेल / शेततळे / विहीर ची एकूण मोबदला रक्कम रुपये (100% दिलासा रकमेसह)</td>
+                    <td><span class="dyn">${red(formatNoticeAmountLatin(otherAssetAmount) || '0/-')}</span></td>
+                </tr>
+                <tr>
+                    <td>5</td>
+                    <td style="text-align: left;"><strong>एकूण मोबदला रक्कम रुपये (अ.क्र.1 ते 4)</strong></td>
+                    <td><strong><span class="dyn">${red(totalAssetValuation)}</span></strong></td>
+                </tr>
+                <tr>
+                    <td>6</td>
+                    <td style="text-align: left;">आस्थापना रक्कम 3% (अ.क्र. 5 चे रकमेवर)</td>
+                    <td><span class="dyn">${red(asthapanaStr)}</span></td>
+                </tr>
+                <tr>
+                    <td>7</td>
+                    <td style="text-align: left;">सोई-सुविधा शुल्क रक्कम 3% (अ.क्र. 5 चे रकमेवर)</td>
+                    <td><span class="dyn">${red(soisuwidhaStr)}</span></td>
+                </tr>
+                <tr>
+                    <td>8</td>
+                    <td style="text-align: left;">संपादन जमिन भोगवटादार वर्ग-2 / नियंत्रित सत्ता प्रकार / महार वतन जमीन असल्यास वजावट करावयाची नजराणा / अनर्जित रक्कम रुपये (अ.क्र. 5 चे रकमेवर 10%)</td>
+                    <td><span class="dyn">${red(class2DeductionStr)}</span></td>
+                </tr>
+                <tr>
+                    <td>9</td>
+                    <td style="text-align: left;">महाराष्ट्र औद्योगिक विकास महामंडळ यांचे पुनर्वसन व पुनर्बहाली धोरण, 2019 दि. 26/08/2019 नुसार विकसित भूखंडापोटी 10% कपात करावयाची रक्कम रुपये (अ.क्र. 5 चे रकमेवर 10%)</td>
+                    <td><span class="dyn">${red(row9DeductionStr)}</span></td>
+                </tr>
+                <tr>
+                    <td>10</td>
+                    <td style="text-align: left;">लिहून देणार (दुसरे पक्ष) यांचे राहते घर संपादन होत असल्यास, 02.50 गुंठे पर्यायी जागेसाठी कपात करावयाची 02.50 गुंठे क्षेत्राची रक्कम रुपये</td>
+                    <td><span class="dyn">${red(houseDeductionStr)}</span></td>
+                </tr>
+                <tr>
+                    <td>11</td>
+                    <td style="text-align: left;"><strong>या पुरवणी निवाड्यानुसार भूधारकांना एकूण देय मोबदला रक्कम (अ.क्र.5-8-9-10)</strong></td>
+                    <td><strong><span class="dyn">${red(finalTotalStr)}</span></strong></td>
+                </tr>
+                <tr>
+                    <td colspan="3" style="text-align: left;"><strong>अक्षरी रक्कम रुपये - <span class="dyn">(${red(finalTotalAksari)})</span></strong></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <p class="paragraph" style="margin-top: 20px;">
+            3) बाधित भूधारक यांनी महाराष्ट्र औद्योगिक विकास अधिनियम, 1961 च्या कलम 33(2) अन्वये दिनांक ${red(awardDateLong)} रोजी पुरवणी संमती करारनामा निष्पादित करून दिला असून, त्या मूळ संमती करारनामा व संमती निवाड्यातील सर्व अटी, शर्ती, तरतुदी, अधिकार व जबाबदाऱ्या यथावत कायम ठेवण्यात आलेल्या आहेत. त्यामध्ये कोणताही बदल करण्यात आलेला नसल्यामुळे त्यांची पुनरावृत्ती या पुरवणी संमती निवाड्यामध्ये करण्यात आलेली नाही.
+        </p>
+
+        <p style="font-weight: bold; margin-top: 20px; margin-bottom: 8px; text-align: center;">अंतिम निवाडा</p>
+        
+        <p class="paragraph">मी, ${red(officerName)}, उपजिल्हाधिकारी (${red(sec3SubdivisionName)}) पुणे याद्वारे घोषीत करतो की,</p>
+        <div class="numbered-point">
+            <span class="point-no">(1)</span>
+            <span>मौजे ${red(village)}, तालुका ${red(taluka)}, जिल्हा ${red(district)} येथील ${red(projectPurpose)} या प्रयोजनासाठी गट क्र. ${red(gutNumber)} मधील ${red(formattedOwnerNames)} यांचे ${red(consentArea)} हे.आर.चौमी क्षेत्र संयुक्त मोजणीत नमूद चतु:सीमेप्रमाणे तसेच त्यामधील सर्व निगडीत घटकांसह या यापूर्वी दि. ${red(awardDateLong)} रोजीचा संमती करारनामा / संमती निवाडा द्वारे निवाड्याद्वारे संपादित करण्यात आले असून, हा पुरवणी संमती निवाडा केवळ त्यामधील राहिलेल्या निगडीत घटकांबाबत करण्यात आला आहे.</span>
+        </div>
+        <div class="numbered-point">
+            <span class="point-no">(2)</span>
+            <span>या पुरवणी संमती निवाड्यानुसार निगडीत घटकांचा एकूण देय मोबदला रक्कम रुपये ${red(finalTotalStr)}/- मंजूर करीत आहे. सदर मोबदला रक्कमेमधून नियमानुसार अनर्जित / नजराणा रक्कम, बँक, सोसायटी यांचे बोजे, पुनर्वसन व पुनर्बहाली धोरणांतर्गत विकसित भूखंडापोटी 10 टक्के रक्कम, घर बाधित होत असल्यास पर्यायी 02.50 गुंठे जागेसाठी सदर 02.50 गुंठे क्षेत्राची रक्कम कपात करण्यात येईल.</span>
+        </div>
+        <div class="numbered-point">
+            <span class="point-no">(3)</span>
+            <span>या संमती निवाड्याची आस्थापना रक्कम रुपये ${red(asthapanaStr)}/- आणि सोई-सुविधा रक्कम रुपये ${red(soisuwidhaStr)}/- इतकी असून, आस्थापना रक्कम संबंधित हेडखाली शासकीय खजिन्यात जमा करणेत यावी व सोई-सुविधा रकमेचा शासनाचे प्रचलित नियमानुसार / तरतुदीनुसार विनियोग करण्यात यावा.</span>
+        </div>
+        <div class="numbered-point">
+            <span class="point-no">(4)</span>
+            <span>हा पुरवणी संमती करारनामा, मूळ संमती करारनाम्यानुसार संपादित झालेल्या मिळकतीतील केवळ निगडीत घटकांबाबत असल्याने, मूळ संमती करारनाम्यान्वये / संमती निवाड्यान्वये संपादित करण्यात आलेल्या मिळकतीचे संपादन, ताबा हस्तांतरण व इतर सर्व बाबी पूर्ववत कायम राहतील. संपादित क्षेत्राचा त्यामधील सर्व तदंगभूत वस्तूंसह निर्वेध व निजोंखमी ताबा यापूर्वीच हस्तांतरित करण्यात आलेला असल्याने, या पुरवणी संमती निवाड्यातील निगडीत घटकांबाबत स्वतंत्र ताबेपावती निष्पादित करण्याची आवश्यकता नाही.</span>
+        </div>
+        <div class="numbered-point">
+            <span class="point-no">(6)</span>
+            <span>हा संमतीचा पुरवणी निवाडा दिनांक <span class="dyn">${red(awardDateLong)}</span> रोजी माझ्या स्वाक्षरी व कार्यालयाच्या मुद्रांकीत शिक्क्यानिशी घोषीत करण्यात आला आहे.</span>
+        </div>
+        <div style="margin-top: 15px;">
+            <p style="font-weight: bold; margin: 0 0 5px;">ठिकाण : पुणे</p>
+            <p style="font-weight: bold; margin: 0;">दिनांक : <span class="dyn">${red(awardDateLong)}</span></p>
+        </div>
+        
+        <div style="text-align: right; margin-top: 40px;">
+            <p class="dyn" style="margin: 0 0 4px; font-weight: bold;">(${red(officerName)})</p>
+            <p class="dyn" style="margin: 0 0 4px;">उपजिल्हाधिकारी</p>
+            <p class="dyn" style="margin: 0;">(${red(sec3SubdivisionName)}) पुणे</p>
+        </div>
+    </section>
+
+    <section class="page">
+        <div style="display: flex; justify-content: space-between; font-weight: bold; margin-bottom: 20px; font-size: 15px;">
+            <div>टिपणी</div>
+            <div>दिनांक :- <span class="dyn">${red(awardDateLong)}</span></div>
+        </div>
+        
+        <div style="margin-left: 5%; margin-bottom: 20px;">
+            <table style="width: 100%; border: none; margin: 0; font-weight: bold;">
+                <tr>
+                    <td style="width: 10%; vertical-align: top; border: none; padding: 2px;">विषय :-</td>
+                    <td style="border: none; padding: 2px; text-align: left;">
+                        भूसंपादन पुणे<br>
+                        संपादनाचे प्रयोजन - <span class="dyn">${red(projectPurpose)}</span><br>
+                        मौजे <span class="dyn">${red(village)}</span>, ता. <span class="dyn">${red(taluka)}</span>, जि. <span class="dyn">${red(district)}</span> येथील जमिन गट नं <span class="dyn">${red(gutNumber)}</span> संपादन क्षेत्र <span class="dyn">${red(consentArea)}</span> हे.आर.चौमी<br>
+                        संमती करारनाम्यानुसार मोबदला अदा करणेबाबत.
+                    </td>
+                </tr>
+            </table>
+        </div>
+        
+        <p style="margin-bottom: 15px;">मा. उपजिल्हाधिकारी (<span class="dyn">${red(sec3SubdivisionName)}</span>) पुणे यांजकडे सविनय सादर,</p>
+        
+        <ol style="padding-left: 20px; text-align: justify; margin-bottom: 20px;">
+            <li style="margin-bottom: 8px;">मौजे <span class="dyn">${red(village)}</span>, ता. <span class="dyn">${red(taluka)}</span>, जि. <span class="dyn">${red(district)}</span> येथील जमिन गट नं <span class="dyn">${red(gutNumber)}</span> मधील क्षेत्र <span class="dyn">${red(consentArea)}</span> हे.आर.चौमी ही मिळकत <span class="dyn">${red(projectPurpose)}</span> या प्रयोजनाकरिता महाराष्ट्र औद्योगीक विकास अधिनियम 1961 चे कलम 33(2) नुसार दि. <span class="dyn">${red(awardDateLong)}</span> रोजी संपादन करण्यात आली आहे.</li>
+            <li style="margin-bottom: 8px;">सदर मिळकतीचे 7/12 पत्रकी <span class="dyn">${red(formattedOwnerNames)}</span> यांची नांवे नमूद आहेत.</li>
+            <li style="margin-bottom: 8px;">संमती करारनाम्यानुसार / संमती निवाड्यानुसार एकूण मोबदला रकमेचा तपशील पुढीलप्रमाणे आहे.</li>
+        </ol>
+        
+        <table style="width: 100%; border-collapse: collapse; text-align: left;" border="1" cellpadding="5">
+            <thead>
+                <tr>
+                    <th style="width: 8%;">अ. क्र.</th>
+                    <th>घटक</th>
+                    <th style="width: 25%;">रक्कम (रुपये)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td class="num-col">1</td><td>उच्चाधिकार समितीने निश्चित केलेला जमिनीचा दर (12% अतिरिक्त घटकाचे रकमेसह) रुपये</td><td class="amount">4,02,54,814/- प्रती हेक्टर</td></tr>
+                <tr><td class="num-col">2</td><td>उच्चाधिकार समितीने निश्चित केलेल्‍या वरीलप्रमाणे दरानुसार या संमती करारनाम्याचा विषय असलेल्या संपादन क्षेत्र <span class="dyn">${red(consentArea)}</span> हे.आर.चौमी. ची रक्कम रुपये</td><td class="amount"><span class="dyn">${red(tipaniRow2Str)}</span></td></tr>
+                <tr><td class="num-col">3</td><td>फळझाडांची एकूण मोबदला रक्कम रुपये (100% दिलासा रकमेसह)</td><td class="amount"><span class="dyn">${red(tipaniRow3Str)}</span></td></tr>
+                <tr><td class="num-col">4</td><td>वनझाडांची एकूण मोबदला रक्कम रुपये (100% दिलासा रकमेसह)</td><td class="amount"><span class="dyn">${red(tipaniRow4Str)}</span></td></tr>
+                <tr><td class="num-col">5</td><td>बांधकामांची / ताल एकूण मोबदला रक्कम रुपये (100% दिलासा रकमेसह)</td><td class="amount"><span class="dyn">${red(tipaniRow5Str)}</span></td></tr>
+                <tr><td class="num-col">6</td><td>पाईपलाईन / बोअरवेल / शेततळे / विहीर ची एकूण मोबदला रक्कम रुपये (100% दिलासा रकमेसह)</td><td class="amount"><span class="dyn">${red(tipaniRow6Str)}</span></td></tr>
+                <tr><td class="num-col">7</td><td class="bold"><strong>एकूण मोबदला रक्कम रुपये (अ.क्र. 2 ते 6)</strong></td><td class="amount bold"><strong><span class="dyn">${red(tipaniRow7TotalStr)}</span></strong></td></tr>
+                <tr><td>8</td><td>भोगवटादार वर्ग-2 / नियंत्रित सत्ता प्रकार / महार वतन जमीन हस्तांतरणापोटी वजावट केलेली नजराणा / अनर्जित रक्कम रुपये (अ.क्र. 7 चे रकमेवर 10%)</td><td><span class="dyn">${red(tipaniRow8DeductionStr)}</span></td></tr>
+                <tr><td>9</td><td>महाराष्ट्र औद्योगिक विकास महामंडळ यांचे पुनर्वसन व पुनर्बहाली धोरण, 2019 दि. 26/08/2019 नुसार विकसित भूखंडापोटी 10% कपात करावयाची रक्कम रुपये (अ.क्र. 7 चे रकमेवर 10%)</td><td><span class="dyn">${red(tipaniRow9DeductionStr)}</span></td></tr>
+                <tr><td>10</td><td>लिहून देणार (दुसरे पक्ष) यांचे राहते घर संपादन होत असल्यास, 02.50 गुंठे पर्यायी जागेसाठी कपात करावयाची 02.50 गुंठे क्षेत्राची रक्कम रुपये</td><td><span class="dyn">${red(tipaniRow10DeductionStr)}</span></td></tr>
+                <tr><td>10</td><td class="bold"><strong>भूमी संपादनाच्या संमती करारनाम्याकरीता भूधारकांना एकूण देय मोबदला रक्कम (अ.क्र.7-8-9)</strong></td><td><strong><span class="dyn">${red(tipaniRow11TotalStr)}</span></strong></td></tr>
+                <tr><td colspan="3" class="bold" style="text-align: left;"><strong>अक्षरी रक्कम रुपये - (<span class="dyn">${red(tipaniRow11TotalAksari)}</span>)</strong></td></tr>
+            </tbody>
+        </table>
+    </section>
+    
+    <section class="page">
+        <ol start="4" style="padding-left: 20px; text-align: justify; margin-bottom: 20px;">
+            <li>प्रस्तुत मिळकतीचे 7/12 वरील वर नमूद सर्व भूधारकांनी सादर केलेल्या संमतीपत्र / प्रतिज्ञापत्रानुसार व त्या अनुषंगाने निष्पादित केलेल्या संमती करारनाम्यानुसार मोबदला रकमेचे पुढीलप्रमाणे वाटप करणेचे आहे.</li>
+        </ol>
+        
+        <table>
+            <thead>
+                <tr>
+                    <th>अ. क्र.</th>
+                    <th>खातेदाराचे नाव</th>
+                    <th>बँकेचे नांव व शाखा</th>
+                    <th>खाते क्रमांक</th>
+                    <th>IFSC Code</th>
+                    <th>अदा करावयाची रक्कम रुपये</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${paymentRowsHtml}
+            </tbody>
+        </table>
+        
+        <p style="text-align: justify; margin-top: 20px; margin-bottom: 40px;">
+            वरीलप्रमाणे मोबदला वाटप करणेबाबत आजअखेर कोणाचीही तक्रार प्राप्त झालेली नसून, वरील वस्तुस्थितीचे अनुषंगाने वर अ.क्र. 4 मध्ये नमूद केलेप्रमाणे संबंधितांचे खात्यामध्ये मोबदला जमा करणेस हरकत नाही.
+        </p>
+        
+        <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: 60px;">
+            <div style="text-align: center;">
+                <p>महसूल सहाय्यक</p>
+            </div>
+            <div style="text-align: center;">
+                <p>सहा. महसूल अधिकारी</p>
+            </div>
+            <div style="text-align: center;">
+                <p>ना.त.</p>
+            </div>
+        </div>
+        
+        <div style="text-align: right; margin-top: 60px;">
+            <p class="dyn" style="margin: 0 0 4px; font-weight: bold;">उपजिल्हाधिकारी</p>
+            <p class="dyn" style="margin: 0;">(<span class="dyn">${red(sec3SubdivisionName)}</span>) पुणे</p>
+        </div>
+    </section>
+
+    <section class="page" style="orientation: landscape;">
+        <h2 style="text-align: center; margin-bottom: 5px;">मोबदला वाटप सीसी पत्रक</h2>
+        <div class="rule" style="margin-bottom: 20px;">---------------------------------------------------------------------------------------------------------------------------------------------------------</div>
+        
+        <p style="text-align: justify; margin-bottom: 10px;">
+            मौजे <span class="dyn">${red(village)}</span>, तालुका - <span class="dyn">${red(taluka)}</span>, जिल्हा <span class="dyn">${red(district)}</span> येथील जमीन गट नं <span class="dyn">${red(gutNumber)}</span> मधील <span class="dyn">${red(projectPurpose)}</span> करिता संपादन क्षेत्र <span class="dyn">${red(consentArea)}</span> हे.आर.चौमी. ची खालीलप्रमाणे मोबदला रक्कम प्राप्त झाली आहे.
+        </p>
+        
+        <table style="font-size: 12px;">
+            <thead>
+                <tr>
+                    <th style="width: 5%;">अ.क्र.</th>
+                    <th style="width: 20%;">मोबदला स्विकारणाऱ्याचे नाव</th>
+                    <th style="width: 10%;">संपादनाचा<br>गट / भूमापन<br>क्रमांक</th>
+                    <th style="width: 10%;">संपादनाचे क्षेत्र<br>(हे.आर.चौमी)</th>
+                    <th style="width: 12%;">संमती करारनाम्यानुसार<br>स्विकारलेली एकूण<br>मोबदला रक्कम</th>
+                    <th style="width: 15%;">धनादेश<br>क्रमांक व दिनांक</th>
+                    <th style="width: 15%;">RTGS / UTR<br>क्रमांक व दिनांक</th>
+                    <th style="width: 13%;">मोबदला स्विकारणाऱ्या व्यक्तीची<br>दिनांकित<br>सही / अंगठा</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${ccSheetRowsHtml}
+            </tbody>
+        </table>
+        
+        <div style="text-align: right; margin-top: 50px;">
+            <p style="margin: 0 0 4px; font-weight: bold;">(<span class="dyn">${red(officerName)}</span>)</p>
+            <p class="dyn" style="margin: 0 0 4px;">उपजिल्हाधिकारी</p>
+            <p class="dyn" style="margin: 0;">(<span class="dyn">${red(sec3SubdivisionName)}</span>) पुणे</p>
+        </div>
+    </section>
+</body>
+</html>
+`;
+        }
+
+
         function buildAwardDecisionHtml() {
             const prefill = currentProcessChartPrefill || {};
             const caseData = prefill.case_data || {};
@@ -17150,6 +17670,16 @@
             } catch (error) {
                 console.error('Puravani draft generation failed:', error);
                 alert('पुरवणी Draft तयार होत नाही. Console तपासा.');
+            }
+        });
+        puravaniAwardDraftGenerateBtn?.addEventListener('click', () => {
+            try {
+                currentAgreementDraftHtml = buildPuravaniAwardDraftHtml();
+                agreementDraftViewBtn?.classList.remove('hidden');
+                openAgreementDraft(currentAgreementDraftHtml, 'पुरवणी संमती निवाडा');
+            } catch (error) {
+                console.error('Puravani Award draft generation failed:', error);
+                alert('पुरवणी संमती निवाडा तयार होत नाही. Console तपासा.');
             }
         });
         awardGenerateBtn?.addEventListener('click', () => {
