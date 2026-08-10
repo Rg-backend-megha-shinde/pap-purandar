@@ -59,6 +59,7 @@ urlpatterns = [
     path('tools/process-chart-form/', views.process_chart_list, name='process_chart_form'),
     path('tools/process-chart-form/form/', views.process_chart_form, name='process_chart_form_entry'),
     path('tools/process-chart-form/delete/<int:id>/', views.delete_process_chart_case, name='delete_process_chart_case'),
+    path('tools/process-chart-form/authenticate/<int:record_id>/', views.authenticate_process_chart, name='authenticate_process_chart'),
     path('tools/automatic-documents/', views.automatic_document_generation, name='automatic_document_generation'),
     path('api/process-chart-form/data/', views.get_process_chart_form_data, name='process_chart_form_data'),
     path('api/process-chart-form/save/', views.save_process_chart_form, name='save_process_chart_form'),

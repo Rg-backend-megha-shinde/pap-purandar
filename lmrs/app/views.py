@@ -5877,6 +5877,21 @@ def delete_process_chart_case(request, id):
     return redirect('process_chart_form')
 
 
+@login_required
+@require_http_methods(["POST"])
+def authenticate_process_chart(request, record_id):
+    record = get_object_or_404(ProcessChartCase, id=record_id)
+    authenticated_value = request.POST.get('authenticated')
+    if authenticated_value is None:
+        authenticated_value = request.headers.get('X-Record-Authenticated')
+    is_authenticated = str(authenticated_value).strip().lower() in {'1', 'true', 'yes', 'on'}
+    if record.is_record_authenticated != is_authenticated:
+        record.is_record_authenticated = is_authenticated
+        record.save(update_fields=['is_record_authenticated', 'updated_at'])
+    return JsonResponse({'success': True, 'authenticated': record.is_record_authenticated})
+
+
+
 def _serialize_process_chart_case(case):
     if not case:
         return None
