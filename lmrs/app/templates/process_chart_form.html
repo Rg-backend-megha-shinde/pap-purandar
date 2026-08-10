@@ -11255,10 +11255,10 @@
                 el.classList.toggle('hidden', !visible);
             }
 
-            // #pcTab6FastCalcTypeWrap: show if fast_calc_type or village_type has value
+            // #pcTab6FastCalcTypeWrap: always visible in Tab 6 so users can select fast calc type
             setVisible(
                 document.getElementById('pcTab6FastCalcTypeWrap'),
-                shouldShow(null, villageData.fast_calc_type, villageData.village_type)
+                true
             );
 
             // #pcTab6ZoneDakhlaWrap: show if sec9_toggle === 'hoy' OR sec12_zone_details has value
@@ -11427,22 +11427,14 @@
 
         function collectTab4AcquisitionAreaMap() {
             const areaMap = new Map();
-            const singleBody = document.getElementById('pcSingleKhataOwnersBody');
-            const multiBody = document.getElementById('pcMultiKhataOwnersBody');
+            const tab4Rows = collectTab4AcquisitionOwnerRows();
+            const sourceRows = tab4Rows.length ? tab4Rows : collectTab4OwnerRows();
 
-            singleBody?.querySelectorAll('tr').forEach((row) => {
-                const inputs = row.querySelectorAll('input');
-                const ownerName = normalizeOwnerName(inputs[0]?.value || '');
-                const acquisitionArea = String(inputs[3]?.value || '').trim();
-                if (!ownerName || !acquisitionArea) return;
+            sourceRows.forEach((row) => {
+                const ownerName = normalizeOwnerName(row.owner_name || '');
+                const acquisitionArea = String(row.acquisition_area || '').trim();
+                if (!ownerName) return;
                 areaMap.set(ownerName, acquisitionArea);
-            });
-
-            const multiSharedArea = String(multiBody?.querySelector('.pc-multi-khata-common-area')?.value || '').trim();
-            multiBody?.querySelectorAll('tr').forEach((row) => {
-                const ownerName = normalizeOwnerName(row.querySelector('input')?.value || '');
-                if (!ownerName || !multiSharedArea) return;
-                areaMap.set(ownerName, multiSharedArea);
             });
 
             return areaMap;

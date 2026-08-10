@@ -1266,6 +1266,8 @@ class ProcessChartCase(models.Model):
     current_step = models.PositiveSmallIntegerField(default=1)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="draft")
 
+    is_record_authenticated = models.BooleanField(default=False)
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
