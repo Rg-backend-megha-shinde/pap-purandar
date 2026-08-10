@@ -1419,3 +1419,119 @@ class ProcessChartValuationRow(models.Model):
 
     def __str__(self):
         return f"{self.case} - {self.valuation_type}"
+
+
+# =========================================================
+# These tables cache the Maharashtra ROR (Record of Rights) web-service master
+# data so the 7/12 API tab can build its dropdowns without hitting SOAP on
+# every page load. Only the caches live here; fetched 7/12 rows are saved into
+# LandRecord712.
+# =========================================================
+
+class RorDivision(models.Model):
+    code = models.CharField(max_length=20, unique=True)
+    name = models.CharField(max_length=150)
+    aliases = models.JSONField(default=list, blank=True)
+    raw_data = models.JSONField(default=dict, blank=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["name"]
+        indexes = [
+            models.Index(fields=["code"], name="app_ror_div_code_idx"),
+            models.Index(fields=["name"], name="app_ror_div_name_idx"),
+        ]
+
+    def __str__(self):
+        return f"{self.name} ({self.code})"
+
+
+class RorDistrict(models.Model):
+    division = models.ForeignKey(
+        RorDivision, on_delete=models.SET_NULL, null=True, blank=True, related_name="districts"
+    )
+    div_code = models.CharField(max_length=20, blank=True)
+    code = models.CharField(max_length=20, unique=True)
+    name = models.CharField(max_length=150)
+    aliases = models.JSONField(default=list, blank=True)
+    raw_data = models.JSONField(default=dict, blank=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["name"]
+        indexes = [
+            models.Index(fields=["div_code"], name="app_ror_dist_div_idx"),
+            models.Index(fields=["code"], name="app_ror_dist_code_idx"),
+            models.Index(fields=["name"], name="app_ror_dist_name_idx"),
+        ]
+
+    def __str__(self):
+        return f"{self.name} ({self.code})"
+
+
+class RorTaluka(models.Model):
+    district = models.ForeignKey(RorDistrict, on_delete=models.CASCADE, related_name="talukas")
+    code = models.CharField(max_length=20)
+    name = models.CharField(max_length=150)
+    aliases = models.JSONField(default=list, blank=True)
+    raw_data = models.JSONField(default=dict, blank=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["district__name", "name"]
+        unique_together = [("district", "code")]
+        indexes = [
+            models.Index(fields=["code"], name="app_ror_tal_code_idx"),
+            models.Index(fields=["name"], name="app_ror_tal_name_idx"),
+            models.Index(fields=["district", "name"], name="app_ror_tal_dn_idx"),
+        ]
+
+    def __str__(self):
+        return f"{self.name} ({self.code})"
+
+
+class RorVillage(models.Model):
+    taluka = models.ForeignKey(RorTaluka, on_delete=models.CASCADE, related_name="villages")
+    code = models.CharField(max_length=40)
+    name = models.CharField(max_length=180)
+    aliases = models.JSONField(default=list, blank=True)
+    raw_data = models.JSONField(default=dict, blank=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["taluka__district__name", "taluka__name", "name"]
+        unique_together = [("taluka", "code")]
+        indexes = [
+            models.Index(fields=["code"], name="app_ror_vil_code_idx"),
+            models.Index(fields=["name"], name="app_ror_vil_name_idx"),
+            models.Index(fields=["taluka", "name"], name="app_ror_vil_tn_idx"),
+        ]
+
+    def __str__(self):
+        return f"{self.name} ({self.code})"
+
+
+class RorSurveyNumber(models.Model):
+    district = models.CharField(max_length=150)
+    taluka = models.CharField(max_length=150)
+    village = models.CharField(max_length=180)
+    gut_number = models.CharField(max_length=50)
+    survey_number = models.CharField(max_length=100)
+    hissa_number = models.CharField(max_length=80, blank=True)
+    raw_data = models.JSONField(default=dict, blank=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["gut_number", "survey_number"]
+        unique_together = [("district", "taluka", "village", "gut_number", "survey_number")]
+        indexes = [
+            models.Index(
+                fields=["district", "taluka", "village", "gut_number"],
+                name="app_ror_survey_loc_idx",
+            ),
+            models.Index(fields=["survey_number"], name="app_ror_survey_no_idx"),
+        ]
+
+    def __str__(self):
+        return self.survey_number
+
