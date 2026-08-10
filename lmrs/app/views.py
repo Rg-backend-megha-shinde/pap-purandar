@@ -1,5 +1,7 @@
 from django.shortcuts import render, redirect
+from django.conf import settings
 from django.http import JsonResponse, HttpResponse
+
 from django.urls import reverse
 from django.db import connection, transaction, ProgrammingError, OperationalError
 from django.db.models import Q, Count
@@ -7,7 +9,10 @@ from django.db.models.functions import TruncDate
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.sessions.models import Session
-from .models import Inspection, ReadyReckonerInfo, ReadyReckonerRate, LandRecord712, FarmerNames,TreeMaster, Asset, AssetMeasurement, AssetTypeMaster, AssetFieldMaster, AssetFormulaMaster, AssetCategory, Document, ToolMaster, DocumentMaster, DocumentAttachment, Entry, VillageData, VillageData8ARecord, VillageDataSec15Rate, VillageDataFile, VillageData8AFile, VillageData32_2Row, VillageData32_2RowFile, VillageData32_1Row, VillageData32_1RowFile, ActiveUserSession, AssetDetail, ProcessChartCase, ProcessChartStepData, ProcessChartAuditLog, ProcessChartDocument, ProcessChartOwnerNotice, ProcessChartDepartmentRow, ProcessChartValuationRow
+from .models import Inspection, ReadyReckonerInfo, ReadyReckonerRate, LandRecord712, FarmerNames,TreeMaster, Asset, AssetMeasurement, AssetTypeMaster, AssetFieldMaster, AssetFormulaMaster, AssetCategory, Document, ToolMaster, DocumentMaster, DocumentAttachment, Entry, VillageData, VillageData8ARecord, VillageDataSec15Rate, VillageDataFile, VillageData8AFile, VillageData32_2Row, VillageData32_2RowFile, VillageData32_1Row, VillageData32_1RowFile, ActiveUserSession, AssetDetail, ProcessChartCase, ProcessChartStepData, ProcessChartAuditLog, ProcessChartDocument, ProcessChartOwnerNotice, ProcessChartDepartmentRow, ProcessChartValuationRow, RorDivision, RorDistrict, RorTaluka, RorVillage, RorSurveyNumber
+from .ror_service import ror_base_params, ror_ensure_location_cache, ror_div_code_allowed, ror_division_display_name, ror_aliases, ror_location_values, ror_location_key, ror_location_filter_q, ror_fetch_all_districts, ror_numeric_pin, ror_fetch_survey_numbers, ror_fetch_712_preview, split_ror_survey_no
+import logging
+logger = logging.getLogger(__name__)
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponseForbidden
 from django.db import connection
@@ -374,6 +379,24 @@ def fetch_valid_gut_map_for_location(district_name, taluka_name, village_name):
         if gut_key and gut_key not in valid_gut_map:
             valid_gut_map[gut_key] = system_gut_name
     return valid_gut_map
+
+
+def match_system_gut_value(uploaded_gut, valid_gut_map):
+    """Match an uploaded Gut or its parent subdivision to the master Gut value."""
+    uploaded_key = normalize_gut_value(uploaded_gut)
+    if not uploaded_key:
+        return ''
+
+    exact_match = valid_gut_map.get(uploaded_key)
+    if exact_match:
+        return exact_match
+
+    parts = uploaded_key.split('/')
+    for end in range(len(parts) - 1, 0, -1):
+        parent_match = valid_gut_map.get('/'.join(parts[:end]))
+        if parent_match:
+            return parent_match
+    return ''
 
 
 def format_gut_number_for_storage(value):
@@ -9237,3 +9260,427 @@ def analytics(request):
         **documents_data,
         "land_record_712_last_updated": _format_analytics_last_updated(land_record_712_last_record),
     })
+
+
+# =========================================================
+# 🔹 7/12 API tab (ROR SOAP)
+# =========================================================
+
+def _ror_sync_allowed_usernames():
+    """
+    Usernames allowed to pull fresh data from the ROR SOAP service.
+    Matched case-insensitively. Configured via ROR_SYNC_ALLOWED_USERNAMES in .env
+    (comma-separated list, e.g. ROR_SYNC_ALLOWED_USERNAMES=megha,vishal).
+    """
+    raw_setting = getattr(settings, 'ROR_SYNC_ALLOWED_USERNAMES', None)
+    if raw_setting is None:
+        raw_setting = os.getenv('ROR_SYNC_ALLOWED_USERNAMES', 'megha,vishal')
+    if isinstance(raw_setting, (set, list, tuple)):
+        return {str(name).strip().casefold() for name in raw_setting if str(name).strip()}
+    return {name.strip().casefold() for name in str(raw_setting or '').split(',') if name.strip()}
+
+
+def _can_sync_ror(request):
+    """SOAP sync hits a rate-limited government service, so it is opt-in."""
+    user = getattr(request, 'user', None)
+    if not user or not user.is_authenticated:
+        return False
+    username = getattr(user, 'username', '') or ''
+    return username.casefold() in _ror_sync_allowed_usernames()
+
+
+
+
+def _land_record_712_ror_queryset(district='', taluka='', village='', gut_number='', survey_number=''):
+    qs = LandRecord712.objects.all()
+    if district:
+        qs = qs.filter(ror_location_filter_q('district', district))
+    if taluka:
+        qs = qs.filter(ror_location_filter_q('taluka', taluka))
+    if village:
+        qs = qs.filter(ror_location_filter_q('village', village, allow_contains=True))
+    gut_key = str(gut_number or '').strip()
+    if gut_key:
+        qs = qs.filter(Q(gut_number__iexact=gut_key) | Q(gut_number__icontains=gut_key))
+    survey_number = str(survey_number or '').strip()
+    _survey_gut, survey_hissa = split_ror_survey_no(survey_number, gut_key)
+    if survey_hissa:
+        qs = qs.filter(Q(hissa_number__iexact=survey_hissa) | Q(hissa_number__icontains=survey_hissa))
+    return qs.order_by('-updated_at', '-id')
+
+
+def _serialize_land_record_712_rows(records):
+    return [
+        {
+            'district': record.district or '',
+            'taluka': record.taluka or '',
+            'village': record.village or '',
+            'gut_number': record.gut_number or '',
+            'survey_number': '/'.join(
+                item for item in [record.gut_number or '', record.hissa_number or ''] if item
+            ),
+            'hissa_number': record.hissa_number or '',
+            'khata_number': record.khata_number or '',
+            'holder_name': record.holder_name or '',
+            'jirayit': record.jirayit or '',
+            'bagayat': record.bagayat or '',
+            'potkharaba': record.potkharaba or '',
+            'total_area': record.total_area or '',
+        }
+        for record in records
+    ]
+
+
+def _land_record_712_ror_rows_from_db(district='', taluka='', village='', gut_number='', survey_number='', limit=200):
+    qs = _land_record_712_ror_queryset(district, taluka, village, gut_number, survey_number)
+    return _serialize_land_record_712_rows(qs[:limit])
+
+
+def _save_ror_712_rows(request, rows, original_document_name='ROR API'):
+    def clean_optional(value):
+        text = str(value or '').strip()
+        if text.casefold() in {'', '-', 'na', 'n/a'}:
+            return None
+        return text
+
+    def build_unique_key(row):
+        return (
+            normalize_match_text(row.get('district')),
+            normalize_match_text(row.get('taluka')),
+            normalize_match_text(row.get('village')),
+            normalize_match_text(row.get('gut_number')),
+            normalize_match_text(row.get('khata_number') or ''),
+            normalize_match_text(row.get('holder_name') or ''),
+            normalize_match_text(row.get('total_area') or ''),
+            normalize_match_text(row.get('aakarni') or ''),
+        )
+
+    skipped_rows = []
+
+    def add_skipped(row, reason):
+        skipped_rows.append({
+            'reason': reason,
+            'gut_number': row.get('gut_number') or '',
+            'khata_number': row.get('khata_number') or '',
+            'holder_name': row.get('holder_name') or '',
+            'total_area': row.get('total_area') or '',
+        })
+
+    first_row = next((row for row in rows if isinstance(row, dict)), {})
+    district, taluka, village = resolve_location_to_english(
+        first_row.get('district'), first_row.get('taluka'), first_row.get('village')
+    )
+    if not all([district, taluka, village]):
+        return 0, 0, [{'reason': 'Missing location', 'gut_number': '', 'khata_number': '', 'holder_name': '', 'total_area': ''}]
+
+    valid_gut_map = fetch_valid_gut_map_for_location(district, taluka, village)
+
+    normalized_rows = []
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        matched_system_gut = match_system_gut_value(row.get('gut_number'), valid_gut_map)
+        if not matched_system_gut:
+            add_skipped(row, 'Gut Number not found')
+            continue
+        normalized_row = {
+            'district': district,
+            'taluka': taluka,
+            'village': village,
+            'gut_number': matched_system_gut,
+            'hissa_number': clean_optional(row.get('hissa_number')),
+            'khata_number': clean_optional(row.get('khata_number')),
+            'khata_area': clean_optional(row.get('khata_area')),
+            'jirayit': clean_optional(row.get('jirayit')),
+            'bagayat': clean_optional(row.get('bagayat')),
+            'potkharaba': clean_optional(row.get('potkharaba')),
+            'aakar': clean_optional(row.get('aakar')),
+            'aakarni': clean_optional(row.get('aakarni')),
+            'total_area': clean_optional(row.get('total_area')),
+            'holder_name': clean_optional(row.get('holder_name')),
+            'kul_khand_other_rights': clean_optional(row.get('kul_khand_other_rights')),
+        }
+        normalized_row['unique_key'] = build_unique_key(normalized_row)
+        normalized_rows.append(normalized_row)
+
+    if not normalized_rows:
+        return 0, 0, skipped_rows
+
+    incoming_guts = sorted({row['gut_number'] for row in normalized_rows if row.get('gut_number')})
+    existing_keys = {
+        build_unique_key(existing_row)
+        for existing_row in LandRecord712.objects.filter(
+            district__iexact=district,
+            taluka__iexact=taluka,
+            village__iexact=village,
+            gut_number__in=incoming_guts,
+        ).values(
+            'district', 'taluka', 'village', 'gut_number',
+            'khata_number', 'holder_name', 'total_area', 'aakarni'
+        )
+    }
+
+    duplicate_count = 0
+    seen_submission_keys = set()
+    objects_to_create = []
+    for row in normalized_rows:
+        row_key = row['unique_key']
+        if row_key in seen_submission_keys or row_key in existing_keys:
+            duplicate_count += 1
+            add_skipped(row, 'Duplicate record')
+            continue
+        seen_submission_keys.add(row_key)
+        existing_keys.add(row_key)
+        objects_to_create.append(LandRecord712(
+            user=request.user,
+            original_document_name=original_document_name,
+            district=row['district'],
+            taluka=row['taluka'],
+            village=row['village'],
+            gut_number=row['gut_number'],
+            hissa_number=row['hissa_number'],
+            khata_number=row['khata_number'],
+            khata_area=row['khata_area'],
+            jirayit=row['jirayit'],
+            bagayat=row['bagayat'],
+            potkharaba=row['potkharaba'],
+            total_area=row['total_area'],
+            aakarni=row['aakarni'],
+            aakar=row['aakar'],
+            holder_name=row['holder_name'],
+            kul_khand_other_rights=row['kul_khand_other_rights'],
+        ))
+
+    if objects_to_create:
+        LandRecord712.objects.bulk_create(objects_to_create, batch_size=200)
+    return len(objects_to_create), duplicate_count, skipped_rows
+
+
+@login_required
+def land_record_712_api(request):
+    return render(request, 'land_record_712_api.html', {
+        'can_sync_ror': _can_sync_ror(request),
+    })
+
+
+def _project_district_keys():
+    """Districts the project location tables actually carry, as match keys."""
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT DISTINCT name FROM purandar_airport.prj_district WHERE name IS NOT NULL")
+            names = [row[0] for row in cursor.fetchall()]
+    except Exception:
+        logger.exception('Project district lookup failed')
+        return set()
+    return {
+        key
+        for name in names
+        for alias in ror_location_values(name)
+        if (key := ror_location_key(alias))
+    }
+
+
+def _district_in_project(district_payload, project_keys):
+    candidate_keys = {
+        key
+        for value in [district_payload['name'], *(district_payload['aliases'] or [])]
+        if (key := ror_location_key(value))
+    }
+    return bool(candidate_keys & project_keys)
+
+
+@login_required
+def land_record_712_ror_locations_api(request):
+    """Division/district lists for the dropdowns, refreshed from SOAP on demand."""
+    return JsonResponse(_ror_locations_payload(request))
+
+
+def _ror_locations_payload(request):
+    warning = ''
+    if request.GET.get('refresh') == '1' and _can_sync_ror(request):
+        try:
+            base = ror_base_params()
+            ror_fetch_all_districts({k: v for k, v in base.items() if k != 'Format_code'})
+        except Exception as exc:
+            warning = str(exc)
+    else:
+        _synced, cache_warning = ror_ensure_location_cache()
+        warning = warning or cache_warning
+
+    divisions_by_code = {}
+    for division in RorDivision.objects.order_by('name', 'code'):
+        if not ror_div_code_allowed(division.code):
+            continue
+        divisions_by_code[division.code] = {
+            'code': division.code,
+            'name': ror_division_display_name(division.code, division.raw_data, division.name),
+        }
+
+    districts = []
+    for district in RorDistrict.objects.select_related('division').order_by('name', 'code'):
+        division = district.division
+        division_code = (division.code if division else district.div_code) or ''
+        if not ror_div_code_allowed(division_code):
+            continue
+        division_name = ror_division_display_name(
+            division_code,
+            district.raw_data or getattr(division, 'raw_data', {}) or {},
+            (division.name if division else ''),
+        )
+        if division_code and division_code not in divisions_by_code:
+            divisions_by_code[division_code] = {'code': division_code, 'name': division_name}
+        districts.append({
+            'code': district.code,
+            'name': district.name,
+            'aliases': ror_aliases(*ror_location_values(district.name), *(district.aliases or [])),
+            'division_code': division_code,
+            'division_name': division_name,
+        })
+
+    project_keys = _project_district_keys()
+    mapped_districts = [item for item in districts if _district_in_project(item, project_keys)]
+    if mapped_districts:
+        districts = mapped_districts
+
+    return {
+        'success': True,
+        'divisions': list(divisions_by_code.values()),
+        'districts': districts,
+        'warning': warning,
+        'can_sync': _can_sync_ror(request),
+    }
+
+
+@login_required
+def land_record_712_ror_saved_rows_api(request):
+    district = (request.GET.get('district') or '').strip()
+    taluka = (request.GET.get('taluka') or '').strip()
+    village = (request.GET.get('village') or '').strip()
+    gut_number = (request.GET.get('gut_number') or '').strip()
+    survey_number = (request.GET.get('survey_number') or '').strip()
+    try:
+        per_page = int(request.GET.get('per_page') or 10)
+    except (TypeError, ValueError):
+        per_page = 10
+    per_page = max(1, min(per_page, 100))
+    try:
+        page = int(request.GET.get('page') or 1)
+    except (TypeError, ValueError):
+        page = 1
+    page = max(1, page)
+
+    qs = _land_record_712_ror_queryset(district, taluka, village, gut_number, survey_number)
+    total_records = qs.count()
+    total_pages = max(1, (total_records + per_page - 1) // per_page)
+    page = min(page, total_pages)
+    start = (page - 1) * per_page
+    end = start + per_page
+    rows = _serialize_land_record_712_rows(qs[start:end])
+    return JsonResponse({
+        'success': True,
+        'rows': rows,
+        'source': 'database',
+        'pagination': {
+            'page': page,
+            'per_page': per_page,
+            'total_records': total_records,
+            'total_pages': total_pages,
+            'start_index': start + 1 if total_records else 0,
+            'end_index': min(end, total_records),
+            'has_previous': page > 1,
+            'has_next': page < total_pages,
+        },
+        'message': 'Showing saved 7/12 rows from local DB.' if rows else 'No saved 7/12 rows found in local DB.',
+    })
+
+
+@login_required
+def land_record_712_ror_survey_numbers_api(request):
+    district = (request.GET.get('district') or '').strip()
+    taluka = (request.GET.get('taluka') or '').strip()
+    village = (request.GET.get('village') or '').strip()
+    gut_number = (request.GET.get('gut_number') or '').strip()
+    if not all([district, taluka, village, gut_number]):
+        return JsonResponse(
+            {'success': False, 'error': 'District, taluka, village and gut number are required.'},
+            status=400,
+        )
+    if not ror_numeric_pin(gut_number):
+        return JsonResponse(
+            {
+                'success': False,
+                'error': f'गट क्रमांक "{gut_number}" मध्ये अंक नाही, त्यामुळे ROR कडून सर्व्हे क्रमांक मिळू शकत नाहीत.',
+            },
+            status=400,
+        )
+    try:
+        options, from_cache = ror_fetch_survey_numbers(district, taluka, village, gut_number)
+        return JsonResponse({'success': True, 'data': options, 'from_cache': from_cache})
+    except Exception as exc:
+        logger.exception('ROR survey number lookup failed')
+        return JsonResponse({'success': False, 'error': str(exc)}, status=502)
+
+
+@login_required
+@require_http_methods(['POST'])
+def land_record_712_ror_sync_api(request):
+    if not _can_sync_ror(request):
+        return JsonResponse({'success': False, 'error': 'You do not have permission to sync SOAP data.'}, status=403)
+    try:
+        payload = json.loads(request.body.decode('utf-8') or '{}')
+    except (TypeError, ValueError, json.JSONDecodeError):
+        return JsonResponse({'success': False, 'error': 'Invalid request payload.'}, status=400)
+
+    district = (payload.get('district') or '').strip()
+    taluka = (payload.get('taluka') or '').strip()
+    village = (payload.get('village') or '').strip()
+    survey_number = (payload.get('survey_number') or '').strip()
+    gut_number = (payload.get('gut_number') or '').strip() or split_ror_survey_no(survey_number)[0]
+    if not all([district, taluka, village, gut_number]):
+        return JsonResponse(
+            {'success': False, 'error': 'District, taluka, village and gut number are required.'},
+            status=400,
+        )
+    try:
+        preview = ror_fetch_712_preview(district, taluka, village, gut_number, survey_number)
+        created_count, duplicate_count, skipped_rows = _save_ror_712_rows(
+            request, preview.get('rows') or []
+        )
+        rows = _land_record_712_ror_rows_from_db(district, taluka, village, gut_number, survey_number)
+        return JsonResponse({
+            'success': True,
+            'rows': rows or preview.get('rows') or [],
+            'codes': preview.get('codes') or {},
+            'source': 'database',
+            'created_count': created_count,
+            'duplicate_count': duplicate_count,
+            'skipped_count': len(skipped_rows),
+            'skipped_rows': skipped_rows,
+            'warnings': preview.get('warnings') or [],
+            'message': 'SOAP data synced into DB.',
+        })
+    except Exception as exc:
+        logger.exception('ROR SOAP sync failed')
+        return JsonResponse({'success': False, 'error': str(exc)}, status=502)
+
+
+@login_required
+@require_http_methods(['POST'])
+def land_record_712_ror_save_api(request):
+    try:
+        payload = json.loads(request.body.decode('utf-8') or '{}')
+    except (TypeError, ValueError, json.JSONDecodeError):
+        return JsonResponse({'success': False, 'error': 'Invalid request payload.'}, status=400)
+    rows = payload.get('rows') or []
+    if not isinstance(rows, list) or not rows:
+        return JsonResponse({'success': False, 'error': 'No 7/12 rows found to save.'}, status=400)
+    created_count, duplicate_count, skipped_rows = _save_ror_712_rows(request, rows)
+    return JsonResponse({
+        'success': True,
+        'created_count': created_count,
+        'duplicate_count': duplicate_count,
+        'skipped_count': len(skipped_rows),
+        'skipped_rows': skipped_rows,
+        'message': f'Saved {created_count} 7/12 API rows.',
+    })
+

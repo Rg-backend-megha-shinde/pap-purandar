@@ -1,0 +1,694 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<style>
+    .tool-tabs-shell {
+        border: 1px solid #d8e4f2;
+        background: #f8fbff;
+        border-radius: 0.65rem;
+        padding: 0.4rem 0.55rem 0;
+    }
+    .tool-tabs {
+        display: flex;
+        align-items: flex-end;
+        gap: 0.4rem;
+        flex-wrap: wrap;
+    }
+    .tool-tab-link {
+        display: inline-block;
+        margin-bottom: -1px;
+        padding: 0.7rem 1.1rem;
+        border: 1px solid transparent;
+        border-radius: 0.5rem 0.5rem 0 0;
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: #6b7d99;
+        line-height: 1;
+        transition: all 120ms ease;
+    }
+    .tool-tab-link:hover { color: #213a63; }
+    .tool-tab-link.is-active {
+        background: #ffffff;
+        color: #125fcb;
+        border-color: #cad8ea;
+        box-shadow: 0 1px 3px rgba(18, 95, 203, 0.15);
+    }
+    @media (max-width: 640px) {
+        .tool-tab-link {
+            padding: 0.6rem 0.85rem;
+            font-size: 0.85rem;
+        }
+    }
+    .ror-label {
+        display: block;
+        margin-bottom: 0.35rem;
+        color: #254267;
+        font-size: 0.84rem;
+        font-weight: 800;
+    }
+    .ror-input {
+        width: 100%;
+        min-height: 2.65rem;
+        border: 1px solid #cad8ea;
+        border-radius: 0.45rem;
+        background: #fff;
+        padding: 0.55rem 0.75rem;
+        color: #1f2937;
+        outline: none;
+    }
+    .ror-input:disabled {
+        background: #eef3f8;
+        color: #6b7280;
+    }
+    .ror-table {
+        min-width: 980px;
+        border-collapse: collapse;
+    }
+    .ror-table th {
+        background: #eaf2fb;
+        color: #1f3760;
+        font-weight: 800;
+        white-space: nowrap;
+    }
+    .ror-table th,
+    .ror-table td {
+        border: 1px solid #d7e5f6;
+        padding: 0.65rem;
+        vertical-align: top;
+    }
+</style>
+
+<div class="w-full px-2 sm:px-3 md:px-4 py-4">
+    <div class="overflow-hidden rounded-lg border border-slate-300 bg-white shadow-sm">
+    <div class="px-3 py-4 md:px-5 lg:px-6">
+    <div class="tool-tabs-shell mb-6">
+        <nav class="tool-tabs" aria-label="Tool views">
+            <a href="{% url 'land_record_712_list' %}" class="tool-tab-link">७/१२ उतारा नोंद</a>
+            <a href="{% url 'land_record_712_api' %}" class="tool-tab-link is-active">७/१२ API</a>
+            <a href="{% url 'ready_reckoner_list' %}" class="tool-tab-link">रेडी रेकनर दर</a>
+            <a href="{% url 'village_info' %}" class="tool-tab-link">गावाची माहिती</a>
+            <a href="{% url 'add_entry' %}" class="tool-tab-link">नुकसान भरपाई नोंद</a>
+            <a href="{% url 'process_chart_form' %}" class="tool-tab-link">भूसंपादन प्रक्रिया</a>
+            <a href="{% url 'automatic_document_generation' %}" class="tool-tab-link">स्वयंचलित दस्तऐवज निर्मिती</a>
+        </nav>
+    </div>
+
+    <div class="flex flex-col gap-3 border-b border-[#d7e5f6] pb-4 md:flex-row md:items-center md:justify-between">
+        <div>
+            <h1 class="text-xl font-bold text-[#1f3760]">७/१२ API नोंद</h1>
+            <p class="mt-1 text-sm text-[#5c78a5]">गट क्रमांक निवडा, saved DB rows पहा किंवा SOAP मधून 7/12 data sync करा.</p>
+        </div>
+        <div class="flex flex-wrap gap-2">
+            <a href="/tools/712/" class="rounded bg-slate-700 px-4 py-2 text-center text-sm font-semibold text-white hover:bg-slate-800">Upload / Manual</a>
+            <a href="{% url 'land_record_712_list' %}" class="rounded bg-gray-800 px-4 py-2 text-center text-sm font-semibold text-white hover:bg-gray-900">नोंदी पहा</a>
+        </div>
+    </div>
+
+    <form id="csrfBridgeForm" class="hidden">{% csrf_token %}</form>
+    <div id="messageBox" class="mt-4 hidden rounded border px-4 py-3 text-sm font-semibold"></div>
+
+    <section class="mt-5 rounded-lg border border-[#d7e5f6] bg-[#fbfdff] p-4">
+        <div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-6">
+            <div>
+                <label class="ror-label" for="divisionSelect">विभाग</label>
+                <select id="divisionSelect" class="ror-input"><option value="">विभाग निवडा</option></select>
+            </div>
+            <div>
+                <label class="ror-label" for="districtSelect">जिल्हा</label>
+                <select id="districtSelect" class="ror-input" disabled><option value="">जिल्हा निवडा</option></select>
+            </div>
+            <div>
+                <label class="ror-label" for="talukaSelect">तालुका</label>
+                <select id="talukaSelect" class="ror-input" disabled><option value="">तालुका निवडा</option></select>
+            </div>
+            <div>
+                <label class="ror-label" for="villageSelect">गाव</label>
+                <select id="villageSelect" class="ror-input" disabled><option value="">गाव निवडा</option></select>
+            </div>
+            <div>
+                <label class="ror-label" for="gutSelect">गट क्रमांक</label>
+                <select id="gutSelect" class="ror-input" disabled><option value="">गट क्रमांक निवडा</option></select>
+            </div>
+            <div>
+                <label class="ror-label" for="surveyNumberInput">Survey Number</label>
+                <select id="surveyNumberInput" class="ror-input" disabled><option value="">Survey Number निवडा</option></select>
+            </div>
+        </div>
+
+        <div class="mt-4 flex flex-wrap items-center justify-end gap-2">
+            <button type="button" id="resetBtn" class="rounded bg-slate-200 px-4 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-300">Reset</button>
+            <button type="button" id="fetchBtn" class="rounded bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700">Fetch 7/12 from DB</button>
+            <button
+                type="button"
+                id="syncBtn"
+                class="rounded px-4 py-2 text-sm font-semibold text-white {% if can_sync_ror %}bg-green-600 hover:bg-green-700{% else %}cursor-not-allowed bg-slate-400 opacity-70{% endif %}"
+                {% if not can_sync_ror %}disabled title="You do not have permission to sync SOAP data."{% endif %}
+            >Sync SOAP to DB</button>
+        </div>
+    </section>
+
+    <section id="codeBox" class="mt-4 hidden rounded-lg border border-[#d7e5f6] bg-white p-4 text-sm">
+        <div class="grid grid-cols-1 gap-3 md:grid-cols-4">
+            <div><span class="font-bold text-[#254267]">dist_code:</span> <span id="distCodeText">-</span></div>
+            <div><span class="font-bold text-[#254267]">tah_code:</span> <span id="tahCodeText">-</span></div>
+            <div><span class="font-bold text-[#254267]">ccode:</span> <span id="ccodeText">-</span></div>
+            <div><span class="font-bold text-[#254267]">source:</span> <span id="sourceText">DB</span></div>
+        </div>
+    </section>
+
+    <section class="mt-5">
+        <div class="mb-3 flex flex-col gap-1 md:flex-row md:items-end md:justify-between">
+            <h2 class="text-lg font-bold text-[#1f3760]">Preview</h2>
+            <p id="previewCountText" class="text-sm text-[#5c78a5]">No rows fetched</p>
+        </div>
+        <div class="mb-4 flex flex-col gap-3 text-sm sm:flex-row sm:items-center sm:justify-between">
+            <label class="flex flex-wrap items-center gap-2">
+                <span>दाखवा</span>
+                <select id="apiPerPageSelect" class="h-9 min-w-[4.5rem] rounded border border-[#cad8ea] bg-white px-3 text-sm leading-none">
+                    <option value="10">10</option>
+                    <option value="25">25</option>
+                    <option value="50">50</option>
+                    <option value="100">100</option>
+                </select>
+                <span>नोंदी</span>
+            </label>
+            <div id="apiPaginationInfo" class="text-[#5c78a5]">0 पैकी 0 ते 0 नोंदी दर्शवत आहे</div>
+        </div>
+        <div class="overflow-x-auto rounded-lg border border-[#d7e5f6]">
+            <table class="ror-table w-full text-left text-sm">
+                <thead>
+                    <tr>
+                        <th>जिल्हा</th>
+                        <th>तालुका</th>
+                        <th>गाव</th>
+                        <th>गट क्रमांक</th>
+                        <th>Survey Number</th>
+                        <th>हिस्सा</th>
+                        <th>खाता नं</th>
+                        <th>भोगवटादाराचे नाव</th>
+                        <th>जिरायत</th>
+                        <th>बागायत</th>
+                        <th>पोटखराब</th>
+                        <th>एकूण क्षेत्र</th>
+                    </tr>
+                </thead>
+                <tbody id="previewBody">
+                    <tr><td colspan="12" class="text-center text-slate-500">Loading saved 7/12 rows...</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <div id="apiPaginationControls" class="mt-3 flex flex-wrap justify-end gap-2 text-sm"></div>
+    </section>
+
+    </div>
+    </div>
+</div>
+
+<script>
+const state = {
+    rows: [],
+    codes: null,
+    page: 1,
+    perPage: 10,
+    totalPages: 1,
+    totalRecords: 0,
+    currentSavedParams: {},
+    rorLocations: { divisions: [], districts: [] },
+};
+const CAN_SYNC_ROR = "{{ can_sync_ror|yesno:'true,false' }}" === "true";
+const divisionSelect = document.getElementById("divisionSelect");
+const districtSelect = document.getElementById("districtSelect");
+const talukaSelect = document.getElementById("talukaSelect");
+const villageSelect = document.getElementById("villageSelect");
+const gutSelect = document.getElementById("gutSelect");
+const surveyNumberInput = document.getElementById("surveyNumberInput");
+const fetchBtn = document.getElementById("fetchBtn");
+const syncBtn = document.getElementById("syncBtn");
+const resetBtn = document.getElementById("resetBtn");
+const messageBox = document.getElementById("messageBox");
+const previewBody = document.getElementById("previewBody");
+const previewCountText = document.getElementById("previewCountText");
+const codeBox = document.getElementById("codeBox");
+const apiPerPageSelect = document.getElementById("apiPerPageSelect");
+const apiPaginationInfo = document.getElementById("apiPaginationInfo");
+const apiPaginationControls = document.getElementById("apiPaginationControls");
+
+function csrfToken() {
+    return document.querySelector('#csrfBridgeForm input[name="csrfmiddlewaretoken"]')?.value || "";
+}
+
+function escapeHtml(value) {
+    return String(value || "").replace(/[&<>"']/g, (char) => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#039;",
+    }[char]));
+}
+
+function showMessage(text, type = "info") {
+    messageBox.textContent = text;
+    messageBox.className = "mt-4 rounded border px-4 py-3 text-sm font-semibold";
+    if (type === "error") messageBox.classList.add("border-red-300", "bg-red-50", "text-red-700");
+    else if (type === "success") messageBox.classList.add("border-green-300", "bg-green-50", "text-green-700");
+    else messageBox.classList.add("border-blue-300", "bg-blue-50", "text-blue-700");
+    messageBox.classList.remove("hidden");
+}
+
+function clearMessage() {
+    messageBox.classList.add("hidden");
+    messageBox.textContent = "";
+}
+
+function optionLabel(item) {
+    return item && typeof item === "object" ? (item.label || item.name || item.value || item.code || item.id || "") : (item || "");
+}
+
+function optionValue(item) {
+    return item && typeof item === "object" ? (item.value || item.code || item.label || item.name || item.id || "") : (item || "");
+}
+
+function resetSelect(select, placeholder, disabled = true) {
+    select.innerHTML = `<option value="">${placeholder}</option>`;
+    select.disabled = disabled;
+}
+
+function fillSelect(select, items, placeholder) {
+    resetSelect(select, placeholder, false);
+    (items || []).forEach((item) => {
+        const value = optionValue(item);
+        const label = optionLabel(item);
+        if (!value) return;
+        const option = document.createElement("option");
+        option.value = value;
+        option.textContent = label || value;
+        select.appendChild(option);
+    });
+}
+
+function selectedOption(select) {
+    return select.options[select.selectedIndex] || null;
+}
+
+function selectedDistrictAliases() {
+    const option = selectedOption(districtSelect);
+    if (!option) return [];
+    try {
+        return JSON.parse(option.dataset.aliases || "[]").filter(Boolean);
+    } catch (_error) {
+        return [];
+    }
+}
+
+function fillDistricts(divisionCode = "") {
+    const districts = (state.rorLocations.districts || []).filter((district) => (
+        !divisionCode || district.division_code === divisionCode
+    ));
+    resetSelect(districtSelect, "जिल्हा निवडा", !districts.length);
+    districts.forEach((district) => {
+        const option = document.createElement("option");
+        option.value = district.name;
+        option.textContent = district.name;
+        option.dataset.code = district.code || "";
+        option.dataset.aliases = JSON.stringify(district.aliases || []);
+        districtSelect.appendChild(option);
+    });
+}
+
+function fillSurveyNumbers(items) {
+    resetSelect(surveyNumberInput, "Survey Number निवडा", false);
+    (items || []).forEach((item) => {
+        const value = item.value || item.label || "";
+        if (!value) return;
+        const option = document.createElement("option");
+        option.value = value;
+        option.textContent = item.label || value;
+        surveyNumberInput.appendChild(option);
+    });
+    if (!(items || []).length) {
+        resetSelect(surveyNumberInput, "Survey Number उपलब्ध नाही", true);
+    }
+}
+
+async function loadLocations(params = {}) {
+    const response = await fetch(`{% url 'get_locations' %}?${new URLSearchParams(params).toString()}`);
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || "Location data failed.");
+    return data.data || [];
+}
+
+async function loadLocationsWithDistrictAliases(params = {}) {
+    const attempts = [params];
+    selectedDistrictAliases().forEach((alias) => {
+        if (alias && alias !== params.district) attempts.push({ ...params, district: alias });
+    });
+    let lastResult = [];
+    for (const attempt of attempts) {
+        lastResult = await loadLocations(attempt);
+        if (lastResult.length) return lastResult;
+    }
+    return lastResult;
+}
+
+function clearPreview() {
+    state.rows = [];
+    state.codes = null;
+    codeBox.classList.add("hidden");
+    previewCountText.textContent = "No rows fetched";
+    updatePagination(null);
+    previewBody.innerHTML = '<tr><td colspan="12" class="text-center text-slate-500">No rows fetched.</td></tr>';
+}
+
+function renderPreview(rows) {
+    if (!rows.length) {
+        previewBody.innerHTML = '<tr><td colspan="12" class="text-center text-slate-500">No 7/12 rows returned.</td></tr>';
+        previewCountText.textContent = "0 rows";
+        return;
+    }
+    previewBody.innerHTML = rows.map((row) => `
+        <tr>
+            <td>${escapeHtml(row.district)}</td>
+            <td>${escapeHtml(row.taluka)}</td>
+            <td>${escapeHtml(row.village)}</td>
+            <td>${escapeHtml(row.gut_number)}</td>
+            <td>${escapeHtml(row.survey_number || row.survey_no)}</td>
+            <td>${escapeHtml(row.hissa_number)}</td>
+            <td>${escapeHtml(row.khata_number)}</td>
+            <td>${escapeHtml(row.holder_name)}</td>
+            <td>${escapeHtml(row.jirayit)}</td>
+            <td>${escapeHtml(row.bagayat)}</td>
+            <td>${escapeHtml(row.potkharaba)}</td>
+            <td>${escapeHtml(row.total_area)}</td>
+        </tr>
+    `).join("");
+    previewCountText.textContent = `${rows.length} row${rows.length === 1 ? "" : "s"} fetched`;
+}
+
+function updatePagination(pagination) {
+    const data = pagination || {
+        page: 1,
+        per_page: state.perPage,
+        total_records: 0,
+        total_pages: 1,
+        start_index: 0,
+        end_index: 0,
+        has_previous: false,
+        has_next: false,
+    };
+    state.page = data.page || 1;
+    state.perPage = data.per_page || state.perPage;
+    state.totalPages = data.total_pages || 1;
+    state.totalRecords = data.total_records || 0;
+    if (apiPerPageSelect) apiPerPageSelect.value = String(state.perPage);
+    if (apiPaginationInfo) {
+        apiPaginationInfo.textContent = `${state.totalRecords} पैकी ${data.start_index || 0} ते ${data.end_index || 0} नोंदी दर्शवत आहे`;
+    }
+    if (!apiPaginationControls) return;
+    apiPaginationControls.innerHTML = "";
+    if (state.totalPages <= 1) return;
+
+    const addButton = (label, page, active = false, disabled = false) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.textContent = label;
+        button.className = active
+            ? "rounded bg-blue-600 px-3 py-1 font-semibold text-white"
+            : "rounded border border-[#cad8ea] bg-white px-3 py-1 font-semibold text-[#254267] hover:bg-[#f4f8ff]";
+        button.disabled = disabled;
+        if (disabled) button.classList.add("cursor-not-allowed", "opacity-50");
+        button.addEventListener("click", () => loadSavedRows(state.currentSavedParams, { showStatus: true, page }));
+        apiPaginationControls.appendChild(button);
+    };
+
+    addButton("मागील", state.page - 1, false, !data.has_previous);
+    const startPage = Math.max(1, state.page - 2);
+    const endPage = Math.min(state.totalPages, state.page + 2);
+    for (let page = startPage; page <= endPage; page += 1) {
+        addButton(String(page), page, page === state.page);
+    }
+    addButton("पुढील", state.page + 1, false, !data.has_next);
+}
+
+function selectedPayload() {
+    const surveyNumber = surveyNumberInput.value.trim();
+    const derivedGut = surveyNumber.split(/[\\/]/)[0].trim();
+    return {
+        division_code: divisionSelect.value,
+        division_name: selectedOption(divisionSelect)?.textContent || "",
+        district: districtSelect.value,
+        taluka: talukaSelect.value,
+        village: villageSelect.value,
+        gut_number: gutSelect.value || derivedGut,
+        survey_number: surveyNumber,
+    };
+}
+
+function validateLocationPayload(payload) {
+    if (!payload.district || !payload.taluka || !payload.village) {
+        showMessage("Please select district, taluka and village.", "error");
+        return false;
+    }
+    if (!payload.gut_number) {
+        showMessage("Please select gut number.", "error");
+        return false;
+    }
+    if (!payload.survey_number) {
+        showMessage("Please select Survey Number.", "error");
+        return false;
+    }
+    return true;
+}
+
+function selectedSavedRowsParams() {
+    const payload = selectedPayload();
+    const params = {};
+    ["district", "taluka", "village", "gut_number", "survey_number"].forEach((key) => {
+        if (payload[key]) params[key] = payload[key];
+    });
+    return params;
+}
+
+async function loadSurveyNumbers() {
+    resetSelect(surveyNumberInput, "Survey Number निवडा");
+    const payload = selectedPayload();
+    if (!payload.district || !payload.taluka || !payload.village || !payload.gut_number) return;
+    resetSelect(surveyNumberInput, "Survey Number loading...");
+    try {
+        const query = new URLSearchParams({
+            district: payload.district,
+            taluka: payload.taluka,
+            village: payload.village,
+            gut_number: payload.gut_number,
+        });
+        const response = await fetch("{% url 'land_record_712_ror_survey_numbers_api' %}?" + query.toString());
+        const data = await response.json();
+        if (!response.ok || !data.success) throw new Error(data.error || "Survey numbers load failed.");
+        fillSurveyNumbers(data.data || []);
+    } catch (error) {
+        resetSelect(surveyNumberInput, "Survey Number उपलब्ध नाही", true);
+        showMessage(error.message, "error");
+    }
+}
+
+async function postJson(url, payload) {
+    const response = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-CSRFToken": csrfToken() },
+        body: JSON.stringify(payload),
+    });
+    const data = await response.json();
+    if (!response.ok || !data.success) throw new Error(data.error || data.message || "Request failed.");
+    return data;
+}
+
+async function fetchJson(url, params = {}) {
+    const query = new URLSearchParams(params).toString();
+    const response = await fetch(query ? `${url}?${query}` : url);
+    const data = await response.json();
+    if (!response.ok || !data.success) throw new Error(data.error || data.message || "Request failed.");
+    return data;
+}
+
+function showCodes(data, sourceLabel) {
+    if (!data.codes) return;
+    document.getElementById("distCodeText").textContent = data.codes.dist_code || "-";
+    document.getElementById("tahCodeText").textContent = data.codes.tah_code || "-";
+    document.getElementById("ccodeText").textContent = data.codes.ccode || "-";
+    document.getElementById("sourceText").textContent = sourceLabel;
+    codeBox.classList.remove("hidden");
+}
+
+async function initDistricts() {
+    try {
+        const response = await fetch("{% url 'land_record_712_ror_locations_api' %}");
+        const data = await response.json();
+        if (!response.ok || !data.success) throw new Error(data.error || "ROR location data failed.");
+        state.rorLocations = {
+            divisions: data.divisions || [],
+            districts: data.districts || [],
+        };
+        fillSelect(divisionSelect, state.rorLocations.divisions, "विभाग निवडा");
+        if (state.rorLocations.divisions.length === 1) {
+            divisionSelect.value = optionValue(state.rorLocations.divisions[0]);
+            fillDistricts(divisionSelect.value);
+        } else if (!state.rorLocations.divisions.length) {
+            fillDistricts("");
+        }
+        if (data.warning) showMessage(data.warning, "info");
+    } catch (error) {
+        showMessage(error.message, "error");
+    }
+}
+
+async function loadSavedRows(params = {}, { showStatus = false, page = 1 } = {}) {
+    state.currentSavedParams = { ...(params || {}) };
+    if (showStatus) {
+        previewCountText.textContent = "Loading saved rows...";
+        previewBody.innerHTML = '<tr><td colspan="12" class="text-center text-slate-500">Loading saved 7/12 rows...</td></tr>';
+    }
+    const data = await fetchJson("{% url 'land_record_712_ror_saved_rows_api' %}", {
+        ...state.currentSavedParams,
+        page,
+        per_page: state.perPage,
+    });
+    state.rows = data.rows || [];
+    renderPreview(state.rows);
+    updatePagination(data.pagination);
+    if (showStatus) showMessage(data.message || "Saved 7/12 rows loaded.", state.rows.length ? "success" : "info");
+}
+
+apiPerPageSelect?.addEventListener("change", () => {
+    state.perPage = Number.parseInt(apiPerPageSelect.value, 10) || 10;
+    loadSavedRows(state.currentSavedParams, { showStatus: true, page: 1 }).catch((error) => showMessage(error.message, "error"));
+});
+
+divisionSelect.addEventListener("change", () => {
+    clearMessage();
+    clearPreview();
+    fillDistricts(divisionSelect.value);
+    resetSelect(talukaSelect, "तालुका निवडा");
+    resetSelect(villageSelect, "गाव निवडा");
+    resetSelect(gutSelect, "गट क्रमांक निवडा");
+    resetSelect(surveyNumberInput, "Survey Number निवडा");
+});
+
+districtSelect.addEventListener("change", async () => {
+    clearMessage();
+    clearPreview();
+    resetSelect(talukaSelect, "तालुका निवडा");
+    resetSelect(villageSelect, "गाव निवडा");
+    resetSelect(gutSelect, "गट क्रमांक निवडा");
+    resetSelect(surveyNumberInput, "Survey Number निवडा");
+    if (!districtSelect.value) return;
+    try {
+        fillSelect(talukaSelect, await loadLocationsWithDistrictAliases({ district: districtSelect.value, lang: "mr" }), "तालुका निवडा");
+    } catch (error) {
+        showMessage(error.message, "error");
+    }
+});
+
+talukaSelect.addEventListener("change", async () => {
+    clearMessage();
+    clearPreview();
+    resetSelect(villageSelect, "गाव निवडा");
+    resetSelect(gutSelect, "गट क्रमांक निवडा");
+    resetSelect(surveyNumberInput, "Survey Number निवडा");
+    if (!districtSelect.value || !talukaSelect.value) return;
+    try {
+        fillSelect(villageSelect, await loadLocationsWithDistrictAliases({ district: districtSelect.value, taluka: talukaSelect.value, lang: "mr" }), "गाव निवडा");
+    } catch (error) {
+        showMessage(error.message, "error");
+    }
+});
+
+villageSelect.addEventListener("change", async () => {
+    clearMessage();
+    clearPreview();
+    resetSelect(gutSelect, "गट क्रमांक निवडा");
+    resetSelect(surveyNumberInput, "Survey Number निवडा");
+    if (!districtSelect.value || !talukaSelect.value || !villageSelect.value) return;
+    try {
+        fillSelect(gutSelect, await loadLocationsWithDistrictAliases({ district: districtSelect.value, taluka: talukaSelect.value, village: villageSelect.value }), "गट क्रमांक निवडा");
+    } catch (error) {
+        showMessage(error.message, "error");
+    }
+});
+
+gutSelect.addEventListener("change", () => {
+    clearPreview();
+    clearMessage();
+    loadSurveyNumbers();
+});
+surveyNumberInput.addEventListener("change", clearPreview);
+
+fetchBtn.addEventListener("click", async () => {
+    clearMessage();
+    clearPreview();
+    fetchBtn.disabled = true;
+    fetchBtn.textContent = "Fetching from DB...";
+    try {
+        await loadSavedRows(selectedSavedRowsParams(), { showStatus: true, page: 1 });
+    } catch (error) {
+        showMessage(error.message, "error");
+    } finally {
+        fetchBtn.disabled = false;
+        fetchBtn.textContent = "Fetch 7/12 from DB";
+    }
+});
+
+syncBtn.addEventListener("click", async () => {
+    clearMessage();
+    clearPreview();
+    if (!CAN_SYNC_ROR) {
+        showMessage("You do not have permission to sync SOAP data.", "error");
+        syncBtn.disabled = true;
+        return;
+    }
+    const payload = selectedPayload();
+    if (!validateLocationPayload(payload)) return;
+    syncBtn.disabled = true;
+    syncBtn.textContent = "Syncing SOAP...";
+    try {
+        const data = await postJson("{% url 'land_record_712_ror_sync_api' %}", payload);
+        state.rows = data.rows || [];
+        renderPreview(state.rows);
+        updatePagination({
+            page: 1,
+            per_page: state.perPage,
+            total_records: state.rows.length,
+            total_pages: 1,
+            start_index: state.rows.length ? 1 : 0,
+            end_index: state.rows.length,
+            has_previous: false,
+            has_next: false,
+        });
+        showCodes(data, "DB after SOAP sync");
+        const warnings = (data.warnings || []).filter(Boolean).join(" ");
+        showMessage(`${data.message || "SOAP data synced into DB."} Created ${data.created_count || 0}, skipped ${data.skipped_count || 0}.${warnings ? " " + warnings : ""}`, warnings ? "info" : "success");
+    } catch (error) {
+        showMessage(error.message, "error");
+    } finally {
+        syncBtn.disabled = !CAN_SYNC_ROR;
+        syncBtn.textContent = "Sync SOAP to DB";
+    }
+});
+
+resetBtn.addEventListener("click", () => {
+    clearMessage();
+    divisionSelect.value = "";
+    districtSelect.value = "";
+    resetSelect(districtSelect, "जिल्हा निवडा");
+    resetSelect(talukaSelect, "तालुका निवडा");
+    resetSelect(villageSelect, "गाव निवडा");
+    resetSelect(gutSelect, "गट क्रमांक निवडा");
+    resetSelect(surveyNumberInput, "Survey Number निवडा");
+    loadSavedRows({}, { showStatus: true, page: 1 }).catch((error) => showMessage(error.message, "error"));
+});
+
+initDistricts();
+loadSavedRows({}, { showStatus: false, page: 1 }).catch((error) => showMessage(error.message, "error"));
+</script>
+
+{% endblock %}
