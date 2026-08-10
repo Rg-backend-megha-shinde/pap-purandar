@@ -3253,7 +3253,10 @@
                 </div>
                 <div class="space-y-6 px-6 py-7 md:px-8">
                     <div class="pc-section">
-                        <h3 class="mb-4 text-lg font-bold text-[#244271]">संपादित जमिनीचा ताबा घेण्याबाबत नोटीस</h3>
+                        <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+                            <h3 class="text-lg font-bold text-[#244271]">संपादित जमिनीचा ताबा घेण्याबाबत नोटीस</h3>
+                            <button type="button" id="pcFillPossessionNoticeOwnersBtn" class="rounded-lg bg-[#0f766e] px-4 py-2 text-sm font-semibold text-white">भूधारक नावे भरा</button>
+                        </div>
                         <div class="grid gap-4 md:grid-cols-3">
                             <div><label class="pc-label">नोटीस बजावण्यात आलेल्या भूधारकाचे नाव</label><input
                                     class="pc-input" name="possession_notice_owner_name" type="text"></div>
@@ -3288,8 +3291,11 @@
                     </div>
 
                     <div class="pc-section">
-                        <h3 class="mb-4 text-lg font-bold text-[#244271]">संपादित जमिनीचा ताबा सक्षम प्राधिकरणामार्फत
-                            महामंडळास सुपुर्द करणे</h3>
+                        <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+                            <h3 class="text-lg font-bold text-[#244271]">संपादित जमिनीचा ताबा सक्षम प्राधिकरणामार्फत
+                                महामंडळास सुपुर्द करणे</h3>
+                            <button type="button" id="pcFillPossessionHandedOwnersBtn" class="rounded-lg bg-[#0f766e] px-4 py-2 text-sm font-semibold text-white">भूधारक नावे भरा</button>
+                        </div>
                         <div class="grid gap-4 md:grid-cols-5">
                             <div class="md:col-span-5">
                                 <span class="pc-label">संपादित जमिनीचा ताबा महामंडळास सुपुर्द करण्यात आले आहे काय
@@ -3583,6 +3589,22 @@
             <button type="button" id="applyPcJointSurveyNamesBtn"
                 class="px-4 py-1.5 bg-[#0f766e] hover:bg-[#0b5e58] text-white rounded text-sm font-semibold">निवडलेली
                 नावे भरा</button>
+        </div>
+    </div>
+</div>
+
+<div id="pcTab12OwnerNamesModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/40 p-4">
+    <div class="w-full max-w-4xl rounded-lg bg-white shadow-xl">
+        <div class="flex items-center justify-between border-b px-4 py-3">
+            <h3 class="text-base font-semibold text-[#244271]">भूधारकांचे नावे निवडा</h3>
+            <button type="button" id="closePcTab12OwnerNamesModalBtn" class="text-xl leading-none text-gray-500 hover:text-gray-700">&times;</button>
+        </div>
+        <div class="max-h-[70vh] overflow-y-auto px-4 py-4">
+            <div id="pcTab12OwnerNamesList" class="space-y-2"></div>
+        </div>
+        <div class="flex justify-end gap-3 border-t px-4 py-3">
+            <button type="button" id="closePcTab12OwnerNamesModalFooterBtn" class="rounded bg-gray-700 px-3 py-1.5 text-sm text-white hover:bg-gray-800">बंद करा</button>
+            <button type="button" id="applyPcTab12OwnerNamesBtn" class="rounded bg-[#0f766e] px-4 py-1.5 text-sm font-semibold text-white hover:bg-[#0b5e58]">निवडलेली नावे भरा</button>
         </div>
     </div>
 </div>
@@ -10342,6 +10364,92 @@
             currentRevisedJointSurveyBlockIndex = -1;
             setJointSurveyModalSectionMode('default');
         }
+        function syncOwnerModalSelectAllState(modal, selectAllSelector, checkboxSelector) {
+            const selectAll = modal?.querySelector(selectAllSelector);
+            if (!selectAll) return;
+            const checkboxes = Array.from(modal.querySelectorAll(checkboxSelector));
+            const checkedCount = checkboxes.filter((checkbox) => checkbox.checked).length;
+            selectAll.checked = checkboxes.length > 0 && checkedCount === checkboxes.length;
+            selectAll.indeterminate = checkedCount > 0 && checkedCount < checkboxes.length;
+        }
+
+        let activeTab12OwnerNamesTarget = 'notice';
+
+        function tab12OwnerNamesTargetField() {
+            const name = activeTab12OwnerNamesTarget === 'handed' ? 'possession_handed_owner_name' : 'possession_notice_owner_name';
+            return processChartForm?.querySelector(`[name="${name}"]`) || document.querySelector(`[name="${name}"]`);
+        }
+
+        function selectedTab12OwnerNames() {
+            return new Set(String(tab12OwnerNamesTargetField()?.value || '')
+                .split(/[,;\n]+/)
+                .map((name) => normalizeOwnerName(name))
+                .filter(Boolean));
+        }
+
+        function openTab12OwnerNamesModal(target = 'notice') {
+            const modal = document.getElementById('pcTab12OwnerNamesModal');
+            const list = document.getElementById('pcTab12OwnerNamesList');
+            if (!modal || !list) return;
+            activeTab12OwnerNamesTarget = target === 'handed' ? 'handed' : 'notice';
+            modal.dataset.pcTab12OwnerTarget = activeTab12OwnerNamesTarget;
+            const rows = collectStep1OwnerRows(currentProcessChartPrefill).filter((row) => String(row.owner_name || '').trim());
+            const selectedNames = selectedTab12OwnerNames();
+            const autoSelectSingleOwner = rows.length === 1 && selectedNames.size === 0;
+            list.innerHTML = rows.length
+                ? `
+                    <label class="flex cursor-pointer items-center gap-3 rounded border border-[#c9d9ef] bg-white px-3 py-3">
+                        <input type="checkbox" class="pc-tab12-owner-select-all">
+                        <span class="text-sm font-semibold text-[#244271]">Select all / सर्व निवडा</span>
+                    </label>
+                    ${rows.map((row, index) => {
+                        const key = normalizeOwnerName(row.owner_name);
+                        const checked = selectedNames.has(key) || autoSelectSingleOwner;
+                        return `<label class="pc-tab12-owner-row flex cursor-pointer items-center gap-3 rounded border border-[#dbe8f8] bg-[#f8fbff] px-3 py-3">
+                            <input type="checkbox" class="pc-tab12-owner-name-checkbox" data-row-index="${index}" ${checked ? 'checked' : ''}>
+                            <span class="text-sm text-[#244271]">
+                                <strong>नाव:</strong> ${escapeHtml(row.owner_name || '')}
+                            </span>
+                        </label>`;
+                    }).join('')}`
+                : '<div class="rounded border border-dashed border-[#d6e3f5] px-3 py-3 text-sm font-semibold text-[#6b7d99]">टॅब 1 मधील भूधारक नावे उपलब्ध नाहीत.</div>';
+            syncOwnerModalSelectAllState(modal, '.pc-tab12-owner-select-all', '.pc-tab12-owner-name-checkbox');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeTab12OwnerNamesModal() {
+            const modal = document.getElementById('pcTab12OwnerNamesModal');
+            modal?.classList.add('hidden');
+            modal?.classList.remove('flex');
+        }
+
+        function populateTab12OwnerNamesFromSelection() {
+            const modal = document.getElementById('pcTab12OwnerNamesModal');
+            if (modal?.dataset.pcTab12OwnerTarget) {
+                activeTab12OwnerNamesTarget = modal.dataset.pcTab12OwnerTarget;
+            }
+            const displayField = tab12OwnerNamesTargetField();
+            if (!modal || !displayField) return;
+            const rows = collectStep1OwnerRows(currentProcessChartPrefill).filter((row) => String(row.owner_name || '').trim());
+            const selectedNames = Array.from(modal.querySelectorAll('.pc-tab12-owner-name-checkbox:checked'))
+                .map((checkbox) => rows[Number(checkbox.dataset.rowIndex || -1)]?.owner_name || '')
+                .map((name) => String(name || '').trim())
+                .filter(Boolean);
+            displayField.value = selectedNames.join(', ');
+            displayField.dispatchEvent(new Event('input', { bubbles: true }));
+            displayField.dispatchEvent(new Event('change', { bubbles: true }));
+            delete displayField.dataset.pcAutoOwnerNames;
+            if (activeTab12OwnerNamesTarget === 'handed') {
+                const handedYesRadio = processChartForm?.querySelector('[name="possession_handed"][value="yes"]');
+                if (handedYesRadio && selectedNames.length) {
+                    handedYesRadio.checked = true;
+                    handedYesRadio.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+            }
+            closeTab12OwnerNamesModal();
+        }
+
 
         function populateAssetOwnerFieldFromSelection(prefill = currentProcessChartPrefill, targetId = '') {
             const container = targetId ? document.getElementById(targetId) : null;
@@ -16703,6 +16811,29 @@
         closeJointSurveyNamesModalBtn?.addEventListener('click', closeJointSurveyNamesModal);
         closeJointSurveyNamesModalFooterBtn?.addEventListener('click', closeJointSurveyNamesModal);
         applyJointSurveyNamesBtn?.addEventListener('click', () => applySelectedJointSurveyNames(currentProcessChartPrefill));
+        document.getElementById('pcFillPossessionNoticeOwnersBtn')?.addEventListener('click', () => openTab12OwnerNamesModal('notice'));
+        document.getElementById('pcFillPossessionHandedOwnersBtn')?.addEventListener('click', () => openTab12OwnerNamesModal('handed'));
+        document.getElementById('closePcTab12OwnerNamesModalBtn')?.addEventListener('click', closeTab12OwnerNamesModal);
+        document.getElementById('closePcTab12OwnerNamesModalFooterBtn')?.addEventListener('click', closeTab12OwnerNamesModal);
+        document.getElementById('applyPcTab12OwnerNamesBtn')?.addEventListener('click', populateTab12OwnerNamesFromSelection);
+        document.getElementById('pcTab12OwnerNamesModal')?.addEventListener('click', (event) => {
+            if (event.target === event.currentTarget) closeTab12OwnerNamesModal();
+        });
+        document.getElementById('pcTab12OwnerNamesModal')?.addEventListener('change', (event) => {
+            const modal = event.currentTarget;
+            const selectAll = event.target.closest('.pc-tab12-owner-select-all');
+            if (selectAll) {
+                modal.querySelectorAll('.pc-tab12-owner-name-checkbox').forEach((checkbox) => {
+                    checkbox.checked = selectAll.checked;
+                });
+                syncOwnerModalSelectAllState(modal, '.pc-tab12-owner-select-all', '.pc-tab12-owner-name-checkbox');
+                return;
+            }
+            if (event.target.closest('.pc-tab12-owner-name-checkbox')) {
+                syncOwnerModalSelectAllState(modal, '.pc-tab12-owner-select-all', '.pc-tab12-owner-name-checkbox');
+            }
+        });
+
         step10FetchOwnersBtn?.addEventListener('click', () => {
             openJointSurveyNamesModal(currentProcessChartPrefill, { mode: 'step10' });
         });
