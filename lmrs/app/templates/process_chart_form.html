@@ -14440,25 +14440,27 @@ function buildPuravaniAwardDraftHtml() {
         * { box-sizing: border-box; }
         body {
             margin: 0;
-            padding: 12mm 16mm;
-            background: #fff;
+            padding: 0;
+            background: #f0f0f0;
             color: #111;
             font-family: 'DVOT Surekh', 'Noto Serif Devanagari', 'Mangal', serif;
             font-size: 14px;
             line-height: 1.45;
         }
         .page {
-            width: auto;
-            margin: 0;
-            padding: 0;
+            width: 210mm;
+            min-height: 297mm;
+            padding: 15mm 20mm;
+            margin: 10mm auto;
             background: #fff;
-            page-break-after: auto;
-            break-after: auto;
+            box-shadow: 0 0 10px rgba(0,0,0,0.2);
+            page-break-after: always;
         }
-        .page + .page { margin-top: 0; page-break-before: always; }
+        .page:last-child { page-break-after: auto; }
+
         @media print {
             body { background: none; }
-            .page { margin: 0; box-shadow: none; width: 100%; min-height: 100vh; }
+            .page { margin: 0; padding: 10mm 14mm; box-shadow: none; width: 100%; min-height: 100vh; page-break-after: always; }
         }
         .cover-page {
             border: 2px solid #000;
@@ -14649,6 +14651,9 @@ function buildPuravaniAwardDraftHtml() {
             <span class="point-no">(3)</span>
             <span>या संमती निवाड्याची आस्थापना रक्कम रुपये ${red(asthapanaStr)}/- आणि सोई-सुविधा रक्कम रुपये ${red(soisuwidhaStr)}/- इतकी असून, आस्थापना रक्कम संबंधित हेडखाली शासकीय खजिन्यात जमा करणेत यावी व सोई-सुविधा रकमेचा शासनाचे प्रचलित नियमानुसार / तरतुदीनुसार विनियोग करण्यात यावा.</span>
         </div>
+    </section>
+
+    <section class="page">
         <div class="numbered-point">
             <span class="point-no">(4)</span>
             <span>हा पुरवणी संमती करारनामा, मूळ संमती करारनाम्यानुसार संपादित झालेल्या मिळकतीतील केवळ निगडीत घटकांबाबत असल्याने, मूळ संमती करारनाम्यान्वये / संमती निवाड्यान्वये संपादित करण्यात आलेल्या मिळकतीचे संपादन, ताबा हस्तांतरण व इतर सर्व बाबी पूर्ववत कायम राहतील. संपादित क्षेत्राचा त्यामधील सर्व तदंगभूत वस्तूंसह निर्वेध व निजोंखमी ताबा यापूर्वीच हस्तांतरित करण्यात आलेला असल्याने, या पुरवणी संमती निवाड्यातील निगडीत घटकांबाबत स्वतंत्र ताबेपावती निष्पादित करण्याची आवश्यकता नाही.</span>
