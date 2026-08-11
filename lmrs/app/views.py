@@ -9,8 +9,9 @@ from django.db.models.functions import TruncDate
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.sessions.models import Session
-from .models import Inspection, ReadyReckonerInfo, ReadyReckonerRate, LandRecord712, FarmerNames,TreeMaster, Asset, AssetMeasurement, AssetTypeMaster, AssetFieldMaster, AssetFormulaMaster, AssetCategory, Document, ToolMaster, DocumentMaster, DocumentAttachment, Entry, VillageData, VillageData8ARecord, VillageDataSec15Rate, VillageDataFile, VillageData8AFile, VillageData32_2Row, VillageData32_2RowFile, VillageData32_1Row, VillageData32_1RowFile, ActiveUserSession, AssetDetail, ProcessChartCase, ProcessChartStepData, ProcessChartAuditLog, ProcessChartDocument, ProcessChartOwnerNotice, ProcessChartDepartmentRow, ProcessChartValuationRow, RorDivision, RorDistrict, RorTaluka, RorVillage, RorSurveyNumber
-from .ror_service import ror_base_params, ror_ensure_location_cache, ror_div_code_allowed, ror_division_display_name, ror_aliases, ror_location_values, ror_location_key, ror_location_filter_q, ror_fetch_all_districts, ror_numeric_pin, ror_fetch_survey_numbers, ror_fetch_712_preview, split_ror_survey_no
+from .models import Inspection, ReadyReckonerInfo, ReadyReckonerRate, LandRecord712, FarmerNames,TreeMaster, Asset, AssetMeasurement, AssetTypeMaster, AssetFieldMaster, AssetFormulaMaster, AssetCategory, Document, ToolMaster, DocumentMaster, DocumentAttachment, Entry, VillageData, VillageData8ARecord, VillageDataSec15Rate, VillageDataFile, VillageData8AFile, VillageData32_2Row, VillageData32_2RowFile, VillageData32_1Row, VillageData32_1RowFile, ActiveUserSession, AssetDetail, ProcessChartCase, ProcessChartStepData, ProcessChartAuditLog, ProcessChartDocument, ProcessChartOwnerNotice, ProcessChartDepartmentRow, ProcessChartValuationRow, RorDivision, RorDistrict, RorTaluka, RorVillage, RorSurveyNumber, Notification, NotificationCommonInfo, NotificationFile
+from .ror_service import ror_base_params, ror_ensure_location_cache, ror_div_code_allowed, ror_division_display_name, ror_aliases, ror_location_values, ror_location_key, ror_location_filter_q, ror_fetch_all_districts, ror_numeric_pin, ror_fetch_survey_numbers, ror_fetch_712_preview, split_ror_survey_no, _ror_rows, _ror_call, _ror_upsert_talukas, _ror_upsert_villages, _ror_best_cached_match
+from .notification_service import clean_text as notification_clean_text, format_display_date, save_notification_files, delete_notification_file, fixed_cpi_values, get_latest_cpi, cpi_payload, save_cpi, parse_notification_sections, compute_cascade, save_notification, notification_detail_payload, export_notifications_csv
 import logging
 logger = logging.getLogger(__name__)
 from django.shortcuts import render, redirect, get_object_or_404
@@ -9542,10 +9543,134 @@ def _ror_locations_payload(request):
     if mapped_districts:
         districts = mapped_districts
 
+    selected_district = None
+    district_code = notification_clean_text(request.GET.get('district_code'))
+    district_name = notification_clean_text(request.GET.get('district') or request.GET.get('district_name'))
+    if district_code:
+        selected_district = RorDistrict.objects.filter(code=district_code).first()
+    if not selected_district and district_name:
+        selected_district = _ror_best_cached_match(RorDistrict.objects.all(), district_name)
+
+    selected_taluka = None
+    taluka_code = notification_clean_text(request.GET.get('taluka_code'))
+    taluka_name = notification_clean_text(request.GET.get('taluka') or request.GET.get('taluka_name'))
+
+    if selected_district:
+        try:
+            if not selected_district.talukas.exists():
+                base = ror_base_params()
+                location_base = {k: v for k, v in base.items() if k != 'Format_code'}
+                div_code = selected_district.div_code or (selected_district.division.code if selected_district.division else '')
+                rows = _ror_rows(_ror_call('GetDistricts_Taluka_Village', {
+                    **location_base,
+                    'opr': '3',
+                    'div_code': div_code,
+                    'dist_code': selected_district.code,
+                    'tah_code': '',
+                }))
+                _ror_upsert_talukas(selected_district, rows)
+        except Exception as exc:
+            warning = warning or str(exc)
+        if taluka_code:
+            selected_taluka = selected_district.talukas.filter(code=taluka_code).first()
+        if not selected_taluka and taluka_name:
+            selected_taluka = _ror_best_cached_match(selected_district.talukas.all(), taluka_name)
+
+    if selected_taluka:
+        try:
+            if not selected_taluka.villages.exists():
+                base = ror_base_params()
+                location_base = {k: v for k, v in base.items() if k != 'Format_code'}
+                div_code = selected_district.div_code or (selected_district.division.code if selected_district and selected_district.division else '')
+                rows = _ror_rows(_ror_call('GetDistricts_Taluka_Village', {
+                    **location_base,
+                    'opr': '4',
+                    'div_code': div_code,
+                    'dist_code': selected_district.code if selected_district else '',
+                    'tah_code': selected_taluka.code,
+                }))
+                _ror_upsert_villages(selected_taluka, rows)
+        except Exception as exc:
+            warning = warning or str(exc)
+
+    talukas = []
+    if selected_district:
+        talukas = [
+            {
+                'code': item.code,
+                'value': item.name,
+                'label': item.name,
+                'name': item.name,
+                'aliases': ror_aliases(item.name, *(item.aliases or [])),
+                'district_code': selected_district.code,
+                'district_name': selected_district.name,
+            }
+            for item in selected_district.talukas.order_by('name')
+        ]
+
+    villages = []
+    if selected_taluka:
+        villages = [
+            {
+                'code': item.code,
+                'value': item.name,
+                'label': item.name,
+                'name': item.name,
+                'aliases': ror_aliases(item.name, *(item.aliases or [])),
+                'taluka_code': selected_taluka.code,
+                'taluka_name': selected_taluka.name,
+            }
+            for item in selected_taluka.villages.order_by('name')
+        ]
+
+    if selected_district and not talukas:
+        try:
+            db_talukas = list(
+                LandRecord712.objects.filter(district__iexact=selected_district.name)
+                .values_list('taluka', flat=True).distinct()
+            )
+            talukas = [
+                {
+                    'code': '',
+                    'value': name,
+                    'label': name,
+                    'name': name,
+                    'aliases': ror_aliases(name),
+                    'district_code': selected_district.code,
+                    'district_name': selected_district.name,
+                }
+                for name in db_talukas if name
+            ]
+        except Exception:
+            pass
+
+    if selected_taluka and not villages:
+        try:
+            db_villages = list(
+                LandRecord712.objects.filter(taluka__iexact=selected_taluka.name)
+                .values_list('village', flat=True).distinct()
+            )
+            villages = [
+                {
+                    'code': '',
+                    'value': name,
+                    'label': name,
+                    'name': name,
+                    'aliases': ror_aliases(name),
+                    'taluka_code': selected_taluka.code,
+                    'taluka_name': selected_taluka.name,
+                }
+                for name in db_villages if name
+            ]
+        except Exception:
+            pass
+
     return {
         'success': True,
         'divisions': list(divisions_by_code.values()),
         'districts': districts,
+        'talukas': talukas,
+        'villages': villages,
         'warning': warning,
         'can_sync': _can_sync_ror(request),
     }
@@ -9683,4 +9808,608 @@ def land_record_712_ror_save_api(request):
         'skipped_rows': skipped_rows,
         'message': f'Saved {created_count} 7/12 API rows.',
     })
+
+
+from django.contrib.auth import get_user_model
+import xml.etree.ElementTree as ET
+import zipfile
+
+NOTIFICATION_TOOL_CODE = "notification"
+NOTIFICATION_TYPE_FILTER_FIELDS = {
+    "sec3": "sec3_pub_no",
+    "sec152": "sec152_pub_no",
+    "sec154": "sec154_pub_no",
+    "sec181": "sec181_pub_no",
+}
+NOTIFICATION_GHATAK_VIBHAG_CODES = ("forest", "water_supply", "agriculture", "construction")
+NOTIFICATION_GHATAK_VIBHAG_FALLBACK = [
+    {"code": "forest", "name_marathi": "वन विभाग", "items": []},
+    {"code": "water_supply", "name_marathi": "पाणीपुरवठा", "items": []},
+    {"code": "agriculture", "name_marathi": "कृषी विभाग", "items": []},
+    {"code": "construction", "name_marathi": "बांधकाम विभाग", "items": []},
+]
+
+
+def _attach_created_by_display(records):
+    user_ids = {record.created_by_user_id for record in records if getattr(record, "created_by_user_id", None)}
+    if not user_ids:
+        return records
+    User = get_user_model()
+    users = User.objects.filter(id__in=user_ids).only("id", "username", "first_name", "last_name")
+    usernames = {user.id: (user.get_full_name() or user.username) for user in users}
+    for record in records:
+        record.created_by_display = usernames.get(record.created_by_user_id, f"User #{record.created_by_user_id}")
+    return records
+
+
+def apply_verified_filter(queryset, value):
+    normalized = str(value or "").strip().lower()
+    if normalized in {"verified", "1", "true"}:
+        return queryset.filter(is_verified=True)
+    if normalized in {"unverified", "0", "false"}:
+        return queryset.filter(is_verified=False)
+    return queryset
+
+
+def parse_verified_flag(request):
+    raw = request.POST.get("verified")
+    if raw is None:
+        raw = request.headers.get("X-Record-Verified")
+    return str(raw).strip().lower() in {"1", "true", "yes", "on", "verified"}
+
+
+def _land_acquisition_tabs():
+    return [
+        {"code": "land_records_712", "label": "७/१२ उतारा नोंद", "url_name": "land_record_712_list", "enabled": True},
+        {"code": "ready_reckoner", "label": "रेडी रेकनर दर माहिती", "url_name": "ready_reckoner_list", "enabled": True},
+        {"code": "village_info", "label": "गावाची माहिती", "url_name": "village_info", "enabled": True},
+        {"code": "notification", "label": "अधिसूचना साधन", "url_name": "notification_list", "enabled": True},
+        {"code": "process_chart", "label": "भूसंपादन प्रक्रिया नोंद", "url_name": "process_chart_form", "enabled": True},
+    ]
+
+
+def _strip_leading_numbering(value):
+    return re.sub(r"^\s*[०-९0-9]+\s*[.．)]\s*", "", str(value or "")).strip()
+
+
+def _serialize_asset_categories(codes=None):
+    queryset = AssetCategory.objects.filter(is_active=True).prefetch_related("asset_list")
+    if codes:
+        queryset = queryset.filter(code__in=list(codes))
+    result = []
+    for cat in queryset:
+        result.append({
+            "code": cat.code,
+            "name_marathi": cat.name_marathi,
+            "items": [
+                {"code": item.code, "name_marathi": item.name_marathi}
+                for item in cat.asset_list.filter(is_active=True).order_by("display_order", "name_marathi")
+            ],
+        })
+    if codes:
+        order = {code: index for index, code in enumerate(codes)}
+        result.sort(key=lambda row: order.get(row["code"], len(order)))
+    return result
+
+
+def _notification_ghatak_vibhags():
+    try:
+        categories = _serialize_asset_categories(NOTIFICATION_GHATAK_VIBHAG_CODES)
+    except Exception:
+        categories = []
+    by_code = {row["code"]: row for row in categories}
+    result = []
+    for fallback in NOTIFICATION_GHATAK_VIBHAG_FALLBACK:
+        row = by_code.get(fallback["code"])
+        if row is None:
+            result.append(dict(fallback))
+            continue
+        result.append({
+            "code": row["code"],
+            "name_marathi": _strip_leading_numbering(row["name_marathi"]) or fallback["name_marathi"],
+            "items": row["items"],
+        })
+    return result
+
+
+def _notification_form_context(request, notification=None):
+    return {
+        "tabs": _land_acquisition_tabs(),
+        "active_tool": NOTIFICATION_TOOL_CODE,
+        "ghatak_vibhags": _notification_ghatak_vibhags(),
+        "mode": "edit" if notification else "new",
+        "notification": notification,
+        "detail": notification_detail_payload(notification) if notification else {
+            "id": None,
+            "district": "",
+            "taluka": "",
+            "village": "",
+            "status": Notification.STATUS_DRAFT,
+            "current_step": 1,
+            "sections": {},
+            "cascade": compute_cascade({}),
+            "files_map": {},
+            "cpi": cpi_payload(get_latest_cpi()),
+        },
+    }
+
+
+@login_required
+def notification_list(request):
+    search_query = notification_clean_text(request.GET.get("search"))
+    status_filter = notification_clean_text(request.GET.get("status"))
+    type_filter = notification_clean_text(request.GET.get("notification_type"))
+    queryset = Notification.objects.all().order_by("-updated_at", "-id")
+    if search_query:
+        queryset = queryset.filter(
+            Q(district__icontains=search_query)
+            | Q(taluka__icontains=search_query)
+            | Q(village__icontains=search_query)
+        )
+    if status_filter in {Notification.STATUS_DRAFT, Notification.STATUS_COMPLETE}:
+        queryset = queryset.filter(status=status_filter)
+    type_filter_section_field = NOTIFICATION_TYPE_FILTER_FIELDS.get(type_filter)
+    if type_filter_section_field:
+        queryset = queryset.exclude(
+            Q(**{f"sections__{type_filter_section_field}__isnull": True})
+            | Q(**{f"sections__{type_filter_section_field}": ""})
+        )
+    verification_filter = notification_clean_text(request.GET.get("verification"))
+    queryset = apply_verified_filter(queryset, verification_filter)
+    per_page_value = request.GET.get("per_page", "10")
+    show_all = per_page_value == "all"
+    try:
+        per_page = int(per_page_value)
+    except (TypeError, ValueError):
+        per_page = 10
+    total_records = queryset.count()
+    if show_all:
+        page_obj = None
+        page_records = list(queryset)
+        current_page = 1
+        total_pages = 1
+    else:
+        paginator = Paginator(queryset, per_page)
+        current_page = int(request.GET.get("page", 1) or 1)
+        page_obj = paginator.get_page(current_page)
+        page_records = list(page_obj.object_list)
+        total_pages = paginator.num_pages
+    _attach_created_by_display(page_records)
+    return render(
+        request,
+        "notification_list.html",
+        {
+            "tabs": _land_acquisition_tabs(),
+            "active_tool": NOTIFICATION_TOOL_CODE,
+            "records": page_records,
+            "search_query": search_query,
+            "status_filter": status_filter,
+            "verification_filter": verification_filter,
+            "type_filter": type_filter,
+            "per_page_value": per_page_value,
+            "show_all": show_all,
+            "page_obj": page_obj,
+            "current_page": current_page,
+            "total_pages": total_pages,
+            "total_records": total_records,
+            "page_links": range(1, total_pages + 1),
+            "fixed_cpi": fixed_cpi_values(),
+        },
+    )
+
+
+@login_required
+def notification_new(request):
+    return render(request, "notification_form.html", _notification_form_context(request))
+
+
+@login_required
+def notification_edit(request, notification_id):
+    notification = get_object_or_404(Notification, id=notification_id)
+    return render(request, "notification_form.html", _notification_form_context(request, notification))
+
+
+@login_required
+@require_http_methods(["POST"])
+def notification_save_api(request):
+    district = notification_clean_text(request.POST.get("district"))
+    taluka = notification_clean_text(request.POST.get("taluka"))
+    village = notification_clean_text(request.POST.get("village"))
+    if not district:
+        district = notification_clean_text(request.POST.get("area_district_0"))
+    if not taluka:
+        taluka = notification_clean_text(request.POST.get("area_taluka_0"))
+    if not village:
+        village = notification_clean_text(request.POST.get("area_village_0"))
+    if not district or not taluka or not village:
+        return JsonResponse({"success": False, "message": "District, Taluka and Village are required."}, status=400)
+    notification_id = notification_clean_text(request.POST.get("notification_id"))
+    notification = Notification.objects.filter(id=notification_id).first() if notification_id else None
+    status = notification_clean_text(request.POST.get("status")) or Notification.STATUS_DRAFT
+    if status not in {Notification.STATUS_DRAFT, Notification.STATUS_COMPLETE}:
+        status = Notification.STATUS_DRAFT
+    try:
+        current_step = max(1, min(5, int(request.POST.get("current_step") or 1)))
+    except (TypeError, ValueError):
+        current_step = 1
+    sections = parse_notification_sections(request.POST)
+    common_info = get_latest_cpi(
+        division_code=notification_clean_text(request.POST.get("cpi_division_code")),
+        division_name=notification_clean_text(request.POST.get("cpi_division_name")),
+        district_code=notification_clean_text(request.POST.get("cpi_district_code")),
+        district_name=notification_clean_text(request.POST.get("cpi_district_name") or district),
+    )
+    notification = save_notification(
+        user=request.user,
+        district=district,
+        taluka=taluka,
+        village=village,
+        sections=sections,
+        status=status,
+        current_step=current_step,
+        request_files=request.FILES,
+        notification=notification,
+        common_info=common_info,
+    )
+    return JsonResponse({"success": True, "notification_id": notification.id, **notification_detail_payload(notification)})
+
+
+@login_required
+def notification_draft_data_api(request, notification_id):
+    notification = Notification.objects.filter(id=notification_id).first()
+    if not notification:
+        return JsonResponse({"found": False})
+    return JsonResponse({"found": True, **notification_detail_payload(notification)})
+
+
+@login_required
+def notification_cascade_api(request, notification_id):
+    notification = get_object_or_404(Notification, id=notification_id)
+    detail = notification_detail_payload(notification)
+    sections = detail.get("sections") or {}
+    required_areas = sections.get("required_areas") or []
+    js_rows = (sections.get("joint_survey") or {}).get("rows") or []
+    js_prefill = js_rows or [
+        {
+            "gut_number": row.get("gut_number", ""),
+            "hissa_number": row.get("hissa_number", ""),
+            "total_area_712": row.get("area_712", ""),
+            "acquired_total_area": row.get("proposed_area", ""),
+            "land_class": "",
+            "cultivable_area": "",
+            "potkharaba_area": "",
+            "aakar_712": "",
+            "kharaba": "",
+            "lagan": "",
+            "aakar_acquired": "",
+            "holder_name": "",
+            "building": "",
+            "well": "",
+            "trees": "",
+            "tree_numbers": "",
+            "remark": row.get("remark", ""),
+            "ghatak": [],
+        }
+        for row in required_areas
+    ]
+    return JsonResponse({
+        "success": True,
+        "notification_id": notification.id,
+        "district": notification.district,
+        "taluka": notification.taluka,
+        "village": notification.village,
+        "area_rows": [
+            {
+                "area_district": row.get("district", ""),
+                "area_taluka": row.get("taluka", ""),
+                "area_village": row.get("village", ""),
+                "area_gut": row.get("gut_number", ""),
+                "area_hissa": row.get("hissa_number", ""),
+                "area_712": row.get("area_712", ""),
+                "area_proposed": row.get("proposed_area", ""),
+                "area_note": row.get("remark", ""),
+            }
+            for row in required_areas
+        ],
+        "sdo_rows": sections.get("sdo_rows") or [],
+        "js_prefill": js_prefill,
+        **(detail.get("cascade") or {}),
+    })
+
+
+@login_required
+def notification_list_api(request):
+    search_query = notification_clean_text(request.GET.get("search") or request.GET.get("q"))
+    type_filter = notification_clean_text(request.GET.get("type_filter") or request.GET.get("status"))
+    try:
+        page = max(1, int(request.GET.get("page") or 1))
+    except (TypeError, ValueError):
+        page = 1
+    try:
+        per_page = int(request.GET.get("per_page") or 10)
+    except (TypeError, ValueError):
+        per_page = 10
+    if per_page not in {5, 10, 25, 50, 100}:
+        per_page = 10
+
+    queryset = Notification.objects.all()
+    if search_query:
+        queryset = queryset.filter(
+            Q(district__icontains=search_query)
+            | Q(taluka__icontains=search_query)
+            | Q(village__icontains=search_query)
+            | Q(sections__sec3_pub_no__icontains=search_query)
+        )
+        if search_query.isdigit():
+            queryset = Notification.objects.filter(id=int(search_query)) | queryset
+    if type_filter in {Notification.STATUS_DRAFT, Notification.STATUS_COMPLETE}:
+        queryset = queryset.filter(status=type_filter)
+
+    paginator = Paginator(queryset.order_by("-updated_at", "-id"), per_page)
+    page_obj = paginator.get_page(page)
+    rows = []
+    for record in page_obj.object_list:
+        sections = record.sections or {}
+        rows.append({
+            "id": record.id,
+            "notification_type": "कलम ३ अधिसूचना",
+            "notification_number": sections.get("sec3_pub_no", ""),
+            "notification_date": sections.get("sec3_pub_date", ""),
+            "district": record.district,
+            "taluka": record.taluka,
+            "village": record.village,
+            "status": record.status,
+            "current_step": record.current_step,
+            "updated_at": timezone.localtime(record.updated_at).strftime("%d %b %Y, %I:%M %p") if record.updated_at else "",
+            "edit_url": reverse("notification_edit", args=[record.id]),
+            "delete_url": reverse("notification_delete_api", args=[record.id]),
+        })
+    return JsonResponse({
+        "success": True,
+        "rows": rows,
+        "total": paginator.count,
+        "page": page_obj.number,
+        "total_pages": paginator.num_pages,
+    })
+
+
+@login_required
+@require_http_methods(["POST"])
+def notification_delete_api(request, notification_id):
+    deleted, _ = Notification.objects.filter(id=notification_id).delete()
+    return JsonResponse({"success": bool(deleted)})
+
+
+@login_required
+@require_http_methods(["POST"])
+def notification_verify_api(request, notification_id):
+    record = get_object_or_404(Notification, id=notification_id)
+    verified = parse_verified_flag(request)
+    if record.is_verified != verified:
+        record.is_verified = verified
+        record.save(update_fields=["is_verified", "updated_at"])
+    return JsonResponse({"success": True, "verified": record.is_verified})
+
+
+@login_required
+@require_http_methods(["POST"])
+def notification_delete_selected_api(request):
+    selected_ids = request.POST.getlist("selected_ids")
+    if not selected_ids:
+        return JsonResponse({"success": False, "message": "No records selected."}, status=400)
+    deleted, _ = Notification.objects.filter(id__in=selected_ids).delete()
+    return JsonResponse({"success": True, "deleted": deleted})
+
+
+@login_required
+@require_http_methods(["POST"])
+def notification_delete_file_api(request, file_id):
+    if not delete_notification_file(file_id):
+        return JsonResponse({"success": False, "message": "File not found."}, status=404)
+    return JsonResponse({"success": True})
+
+
+@login_required
+def notification_cpi_data_api(request):
+    cpi = get_latest_cpi(
+        scope_type=notification_clean_text(request.GET.get("scope_type")),
+        division_code=notification_clean_text(request.GET.get("division_code")),
+        division_name=notification_clean_text(request.GET.get("division_name")),
+        district_code=notification_clean_text(request.GET.get("district_code")),
+        district_name=notification_clean_text(request.GET.get("district_name") or request.GET.get("district")),
+    )
+    return JsonResponse({"found": bool(cpi), **cpi_payload(cpi)})
+
+
+@login_required
+def notification_cpi_list_api(request):
+    rows = []
+    queryset = NotificationCommonInfo.objects.filter(scope_type=NotificationCommonInfo.SCOPE_DISTRICT)
+    for cpi in queryset.order_by("division_name", "district_name", "-updated_at", "-id"):
+        payload = cpi_payload(cpi)
+        payload["id"] = cpi.id
+        payload["updated_at"] = timezone.localtime(cpi.updated_at).strftime("%d/%m/%Y %H:%M") if cpi.updated_at else ""
+        rows.append(payload)
+    return JsonResponse({"success": True, "rows": rows})
+
+
+@login_required
+@require_http_methods(["POST"])
+def notification_cpi_save_api(request):
+    if (
+        notification_clean_text(request.POST.get("scope_type")) == "district"
+        and (
+            not notification_clean_text(request.POST.get("division_code"))
+            or not notification_clean_text(request.POST.get("district_code"))
+        )
+    ):
+        return JsonResponse({"success": False, "message": "Division and district are required."}, status=400)
+    try:
+        cpi = save_cpi(request.user, request.POST, request.FILES)
+    except Exception as exc:
+        logger.exception("Failed to save notification common project information")
+        message = str(exc) if settings.DEBUG else "Unable to save common project information."
+        return JsonResponse({"success": False, "message": message}, status=500)
+    return JsonResponse({"success": True, **cpi_payload(cpi)})
+
+
+@login_required
+@require_http_methods(["POST"])
+def notification_cpi_delete_api(request, cpi_id):
+    deleted, _ = NotificationCommonInfo.objects.filter(id=cpi_id).delete()
+    return JsonResponse({"success": bool(deleted)})
+
+
+@login_required
+def notification_cpi_locations_api(request):
+    return JsonResponse(_ror_locations_payload(request))
+
+
+def _xlsx_cell_value(cell, shared_strings):
+    cell_type = cell.attrib.get("t")
+    value_node = cell.find("{http://schemas.openxmlformats.org/spreadsheetml/2006/main}v")
+    if value_node is None:
+        inline_node = cell.find("{http://schemas.openxmlformats.org/spreadsheetml/2006/main}is/{http://schemas.openxmlformats.org/spreadsheetml/2006/main}t")
+        return (inline_node.text or "").strip() if inline_node is not None else ""
+    value = value_node.text or ""
+    if cell_type == "s":
+        try:
+            return shared_strings[int(value)]
+        except (ValueError, IndexError):
+            return ""
+    if cell_type in (None, "n"):
+        try:
+            val_float = float(value)
+            return f"{val_float:g}"
+        except ValueError:
+            return value.strip()
+    return value.strip()
+
+
+def _xlsx_column_index(cell_ref):
+    letters = "".join(char for char in (cell_ref or "") if char.isalpha()).upper()
+    index = 0
+    for char in letters:
+        index = index * 26 + (ord(char) - ord("A") + 1)
+    return max(index - 1, 0)
+
+
+def _parse_xlsx_area_rows(uploaded_file):
+    with zipfile.ZipFile(uploaded_file) as archive:
+        shared_strings = []
+        if "xl/sharedStrings.xml" in archive.namelist():
+            root = ET.fromstring(archive.read("xl/sharedStrings.xml"))
+            for item in root.findall("{http://schemas.openxmlformats.org/spreadsheetml/2006/main}si"):
+                parts = [node.text or "" for node in item.findall(".//{http://schemas.openxmlformats.org/spreadsheetml/2006/main}t")]
+                shared_strings.append("".join(parts).strip())
+        sheet_name = "xl/worksheets/sheet1.xml"
+        root = ET.fromstring(archive.read(sheet_name))
+        rows = []
+        for row in root.findall(".//{http://schemas.openxmlformats.org/spreadsheetml/2006/main}row"):
+            values = []
+            for cell in row.findall("{http://schemas.openxmlformats.org/spreadsheetml/2006/main}c"):
+                col_idx = _xlsx_column_index(cell.attrib.get("r", ""))
+                while len(values) <= col_idx:
+                    values.append("")
+                values[col_idx] = _xlsx_cell_value(cell, shared_strings)
+            if any(notification_clean_text(value) for value in values):
+                rows.append(values)
+        return rows
+
+
+def _area_rows_from_matrix(rows):
+    aliases = {
+        "district": {"district", "जिल्हा"},
+        "taluka": {"taluka", "तालुका"},
+        "village": {"village", "village name", "गाव"},
+        "gut_number": {"gut", "gut no", "gut no/survey no", "gut no. survey no", "gut no./survey no.", "survey no", "survey number", "गट क्रमांक"},
+        "hissa_number": {"hissa", "hissa no", "hissa no.", "hissa number", "हिस्सा नंबर"},
+        "area_712": {"7/12 area", "7 12 area", "७.१२ प्रमाणे क्षेत्र", "७/१२ प्रमाणे क्षेत्र"},
+        "proposed_area": {"area", "area in", "area in hectare r", "area in (hectare r)", "proposed", "proposed area", "प्रस्तावित संपादन क्षेत्र"},
+        "remark": {"remark", "remarks", "note", "शेरा"},
+    }
+
+    def normalize_header(value):
+        text = notification_clean_text(value).lower()
+        text = re.sub(r"[\n\r]+", " ", text)
+        text = re.sub(r"[^a-z0-9\u0900-\u097f]+", " ", text)
+        return re.sub(r"\s+", " ", text).strip()
+
+    header_index = 0
+    column_map = {}
+    for idx, row in enumerate(rows or []):
+        normalized = [normalize_header(value) for value in row]
+        found = {}
+        for col_idx, header in enumerate(normalized):
+            for field, field_aliases in aliases.items():
+                normalized_aliases = {normalize_header(alias) for alias in field_aliases}
+                if header in normalized_aliases:
+                    found[field] = col_idx
+        if {"district", "taluka", "village", "gut_number"}.issubset(found):
+            header_index = idx
+            column_map = found
+            break
+
+    if not column_map:
+        column_map = {
+            "district": 1,
+            "taluka": 2,
+            "village": 3,
+            "gut_number": 4,
+            "hissa_number": 5,
+            "proposed_area": 6,
+        }
+
+    data_rows = rows[header_index + 1:] if rows else []
+    parsed = []
+    last_values = {"district": "", "taluka": "", "village": "", "gut_number": ""}
+    for row in data_rows:
+        def get(field):
+            col_idx = column_map.get(field)
+            if col_idx is None or col_idx >= len(row):
+                return ""
+            return notification_clean_text(row[col_idx])
+
+        raw_gut = get("gut_number")
+        raw_hissa = get("hissa_number")
+        entry = {
+            "district": get("district") or last_values["district"],
+            "taluka": get("taluka") or last_values["taluka"],
+            "village": get("village") or last_values["village"],
+            "gut_number": raw_gut or last_values["gut_number"],
+            "hissa_number": raw_hissa,
+            "area_712": get("area_712"),
+            "proposed_area": get("proposed_area"),
+            "remark": get("remark"),
+        }
+        for field in last_values:
+            if entry.get(field):
+                last_values[field] = entry[field]
+        if entry["gut_number"] and (raw_gut or raw_hissa):
+            parsed.append(entry)
+    return parsed
+
+
+@login_required
+@require_http_methods(["POST"])
+def notification_parse_area_rows_api(request):
+    uploaded_file = request.FILES.get("file")
+    if not uploaded_file:
+        return JsonResponse({"success": False, "message": "No file uploaded."}, status=400)
+    name = (uploaded_file.name or "").lower()
+    try:
+        if name.endswith(".xlsx"):
+            matrix = _parse_xlsx_area_rows(uploaded_file)
+        else:
+            text = uploaded_file.read().decode("utf-8-sig")
+            matrix = list(csv.reader(io.StringIO(text)))
+    except Exception as exc:
+        return JsonResponse({"success": False, "message": f"Excel parse failed: {exc}"}, status=400)
+    return JsonResponse({"success": True, "rows": _area_rows_from_matrix(matrix)})
+
+
+@login_required
+def notification_download_csv(request):
+    return export_notifications_csv(Notification.objects.all())
+
 
