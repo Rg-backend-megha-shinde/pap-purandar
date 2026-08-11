@@ -1,0 +1,13 @@
+<span data-verify-status>
+  {% if verified %}
+    <label class="lmrs-verify-cell is-verified" title="Verified">
+      <input type="checkbox" class="lmrs-verify-check" aria-label="Verified record" checked>
+      <span class="lmrs-verify-icon">&#10003;</span><span>Verified</span>
+    </label>
+  {% else %}
+    <label class="lmrs-verify-cell" title="Unverified">
+      <input type="checkbox" class="lmrs-verify-check" aria-label="Unverified record">
+      <span>Unverified</span>
+    </label>
+  {% endif %}
+</span>

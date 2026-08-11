@@ -1,0 +1,1264 @@
+{% extends "base.html" %}
+
+{% block title %}अधिसूचना साधन{% endblock %}
+
+{% block content %}
+<style>
+  .tool-tabs-shell {
+    border: 1px solid #d8e4f2;
+    background: #f8fbff;
+    border-radius: 0.65rem;
+    padding: 0.4rem 0.55rem 0;
+  }
+  .tool-tabs {
+    display: flex;
+    align-items: flex-end;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+  }
+  .tool-tab-link {
+    display: inline-block;
+    margin-bottom: -1px;
+    padding: 0.7rem 1.1rem;
+    border: 1px solid transparent;
+    border-radius: 0.5rem 0.5rem 0 0;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #6b7d99;
+    line-height: 1;
+    transition: all 120ms ease;
+  }
+  .tool-tab-link:hover { color: #213a63; }
+  .tool-tab-link.is-active {
+    background: #ffffff;
+    color: #125fcb;
+    border-color: #cad8ea;
+    box-shadow: 0 1px 3px rgba(18, 95, 203, 0.15);
+  }
+  @media (max-width: 640px) {
+    .tool-tab-link {
+      padding: 0.6rem 0.85rem;
+      font-size: 0.85rem;
+    }
+  }
+  .nl-page-title {
+    font-size: 1.6rem;
+    font-weight: 800;
+    color: #1a3258;
+    letter-spacing: 0;
+  }
+  .nl-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    border: none;
+    border-radius: 0.6rem;
+    font-size: 0.88rem;
+    font-weight: 700;
+    padding: 0.55rem 1.1rem;
+    cursor: pointer;
+    transition: filter 120ms ease, transform 80ms ease;
+    white-space: nowrap;
+  }
+  .nl-btn:hover {
+    filter: brightness(0.92);
+    transform: translateY(-1px);
+  }
+  .nl-btn-red { background: #dc2626; color: #fff; }
+  .nl-btn-green { background: #16a34a; color: #fff; }
+  .nl-btn-blue { background: #125fcb; color: #fff; }
+  .nl-btn:disabled {
+    cursor: not-allowed;
+    filter: grayscale(0.35);
+    opacity: 0.55;
+    transform: none;
+  }
+  .nl-filter-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.65rem;
+    background: #f4f8ff;
+    border: 1px solid #dce8f7;
+    border-radius: 0.75rem;
+    padding: 0.75rem 1rem;
+    margin-bottom: 1rem;
+  }
+  .nl-filter-label {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: #44597a;
+    white-space: nowrap;
+  }
+  .nl-filter-select,
+  .nl-search-input {
+    border: 1px solid #c9d9ef;
+    border-radius: 0.55rem;
+    background: #fff;
+    padding: 0.45rem 0.85rem;
+    font-size: 0.85rem;
+    color: #394d6c;
+  }
+  .nl-filter-select { min-width: 160px; }
+  .nl-search-input { width: 220px; }
+  .nl-filter-clear {
+    border: 1px solid #c9d9ef;
+    border-radius: 0.55rem;
+    background: #fff;
+    padding: 0.45rem 0.9rem;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #4a6488;
+    cursor: pointer;
+    transition: background 120ms;
+  }
+  .nl-filter-clear:hover { background: #eef5ff; }
+  .nl-pagination-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    margin-bottom: 0.65rem;
+    font-size: 0.83rem;
+    color: #44597a;
+    font-weight: 600;
+  }
+  .nl-pagination-bar select,
+  .nl-pagination-bar input {
+    border: 1px solid #c9d9ef;
+    border-radius: 0.45rem;
+    background: #fff;
+    padding: 0.3rem 0.6rem;
+    font-size: 0.83rem;
+    color: #394d6c;
+  }
+  .nl-table-wrap {
+    overflow-x: auto;
+    border-radius: 0.75rem;
+    border: 1px solid #d7e5f6;
+  }
+  .nl-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.83rem;
+    color: #2a3f62;
+    min-width: 1120px;
+  }
+  .nl-table thead th {
+    background: #eef5ff;
+    border: 1px solid #d7e5f6;
+    padding: 0.6rem 0.55rem;
+    font-weight: 800;
+    color: #244271;
+    white-space: nowrap;
+    text-align: center;
+  }
+  .nl-table tbody td {
+    border: 1px solid #e4eef9;
+    padding: 0.52rem 0.55rem;
+    vertical-align: middle;
+    text-align: center;
+  }
+  .nl-table tbody td .flex {
+    justify-content: center;
+  }
+  .nl-table tbody tr:hover { background: #f5f9ff; }
+  .nl-table tbody tr:nth-child(even) { background: #fafcff; }
+  .nl-table tbody tr:nth-child(even):hover { background: #f0f6ff; }
+  .nl-badge {
+    display: inline-block;
+    border-radius: 99px;
+    padding: 0.2rem 0.65rem;
+    font-size: 0.76rem;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+  .nl-badge-orange {
+    background: #fff7ed;
+    color: #c2410c;
+    border: 1px solid #fed7aa;
+  }
+  .nl-badge-green {
+    background: #f0fdf4;
+    color: #15803d;
+    border: 1px solid #bbf7d0;
+  }
+  .nl-view-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.3rem;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    border-radius: 0.5rem;
+    color: #1d4ed8;
+    font-size: 0.8rem;
+    font-weight: 700;
+    padding: 0.3rem 0.7rem;
+    cursor: pointer;
+    transition: background 120ms;
+    white-space: nowrap;
+  }
+  .nl-view-btn:hover { background: #dbeafe; }
+  .nl-view-btn.is-danger {
+    background: #fff1f2;
+    border-color: #fecdd3;
+    color: #be123c;
+  }
+  .nl-view-btn.is-danger:hover { background: #ffe4e6; }
+  .nl-bottom-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 1rem;
+    gap: 0.5rem;
+    font-size: 0.83rem;
+    color: #44597a;
+    font-weight: 600;
+  }
+  .nl-page-btns {
+    display: flex;
+    gap: 0.3rem;
+    flex-wrap: wrap;
+  }
+  .nl-page-btn {
+    border: 1px solid #c9d9ef;
+    border-radius: 0.45rem;
+    background: #fff;
+    padding: 0.3rem 0.7rem;
+    font-size: 0.83rem;
+    color: #394d6c;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background 100ms;
+  }
+  .nl-page-btn:hover { background: #eef5ff; }
+  .nl-page-btn.is-active {
+    background: #125fcb;
+    color: #fff;
+    border-color: #125fcb;
+  }
+  .nt-modal-panel {
+    background: #fff;
+    border-radius: 1rem;
+    box-shadow: 0 24px 60px rgba(10, 22, 50, 0.28);
+    overflow: hidden;
+  }
+  .nt-modal-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 1rem 1.4rem;
+    background: linear-gradient(135deg, #1a4fa0 0%, #1565c0 60%, #125fcb 100%);
+  }
+  .nt-modal-title {
+    color: #fff;
+    font-size: 1rem;
+    font-weight: 800;
+  }
+  .nt-modal-close {
+    display: flex;
+    width: 2rem;
+    height: 2rem;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.45rem;
+    background: rgba(255, 255, 255, 0.15);
+    color: #fff;
+    font-size: 1.1rem;
+  }
+  .nt-modal-close:hover { background: rgba(255, 255, 255, 0.28); }
+  .nt-cpi-modal {
+    width: 100%;
+    max-width: 96vw;
+    height: 92vh;
+  }
+  .nt-cpi-icon {
+    display: flex;
+    width: 2rem;
+    height: 2rem;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.5rem;
+    background: rgba(255, 255, 255, 0.18);
+  }
+  .nt-cpi-subtitle {
+    margin-top: 0.1rem;
+    color: rgba(255, 255, 255, 0.75);
+    font-size: 0.76rem;
+    font-weight: 500;
+  }
+  .nt-label {
+    display: block;
+    margin-bottom: 0.45rem;
+    color: #44597a;
+    font-size: 0.875rem;
+    font-weight: 700;
+  }
+  .nt-input {
+    width: 100%;
+    border: 1px solid #d3deeb;
+    border-radius: 0.75rem;
+    background: #fff;
+    padding: 0.75rem 1rem;
+    color: #394d6c;
+    font-size: 0.875rem;
+  }
+  .nt-input[readonly] {
+    background: #f3f7fc;
+    color: #6d7f9b;
+  }
+  .nt-cpi-success {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.65rem;
+    border: 1px solid #bbf7d0;
+    border-radius: 0.75rem;
+    background: #f0fdf4;
+    padding: 0.75rem 1rem;
+  }
+  .nt-cpi-success-icon {
+    width: 1.25rem;
+    height: 1.25rem;
+    color: #16a34a;
+    flex-shrink: 0;
+    margin-top: 0.05rem;
+  }
+  .nt-cpi-success strong {
+    display: block;
+    color: #166534;
+    font-size: 0.88rem;
+    font-weight: 800;
+  }
+  .nt-cpi-success span {
+    color: #15803d;
+    font-size: 0.8rem;
+    font-weight: 500;
+  }
+  .nt-cpi-action-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.55rem;
+    padding-bottom: 1.1rem;
+    border-bottom: 1px solid #e2ebf7;
+  }
+  .nt-cpi-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    border-radius: 0.6rem;
+    font-size: 0.84rem;
+    font-weight: 700;
+    padding: 0.5rem 1.1rem;
+    cursor: pointer;
+    transition: filter 120ms ease, transform 80ms ease;
+    white-space: nowrap;
+  }
+  .nt-cpi-btn:hover {
+    filter: brightness(0.92);
+    transform: translateY(-1px);
+  }
+  .nt-cpi-btn-primary {
+    border: none;
+    background: #125fcb;
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(18, 95, 203, 0.22);
+  }
+  .nt-cpi-btn-secondary {
+    border: 1.5px solid #b8d4f8;
+    background: #f0f6ff;
+    color: #1e4da1;
+  }
+  .nt-cpi-btn-outline {
+    border: 1.5px solid #cbd5e1;
+    background: #fff;
+    color: #64748b;
+  }
+  .nt-cpi-divider {
+    border: none;
+    border-top: 1px solid #e2ebf7;
+    margin: 1.25rem 0;
+  }
+  .nt-cpi-scope-panel {
+    border: 1px solid #d8e6f8;
+    border-radius: 0.65rem;
+    background: #f8fbff;
+    padding: 0.9rem;
+  }
+  .nt-cpi-scope-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.65rem;
+    margin-top: 0.55rem;
+  }
+  .nt-cpi-scope-option {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    border: 1px solid #c7d8f0;
+    border-radius: 0.5rem;
+    background: #fff;
+    padding: 0.5rem 0.75rem;
+    color: #244271;
+    font-size: 0.82rem;
+    font-weight: 800;
+  }
+  .nt-cpi-scope-option input {
+    width: 0.9rem;
+    height: 0.9rem;
+  }
+  .nt-cpi-saved-list {
+    overflow: hidden;
+    border: 1px solid #d8e6f8;
+    border-radius: 0.65rem;
+    background: #fff;
+  }
+  .nt-cpi-saved-head,
+  .nt-cpi-saved-row {
+    display: grid;
+    grid-template-columns: 1.1fr 1.1fr 1.3fr 1fr 0.8fr 0.8fr;
+    gap: 0.75rem;
+    align-items: center;
+    padding: 0.65rem 0.85rem;
+  }
+  .nt-cpi-saved-head {
+    background: #eaf3ff;
+    color: #143a70;
+    font-size: 0.78rem;
+    font-weight: 900;
+  }
+  .nt-cpi-saved-row {
+    border-top: 1px solid #e2ebf7;
+    color: #244271;
+    font-size: 0.8rem;
+    text-align: left;
+    width: 100%;
+  }
+  .nt-cpi-saved-row > span {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  .nt-cpi-saved-row:hover {
+    background: #f6faff;
+  }
+  .nt-cpi-row-actions {
+    display: inline-flex;
+    gap: 0.35rem;
+    justify-content: flex-end;
+  }
+  .nt-cpi-icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 2rem;
+    height: 2rem;
+    border: 1px solid #bfd5f5;
+    border-radius: 0.5rem;
+    background: #f5f9ff;
+    color: #125fcb;
+    font-size: 0.78rem;
+    font-weight: 900;
+  }
+  .nt-cpi-icon-btn.is-danger {
+    border-color: #fecaca;
+    background: #fff5f5;
+    color: #dc2626;
+  }
+  .nt-cpi-file-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    border: 1px solid #d8e6f8;
+    border-radius: 0.6rem;
+    background: #f8fbff;
+    padding: 0.5rem 0.65rem;
+  }
+  .nt-cpi-file-name {
+    min-width: 0;
+    overflow: hidden;
+    color: #125fcb;
+    font-size: 0.82rem;
+    font-weight: 900;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .nt-cpi-file-actions {
+    display: inline-flex;
+    flex-shrink: 0;
+    gap: 0.35rem;
+  }
+  .nt-cpi-saved-empty {
+    border-top: 1px solid #e2ebf7;
+    padding: 0.8rem;
+    color: #64748b;
+    font-size: 0.82rem;
+    font-weight: 700;
+  }
+  .nt-cpi-officer-block {
+    border: 1px solid #e2ebf7;
+    border-radius: 0.75rem;
+    background: #f8fbff;
+    padding: 0.9rem 1rem;
+  }
+  .nt-cpi-officer-label {
+    margin-bottom: 0.6rem;
+    color: #244271;
+    font-size: 0.8rem;
+    font-weight: 700;
+  }
+  #ntPerPage {
+    width: 4.25rem;
+    min-width: 4.25rem;
+    height: 2.15rem;
+    padding: 0 1.55rem 0 0.65rem;
+  }
+</style>
+
+<main class="flex-1 overflow-y-auto bg-slate-100 px-2 py-4 dark:bg-background-dark sm:px-3 md:px-4">
+  <div class="w-full space-y-4">
+    <div class="tool-tabs-shell">
+      <nav class="tool-tabs" aria-label="Tool views">
+          <a href="{% url 'land_record_712_list' %}" class="tool-tab-link">७/१२ उतारा नोंद</a>
+          <a href="{% url 'land_record_712_api' %}" class="tool-tab-link">७/१२ API</a>
+          <a href="{% url 'notification_list' %}" class="tool-tab-link is-active">अधिसूचना साधन</a>
+          <a href="{% url 'ready_reckoner_list' %}" class="tool-tab-link">रेडी रेकनर दर</a>
+          <a href="{% url 'village_info' %}" class="tool-tab-link">गावाची माहिती</a>
+          <a href="{% url 'add_entry' %}" class="tool-tab-link">भूसंपादन प्रक्रिया</a>
+          <a href="{% url 'automatic_document_generation' %}" class="tool-tab-link">स्वयंचलित दस्तऐवज निर्मिती</a>
+      </nav>
+    </div>
+
+    <section class="overflow-hidden rounded-lg border border-slate-300 bg-white px-3 py-4 shadow-sm md:px-5 lg:px-6">
+      <div class="mb-5 flex flex-wrap items-center justify-between gap-3">
+        <h1 class="nl-page-title">अधिसूचना नोंदी</h1>
+        <div class="flex flex-wrap gap-2">
+          <button id="bulkDeleteNotificationBtn" type="submit" form="bulkDeleteNotificationForm" disabled data-base-label="निवडलेले हटवा" class="nl-btn nl-btn-red">निवडलेले हटवा</button>
+          <a href="{% url 'notification_csv_download' %}" class="nl-btn nl-btn-green">CSV डाउनलोड</a>
+          <button type="button" id="ntOpenCpiModal" class="nl-btn" style="background:#4f46e5;color:#fff;">
+            <span class="material-symbols-outlined text-base">inventory_2</span>
+            सामायिक प्रकल्प माहिती
+          </button>
+          <a href="{% url 'notification_new' %}" class="nl-btn nl-btn-blue">+ नवीन अधिसूचना</a>
+        </div>
+      </div>
+
+      {% include "tools/_verification_assets.html" %}
+      <div class="nl-filter-bar">
+        <form method="get" class="flex flex-1 flex-wrap items-center gap-2">
+          <span class="nl-filter-label">अधिसूचनेचा प्रकार</span>
+          <select name="notification_type" class="nl-filter-select" onchange="this.form.submit()">
+            <option value="">अधिसूचनेचा प्रकार निवडा</option>
+            <option value="sec3" {% if type_filter == 'sec3' %}selected{% endif %}>कलम ३ अधिसूचना</option>
+            <option value="sec152" {% if type_filter == 'sec152' %}selected{% endif %}>कलम १५(२) अधिसूचना</option>
+            <option value="sec154" {% if type_filter == 'sec154' %}selected{% endif %}>कलम १५(४) अधिसूचना</option>
+            <option value="sec181" {% if type_filter == 'sec181' %}selected{% endif %}>कलम १८(१) अधिसूचना</option>
+          </select>
+          <select name="status" class="nl-filter-select" onchange="this.form.submit()">
+            <option value="">सर्व स्थिती</option>
+            <option value="draft" {% if status_filter == 'draft' %}selected{% endif %}>Draft</option>
+            <option value="complete" {% if status_filter == 'complete' %}selected{% endif %}>Complete</option>
+          </select>
+          <select name="verification" class="nl-filter-select" onchange="this.form.submit()">
+            <option value="">Verified/Unverified</option>
+            <option value="verified" {% if verification_filter == 'verified' %}selected{% endif %}>Verified</option>
+            <option value="unverified" {% if verification_filter == 'unverified' %}selected{% endif %}>Unverified</option>
+          </select>
+          <a href="{% url 'notification_list' %}" class="nl-filter-clear">फिल्टर काढा</a>
+          <input id="ntSearchInput" name="search" type="search" value="{{ search_query }}" class="nl-search-input ml-auto" placeholder="अधिसूचना शोधा...">
+          <input type="hidden" name="per_page" value="{{ per_page_value }}">
+        </form>
+      </div>
+
+      <div class="nl-pagination-bar">
+        <form id="ntPerPageForm" method="get" class="flex items-center gap-2">
+          <span>दाखवा</span>
+          <select id="ntPerPage" name="per_page">
+            <option value="10" {% if per_page_value == '10' %}selected{% endif %}>10</option>
+            <option value="25" {% if per_page_value == '25' %}selected{% endif %}>25</option>
+            <option value="50" {% if per_page_value == '50' %}selected{% endif %}>50</option>
+            <option value="100" {% if per_page_value == '100' %}selected{% endif %}>100</option>
+            <option value="all" {% if per_page_value == 'all' %}selected{% endif %}>All</option>
+          </select>
+          <span>नोंदी</span>
+          {% if search_query %}<input type="hidden" name="search" value="{{ search_query }}">{% endif %}
+        </form>
+      </div>
+
+      <form id="bulkDeleteNotificationForm" method="post" action="{% url 'notification_delete_selected_api' %}">
+        {% csrf_token %}
+        <div class="nl-table-wrap">
+          <table id="notificationTable" class="nl-table">
+            <thead>
+              <tr>
+                <th><input id="selectAllNotificationRows" type="checkbox" class="h-4 w-4"></th>
+                <th>अनुक्रमांक</th>
+                <th>जिल्हा</th>
+                <th>तालुका</th>
+                <th>गाव</th>
+                <th>स्थिती</th>
+                <th>अद्यतनित</th>
+                <th>Actions</th>
+                <th>Remark</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for record in records %}
+                <tr data-verify-row data-verify-url="{% url 'notification_verify_api' record.id %}">
+                  <td><input type="checkbox" name="selected_ids" value="{{ record.id }}" class="ntRowSelect h-4 w-4"></td>
+                  <td class="text-center">{{ forloop.counter }}</td>
+                  <td>{{ record.district }}</td>
+                  <td>{{ record.taluka }}</td>
+                  <td>{{ record.village }}</td>
+                  <td>
+                    {% if record.status == "complete" %}
+                      <span class="nl-badge nl-badge-green">Complete</span>
+                    {% else %}
+                      <span class="nl-badge nl-badge-orange">Draft (Step {{ record.current_step }})</span>
+                    {% endif %}
+                  </td>
+                  <td>
+                    <div class="text-xs text-gray-600">{{ record.updated_at|date:"d M Y, h:i a" }}</div>
+                    {% if record.created_by_display %}
+                      <div class="text-xs text-[#6d7f9b]">Updated by {{ record.created_by_display }}</div>
+                    {% endif %}
+                  </td>
+                  <td>
+                    <div class="flex gap-2">
+                      <a href="{% url 'notification_edit' record.id %}" class="nl-view-btn" title="Edit">
+                        <span class="material-symbols-outlined text-base">edit</span>
+                      </a>
+                      <button type="button" class="ntSingleDeleteButton nl-view-btn is-danger" data-delete-url="{% url 'notification_delete_api' record.id %}" title="Delete">
+                        <span class="material-symbols-outlined text-base">delete</span>
+                      </button>
+                    </div>
+                  </td>
+                  <td class="text-center">{% include "tools/_verification_cell.html" with verified=record.is_verified %}</td>
+                </tr>
+              {% empty %}
+                <tr><td colspan="10" class="px-4 py-8 text-center text-sm text-slate-500">No notification records found.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </form>
+
+      <div class="nl-bottom-bar">
+        <div>{{ total_records }} नोंदी</div>
+        {% if total_pages > 1 %}
+          <div class="nl-page-btns">
+            {% if page_obj.has_previous %}
+              <a class="nl-page-btn" href="?page={{ page_obj.previous_page_number }}&per_page={{ per_page_value }}{% if search_query %}&search={{ search_query }}{% endif %}">← मागील</a>
+            {% endif %}
+            {% for page_no in page_links %}
+              <a class="nl-page-btn {% if page_no == current_page %}is-active{% endif %}" href="?page={{ page_no }}&per_page={{ per_page_value }}{% if search_query %}&search={{ search_query }}{% endif %}">{{ page_no }}</a>
+            {% endfor %}
+            {% if page_obj.has_next %}
+              <a class="nl-page-btn" href="?page={{ page_obj.next_page_number }}&per_page={{ per_page_value }}{% if search_query %}&search={{ search_query }}{% endif %}">पुढील →</a>
+            {% endif %}
+          </div>
+        {% endif %}
+      </div>
+    </section>
+  </div>
+</main>
+
+<!-- CPI modal -->
+<div id="ntCpiModal" class="fixed inset-0 z-[10000] hidden items-center justify-center bg-black/50 p-4">
+  <div class="nt-modal-panel nt-cpi-modal flex flex-col">
+    <div class="nt-modal-head">
+      <div class="flex items-center gap-3">
+        <div class="nt-cpi-icon">
+          <span class="material-symbols-outlined text-base text-white">inventory_2</span>
+        </div>
+        <div>
+          <h3 class="nt-modal-title">सामायिक प्रकल्प माहिती <span class="text-xs font-semibold opacity-80">(Common Project Information)</span></h3>
+          <p class="nt-cpi-subtitle">ही माहिती एकदाच भरावी. पुढील सर्व अधिसूचनांसाठी स्वयंचलितपणे उपलब्ध होईल.</p>
+        </div>
+      </div>
+      <button type="button" id="ntCpiModalClose" class="nt-modal-close">&times;</button>
+    </div>
+    <div class="flex-1 space-y-5 overflow-y-auto p-6">
+      <div id="ntCpiSuccessBanner" class="nt-cpi-success hidden">
+        <svg class="nt-cpi-success-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        <div>
+          <strong>✓ सामायिक प्रकल्प माहिती उपलब्ध आहे.</strong>
+          <span>पुढील अधिसूचनांसाठी ही माहिती स्वयंचलितपणे वापरली जाईल.</span>
+        </div>
+      </div>
+
+      <div class="nt-cpi-action-bar">
+        <button type="button" id="ntCpiModalReset" class="nt-cpi-btn nt-cpi-btn-outline">
+          <span class="material-symbols-outlined text-sm">refresh</span>
+          रीसेट
+        </button>
+        <button type="button" id="ntCpiModalEdit" class="nt-cpi-btn nt-cpi-btn-secondary">
+          <span class="material-symbols-outlined text-sm">edit</span>
+          संपादन करा
+        </button>
+        <button type="button" id="ntCpiModalSave" class="nt-cpi-btn nt-cpi-btn-primary">
+          <span class="material-symbols-outlined text-sm">save</span>
+          सामायिक माहिती जतन करा
+        </button>
+      </div>
+
+      <div class="nt-cpi-saved-list">
+        <div class="nt-cpi-saved-head">
+          <span>विभाग</span>
+          <span>जिल्हा</span>
+          <span>प्रकल्प</span>
+          <span>प्रशासकीय मान्यता अधिसूचना</span>
+          <span>Updated</span>
+          <span>Actions</span>
+        </div>
+        <div id="ntCpiSavedRows">
+          <div class="nt-cpi-saved-empty">नोंदी नाहीत.</div>
+        </div>
+      </div>
+
+      <div class="nt-cpi-scope-panel">
+        <div id="ntCpiScopeSelectors" class="grid gap-4 md:grid-cols-2">
+          <div id="ntCpiDivisionWrap">
+            <label class="nt-label">विभाग</label>
+            <select id="ntCpiDivision" class="nt-input"></select>
+          </div>
+          <div id="ntCpiDistrictWrap">
+            <label class="nt-label">जिल्हा</label>
+            <select id="ntCpiDistrict" class="nt-input"></select>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid gap-4 md:grid-cols-2">
+        <div><label class="nt-label">प्रकल्पाचे नाव</label><input id="ntCpiFormProjectName" class="nt-input" placeholder="प्रकल्पाचे नाव"></div>
+        <div><label class="nt-label">प्रयोजन</label><input id="ntCpiFormProjectPurpose" class="nt-input" placeholder="प्रयोजन"></div>
+        <div><label class="nt-label">प्रशासकीय मान्यता अधिसूचना क्रमांक</label><input id="ntCpiFormApprovalNo" class="nt-input" placeholder="प्रशासकीय मान्यता अधिसूचना क्रमांक"></div>
+        <div><label class="nt-label">दिनांक</label><input type="date" id="ntCpiFormApprovalDate" class="nt-input"></div>
+        <div><label class="nt-label">संपादन मंडळाचे अथवा कार्यान्वयीन यंत्रणेचे नाव</label><input id="ntCpiFormAgencyName" class="nt-input" placeholder="संपादन मंडळाचे अथवा कार्यान्वयीन यंत्रणेचे नाव"></div>
+        <div><label class="nt-label">शिबीर कार्यालयाचे नाव</label><input id="ntCpiFormSpecialProjectName" class="nt-input" placeholder="शिबीर कार्यालयाचे नाव"></div>
+      </div>
+
+      <hr class="nt-cpi-divider">
+
+      <div class="space-y-3">
+        <div class="nt-cpi-officer-block">
+          <div class="nt-cpi-officer-label">१. मुख्य अभियंता</div>
+          <div class="grid gap-3 md:grid-cols-2">
+            <div><label class="nt-label">नाव</label><input id="ntCpiFormOfficer1Name" class="nt-input" placeholder="नाव"></div>
+            <div><label class="nt-label">पदनाम</label><input id="ntCpiFormOfficer1Post" class="nt-input" placeholder="पदनाम"></div>
+          </div>
+        </div>
+        <div class="nt-cpi-officer-block">
+          <div class="nt-cpi-officer-label">२. अधिक्षक अभियंता</div>
+          <div class="grid gap-3 md:grid-cols-2">
+            <div><label class="nt-label">नाव</label><input id="ntCpiFormOfficer2Name" class="nt-input" placeholder="नाव"></div>
+            <div><label class="nt-label">पदनाम</label><input id="ntCpiFormOfficer2Post" class="nt-input" placeholder="पदनाम"></div>
+          </div>
+        </div>
+        <div class="nt-cpi-officer-block">
+          <div class="nt-cpi-officer-label">३. कार्यकारी अभियंता</div>
+          <div class="grid gap-3 md:grid-cols-2">
+            <div><label class="nt-label">कार्यकारी अभियंता नाव</label><input id="ntCpiFormOfficer3Name" class="nt-input" placeholder="कार्यकारी अभियंता नाव"></div>
+            <div><label class="nt-label">पदनाम</label><input id="ntCpiFormOfficer3Post" class="nt-input" placeholder="पदनाम"></div>
+            <div><label class="nt-label">कार्यालयीन ईमेल</label><input id="ntCpiFormOfficer3Email" class="nt-input" type="email" placeholder="कार्यालयीन ईमेल"></div>
+            <div><label class="nt-label">कार्यालयीन दुरध्वनी क्रमांक</label><input id="ntCpiFormOfficer3Phone" class="nt-input" placeholder="कार्यालयीन दुरध्वनी क्रमांक"></div>
+            <div class="md:col-span-2">
+              <label class="nt-label">कार्यालयीन आदेश अपलोड करा</label>
+              <input id="ntCpiFormOfficer3OrderFile" class="nt-input" type="file">
+              <div id="ntCpiFormOfficer3OrderExisting" class="mt-2 text-sm font-semibold text-[#4a6488]"></div>
+            </div>
+          </div>
+        </div>
+        <div class="nt-cpi-officer-block">
+          <div class="nt-cpi-officer-label">४. अपर जिल्हाधिकारी/उपजिल्हाधिकारी</div>
+          <div class="grid gap-3 md:grid-cols-2">
+            <div><label class="nt-label">नाव</label><input id="ntCpiFormOfficer4Name" class="nt-input" placeholder="नाव"></div>
+            <div><label class="nt-label">पदनाम</label><input id="ntCpiFormOfficer4Post" class="nt-input" placeholder="पदनाम"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="flex items-center justify-end gap-2 border-t border-slate-200 bg-slate-50 p-4">
+      <button type="button" id="ntCpiModalCancel" class="rounded-2xl border border-[#c9d9ef] bg-white px-5 py-3 text-base font-semibold text-[#4a6488]">रद्द करा</button>
+    </div>
+  </div>
+</div>
+
+<div id="ntDeleteConfirmModal" class="fixed inset-0 z-[10000] hidden items-center justify-center bg-black/50 p-4">
+  <div class="nt-modal-panel w-full max-w-md">
+    <div class="nt-modal-head">
+      <h3 class="nt-modal-title">अधिसूचना नोंद हटवा</h3>
+    </div>
+    <div class="p-4">
+      <p id="ntDeleteConfirmText" class="text-sm text-slate-600">तुम्हाला ही अधिसूचना नोंद हटवायची आहे का?</p>
+    </div>
+    <div class="flex items-center justify-end gap-2 bg-slate-50 p-4">
+      <button type="button" id="ntDeleteConfirmCancel" class="rounded-2xl border border-[#c9d9ef] bg-white px-5 py-3 text-base font-semibold text-[#4a6488]">रद्द करा</button>
+      <button type="button" id="ntDeleteConfirmProceed" class="nl-btn nl-btn-red">हटवा</button>
+    </div>
+  </div>
+</div>
+
+{{ fixed_cpi|json_script:"ntFixedCpiData" }}
+<script>
+  const ntFixedCpi = JSON.parse(document.getElementById("ntFixedCpiData").textContent || "{}");
+  const NT_FIXED_CPI_INPUT_IDS = {
+    project_name: "ntCpiFormProjectName",
+    project_purpose: "ntCpiFormProjectPurpose",
+    approval_no: "ntCpiFormApprovalNo",
+    approval_date: "ntCpiFormApprovalDate",
+    agency_name: "ntCpiFormAgencyName",
+  };
+
+  function applyFixedCpiFields() {
+    Object.entries(ntFixedCpi).forEach(([field, value]) => {
+      const input = document.getElementById(NT_FIXED_CPI_INPUT_IDS[field] || "");
+      if (!input) return;
+      const isDate = input.type === "date";
+      input.value = isDate ? toDateInputValue(value) : value;
+      input.readOnly = true;
+      if (isDate) input.disabled = true;
+      input.classList.add("bg-[#eef3f8]", "text-[#4a6488]");
+    });
+  }
+  applyFixedCpiFields();
+
+  const perPage = document.getElementById("ntPerPage");
+  if (perPage) perPage.addEventListener("change", () => document.getElementById("ntPerPageForm").submit());
+  const search = document.getElementById("ntSearchInput");
+  if (search) {
+    let timer;
+    search.addEventListener("input", () => {
+      clearTimeout(timer);
+      timer = setTimeout(() => search.form.submit(), 450);
+    });
+  }
+
+  const selectAll = document.getElementById("selectAllNotificationRows");
+  const bulkBtn = document.getElementById("bulkDeleteNotificationBtn");
+  const bulkForm = document.getElementById("bulkDeleteNotificationForm");
+  const rowSelects = Array.from(document.querySelectorAll(".ntRowSelect"));
+  const deleteConfirmModal = document.getElementById("ntDeleteConfirmModal");
+  const deleteConfirmText = document.getElementById("ntDeleteConfirmText");
+  const deleteConfirmCancel = document.getElementById("ntDeleteConfirmCancel");
+  const deleteConfirmProceed = document.getElementById("ntDeleteConfirmProceed");
+  let pendingDeleteUrl = null;
+
+  function updateBulkState() {
+    const selectedCount = rowSelects.filter((box) => box.checked).length;
+    const anyChecked = selectedCount > 0;
+    if (bulkBtn) {
+      const baseLabel = bulkBtn.dataset.baseLabel || "निवडलेले हटवा";
+      bulkBtn.disabled = !anyChecked;
+      bulkBtn.classList.toggle("opacity-60", !anyChecked);
+      bulkBtn.classList.toggle("cursor-not-allowed", !anyChecked);
+      bulkBtn.textContent = anyChecked ? `${baseLabel} (${selectedCount})` : baseLabel;
+    }
+    if (selectAll) {
+      selectAll.checked = rowSelects.length > 0 && rowSelects.every((box) => box.checked);
+      selectAll.indeterminate = selectedCount > 0 && selectedCount < rowSelects.length;
+    }
+  }
+  selectAll?.addEventListener("change", () => {
+    rowSelects.forEach((box) => { box.checked = selectAll.checked; });
+    updateBulkState();
+  });
+  rowSelects.forEach((box) => box.addEventListener("change", updateBulkState));
+
+  function csrfToken() {
+    return document.querySelector('input[name="csrfmiddlewaretoken"]')?.value || "";
+  }
+
+  let ntCpiLocations = { divisions: [], districts: [] };
+  let ntCpiSavedById = new Map();
+  let ntCpiOrderDeleteRequested = false;
+
+  function cpiModalInputs() {
+    return Array.from(document.querySelectorAll('#ntCpiModal input[id^="ntCpiForm"]'));
+  }
+
+  function setCpiReadonly(readonly) {
+    cpiModalInputs().forEach((input) => {
+      if (input.type === "file") input.disabled = readonly;
+      else input.readOnly = readonly;
+    });
+    if (!readonly) applyFixedCpiFields();
+  }
+
+  function toDateInputValue(value) {
+    const text = String(value || "").trim();
+    const match = text.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+    if (match) return `${match[3]}-${match[2]}-${match[1]}`;
+    return text;
+  }
+
+  function fillCpiModalForm(cpi = {}) {
+    ntCpiOrderDeleteRequested = false;
+    document.getElementById("ntCpiFormProjectName").value = cpi.project_name || "";
+    document.getElementById("ntCpiFormProjectPurpose").value = cpi.project_purpose || "";
+    document.getElementById("ntCpiFormApprovalNo").value = cpi.approval_no || "";
+    document.getElementById("ntCpiFormApprovalDate").value = toDateInputValue(cpi.approval_date || "");
+    document.getElementById("ntCpiFormAgencyName").value = cpi.agency_name || "";
+    document.getElementById("ntCpiFormSpecialProjectName").value = cpi.special_project_name || "";
+    ["1", "2", "3", "4"].forEach((i) => {
+      document.getElementById(`ntCpiFormOfficer${i}Name`).value = cpi[`officer${i}_name`] || "";
+      document.getElementById(`ntCpiFormOfficer${i}Post`).value = cpi[`officer${i}_post`] || "";
+    });
+    document.getElementById("ntCpiFormOfficer3Email").value = cpi.officer3_email || "";
+    document.getElementById("ntCpiFormOfficer3Phone").value = cpi.officer3_phone || "";
+    document.getElementById("ntCpiFormOfficer3OrderFile").value = "";
+    renderCpiOrderExisting(cpi.officer3_order_file_url || "", cpi.officer3_order_file_name || "कार्यालयीन आदेश");
+    applyFixedCpiFields();
+  }
+
+  function renderCpiOrderExisting(fileUrl = "", fileName = "कार्यालयीन आदेश") {
+    const orderExisting = document.getElementById("ntCpiFormOfficer3OrderExisting");
+    if (!orderExisting) return;
+    orderExisting.innerHTML = fileUrl
+      ? `
+        <div class="nt-cpi-file-row">
+          <span class="nt-cpi-file-name" title="${escapeHtml(fileName)}">${escapeHtml(fileName)}</span>
+          <span class="nt-cpi-file-actions">
+            <button type="button" class="nt-cpi-icon-btn" data-cpi-order-view data-file-url="${escapeHtml(fileUrl)}" title="View">
+              <span class="material-symbols-outlined text-sm">visibility</span>
+            </button>
+            <button type="button" class="nt-cpi-icon-btn is-danger" data-cpi-order-delete title="Remove">×</button>
+          </span>
+        </div>
+      `
+      : "";
+  }
+
+  function resetCpiModalForm({ clearScope = true } = {}) {
+    ntCpiOrderDeleteRequested = false;
+    cpiModalInputs().forEach((input) => {
+      input.value = "";
+    });
+    document.getElementById("ntCpiFormOfficer3OrderExisting").innerHTML = "";
+    if (clearScope) {
+      const division = document.getElementById("ntCpiDivision");
+      if (division) division.value = "";
+      populateCpiDistricts("");
+    }
+    setCpiReadonly(false);
+    document.getElementById("ntCpiSuccessBanner")?.classList.add("hidden");
+  }
+
+  function cpiScopeType() {
+    return "district";
+  }
+
+  function selectOptionName(select) {
+    return select?.selectedOptions?.[0]?.dataset.name || select?.selectedOptions?.[0]?.textContent || "";
+  }
+
+  function populateCpiSelect(select, placeholder, rows, selectedValue = "") {
+    if (!select) return;
+    select.innerHTML = `<option value="">${placeholder}</option>`;
+    rows.forEach((row) => {
+      if (!row?.code) return;
+      const option = document.createElement("option");
+      option.value = row.code;
+      option.textContent = row.name || row.code;
+      option.dataset.name = row.name || "";
+      if (row.division_code) option.dataset.divisionCode = row.division_code;
+      if (row.division_name) option.dataset.divisionName = row.division_name;
+      if (String(row.code) === String(selectedValue)) option.selected = true;
+      select.appendChild(option);
+    });
+  }
+
+  async function loadCpiLocations() {
+    const response = await fetch("/api/notification/cpi/locations/");
+    if (!response.ok) return;
+    const payload = await response.json();
+    if (!payload.success) return;
+    ntCpiLocations = {
+      divisions: payload.divisions || [],
+      districts: payload.districts || [],
+    };
+    populateCpiSelect(document.getElementById("ntCpiDivision"), "विभाग निवडा", ntCpiLocations.divisions);
+    populateCpiDistricts();
+  }
+
+  function populateCpiDistricts(selectedValue = "") {
+    const division = document.getElementById("ntCpiDivision");
+    const district = document.getElementById("ntCpiDistrict");
+    const divisionCode = division?.value || "";
+    const rows = ntCpiLocations.districts.filter((item) => !divisionCode || item.division_code === divisionCode);
+    populateCpiSelect(district, "जिल्हा निवडा", rows, selectedValue);
+  }
+
+  function escapeHtml(value) {
+    return String(value ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
+
+  async function loadCpiSavedList() {
+    const wrap = document.getElementById("ntCpiSavedRows");
+    if (!wrap) return;
+    const response = await fetch("/api/notification/cpi/list/");
+    if (!response.ok) return;
+    const payload = await response.json();
+    const rows = payload.rows || [];
+    ntCpiSavedById = new Map(rows.map((row) => [String(row.id || ""), row]));
+    if (!rows.length) {
+      wrap.innerHTML = '<div class="nt-cpi-saved-empty">नोंदी नाहीत.</div>';
+      return;
+    }
+    wrap.innerHTML = rows.map((row) => `
+      <div class="nt-cpi-saved-row"
+        data-cpi-id="${escapeHtml(row.id || "")}"
+        data-division-code="${escapeHtml(row.division_code || "")}"
+        data-district-code="${escapeHtml(row.district_code || "")}">
+        <span>${escapeHtml(row.division_name || "-")}</span>
+        <span>${escapeHtml(row.district_name || "-")}</span>
+        <span>${escapeHtml(row.project_name || "-")}</span>
+        <span>${escapeHtml(row.approval_no || "-")}</span>
+        <span>${escapeHtml(row.updated_at || "-")}</span>
+        <span class="nt-cpi-row-actions">
+          <button type="button" class="nt-cpi-icon-btn" data-cpi-edit title="Edit">✎</button>
+          <button type="button" class="nt-cpi-icon-btn is-danger" data-cpi-delete title="Delete">×</button>
+        </span>
+      </div>
+    `).join("");
+  }
+
+  function setCpiScopeSelection(divisionCode, districtCode) {
+    const division = document.getElementById("ntCpiDivision");
+    const district = document.getElementById("ntCpiDistrict");
+    if (divisionCode) {
+      division.value = divisionCode;
+      populateCpiDistricts(districtCode);
+    }
+    if (districtCode) district.value = districtCode;
+  }
+
+  async function selectSavedCpi(row) {
+    const cpi = ntCpiSavedById.get(String(row.dataset.cpiId || ""));
+    const divisionCode = row.dataset.divisionCode || cpi?.division_code || "";
+    const districtCode = row.dataset.districtCode || cpi?.district_code || "";
+    setCpiScopeSelection(divisionCode, districtCode);
+    if (cpi) {
+      fillCpiModalForm(cpi);
+      setCpiReadonly(false);
+      document.getElementById("ntCpiSuccessBanner")?.classList.remove("hidden");
+      return;
+    }
+    await loadCpiForScope();
+    setCpiReadonly(false);
+  }
+
+  async function deleteSavedCpi(row) {
+    const cpiId = row.dataset.cpiId || "";
+    if (!cpiId) return;
+    if (!confirm("ही सामायिक प्रकल्प माहिती हटवायची आहे का?")) return;
+    const response = await fetch(`/api/notification/cpi/${cpiId}/delete/`, {
+      method: "POST",
+      headers: { "X-CSRFToken": csrfToken() },
+    });
+    const payload = await response.json();
+    if (!response.ok || !payload.success) {
+      alert("नोंद हटवताना त्रुटी आली.");
+      return;
+    }
+    await loadCpiSavedList();
+    fillCpiModalForm({});
+    setCpiReadonly(false);
+    document.getElementById("ntCpiSuccessBanner")?.classList.add("hidden");
+  }
+
+  function cpiScopeParams() {
+    const division = document.getElementById("ntCpiDivision");
+    const district = document.getElementById("ntCpiDistrict");
+    return {
+      scope_type: cpiScopeType(),
+      division_code: division?.value || district?.selectedOptions?.[0]?.dataset.divisionCode || "",
+      division_name: selectOptionName(division) || district?.selectedOptions?.[0]?.dataset.divisionName || "",
+      district_code: district?.value || "",
+      district_name: selectOptionName(district),
+    };
+  }
+
+  function cpiScopeReady() {
+    return Boolean(document.getElementById("ntCpiDivision")?.value && document.getElementById("ntCpiDistrict")?.value);
+  }
+
+  function updateCpiScopeControls() {
+    document.getElementById("ntCpiScopeSelectors")?.classList.remove("hidden");
+    document.getElementById("ntCpiDistrictWrap")?.classList.remove("hidden");
+    populateCpiDistricts(document.getElementById("ntCpiDistrict")?.value || "");
+  }
+
+  async function loadCpiForScope() {
+    updateCpiScopeControls();
+    if (!cpiScopeReady()) {
+      fillCpiModalForm({});
+      setCpiReadonly(false);
+      document.getElementById("ntCpiSuccessBanner")?.classList.add("hidden");
+      return;
+    }
+    const response = await fetch(`/api/notification/cpi/data/?${new URLSearchParams(cpiScopeParams()).toString()}`);
+    const cpi = await response.json();
+    fillCpiModalForm(cpi);
+    setCpiReadonly(Boolean(cpi.found));
+    document.getElementById("ntCpiSuccessBanner")?.classList.toggle("hidden", !cpi.found);
+  }
+
+  async function openCpiModal() {
+    await loadCpiLocations();
+    await loadCpiSavedList();
+    await loadCpiForScope();
+    document.getElementById("ntCpiModal").classList.remove("hidden");
+    document.getElementById("ntCpiModal").classList.add("flex");
+  }
+
+  function closeCpiModal() {
+    document.getElementById("ntCpiModal").classList.add("hidden");
+    document.getElementById("ntCpiModal").classList.remove("flex");
+  }
+
+  document.getElementById("ntOpenCpiModal")?.addEventListener("click", openCpiModal);
+  document.getElementById("ntCpiModalClose")?.addEventListener("click", closeCpiModal);
+  document.getElementById("ntCpiModalCancel")?.addEventListener("click", closeCpiModal);
+  document.getElementById("ntCpiModalEdit")?.addEventListener("click", () => setCpiReadonly(false));
+  document.getElementById("ntCpiModalReset")?.addEventListener("click", async () => {
+    const hasUnsavedInput = cpiModalInputs().some((input) => input.value && !input.readOnly);
+    if (hasUnsavedInput && !confirm("भरलेली माहिती साफ करायची आहे का? जतन न केलेली माहिती जाणार आहे.")) return;
+    resetCpiModalForm();
+    await loadCpiSavedList();
+  });
+  document.getElementById("ntCpiFormOfficer3OrderFile")?.addEventListener("change", () => {
+    ntCpiOrderDeleteRequested = false;
+  });
+  document.getElementById("ntCpiFormOfficer3OrderExisting")?.addEventListener("click", (event) => {
+    const viewButton = event.target.closest("[data-cpi-order-view]");
+    if (viewButton) {
+      window.open(viewButton.dataset.fileUrl || "", "_blank", "noopener");
+      return;
+    }
+    if (event.target.closest("[data-cpi-order-delete]")) {
+      ntCpiOrderDeleteRequested = true;
+      renderCpiOrderExisting("", "");
+    }
+  });
+  document.getElementById("ntCpiDivision")?.addEventListener("change", () => {
+    populateCpiDistricts();
+    loadCpiForScope();
+  });
+  document.getElementById("ntCpiDistrict")?.addEventListener("change", loadCpiForScope);
+  document.getElementById("ntCpiSavedRows")?.addEventListener("click", (event) => {
+    const row = event.target.closest(".nt-cpi-saved-row");
+    if (!row) return;
+    if (event.target.closest("[data-cpi-delete]")) {
+      deleteSavedCpi(row);
+      return;
+    }
+    if (event.target.closest("[data-cpi-edit]")) {
+      selectSavedCpi(row).then(() => setCpiReadonly(false));
+    }
+  });
+  document.getElementById("ntCpiModalSave")?.addEventListener("click", async () => {
+    if (!cpiScopeReady()) {
+      alert("विभाग / जिल्हा निवडा.");
+      return;
+    }
+    const body = new FormData();
+    Object.entries(cpiScopeParams()).forEach(([key, value]) => body.append(key, value || ""));
+    body.append("project_name", document.getElementById("ntCpiFormProjectName").value);
+    body.append("project_purpose", document.getElementById("ntCpiFormProjectPurpose").value);
+    body.append("approval_no", document.getElementById("ntCpiFormApprovalNo").value);
+    body.append("approval_date", document.getElementById("ntCpiFormApprovalDate").value);
+    body.append("agency_name", document.getElementById("ntCpiFormAgencyName").value);
+    body.append("special_project_name", document.getElementById("ntCpiFormSpecialProjectName").value);
+    ["1", "2", "3", "4"].forEach((i) => {
+      body.append(`officer${i}_name`, document.getElementById(`ntCpiFormOfficer${i}Name`).value);
+      body.append(`officer${i}_post`, document.getElementById(`ntCpiFormOfficer${i}Post`).value);
+    });
+    body.append("officer3_email", document.getElementById("ntCpiFormOfficer3Email").value);
+    body.append("officer3_phone", document.getElementById("ntCpiFormOfficer3Phone").value);
+    const orderFile = document.getElementById("ntCpiFormOfficer3OrderFile").files?.[0];
+    if (ntCpiOrderDeleteRequested && !orderFile) body.append("officer3_order_delete", "1");
+    if (orderFile) body.append("officer3_order_file", orderFile);
+    const response = await fetch("/api/notification/cpi/save/", {
+      method: "POST",
+      headers: { "X-CSRFToken": csrfToken() },
+      body,
+    });
+    let payload = {};
+    try {
+      payload = await response.json();
+    } catch (_error) {
+      payload = {};
+    }
+    if (!response.ok || payload.success === false) {
+      alert(payload.message || payload.error || "सामायिक माहिती जतन करताना त्रुटी आली.");
+      return;
+    }
+    await loadCpiSavedList();
+    resetCpiModalForm();
+    document.getElementById("ntCpiSuccessBanner")?.classList.remove("hidden");
+  });
+
+  function openDeleteConfirm(message) {
+    if (deleteConfirmText) deleteConfirmText.textContent = message;
+    deleteConfirmModal?.classList.remove("hidden");
+    deleteConfirmModal?.classList.add("flex");
+  }
+  function closeDeleteConfirm() {
+    pendingDeleteUrl = null;
+    deleteConfirmModal?.classList.add("hidden");
+    deleteConfirmModal?.classList.remove("flex");
+  }
+  deleteConfirmCancel?.addEventListener("click", closeDeleteConfirm);
+  deleteConfirmModal?.addEventListener("click", (event) => {
+    if (event.target === deleteConfirmModal) closeDeleteConfirm();
+  });
+
+  bulkForm?.addEventListener("submit", (event) => {
+    event.preventDefault();
+    const selectedCount = rowSelects.filter((box) => box.checked).length;
+    if (!selectedCount) return;
+    pendingDeleteUrl = null;
+    openDeleteConfirm(`${selectedCount} निवडलेल्या अधिसूचना नोंदी हटवायच्या आहेत का?`);
+  });
+
+  document.querySelectorAll(".ntSingleDeleteButton").forEach((button) => {
+    button.addEventListener("click", () => {
+      pendingDeleteUrl = button.dataset.deleteUrl;
+      openDeleteConfirm("तुम्हाला ही अधिसूचना नोंद हटवायची आहे का?");
+    });
+  });
+
+  deleteConfirmProceed?.addEventListener("click", async () => {
+    if (pendingDeleteUrl) {
+      await fetch(pendingDeleteUrl, {
+        method: "POST",
+        headers: { "X-CSRFToken": csrfToken() },
+      });
+    } else if (bulkForm) {
+      await fetch(bulkForm.action, {
+        method: "POST",
+        headers: { "X-CSRFToken": csrfToken() },
+        body: new FormData(bulkForm),
+      });
+    }
+    closeDeleteConfirm();
+    window.location.reload();
+  });
+
+  updateBulkState();
+</script>
+{% endblock %}
