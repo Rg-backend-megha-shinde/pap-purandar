@@ -155,14 +155,20 @@
   .nt-step-dot { min-width: 0; }
   .nt-step-dot span {
     display: flex;
-    width: 2.5rem;
-    height: 2.5rem;
+    box-sizing: border-box;
+    width: 2.75rem;
+    height: 2.75rem;
     align-items: center;
     justify-content: center;
     border-radius: 9999px;
     border: 2px solid #cad8ea;
     background: #fff;
-    font-size: 0.9rem;
+    /* देवनागरी अंक sit higher in the em box than Latin ones and their शिरोरेखा was
+       touching the circle, so the badge gets more room and the glyph a nudge down. */
+    font-size: 1rem;
+    line-height: 1;
+    padding-top: 0.12rem;
+    overflow: visible;
     font-weight: 700;
     color: #8a99ad;
   }
