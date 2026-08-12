@@ -73,46 +73,6 @@
     opacity: 0.55;
     transform: none;
   }
-  .nl-filter-bar {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 0.65rem;
-    background: #f4f8ff;
-    border: 1px solid #dce8f7;
-    border-radius: 0.75rem;
-    padding: 0.75rem 1rem;
-    margin-bottom: 1rem;
-  }
-  .nl-filter-label {
-    font-size: 0.82rem;
-    font-weight: 700;
-    color: #44597a;
-    white-space: nowrap;
-  }
-  .nl-filter-select,
-  .nl-search-input {
-    border: 1px solid #c9d9ef;
-    border-radius: 0.55rem;
-    background: #fff;
-    padding: 0.45rem 0.85rem;
-    font-size: 0.85rem;
-    color: #394d6c;
-  }
-  .nl-filter-select { min-width: 160px; }
-  .nl-search-input { width: 220px; }
-  .nl-filter-clear {
-    border: 1px solid #c9d9ef;
-    border-radius: 0.55rem;
-    background: #fff;
-    padding: 0.45rem 0.9rem;
-    font-size: 0.85rem;
-    font-weight: 700;
-    color: #4a6488;
-    cursor: pointer;
-    transition: background 120ms;
-  }
-  .nl-filter-clear:hover { background: #eef5ff; }
   .nl-pagination-bar {
     display: flex;
     flex-wrap: wrap;
@@ -550,31 +510,73 @@
       </div>
 
       {% include "tools/_verification_assets.html" %}
-      <div class="nl-filter-bar">
-        <form method="get" class="flex flex-1 flex-wrap items-center gap-2">
-          <span class="nl-filter-label">अधिसूचनेचा प्रकार</span>
-          <select name="notification_type" class="nl-filter-select" onchange="this.form.submit()">
-            <option value="">अधिसूचनेचा प्रकार निवडा</option>
-            <option value="sec3" {% if type_filter == 'sec3' %}selected{% endif %}>कलम ३ अधिसूचना</option>
-            <option value="sec152" {% if type_filter == 'sec152' %}selected{% endif %}>कलम १५(२) अधिसूचना</option>
-            <option value="sec154" {% if type_filter == 'sec154' %}selected{% endif %}>कलम १५(४) अधिसूचना</option>
-            <option value="sec181" {% if type_filter == 'sec181' %}selected{% endif %}>कलम १८(१) अधिसूचना</option>
-          </select>
-          <select name="status" class="nl-filter-select" onchange="this.form.submit()">
-            <option value="">सर्व स्थिती</option>
-            <option value="draft" {% if status_filter == 'draft' %}selected{% endif %}>Draft</option>
-            <option value="complete" {% if status_filter == 'complete' %}selected{% endif %}>Complete</option>
-          </select>
-          <select name="verification" class="nl-filter-select" onchange="this.form.submit()">
-            <option value="">Verified/Unverified</option>
-            <option value="verified" {% if verification_filter == 'verified' %}selected{% endif %}>Verified</option>
-            <option value="unverified" {% if verification_filter == 'unverified' %}selected{% endif %}>Unverified</option>
-          </select>
-          <a href="{% url 'notification_list' %}" class="nl-filter-clear">फिल्टर काढा</a>
-          <input id="ntSearchInput" name="search" type="search" value="{{ search_query }}" class="nl-search-input ml-auto" placeholder="अधिसूचना शोधा...">
+      <form method="get" id="ntFilterForm">
+        <div class="mb-3 rounded-lg border border-[#d7e5f6] bg-white p-3">
+          <div class="grid grid-cols-1 gap-3 md:grid-cols-[220px_1fr_auto]">
+            <label class="text-sm font-semibold text-[#44597a]">
+              <span class="mb-1 block">फिल्टर प्रकार</span>
+              <select id="ntFilterType" name="filter_type" class="w-full rounded border border-gray-300 px-3 py-2 text-sm">
+                <option value="">फिल्टर प्रकार निवडा</option>
+                <option value="district" {% if filter_type == 'district' %}selected{% endif %}>जिल्हा</option>
+                <option value="taluka" {% if filter_type == 'taluka' %}selected{% endif %}>तालुका</option>
+                <option value="village" {% if filter_type == 'village' %}selected{% endif %}>गाव</option>
+                <option value="status" {% if filter_type == 'status' %}selected{% endif %}>स्थिती</option>
+                <option value="verification" {% if filter_type == 'verification' %}selected{% endif %}>Verified/Unverified</option>
+              </select>
+            </label>
+            <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <label id="ntDistrictWrap" class="hidden text-sm font-semibold text-[#44597a]">
+                <span class="mb-1 block">जिल्हा</span>
+                <select id="ntDistrictFilter" name="district" class="w-full rounded border border-gray-300 px-3 py-2 text-sm"
+                        data-nl-location-filter="district" data-selected="{{ district_filter }}">
+                  <option value="">जिल्हा निवडा</option>
+                </select>
+              </label>
+              <label id="ntTalukaWrap" class="hidden text-sm font-semibold text-[#44597a]">
+                <span class="mb-1 block">तालुका</span>
+                <select id="ntTalukaFilter" name="taluka" class="w-full rounded border border-gray-300 px-3 py-2 text-sm" disabled
+                        data-nl-location-filter="taluka" data-selected="{{ taluka_filter }}">
+                  <option value="">तालुका निवडा</option>
+                </select>
+              </label>
+              <label id="ntVillageWrap" class="hidden text-sm font-semibold text-[#44597a]">
+                <span class="mb-1 block">गाव</span>
+                <select id="ntVillageFilter" name="village" class="w-full rounded border border-gray-300 px-3 py-2 text-sm" disabled
+                        data-nl-location-filter="village" data-selected="{{ village_filter }}">
+                  <option value="">गाव निवडा</option>
+                </select>
+              </label>
+              <label id="ntStatusWrap" class="hidden text-sm font-semibold text-[#44597a]">
+                <span class="mb-1 block">स्थिती</span>
+                <select id="ntStatusFilter" name="status" class="w-full rounded border border-gray-300 px-3 py-2 text-sm">
+                  <option value="">सर्व स्थिती</option>
+                  <option value="draft" {% if status_filter == 'draft' %}selected{% endif %}>Draft</option>
+                  <option value="complete" {% if status_filter == 'complete' %}selected{% endif %}>Complete</option>
+                </select>
+              </label>
+              <label id="ntVerificationWrap" class="hidden text-sm font-semibold text-[#44597a]">
+                <span class="mb-1 block">Verified/Unverified</span>
+                <select id="ntVerificationFilter" name="verification" class="w-full rounded border border-gray-300 px-3 py-2 text-sm">
+                  <option value="">Verified/Unverified</option>
+                  <option value="verified" {% if verification_filter == 'verified' %}selected{% endif %}>Verified</option>
+                  <option value="unverified" {% if verification_filter == 'unverified' %}selected{% endif %}>Unverified</option>
+                </select>
+              </label>
+            </div>
+            <div class="flex items-end">
+              <a href="{% url 'notification_list' %}?clear_filters=1" class="inline-flex w-full items-center justify-center rounded bg-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-300">फिल्टर काढा</a>
+            </div>
+          </div>
+          <div class="mt-3 flex justify-end">
+            <label class="text-sm font-semibold text-[#44597a]">
+              <span class="mb-1 block">शोधा</span>
+              <input id="ntSearchInput" name="search" type="search" value="{{ search_query }}"
+                     class="w-full rounded border border-gray-300 px-3 py-2 text-sm sm:w-64" placeholder="अधिसूचना शोधा...">
+            </label>
+          </div>
           <input type="hidden" name="per_page" value="{{ per_page_value }}">
-        </form>
-      </div>
+        </div>
+      </form>
 
       <div class="nl-pagination-bar">
         <form id="ntPerPageForm" method="get" class="flex items-center gap-2">
@@ -588,6 +590,12 @@
           </select>
           <span>नोंदी</span>
           {% if search_query %}<input type="hidden" name="search" value="{{ search_query }}">{% endif %}
+          {% if verification_filter %}<input type="hidden" name="verification" value="{{ verification_filter }}">{% endif %}
+          {% if filter_type %}<input type="hidden" name="filter_type" value="{{ filter_type }}">{% endif %}
+          {% if status_filter %}<input type="hidden" name="status" value="{{ status_filter }}">{% endif %}
+          {% if district_filter %}<input type="hidden" name="district" value="{{ district_filter }}">{% endif %}
+          {% if taluka_filter %}<input type="hidden" name="taluka" value="{{ taluka_filter }}">{% endif %}
+          {% if village_filter %}<input type="hidden" name="village" value="{{ village_filter }}">{% endif %}
         </form>
       </div>
 
@@ -654,13 +662,13 @@
         {% if total_pages > 1 %}
           <div class="nl-page-btns">
             {% if page_obj.has_previous %}
-              <a class="nl-page-btn" href="?page={{ page_obj.previous_page_number }}&per_page={{ per_page_value }}{% if search_query %}&search={{ search_query }}{% endif %}">← मागील</a>
+              <a class="nl-page-btn" href="?page={{ page_obj.previous_page_number }}&per_page={{ per_page_value }}{% if filter_querystring %}&{{ filter_querystring }}{% endif %}">← मागील</a>
             {% endif %}
             {% for page_no in page_links %}
-              <a class="nl-page-btn {% if page_no == current_page %}is-active{% endif %}" href="?page={{ page_no }}&per_page={{ per_page_value }}{% if search_query %}&search={{ search_query }}{% endif %}">{{ page_no }}</a>
+              <a class="nl-page-btn {% if page_no == current_page %}is-active{% endif %}" href="?page={{ page_no }}&per_page={{ per_page_value }}{% if filter_querystring %}&{{ filter_querystring }}{% endif %}">{{ page_no }}</a>
             {% endfor %}
             {% if page_obj.has_next %}
-              <a class="nl-page-btn" href="?page={{ page_obj.next_page_number }}&per_page={{ per_page_value }}{% if search_query %}&search={{ search_query }}{% endif %}">पुढील →</a>
+              <a class="nl-page-btn" href="?page={{ page_obj.next_page_number }}&per_page={{ per_page_value }}{% if filter_querystring %}&{{ filter_querystring }}{% endif %}">पुढील →</a>
             {% endif %}
           </div>
         {% endif %}
@@ -833,6 +841,132 @@
 
   const perPage = document.getElementById("ntPerPage");
   if (perPage) perPage.addEventListener("change", () => document.getElementById("ntPerPageForm").submit());
+
+  // फिल्टर प्रकार → जिल्हा / तालुका / गाव / स्थिती, same cascade as गावाची माहिती
+  // and भूसंपादन प्रक्रिया. Option values are the Marathi labels, because that is
+  // what अधिसूचना rows store; the English name rides along in data-api-value for
+  // the /api/locations/ calls, which match on the project (English) spelling.
+  (() => {
+    const filterForm = document.getElementById("ntFilterForm");
+    const filterType = document.getElementById("ntFilterType");
+    const districtFilter = document.getElementById("ntDistrictFilter");
+    const talukaFilter = document.getElementById("ntTalukaFilter");
+    const villageFilter = document.getElementById("ntVillageFilter");
+    const statusFilter = document.getElementById("ntStatusFilter");
+    const verificationFilter = document.getElementById("ntVerificationFilter");
+    if (!filterForm || !filterType) return;
+
+    const locationSelects = [districtFilter, talukaFilter, villageFilter];
+    const depthOf = (type) => ({ district: 1, taluka: 2, village: 3 }[type] || 0);
+
+    const apiValue = (select) => select?.selectedOptions?.[0]?.dataset?.apiValue || select?.value || "";
+
+    const loadOptions = async (params = {}) => {
+      try {
+        const url = new URL("/api/locations/", window.location.origin);
+        url.searchParams.set("lang", "mr");
+        Object.entries(params).forEach(([key, value]) => {
+          if (value) url.searchParams.set(key, value);
+        });
+        const response = await fetch(url.toString());
+        if (!response.ok) throw new Error("Location request failed");
+        const payload = await response.json();
+        return Array.isArray(payload.data) ? payload.data : [];
+      } catch (error) {
+        console.error("List location filter load failed:", error);
+        return [];
+      }
+    };
+
+    const fillSelect = (select, placeholder, items, selectedValue = "") => {
+      if (!select) return;
+      select.innerHTML = "";
+      select.add(new Option(placeholder, ""));
+      (items || []).forEach((item) => {
+        const label = String(item?.label || item?.value || "").trim();
+        if (!label) return;
+        const option = new Option(label, label);
+        option.dataset.apiValue = String(item?.value || item?.label || "").trim();
+        select.add(option);
+      });
+      select.disabled = !(items || []).length;
+      if (selectedValue && Array.from(select.options).some((option) => option.value === selectedValue)) {
+        select.value = selectedValue;
+      }
+    };
+
+    // Each field sits in its own <label>, so hide the wrapper (label + caption).
+    const wrapOf = (select) => select?.closest("label") || select;
+
+    const updateVisibility = () => {
+      const depth = depthOf(filterType.value);
+      locationSelects.forEach((select) => {
+        if (!select) return;
+        const key = select.dataset.nlLocationFilter;
+        wrapOf(select).classList.toggle("hidden", !depth || depthOf(key) > depth);
+      });
+      wrapOf(statusFilter)?.classList.toggle("hidden", filterType.value !== "status");
+      wrapOf(verificationFilter)?.classList.toggle("hidden", filterType.value !== "verification");
+    };
+
+    const refreshTalukas = async () => {
+      const district = apiValue(districtFilter);
+      const items = district ? await loadOptions({ district }) : [];
+      fillSelect(talukaFilter, district ? "तालुका निवडा" : "प्रथम जिल्हा निवडा", items, talukaFilter?.dataset.selected || "");
+    };
+
+    const refreshVillages = async () => {
+      const district = apiValue(districtFilter);
+      const taluka = apiValue(talukaFilter);
+      const items = district && taluka ? await loadOptions({ district, taluka }) : [];
+      fillSelect(villageFilter, taluka ? "गाव निवडा" : "प्रथम तालुका निवडा", items, villageFilter?.dataset.selected || "");
+    };
+
+    const init = async () => {
+      updateVisibility();
+      fillSelect(districtFilter, "जिल्हा निवडा", await loadOptions(), districtFilter?.dataset.selected || "");
+      await refreshTalukas();
+      await refreshVillages();
+    };
+
+    filterType.addEventListener("change", async () => {
+      const hadFilter = locationSelects.some((select) => select?.value)
+        || Boolean(statusFilter?.value)
+        || Boolean(verificationFilter?.value);
+      locationSelects.forEach((select) => {
+        if (select) {
+          select.value = "";
+          select.dataset.selected = "";
+        }
+      });
+      if (statusFilter) statusFilter.value = "";
+      if (verificationFilter) verificationFilter.value = "";
+      updateVisibility();
+      await refreshTalukas();
+      await refreshVillages();
+      if (hadFilter) filterForm.submit();
+    });
+
+    districtFilter?.addEventListener("change", async () => {
+      if (talukaFilter) { talukaFilter.value = ""; talukaFilter.dataset.selected = ""; }
+      if (villageFilter) { villageFilter.value = ""; villageFilter.dataset.selected = ""; }
+      await refreshTalukas();
+      await refreshVillages();
+      if (depthOf(filterType.value) === 1 || districtFilter.value === "") filterForm.submit();
+    });
+
+    talukaFilter?.addEventListener("change", async () => {
+      if (villageFilter) { villageFilter.value = ""; villageFilter.dataset.selected = ""; }
+      await refreshVillages();
+      if (depthOf(filterType.value) === 2 || talukaFilter.value === "") filterForm.submit();
+    });
+
+    villageFilter?.addEventListener("change", () => filterForm.submit());
+    statusFilter?.addEventListener("change", () => filterForm.submit());
+    verificationFilter?.addEventListener("change", () => filterForm.submit());
+
+    init();
+  })();
   const search = document.getElementById("ntSearchInput");
   if (search) {
     let timer;

@@ -10,7 +10,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.sessions.models import Session
 from .models import Inspection, ReadyReckonerInfo, ReadyReckonerRate, LandRecord712, FarmerNames,TreeMaster, Asset, AssetMeasurement, AssetTypeMaster, AssetFieldMaster, AssetFormulaMaster, AssetCategory, Document, ToolMaster, DocumentMaster, DocumentAttachment, Entry, VillageData, VillageData8ARecord, VillageDataSec15Rate, VillageDataFile, VillageData8AFile, VillageData32_2Row, VillageData32_2RowFile, VillageData32_1Row, VillageData32_1RowFile, ActiveUserSession, AssetDetail, ProcessChartCase, ProcessChartStepData, ProcessChartAuditLog, ProcessChartDocument, ProcessChartOwnerNotice, ProcessChartDepartmentRow, ProcessChartValuationRow, RorDivision, RorDistrict, RorTaluka, RorVillage, RorSurveyNumber, Notification, NotificationCommonInfo, NotificationFile
-from .ror_service import ror_base_params, ror_ensure_location_cache, ror_div_code_allowed, ror_division_display_name, ror_aliases, ror_location_values, ror_location_key, ror_location_filter_q, ror_fetch_all_districts, ror_numeric_pin, ror_fetch_survey_numbers, ror_fetch_712_preview, split_ror_survey_no, _ror_rows, _ror_call, _ror_upsert_talukas, _ror_upsert_villages, _ror_best_cached_match
+from .ror_service import ror_base_params, ror_ensure_location_cache, ror_div_code_allowed, ror_division_display_name, ror_aliases, ror_location_values, ror_location_key, ror_location_filter_q, ror_fetch_all_districts, ror_numeric_pin, ror_fetch_survey_numbers, ror_fetch_712_preview, split_ror_survey_no, _ror_rows, _ror_call, _ror_upsert_talukas, _ror_upsert_villages, _ror_best_cached_match, _project_village_marathi_names
 from .notification_service import clean_text as notification_clean_text, format_display_date, save_notification_files, delete_notification_file, fixed_cpi_values, get_latest_cpi, cpi_payload, save_cpi, parse_notification_sections, compute_cascade, save_notification, notification_detail_payload, export_notifications_csv
 import logging
 logger = logging.getLogger(__name__)
@@ -26,6 +26,7 @@ import json
 import os
 import requests
 from collections import Counter
+from difflib import SequenceMatcher
 from io import BytesIO
 import unicodedata
 from urllib.parse import urlparse, parse_qs, urlencode, quote
@@ -441,6 +442,96 @@ def resolve_project_table_name(cursor, *table_candidates, schemas=("purandar_air
             if cursor.fetchone():
                 return f"{schema_name}.{table_name}"
     return None
+
+def sticky_list_filters(request, key, fields):
+    """
+    Keep a list's filters applied until the user clears them.
+
+    Opening a record and coming back drops the querystring, so each list's last
+    applied values are remembered in the session: a request carrying any of the
+    filter fields refreshes the memory, `?clear_filters=1` (the फिल्टर काढा link)
+    wipes it, and a bare URL replays whatever was remembered.
+    """
+    store = request.session.get('list_filters') or {}
+    if request.GET.get('clear_filters'):
+        if store.pop(key, None) is not None:
+            request.session['list_filters'] = store
+            request.session.modified = True
+        return {}
+    if any(field in request.GET for field in fields):
+        values = {
+            field: request.GET[field].strip()
+            for field in fields
+            if (request.GET.get(field) or '').strip()
+        }
+        if store.get(key) != values:
+            store[key] = values
+            request.session['list_filters'] = store
+            request.session.modified = True
+        return values
+    return store.get(key) or {}
+
+
+LOCATION_NAME_VARIANT_SQL = {
+    'district': """
+        SELECT a.name, NULLIF(TRIM(dm.district_name_m), '')
+        FROM purandar_airport.prj_district a
+        LEFT JOIN public.district_master dm ON a.district_id = dm.id
+        WHERE UPPER(TRIM(a.name)) = UPPER(TRIM(%s))
+           OR UPPER(TRIM(COALESCE(dm.district_name_m, ''))) = UPPER(TRIM(%s))
+    """,
+    'taluka': """
+        SELECT c.taluka, NULLIF(TRIM(tm.taluka_name_m), '')
+        FROM purandar_airport.prj_taluka c
+        LEFT JOIN public.taluka_master tm ON c.taluka_id = tm.id
+        WHERE UPPER(TRIM(c.taluka)) = UPPER(TRIM(%s))
+           OR UPPER(TRIM(COALESCE(tm.taluka_name_m, ''))) = UPPER(TRIM(%s))
+    """,
+    'village': """
+        SELECT d.village, NULLIF(TRIM(vm.village_name_m), '')
+        FROM purandar_airport.prj_village d
+        LEFT JOIN public.village_master vm ON d.village_id = vm.id
+        WHERE UPPER(TRIM(d.village)) = UPPER(TRIM(%s))
+           OR UPPER(TRIM(COALESCE(vm.village_name_m, ''))) = UPPER(TRIM(%s))
+    """,
+}
+
+
+def location_name_variants(field, value):
+    """
+    Both spellings of one location name, whichever script it arrives in.
+
+    List filters send whatever the dropdown holds while the stored rows may use
+    the other script, so a filter has to match on either.
+    """
+    text = str(value or '').strip()
+    if not text or field not in LOCATION_NAME_VARIANT_SQL:
+        return [text] if text else []
+    names = [text]
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute(LOCATION_NAME_VARIANT_SQL[field], [text, text])
+            for row in cursor.fetchall():
+                names.extend(str(name or '').strip() for name in row)
+    except Exception:
+        logger.exception('Location variant lookup failed for %s=%s', field, text)
+    seen = set()
+    unique_names = []
+    for name in names:
+        key = name.casefold()
+        if name and key not in seen:
+            seen.add(key)
+            unique_names.append(name)
+    return unique_names
+
+
+def location_name_filter_q(field, value):
+    """Q matching `field` against every known spelling of `value`."""
+    query = Q()
+    for name in location_name_variants(field, value):
+        query |= Q(**{f'{field}__iexact': name})
+    return query
+
 
 def build_location_aliases(district, taluka, village):
     """
@@ -951,10 +1042,13 @@ def _parse_ready_reckoner_blocks(request, block_count, village_type):
 
 @login_required
 def ready_reckoner_list(request):
-    filter_type = clean_optional_char(request.GET.get('filter_type'))
-    district_filter = clean_optional_char(request.GET.get('district'))
-    taluka_filter = clean_optional_char(request.GET.get('taluka'))
-    village_filter = clean_optional_char(request.GET.get('village'))
+    sticky = sticky_list_filters(request, 'ready_reckoner_list', (
+        'filter_type', 'district', 'taluka', 'village',
+    ))
+    filter_type = clean_optional_char(sticky.get('filter_type'))
+    district_filter = clean_optional_char(sticky.get('district'))
+    taluka_filter = clean_optional_char(sticky.get('taluka'))
+    village_filter = clean_optional_char(sticky.get('village'))
     if filter_type not in {'district', 'taluka', 'village'}:
         filter_type = ''
 
@@ -1004,7 +1098,7 @@ def ready_reckoner_list(request):
             'village_mr': village_mr,
             'year': key[3],
         })
-    clear_filter_query_string = urlencode({})
+    clear_filter_query_string = urlencode({'clear_filters': '1'})
     return render(request, 'ready_reckoner_list.html', {
         'groups': groups,
         'filter_type': filter_type,
@@ -1756,12 +1850,15 @@ def land_record_712_list(request):
         return redirect(f"{request.path}?{params.urlencode()}")
 
     per_page_raw = (request.GET.get('per_page', '10') or '10').strip().lower()
-    search_query = (request.GET.get('search') or '').strip()
-    filter_type = clean_optional_char(request.GET.get('filter_type'))
-    district_filter = clean_optional_char(request.GET.get('district'))
-    taluka_filter = clean_optional_char(request.GET.get('taluka'))
-    village_filter = clean_optional_char(request.GET.get('village'))
-    gut_filter = clean_optional_char(request.GET.get('gut_number') or request.GET.get('gut'))
+    sticky = sticky_list_filters(request, 'land_record_712_list', (
+        'search', 'filter_type', 'district', 'taluka', 'village', 'gut_number', 'gut',
+    ))
+    search_query = (sticky.get('search') or '').strip()
+    filter_type = clean_optional_char(sticky.get('filter_type'))
+    district_filter = clean_optional_char(sticky.get('district'))
+    taluka_filter = clean_optional_char(sticky.get('taluka'))
+    village_filter = clean_optional_char(sticky.get('village'))
+    gut_filter = clean_optional_char(sticky.get('gut_number') or sticky.get('gut'))
     if filter_type not in {'district', 'taluka', 'village', 'gut_number'}:
         filter_type = ''
     show_all = per_page_raw == 'all'
@@ -1859,9 +1956,10 @@ def land_record_712_list(request):
             page_links.append(total_pages)
 
     query_params = {'per_page': per_page_raw if show_all else str(per_page)}
+    # फिल्टर काढा keeps the page size but wipes the remembered filters, search included.
+    clear_filter_query_string = urlencode({**query_params, 'clear_filters': '1'})
     if search_query:
         query_params['search'] = search_query
-    clear_filter_query_string = urlencode(query_params)
     if filter_type:
         query_params['filter_type'] = filter_type
         if district_filter:
@@ -6482,6 +6580,277 @@ def _sanitize_potkharaba_for_record(land_record):
     return getattr(land_record, 'potkharaba', '') or ''
 
 
+# ---------------------------------------------------------------------------
+# 7/12 owner + area lookup for भूसंपादन प्रक्रिया / अधिसूचना
+#
+# Ported from LMRS-MULTITENANT (apps/process/views.py) so the notification form
+# gets the owner-row + area_summary contract it was written against. The one
+# local difference: multitenant resolves village spellings from the tenant's
+# prj_village row via village_id, while here the dropdowns come from the ROR
+# cache (Marathi) and LandRecord712 stores project names (English), so the
+# candidates are bridged through the project/master tables instead.
+# ---------------------------------------------------------------------------
+
+def _clean_712_value(value):
+    return str(value or '').strip()
+
+
+def _unique_clean_values(*values):
+    seen = set()
+    cleaned_values = []
+    for value in values:
+        cleaned = _clean_712_value(value)
+        key = cleaned.casefold()
+        if cleaned and key not in seen:
+            seen.add(key)
+            cleaned_values.append(cleaned)
+    return cleaned_values
+
+
+def _sum_712_area(values):
+    """Total of H.AA.SS area strings, formatted back as H.AA.SS."""
+    return _format_sqm_to_har(sum(_parse_area_to_sqm(value) for value in values))
+
+
+# original_document_name stamped on rows created by the ROR SOAP sync.
+ROR_API_SOURCE_NAME = 'ROR API'
+
+
+def _ror_api_712_rows():
+    """
+    Only the rows synced from the ROR 7/12 SOAP API.
+
+    JMS sheets uploaded on the ७/१२ उतारा नोंद tab land in the same table but
+    stamp the gut-level area on every holder line, so mixing them in multiplies
+    the total. अधिसूचना areas and the ७/१२ API tab both read ROR rows only.
+    """
+    return LandRecord712.objects.filter(original_document_name__iexact=ROR_API_SOURCE_NAME)
+
+
+def _location_contains_filter(field_name, value):
+    value = _clean_712_value(value)
+    if not value:
+        return Q()
+    return Q(**{f"{field_name}__iexact": value}) | Q(**{f"{field_name}__icontains": value})
+
+
+HISSA_TRANSLITERATION = str.maketrans({
+    'अ': 'a',
+    'आ': 'a',
+    'ब': 'b',
+    'क': 'k',
+    'ड': 'd',
+    'c': 'k',
+    'C': 'k',
+})
+
+
+def _normalize_hissa_key(value):
+    text = _clean_712_value(value).translate(str.maketrans('०१२३४५६७८९', '0123456789'))
+    text = text.translate(HISSA_TRANSLITERATION).casefold()
+    text = text.replace('\\', '/').replace('-', '/')
+    text = re.sub(r'\s+', '', text)
+    text = re.sub(r'/+', '/', text)
+    return text.strip('/')
+
+
+def _hissa_variants(value):
+    text = _clean_712_value(value)
+    if not text:
+        return set()
+    variants = {text, text.replace('\\', '/'), text.replace('-', '/')}
+    key = _normalize_hissa_key(text)
+    if key:
+        variants.add(key)
+        variants.add(key.replace('/a', '/अ').replace('/b', '/ब').replace('/k', '/क').replace('/d', '/ड'))
+        variants.add(key.replace('a', 'अ').replace('b', 'ब').replace('k', 'क').replace('d', 'ड'))
+    return {item for item in variants if item}
+
+
+def _compact_location_text(value):
+    return ''.join(char for char in _clean_712_value(value).casefold() if not char.isspace())
+
+
+def _best_village_queryset(queryset, village):
+    village_key = _compact_location_text(village)
+    if not village_key:
+        return queryset.none()
+    best_value = ''
+    best_score = 0.0
+    for candidate in queryset.values_list('village', flat=True).distinct():
+        candidate_key = _compact_location_text(candidate)
+        if not candidate_key:
+            continue
+        score = SequenceMatcher(None, village_key, candidate_key).ratio()
+        if score > best_score:
+            best_score = score
+            best_value = candidate
+    if best_value and best_score >= 0.45:
+        return queryset.filter(village__iexact=best_value)
+    return queryset.none()
+
+
+def _village_exact_filter(village_names):
+    query = Q()
+    for village_name in village_names:
+        query |= Q(village__iexact=village_name)
+    return query
+
+
+def _village_contains_filter(village_names):
+    query = Q()
+    for village_name in village_names:
+        query |= _location_contains_filter('village', village_name)
+    return query
+
+
+def _process_712_village_candidates(district, taluka, village):
+    """Village spellings (both scripts) to match LandRecord712 rows against."""
+    _en_district, en_taluka, en_village = resolve_location_to_english(district, taluka, village)
+    marathi_names = _project_village_marathi_names(en_taluka, en_village) or _project_village_marathi_names('', en_village)
+    return _unique_clean_values(village, en_village, *marathi_names)
+
+
+def _process_712_queryset(district, taluka, village, gut_number, gut_label='', village_candidates=None, hissa_number=''):
+    gut_candidates = {
+        _clean_712_value(gut_number),
+        _clean_712_value(gut_label),
+        normalize_gut_value(gut_number),
+        normalize_gut_value(gut_label),
+    }
+    for hissa_variant in _hissa_variants(hissa_number):
+        if gut_number:
+            gut_candidates.add(f"{_clean_712_value(gut_number)}/{hissa_variant}")
+        if gut_label:
+            gut_candidates.add(_clean_712_value(gut_label))
+    gut_candidates = {item for item in gut_candidates if item}
+    village_names = _unique_clean_values(village, *(village_candidates or []))
+    gut_filter = Q()
+    for candidate in gut_candidates:
+        gut_filter |= Q(gut_number__iexact=candidate)
+        if not hissa_number and '/' not in candidate:
+            gut_filter |= Q(gut_number__startswith=f"{candidate}/")
+        normalized = normalize_gut_value(candidate)
+        if normalized:
+            # Rows synced from ROR keep the system label ("ग.नं.259 पै"), so also
+            # match on the digits-only form the forms send.
+            gut_filter |= Q(gut_number__iexact=normalized)
+            gut_filter |= Q(gut_number__icontains=normalized)
+            if not hissa_number and '/' not in normalized:
+                gut_filter |= Q(gut_number__startswith=f"{normalized}/")
+    if not gut_filter:
+        return LandRecord712.objects.none()
+    hissa_number = _clean_712_value(hissa_number)
+
+    def apply_hissa_filter(queryset):
+        if not hissa_number:
+            return queryset
+        hissa_filter = Q()
+        for variant in _hissa_variants(hissa_number):
+            hissa_filter |= Q(hissa_number__iexact=variant) | Q(hissa_number__icontains=variant)
+            if gut_number:
+                full_gut = f"{_clean_712_value(gut_number)}/{variant}"
+                hissa_filter |= Q(gut_number__iexact=full_gut) | Q(gut_number__icontains=full_gut)
+        return queryset.filter(hissa_filter)
+
+    attempts = []
+    exact = apply_hissa_filter(_ror_api_712_rows().filter(gut_filter))
+    if district:
+        exact = exact.filter(district__iexact=district)
+    if taluka:
+        exact = exact.filter(taluka__iexact=taluka)
+    if village_names:
+        exact = exact.filter(_village_exact_filter(village_names))
+    attempts.append(exact)
+
+    loose = apply_hissa_filter(_ror_api_712_rows().filter(gut_filter))
+    if district:
+        loose = loose.filter(_location_contains_filter('district', district))
+    if taluka:
+        loose = loose.filter(_location_contains_filter('taluka', taluka))
+    if village_names:
+        loose = loose.filter(_village_contains_filter(village_names))
+    attempts.append(loose)
+
+    taluka_only = apply_hissa_filter(_ror_api_712_rows().filter(gut_filter))
+    if district:
+        taluka_only = taluka_only.filter(_location_contains_filter('district', district))
+    if taluka:
+        taluka_only = taluka_only.filter(_location_contains_filter('taluka', taluka))
+    if village_names:
+        attempts.extend(_best_village_queryset(taluka_only, village_name) for village_name in village_names)
+    else:
+        attempts.append(taluka_only)
+
+    gut_only = apply_hissa_filter(_ror_api_712_rows().filter(gut_filter))
+    if village_names:
+        attempts.extend(_best_village_queryset(gut_only, village_name) for village_name in village_names)
+    else:
+        attempts.append(gut_only)
+
+    for queryset in attempts:
+        if queryset.exists():
+            return queryset
+    return LandRecord712.objects.none()
+
+
+@login_required
+def process_chart_owners_from_712(request):
+    district = _clean_712_value(request.GET.get('district'))
+    taluka = _clean_712_value(request.GET.get('taluka'))
+    village = _clean_712_value(request.GET.get('village'))
+    gut_number = _clean_712_value(request.GET.get('gut_number') or request.GET.get('gut'))
+    gut_label = _clean_712_value(request.GET.get('gut_label'))
+    hissa_number = _clean_712_value(request.GET.get('hissa_number') or request.GET.get('hissa'))
+    area_all_hissa = _clean_712_value(request.GET.get('area_all_hissa')).lower() in {'1', 'true', 'yes', 'on'}
+
+    en_district, en_taluka, _en_village = resolve_location_to_english(district, taluka, village)
+    village_candidates = _process_712_village_candidates(district, taluka, village)
+    qs = _process_712_queryset(
+        en_district or district, en_taluka or taluka, village,
+        gut_number, gut_label, village_candidates, hissa_number,
+    ).order_by('id')
+    records = list(qs[:100])
+    summary_records = records
+    if area_all_hissa:
+        summary_qs = _process_712_queryset(
+            en_district or district, en_taluka or taluka, village,
+            gut_number, '', village_candidates, '',
+        ).order_by('id')
+        summary_records = list(summary_qs[:500]) or records
+
+    rows = []
+    for record in records:
+        names = split_holder_names(record.holder_name) or [record.holder_name or '']
+        for name in names:
+            if not name:
+                continue
+            rows.append({
+                'land_record_id': record.id,
+                'holder_name': name,
+                'name': name,
+                'khata_number': record.khata_number,
+                'cultivable_area': record.total_area,
+                'potkharaba_area': record.potkharaba,
+                'total_area': record.total_area,
+                'aakarni': record.aakarni,
+                'other_rights': record.kul_khand_other_rights,
+            })
+
+    return JsonResponse({
+        'success': True,
+        'owners': rows,
+        'area_summary': {
+            'cultivable_area': _sum_712_area(record.total_area for record in summary_records),
+            'potkharaba_area': _sum_712_area(record.potkharaba for record in summary_records),
+            'total_area': _sum_712_area(record.total_area for record in summary_records),
+        },
+        'matched_records': len(records),
+        'area_matched_records': len(summary_records),
+        'normalized_gut_number': normalize_gut_value(gut_number or gut_label),
+    })
+
+
 def _get_matching_land_records_for_process_chart(district, taluka, village, gut_number):
     district_key = normalize_match_text(district)
     taluka_key = normalize_match_text(taluka)
@@ -9293,7 +9662,7 @@ def _can_sync_ror(request):
 
 
 def _land_record_712_ror_queryset(district='', taluka='', village='', gut_number='', survey_number=''):
-    qs = LandRecord712.objects.all()
+    qs = _ror_api_712_rows()
     if district:
         qs = qs.filter(ror_location_filter_q('district', district))
     if taluka:
@@ -9310,12 +9679,81 @@ def _land_record_712_ror_queryset(district='', taluka='', village='', gut_number
     return qs.order_by('-updated_at', '-id')
 
 
+def _land_record_712_marathi_location_maps(records):
+    """
+    Marathi labels for the English district/taluka/village names stored on 7/12 rows.
+
+    Rows are saved with canonical English names (resolve_location_to_english), but the
+    7/12 API list view has to show them in Marathi, so map them back through the
+    *_master tables. Keys are upper-cased and trimmed for case-insensitive lookups.
+    """
+    maps = {'district': {}, 'taluka': {}, 'village': {}}
+
+    def keys_for(attr):
+        return sorted({
+            str(getattr(record, attr, '') or '').strip().upper()
+            for record in records
+            if str(getattr(record, attr, '') or '').strip()
+        })
+
+    queries = {
+        'district': (
+            """
+            SELECT UPPER(TRIM(a.name)), NULLIF(TRIM(dm.district_name_m), '')
+            FROM purandar_airport.prj_district a
+            LEFT JOIN public.district_master dm ON a.district_id = dm.id
+            WHERE UPPER(TRIM(a.name)) = ANY(%s)
+            """
+        ),
+        'taluka': (
+            """
+            SELECT UPPER(TRIM(c.taluka)), NULLIF(TRIM(tm.taluka_name_m), '')
+            FROM purandar_airport.prj_taluka c
+            LEFT JOIN public.taluka_master tm ON c.taluka_id = tm.id
+            WHERE UPPER(TRIM(c.taluka)) = ANY(%s)
+            """
+        ),
+        'village': (
+            """
+            SELECT UPPER(TRIM(d.village)), NULLIF(TRIM(vm.village_name_m), '')
+            FROM purandar_airport.prj_village d
+            LEFT JOIN public.village_master vm ON d.village_id = vm.id
+            WHERE UPPER(TRIM(d.village)) = ANY(%s)
+            """
+        ),
+    }
+
+    for field, sql in queries.items():
+        wanted = keys_for(field)
+        if not wanted:
+            continue
+        try:
+            with connection.cursor() as cursor:
+                cursor.execute(sql, [wanted])
+                for key, marathi_name in cursor.fetchall():
+                    if key and marathi_name:
+                        maps[field].setdefault(key, marathi_name)
+        except Exception:
+            logger.exception('Marathi %s lookup failed for 7/12 API rows', field)
+
+    return maps
+
+
 def _serialize_land_record_712_rows(records):
+    records = list(records)
+    marathi = _land_record_712_marathi_location_maps(records)
+
+    def localized(field, value):
+        text = str(value or '').strip()
+        if not text:
+            return ''
+        return marathi[field].get(text.upper(), text)
+
     return [
         {
-            'district': record.district or '',
-            'taluka': record.taluka or '',
-            'village': record.village or '',
+            'district': localized('district', record.district),
+            'taluka': localized('taluka', record.taluka),
+            'village': localized('village', record.village),
             'gut_number': record.gut_number or '',
             'survey_number': '/'.join(
                 item for item in [record.gut_number or '', record.hissa_number or ''] if item
@@ -9337,7 +9775,7 @@ def _land_record_712_ror_rows_from_db(district='', taluka='', village='', gut_nu
     return _serialize_land_record_712_rows(qs[:limit])
 
 
-def _save_ror_712_rows(request, rows, original_document_name='ROR API'):
+def _save_ror_712_rows(request, rows, original_document_name=ROR_API_SOURCE_NAME):
     def clean_optional(value):
         text = str(value or '').strip()
         if text.casefold() in {'', '-', 'na', 'n/a'}:
@@ -9410,7 +9848,9 @@ def _save_ror_712_rows(request, rows, original_document_name='ROR API'):
     incoming_guts = sorted({row['gut_number'] for row in normalized_rows if row.get('gut_number')})
     existing_keys = {
         build_unique_key(existing_row)
-        for existing_row in LandRecord712.objects.filter(
+        # Only against previously synced rows — a JMS upload carrying the same
+        # values must not make the sync skip a genuine ROR row.
+        for existing_row in _ror_api_712_rows().filter(
             district__iexact=district,
             taluka__iexact=taluka,
             village__iexact=village,
@@ -9538,10 +9978,26 @@ def _ror_locations_payload(request):
             'division_name': division_name,
         })
 
+    # Only the जिल्हे this project actually covers — पुरंदर is a Pune-district
+    # project, so सोलापूर / सातारा / सांगली / कोल्हापूर must never be selectable
+    # even though ROR returns the whole पुणे विभाग. When the project tables name
+    # a district the ROR cache has no match for, say so instead of quietly
+    # falling back to every district in the division.
     project_keys = _project_district_keys()
-    mapped_districts = [item for item in districts if _district_in_project(item, project_keys)]
-    if mapped_districts:
-        districts = mapped_districts
+    if project_keys:
+        districts = [item for item in districts if _district_in_project(item, project_keys)]
+        if not districts:
+            warning = warning or 'प्रकल्पाच्या जिल्ह्याशी जुळणारा ROR जिल्हा सापडला नाही. ROR स्थान cache refresh करा.'
+    else:
+        warning = warning or 'प्रकल्पाचे जिल्हे वाचता आले नाहीत, त्यामुळे विभागातील सर्व जिल्हे दाखवले आहेत.'
+
+    kept_division_codes = {item['division_code'] for item in districts if item['division_code']}
+    if kept_division_codes:
+        divisions_by_code = {
+            code: division
+            for code, division in divisions_by_code.items()
+            if code in kept_division_codes
+        }
 
     selected_district = None
     district_code = notification_clean_text(request.GET.get('district_code'))
@@ -9815,12 +10271,6 @@ import xml.etree.ElementTree as ET
 import zipfile
 
 NOTIFICATION_TOOL_CODE = "notification"
-NOTIFICATION_TYPE_FILTER_FIELDS = {
-    "sec3": "sec3_pub_no",
-    "sec152": "sec152_pub_no",
-    "sec154": "sec154_pub_no",
-    "sec181": "sec181_pub_no",
-}
 NOTIFICATION_GHATAK_VIBHAG_CODES = ("forest", "water_supply", "agriculture", "construction")
 NOTIFICATION_GHATAK_VIBHAG_FALLBACK = [
     {"code": "forest", "name_marathi": "वन विभाग", "items": []},
@@ -9936,10 +10386,23 @@ def _notification_form_context(request, notification=None):
 
 @login_required
 def notification_list(request):
-    search_query = notification_clean_text(request.GET.get("search"))
-    status_filter = notification_clean_text(request.GET.get("status"))
-    type_filter = notification_clean_text(request.GET.get("notification_type"))
+    sticky = sticky_list_filters(request, "notification_list", (
+        "search", "status", "verification", "filter_type", "district", "taluka", "village",
+    ))
+    search_query = notification_clean_text(sticky.get("search"))
+    status_filter = notification_clean_text(sticky.get("status"))
+    filter_type = notification_clean_text(sticky.get("filter_type"))
+    district_filter = notification_clean_text(sticky.get("district"))
+    taluka_filter = notification_clean_text(sticky.get("taluka"))
+    village_filter = notification_clean_text(sticky.get("village"))
     queryset = Notification.objects.all().order_by("-updated_at", "-id")
+    for field, value in (
+        ("district", district_filter),
+        ("taluka", taluka_filter),
+        ("village", village_filter),
+    ):
+        if value:
+            queryset = queryset.filter(location_name_filter_q(field, value))
     if search_query:
         queryset = queryset.filter(
             Q(district__icontains=search_query)
@@ -9948,13 +10411,7 @@ def notification_list(request):
         )
     if status_filter in {Notification.STATUS_DRAFT, Notification.STATUS_COMPLETE}:
         queryset = queryset.filter(status=status_filter)
-    type_filter_section_field = NOTIFICATION_TYPE_FILTER_FIELDS.get(type_filter)
-    if type_filter_section_field:
-        queryset = queryset.exclude(
-            Q(**{f"sections__{type_filter_section_field}__isnull": True})
-            | Q(**{f"sections__{type_filter_section_field}": ""})
-        )
-    verification_filter = notification_clean_text(request.GET.get("verification"))
+    verification_filter = notification_clean_text(sticky.get("verification"))
     queryset = apply_verified_filter(queryset, verification_filter)
     per_page_value = request.GET.get("per_page", "10")
     show_all = per_page_value == "all"
@@ -9975,6 +10432,20 @@ def notification_list(request):
         page_records = list(page_obj.object_list)
         total_pages = paginator.num_pages
     _attach_created_by_display(page_records)
+    # Every active filter, so pagination links and the per-page form keep them.
+    filter_querystring = urlencode({
+        key: value
+        for key, value in (
+            ("search", search_query),
+            ("verification", verification_filter),
+            ("filter_type", filter_type),
+            ("status", status_filter),
+            ("district", district_filter),
+            ("taluka", taluka_filter),
+            ("village", village_filter),
+        )
+        if value
+    })
     return render(
         request,
         "notification_list.html",
@@ -9985,7 +10456,11 @@ def notification_list(request):
             "search_query": search_query,
             "status_filter": status_filter,
             "verification_filter": verification_filter,
-            "type_filter": type_filter,
+            "filter_type": filter_type,
+            "district_filter": district_filter,
+            "taluka_filter": taluka_filter,
+            "village_filter": village_filter,
+            "filter_querystring": filter_querystring,
             "per_page_value": per_page_value,
             "show_all": show_all,
             "page_obj": page_obj,

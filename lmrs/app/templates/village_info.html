@@ -2338,6 +2338,7 @@
             `;
             const data = await fetchJSON('/api/village-info/list/');
             villageRecords = data.rows || [];
+            await viRestoreListFilter();
             currentPage = 1;
             applyVillageSearchAndRender();
         }
@@ -2487,6 +2488,42 @@
             viListLocationFilter.district = viListDistrictFilter?.value || '';
             viListLocationFilter.taluka = viListTalukaFilter?.value || '';
             viListLocationFilter.village = viListVillageFilter?.value || '';
+        }
+
+        // The filter lives only in the page, so remember it: opening a record and
+        // coming back must not silently drop it. फिल्टर काढा is the only thing that
+        // forgets it.
+        const VI_LIST_FILTER_KEY = 'lmrs.villageInfo.listFilter';
+
+        function viSaveListFilter() {
+            try {
+                const state = {
+                    type: viListFilterType?.value || '',
+                    district: viListDistrictFilter?.value || '',
+                    taluka: viListTalukaFilter?.value || '',
+                    village: viListVillageFilter?.value || '',
+                };
+                if (state.type) localStorage.setItem(VI_LIST_FILTER_KEY, JSON.stringify(state));
+                else localStorage.removeItem(VI_LIST_FILTER_KEY);
+            } catch (error) { /* storage unavailable */ }
+        }
+
+        function viForgetListFilter() {
+            try { localStorage.removeItem(VI_LIST_FILTER_KEY); } catch (error) { /* ignore */ }
+        }
+
+        async function viRestoreListFilter() {
+            let saved = null;
+            try { saved = JSON.parse(localStorage.getItem(VI_LIST_FILTER_KEY) || 'null'); } catch (error) { saved = null; }
+            if (!saved || !saved.type || !viListFilterType) return;
+            viListFilterType.value = saved.type;
+            viUpdateListFilterVisibility();
+            const depth = viListFilterDepth();
+            if (!depth) return;
+            await viLoadListDistricts(saved.district || '');
+            if (depth >= 2) await viLoadListTalukas(saved.taluka || '');
+            if (depth >= 3) await viLoadListVillages(saved.village || '');
+            viUpdateListFilterState();
         }
 
         function viRowMatchesLocationFilter(row) {
@@ -5607,20 +5644,24 @@
             if (viListFilterDepth()) {
                 await viLoadListDistricts();
             }
+            viSaveListFilter();
             currentPage = 1;
             applyVillageSearchAndRender();
         });
         viListDistrictFilter?.addEventListener('change', async () => {
             await viLoadListTalukas();
+            viSaveListFilter();
             currentPage = 1;
             applyVillageSearchAndRender();
         });
         viListTalukaFilter?.addEventListener('change', async () => {
             await viLoadListVillages();
+            viSaveListFilter();
             currentPage = 1;
             applyVillageSearchAndRender();
         });
         viListVillageFilter?.addEventListener('change', () => {
+            viSaveListFilter();
             currentPage = 1;
             applyVillageSearchAndRender();
         });
@@ -5634,6 +5675,7 @@
             fillSelect(viListTalukaFilter, [], 'तालुका निवडा');
             fillSelect(viListVillageFilter, [], 'गाव निवडा');
             viUpdateListFilterVisibility();
+            viForgetListFilter();
             currentPage = 1;
             applyVillageSearchAndRender();
         });

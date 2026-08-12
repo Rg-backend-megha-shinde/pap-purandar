@@ -2,7 +2,7 @@ import csv
 import io
 import logging
 import re
-from collections import defaultdict
+from collections import Counter, defaultdict
 from datetime import datetime
 
 from django.db import connection
@@ -648,21 +648,70 @@ def compute_cascade(sections, notification_location=None):
     joint_survey = sections.get("joint_survey") or {}
     survey_rows = joint_survey.get("rows") or []
 
-    sec181_source_rows = survey_rows if survey_rows else required_areas
+    def survey_acquired_area(row):
+        return row.get("acquired_total_area") or row.get("acquired_area") or row.get("proposed_area") or ""
+
+    # संयुक्त मोजणी rows indexed both गट/हिस्सा-wise and गट-wise.
+    survey_by_key = {}
+    survey_by_gut = {}
+    for row in survey_rows:
+        key = row_lookup_key(row)
+        if key:
+            survey_by_key.setdefault(key, row)
+        gut = _normalize_gut(row.get("gut_number"))
+        if gut:
+            survey_by_gut.setdefault(gut, []).append(row)
+
+    sec181_area_by_key = {}
+
+    def sec181_row(area_row, acquired_area, survey_row=None):
+        key = row_lookup_key(area_row)
+        if key:
+            sec181_area_by_key[key] = acquired_area
+        return {
+            "gut_number": area_row.get("gut_number", ""),
+            "hissa_number": area_row.get("hissa_number", ""),
+            "district": area_row.get("district") or notification_location.get("district", ""),
+            "taluka": area_row.get("taluka") or notification_location.get("taluka", ""),
+            "village": area_row.get("village") or notification_location.get("village", ""),
+            "area_712": area_row.get("area_712") or (survey_row or {}).get("total_area_712", ""),
+            "proposed_area": acquired_area,
+            "acquired_area": acquired_area,
+            "remark": area_row.get("remark", ""),
+        }
+
     sec181_rows = []
-    for row in sec181_source_rows:
-        matched = gut_lookup.get(row_lookup_key(row)) or gut_lookup.get(_normalize_gut(row.get("gut_number")))
-        sec181_rows.append({
-            "gut_number": row.get("gut_number", ""),
-            "hissa_number": row.get("hissa_number", "") or (matched or {}).get("hissa_number", ""),
-            "district": (matched or {}).get("district") or notification_location.get("district", ""),
-            "taluka": (matched or {}).get("taluka") or notification_location.get("taluka", ""),
-            "village": (matched or {}).get("village") or notification_location.get("village", ""),
-            "area_712": (matched or {}).get("area_712") or row.get("area_712") or row.get("total_area_712", ""),
-            "proposed_area": row.get("acquired_total_area") or row.get("proposed_area") or (matched or {}).get("proposed_area", ""),
-            "acquired_area": row.get("acquired_total_area") or row.get("proposed_area") or (matched or {}).get("proposed_area", ""),
-            "remark": row.get("remark", ""),
-        })
+    if survey_rows:
+        # कलम १८(१) carries only the गट that कलम १५(२) *and* संयुक्त मोजणी both hold —
+        # a गट added to संयुक्त मोजणी alone never reaches १८(१) — and it lists them
+        # हिस्सा-wise the way कलम १५(२) does, not one row per गट.
+        area_rows_per_gut = Counter(
+            _normalize_gut(row.get("gut_number")) for row in required_areas if row.get("gut_number")
+        )
+        for area_row in required_areas:
+            key = row_lookup_key(area_row)
+            gut = _normalize_gut(area_row.get("gut_number"))
+            hissa_survey = survey_by_key.get(key)
+            if hissa_survey is not None:
+                sec181_rows.append(sec181_row(area_row, survey_acquired_area(hissa_survey) or area_row.get("proposed_area", ""), hissa_survey))
+                continue
+            gut_survey_rows = survey_by_gut.get(gut) or []
+            if not gut_survey_rows:
+                continue
+            gut_survey = gut_survey_rows[0]
+            # A गट-level संयुक्त मोजणी figure is this row's area only when the गट has a
+            # single हिस्सा; otherwise it is the गट total and must not be repeated on
+            # every हिस्सा, so each keeps its own कलम १५(२) area.
+            acquired_area = (
+                survey_acquired_area(gut_survey)
+                if area_rows_per_gut.get(gut, 0) <= 1
+                else area_row.get("proposed_area", "")
+            )
+            sec181_rows.append(sec181_row(area_row, acquired_area, gut_survey))
+    else:
+        # No संयुक्त मोजणी yet — keep showing the कलम १५(२) rows so the step is not blank.
+        for area_row in required_areas:
+            sec181_rows.append(sec181_row(area_row, area_row.get("proposed_area", "")))
 
     cascade = {
         "sec3_rows": project_area_rows(required_areas),
@@ -679,6 +728,15 @@ def compute_cascade(sections, notification_location=None):
     for key, rows in cascade_edits.items():
         if rows:
             cascade[key] = merge_cascade_edits(cascade.get(key, []), rows)
+
+    # संयुक्त मोजणीप्रमाणे संपादन क्षेत्र always mirrors that हिस्सा's एकूण क्षेत्र from
+    # संयुक्त मोजणी, so an older manual edit cannot keep overriding it. Every other
+    # column of कलम १८(१) still honours the edit.
+    for row in cascade.get("sec181_rows") or []:
+        computed_area = sec181_area_by_key.get(row_lookup_key(row))
+        if computed_area:
+            row["acquired_area"] = computed_area
+            row["proposed_area"] = computed_area
     return cascade
 
 

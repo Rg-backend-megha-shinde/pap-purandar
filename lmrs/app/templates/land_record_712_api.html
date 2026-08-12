@@ -86,9 +86,10 @@
         <nav class="tool-tabs" aria-label="Tool views">
             <a href="{% url 'land_record_712_list' %}" class="tool-tab-link">७/१२ उतारा नोंद</a>
             <a href="{% url 'land_record_712_api' %}" class="tool-tab-link is-active">७/१२ API</a>
+            <a href="{% url 'notification_list' %}" class="tool-tab-link">अधिसूचना साधन</a>
             <a href="{% url 'ready_reckoner_list' %}" class="tool-tab-link">रेडी रेकनर दर</a>
             <a href="{% url 'village_info' %}" class="tool-tab-link">गावाची माहिती</a>
-            <a href="{% url 'add_entry' %}" class="tool-tab-link">नुकसान भरपाई नोंद</a>
+            <!-- <a href="{% url 'add_entry' %}" class="tool-tab-link">नुकसान भरपाई नोंद</a> -->
             <a href="{% url 'process_chart_form' %}" class="tool-tab-link">भूसंपादन प्रक्रिया</a>
             <a href="{% url 'automatic_document_generation' %}" class="tool-tab-link">स्वयंचलित दस्तऐवज निर्मिती</a>
         </nav>
@@ -161,6 +162,50 @@
         <div class="mb-3 flex flex-col gap-1 md:flex-row md:items-end md:justify-between">
             <h2 class="text-lg font-bold text-[#1f3760]">Preview</h2>
             <p id="previewCountText" class="text-sm text-[#5c78a5]">No rows fetched</p>
+        </div>
+
+        <div class="mb-3 rounded-lg border border-[#d7e5f6] bg-white p-3">
+            <div class="grid grid-cols-1 gap-3 md:grid-cols-[220px_1fr_auto]">
+                <label class="text-sm font-semibold text-[#44597a]">
+                    <span class="mb-1 block">फिल्टर प्रकार</span>
+                    <select id="listFilterType" class="w-full rounded border border-gray-300 px-3 py-2 text-sm">
+                        <option value="">फिल्टर प्रकार निवडा</option>
+                        <option value="district">जिल्हा</option>
+                        <option value="taluka">तालुका</option>
+                        <option value="village">गाव</option>
+                        <option value="gut_number">गट क्रमांक</option>
+                    </select>
+                </label>
+                <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                    <label id="listDistrictWrap" class="hidden text-sm font-semibold text-[#44597a]">
+                        <span class="mb-1 block">जिल्हा</span>
+                        <select id="listDistrictFilter" class="w-full rounded border border-gray-300 px-3 py-2 text-sm">
+                            <option value="">जिल्हा निवडा</option>
+                        </select>
+                    </label>
+                    <label id="listTalukaWrap" class="hidden text-sm font-semibold text-[#44597a]">
+                        <span class="mb-1 block">तालुका</span>
+                        <select id="listTalukaFilter" class="w-full rounded border border-gray-300 px-3 py-2 text-sm" disabled>
+                            <option value="">तालुका निवडा</option>
+                        </select>
+                    </label>
+                    <label id="listVillageWrap" class="hidden text-sm font-semibold text-[#44597a]">
+                        <span class="mb-1 block">गाव</span>
+                        <select id="listVillageFilter" class="w-full rounded border border-gray-300 px-3 py-2 text-sm" disabled>
+                            <option value="">गाव निवडा</option>
+                        </select>
+                    </label>
+                    <label id="listGutWrap" class="hidden text-sm font-semibold text-[#44597a]">
+                        <span class="mb-1 block">गट क्रमांक</span>
+                        <select id="listGutFilter" class="w-full rounded border border-gray-300 px-3 py-2 text-sm" disabled>
+                            <option value="">गट क्रमांक निवडा</option>
+                        </select>
+                    </label>
+                </div>
+                <div class="flex items-end">
+                    <button type="button" id="listFilterClear" class="inline-flex w-full items-center justify-center rounded bg-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-300">फिल्टर काढा</button>
+                </div>
+            </div>
         </div>
         <div class="mb-4 flex flex-col gap-3 text-sm sm:flex-row sm:items-center sm:justify-between">
             <label class="flex flex-wrap items-center gap-2">
@@ -687,8 +732,189 @@ resetBtn.addEventListener("click", () => {
     loadSavedRows({}, { showStatus: true, page: 1 }).catch((error) => showMessage(error.message, "error"));
 });
 
+// फिल्टर प्रकार for the saved-rows Preview, same cascade as the ७/१२ उतारा नोंद
+// tab. It only filters what the list shows; the selects above still drive
+// fetch / sync. Option values are the project (English) names the rows carry.
+(() => {
+    const listFilterType = document.getElementById("listFilterType");
+    const listDistrict = document.getElementById("listDistrictFilter");
+    const listTaluka = document.getElementById("listTalukaFilter");
+    const listVillage = document.getElementById("listVillageFilter");
+    const listGut = document.getElementById("listGutFilter");
+    const wraps = {
+        district: document.getElementById("listDistrictWrap"),
+        taluka: document.getElementById("listTalukaWrap"),
+        village: document.getElementById("listVillageWrap"),
+        gut_number: document.getElementById("listGutWrap"),
+    };
+    if (!listFilterType) return;
+
+    const depthOf = (type) => ({ district: 1, taluka: 2, village: 3, gut_number: 4 }[type] || 0);
+    const requiredDepth = () => depthOf(listFilterType.value);
+
+    function updateVisibility() {
+        const depth = requiredDepth();
+        Object.entries(wraps).forEach(([key, wrap]) => {
+            wrap?.classList.toggle("hidden", depthOf(key) > depth);
+        });
+    }
+
+    async function loadListOptions(params = {}) {
+        const query = new URLSearchParams({ lang: "mr", ...params });
+        try {
+            const response = await fetch(`{% url 'get_locations' %}?${query.toString()}`);
+            const data = await response.json();
+            return response.ok ? (data.data || []) : [];
+        } catch (error) {
+            return [];
+        }
+    }
+
+    async function loadListDistricts() {
+        fillSelect(listDistrict, await loadListOptions(), "जिल्हा निवडा");
+    }
+
+    async function loadListTalukas() {
+        resetSelect(listTaluka, "तालुका निवडा");
+        resetSelect(listVillage, "गाव निवडा");
+        resetSelect(listGut, "गट क्रमांक निवडा");
+        if (!listDistrict.value) return;
+        fillSelect(listTaluka, await loadListOptions({ district: listDistrict.value }), "तालुका निवडा");
+    }
+
+    async function loadListVillages() {
+        resetSelect(listVillage, "गाव निवडा");
+        resetSelect(listGut, "गट क्रमांक निवडा");
+        if (!listDistrict.value || !listTaluka.value) return;
+        fillSelect(listVillage, await loadListOptions({ district: listDistrict.value, taluka: listTaluka.value }), "गाव निवडा");
+    }
+
+    async function loadListGuts() {
+        resetSelect(listGut, "गट क्रमांक निवडा");
+        if (!listDistrict.value || !listTaluka.value || !listVillage.value) return;
+        fillSelect(listGut, await loadListOptions({
+            district: listDistrict.value,
+            taluka: listTaluka.value,
+            village: listVillage.value,
+        }), "गट क्रमांक निवडा");
+    }
+
+    // Remembered until फिल्टर काढा, so leaving the tab and coming back keeps the list
+    // filtered the way it was left.
+    const LIST_FILTER_KEY = "lmrs.landRecord712Api.listFilter";
+
+    function saveListFilter() {
+        try {
+            const state = {
+                type: listFilterType.value || "",
+                district: listDistrict.value || "",
+                taluka: listTaluka.value || "",
+                village: listVillage.value || "",
+                gut_number: listGut.value || "",
+            };
+            if (state.type) localStorage.setItem(LIST_FILTER_KEY, JSON.stringify(state));
+            else localStorage.removeItem(LIST_FILTER_KEY);
+        } catch (error) { /* storage unavailable */ }
+    }
+
+    function forgetListFilter() {
+        try { localStorage.removeItem(LIST_FILTER_KEY); } catch (error) { /* ignore */ }
+    }
+
+    function filterParams() {
+        const depth = requiredDepth();
+        const values = [listDistrict.value, listTaluka.value, listVillage.value, listGut.value];
+        if (!depth || values.slice(0, depth).some((value) => !value)) return null;
+        const params = {};
+        ["district", "taluka", "village", "gut_number"].slice(0, depth).forEach((key, index) => {
+            params[key] = values[index];
+        });
+        return params;
+    }
+
+    function applyListFilterIfComplete() {
+        saveListFilter();
+        const params = filterParams();
+        if (!params) return;
+        loadSavedRows(params, { showStatus: true, page: 1 }).catch((error) => showMessage(error.message, "error"));
+    }
+
+    async function restoreListFilter() {
+        let saved = null;
+        try { saved = JSON.parse(localStorage.getItem(LIST_FILTER_KEY) || "null"); } catch (error) { saved = null; }
+        if (!saved || !saved.type) return null;
+        listFilterType.value = saved.type;
+        updateVisibility();
+        const depth = requiredDepth();
+        if (!depth) return null;
+        fillSelect(listDistrict, await loadListOptions(), "जिल्हा निवडा");
+        listDistrict.value = saved.district || "";
+        if (depth >= 2 && listDistrict.value) {
+            fillSelect(listTaluka, await loadListOptions({ district: listDistrict.value }), "तालुका निवडा");
+            listTaluka.value = saved.taluka || "";
+        }
+        if (depth >= 3 && listTaluka.value) {
+            fillSelect(listVillage, await loadListOptions({
+                district: listDistrict.value,
+                taluka: listTaluka.value,
+            }), "गाव निवडा");
+            listVillage.value = saved.village || "";
+        }
+        if (depth >= 4 && listVillage.value) {
+            fillSelect(listGut, await loadListOptions({
+                district: listDistrict.value,
+                taluka: listTaluka.value,
+                village: listVillage.value,
+            }), "गट क्रमांक निवडा");
+            listGut.value = saved.gut_number || "";
+        }
+        return filterParams();
+    }
+
+    listFilterType.addEventListener("change", async () => {
+        updateVisibility();
+        resetSelect(listTaluka, "तालुका निवडा");
+        resetSelect(listVillage, "गाव निवडा");
+        resetSelect(listGut, "गट क्रमांक निवडा");
+        if (requiredDepth()) await loadListDistricts();
+        else resetSelect(listDistrict, "जिल्हा निवडा");
+    });
+
+    listDistrict.addEventListener("change", async () => {
+        await loadListTalukas();
+        applyListFilterIfComplete();
+    });
+    listTaluka.addEventListener("change", async () => {
+        await loadListVillages();
+        applyListFilterIfComplete();
+    });
+    listVillage.addEventListener("change", async () => {
+        await loadListGuts();
+        applyListFilterIfComplete();
+    });
+    listGut.addEventListener("change", applyListFilterIfComplete);
+
+    document.getElementById("listFilterClear")?.addEventListener("click", () => {
+        listFilterType.value = "";
+        [listDistrict, listTaluka, listVillage, listGut].forEach((select) => { select.value = ""; });
+        resetSelect(listDistrict, "जिल्हा निवडा");
+        resetSelect(listTaluka, "तालुका निवडा");
+        resetSelect(listVillage, "गाव निवडा");
+        resetSelect(listGut, "गट क्रमांक निवडा");
+        updateVisibility();
+        forgetListFilter();
+        loadSavedRows({}, { showStatus: true, page: 1 }).catch((error) => showMessage(error.message, "error"));
+    });
+
+    updateVisibility();
+    // Load the list with whatever filter was left in place last time.
+    restoreListFilter()
+        .catch(() => null)
+        .then((params) => loadSavedRows(params || {}, { showStatus: false, page: 1 }))
+        .catch((error) => showMessage(error.message, "error"));
+})();
+
 initDistricts();
-loadSavedRows({}, { showStatus: false, page: 1 }).catch((error) => showMessage(error.message, "error"));
 </script>
 
 {% endblock %}
