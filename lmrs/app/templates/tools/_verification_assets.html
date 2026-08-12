@@ -1,0 +1,76 @@
+<style>
+  .lmrs-verify-cell { display: inline-flex; align-items: center; justify-content: center; gap: 0.35rem; }
+  .lmrs-verify-cell.is-verified { color: #15803d; font-size: 0.75rem; font-weight: 800; }
+  .lmrs-verify-cell:not(.is-verified) { color: #64748b; font-size: 0.75rem; font-weight: 700; }
+  .lmrs-verify-check {
+    height: 18px; width: 18px; accent-color: #16a34a;
+    cursor: pointer; vertical-align: middle; margin: 0;
+  }
+  .lmrs-verify-check:disabled { cursor: progress; opacity: 0.6; }
+  .lmrs-verify-icon {
+    display: inline-flex; height: 22px; width: 22px; align-items: center; justify-content: center;
+    border-radius: 9999px; background: #16a34a; color: #fff; font-size: 0.85rem; font-weight: 900;
+  }
+</style>
+<script>
+(function () {
+  if (window.lmrsVerificationReady) return;
+  window.lmrsVerificationReady = true;
+
+  function markup(verified) {
+    return verified
+      ? '<label class="lmrs-verify-cell is-verified" title="Verified">'
+        + '<input type="checkbox" class="lmrs-verify-check" aria-label="Verified record" checked>'
+        + '<span class="lmrs-verify-icon">&#10003;</span><span>Verified</span></label>'
+      : '<label class="lmrs-verify-cell" title="Unverified">'
+        + '<input type="checkbox" class="lmrs-verify-check" aria-label="Unverified record">'
+        + '<span>Unverified</span></label>';
+  }
+  window.lmrsVerificationMarkup = markup;
+
+  function csrf() {
+    const input = document.querySelector('input[name="csrfmiddlewaretoken"]');
+    if (input) return input.value;
+    const match = document.cookie.match(/(^|;)\s*csrftoken=([^;]+)/);
+    return match ? decodeURIComponent(match[2]) : '';
+  }
+
+  document.addEventListener('change', async function (event) {
+    const checkbox = event.target.closest('.lmrs-verify-check');
+    if (!checkbox) return;
+    const row = checkbox.closest('[data-verify-row]');
+    const url = row && row.dataset.verifyUrl;
+    if (!url) return;
+
+    const next = checkbox.checked;
+    const confirmText = next
+      ? 'सदरिल नोंद Verified म्हणून जतन करायची आहे का?'
+      : 'सदरिल नोंद Unverified म्हणून जतन करायची आहे का?';
+    if (!window.confirm(confirmText)) {
+      checkbox.checked = !next;
+      return;
+    }
+
+    checkbox.disabled = true;
+    try {
+      const body = new FormData();
+      body.append('verified', next ? 'true' : 'false');
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'X-CSRFToken': csrf() },
+        body: body,
+      });
+      const result = await response.json();
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || 'प्रमाणित स्थिती जतन करता आली नाही.');
+      }
+      const wrap = checkbox.closest('[data-verify-status]');
+      if (wrap) wrap.innerHTML = markup(result.verified);
+    } catch (error) {
+      window.alert(error.message || 'प्रमाणित स्थिती जतन करता आली नाही.');
+      checkbox.checked = !next;
+      checkbox.disabled = false;
+    }
+  });
+})();
+</script>

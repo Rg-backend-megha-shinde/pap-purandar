@@ -59,6 +59,40 @@
         color: #166534;
         border-color: #bbf7d0;
     }
+    .pc-authenticate-process-row {
+        height: 18px;
+        width: 18px;
+        accent-color: #16a34a;
+        cursor: pointer;
+        vertical-align: middle;
+    }
+    .pc-auth-verify-check {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+    }
+    .pc-authenticated-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        color: #15803d;
+        font-size: 0.75rem;
+        font-weight: 800;
+        vertical-align: middle;
+    }
+    .pc-authenticated-icon {
+        display: inline-flex;
+        height: 22px;
+        width: 22px;
+        align-items: center;
+        justify-content: center;
+        border-radius: 9999px;
+        background: #16a34a;
+        color: #fff;
+        font-size: 0.85rem;
+        font-weight: 900;
+    }
     .pc-list-controls {
         display: flex;
         align-items: center;
@@ -167,6 +201,8 @@
             <div class="tool-tabs-shell mb-6">
                 <nav class="tool-tabs" aria-label="Tool views">
                     <a href="{% url 'land_record_712_list' %}" class="tool-tab-link">७/१२ उतारा नोंद</a>
+                    <a href="{% url 'land_record_712_api' %}" class="tool-tab-link">७/१२ API</a>
+                    <a href="{% url 'notification_list' %}" class="tool-tab-link">अधिसूचना साधन</a>
                     <a href="{% url 'ready_reckoner_list' %}" class="tool-tab-link">रेडी रेकनर दर</a>
                     <a href="{% url 'village_info' %}" class="tool-tab-link">गावाची माहिती</a>
                     <a href="{% url 'add_entry' %}" class="tool-tab-link">नुकसान भरपाई नोंद</a>
@@ -262,11 +298,12 @@
                                 <th class="border border-[#d7e5f6] px-3 py-2 text-center font-semibold">टप्पा</th>
                                 <th class="border border-[#d7e5f6] px-3 py-2 text-center font-semibold">Updated</th>
                                 <th class="border border-[#d7e5f6] px-3 py-2 text-center font-semibold">Actions</th>
+                                <th class="border border-[#d7e5f6] px-3 py-2 text-center font-semibold">Remark</th>
                             </tr>
                         </thead>
                         <tbody class="bg-white">
                             {% for item in cases %}
-                            <tr>
+                            <tr data-pc-list-row data-authenticate-url="{% url 'authenticate_process_chart' item.id %}">
 
                                 <td class="border border-[#d7e5f6] px-3 py-2 text-center" data-search="{{ item.id }}">{{ item.id }}</td>
                                 <td class="border border-[#d7e5f6] px-3 py-2 text-center" data-search="{{ item.district_mr|default:'' }} {{ item.district|default:'' }}">{{ item.district_mr|default:"-" }}</td>
@@ -328,6 +365,21 @@
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673A2.25 2.25 0 0115.916 21H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"></path>
                                         </svg>
                                     </a>
+                                </td>
+                                <td class="border border-[#d7e5f6] px-3 py-2 text-center whitespace-nowrap" data-search="{% if item.is_record_authenticated %}Verified{% else %}Unverified{% endif %}">
+                                    <span data-pc-auth-status>
+                                        {% if item.is_record_authenticated %}
+                                            <label class="pc-auth-verify-check pc-authenticated-badge" title="Verified">
+                                                <input type="checkbox" class="pc-authenticate-process-row" aria-label="Verified record" checked>
+                                                <span class="pc-authenticated-icon">✓</span><span>Verified</span>
+                                            </label>
+                                        {% else %}
+                                            <label class="pc-auth-verify-check" title="Unverified">
+                                                <input type="checkbox" class="pc-authenticate-process-row" aria-label="Unverified record">
+                                                <span>Unverified</span>
+                                            </label>
+                                        {% endif %}
+                                    </span>
                                 </td>
                             </tr>
                             {% endfor %}
@@ -397,7 +449,7 @@ $(document).ready(function () {
         info: false,
         scrollX: true,
         columnDefs: [
-            { targets: -1, orderable: false, searchable: true }
+            { targets: [-1, -2], orderable: false, searchable: true }
         ],
         language: {
             search: "शोध:",
@@ -726,6 +778,41 @@ $(document).ready(function () {
         }
         if (event.key === 'Escape' && ownerInfoModal && !ownerInfoModal.classList.contains('hidden')) {
             closeOwnerInfoModal();
+        }
+    });
+    $(document).on('click', '.pc-authenticate-process-row', async function (event) {
+        const authenticateButton = this;
+        const row = authenticateButton.closest('[data-pc-list-row]');
+        if (!row) return;
+        const nextAuthenticated = authenticateButton.checked;
+        const confirmMessage = nextAuthenticated
+            ? 'सदरिल नोंद Verified म्हणून जतन करायची आहे का?'
+            : 'सदरिल नोंद Unverified म्हणून जतन करायची आहे का?';
+        if (!window.confirm(confirmMessage)) {
+            authenticateButton.checked = !nextAuthenticated;
+            return;
+        }
+        authenticateButton.disabled = true;
+        try {
+            const formData = new FormData();
+            formData.append('authenticated', nextAuthenticated ? 'true' : 'false');
+            const response = await fetch(row.dataset.authenticateUrl, {
+                method: 'POST',
+                headers: { 'X-CSRFToken': '{{ csrf_token }}' },
+                body: formData,
+            });
+            const result = await response.json();
+            if (!response.ok || !result.success) throw new Error(result.error || 'प्रमाणित स्थिती जतन करता आली नाही.');
+            const statusWrap = row.querySelector('[data-pc-auth-status]');
+            if (statusWrap) {
+                statusWrap.innerHTML = result.authenticated
+                    ? '<label class="pc-auth-verify-check pc-authenticated-badge" title="Verified"><input type="checkbox" class="pc-authenticate-process-row" aria-label="Verified record" checked><span class="pc-authenticated-icon">✓</span><span>Verified</span></label>'
+                    : '<label class="pc-auth-verify-check" title="Unverified"><input type="checkbox" class="pc-authenticate-process-row" aria-label="Unverified record"><span>Unverified</span></label>';
+            }
+        } catch (error) {
+            alert(error.message || 'प्रमाणित स्थिती जतन करता आली नाही.');
+            authenticateButton.disabled = false;
+            authenticateButton.checked = !nextAuthenticated;
         }
     });
 });

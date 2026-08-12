@@ -1266,6 +1266,8 @@ class ProcessChartCase(models.Model):
     current_step = models.PositiveSmallIntegerField(default=1)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="draft")
 
+    is_record_authenticated = models.BooleanField(default=False)
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -1417,3 +1419,223 @@ class ProcessChartValuationRow(models.Model):
 
     def __str__(self):
         return f"{self.case} - {self.valuation_type}"
+
+
+# =========================================================
+# These tables cache the Maharashtra ROR (Record of Rights) web-service master
+# data so the 7/12 API tab can build its dropdowns without hitting SOAP on
+# every page load. Only the caches live here; fetched 7/12 rows are saved into
+# LandRecord712.
+# =========================================================
+
+class RorDivision(models.Model):
+    code = models.CharField(max_length=20, unique=True)
+    name = models.CharField(max_length=150)
+    aliases = models.JSONField(default=list, blank=True)
+    raw_data = models.JSONField(default=dict, blank=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["name"]
+        indexes = [
+            models.Index(fields=["code"], name="app_ror_div_code_idx"),
+            models.Index(fields=["name"], name="app_ror_div_name_idx"),
+        ]
+
+    def __str__(self):
+        return f"{self.name} ({self.code})"
+
+
+class RorDistrict(models.Model):
+    division = models.ForeignKey(
+        RorDivision, on_delete=models.SET_NULL, null=True, blank=True, related_name="districts"
+    )
+    div_code = models.CharField(max_length=20, blank=True)
+    code = models.CharField(max_length=20, unique=True)
+    name = models.CharField(max_length=150)
+    aliases = models.JSONField(default=list, blank=True)
+    raw_data = models.JSONField(default=dict, blank=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["name"]
+        indexes = [
+            models.Index(fields=["div_code"], name="app_ror_dist_div_idx"),
+            models.Index(fields=["code"], name="app_ror_dist_code_idx"),
+            models.Index(fields=["name"], name="app_ror_dist_name_idx"),
+        ]
+
+    def __str__(self):
+        return f"{self.name} ({self.code})"
+
+
+class RorTaluka(models.Model):
+    district = models.ForeignKey(RorDistrict, on_delete=models.CASCADE, related_name="talukas")
+    code = models.CharField(max_length=20)
+    name = models.CharField(max_length=150)
+    aliases = models.JSONField(default=list, blank=True)
+    raw_data = models.JSONField(default=dict, blank=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["district__name", "name"]
+        unique_together = [("district", "code")]
+        indexes = [
+            models.Index(fields=["code"], name="app_ror_tal_code_idx"),
+            models.Index(fields=["name"], name="app_ror_tal_name_idx"),
+            models.Index(fields=["district", "name"], name="app_ror_tal_dn_idx"),
+        ]
+
+    def __str__(self):
+        return f"{self.name} ({self.code})"
+
+
+class RorVillage(models.Model):
+    taluka = models.ForeignKey(RorTaluka, on_delete=models.CASCADE, related_name="villages")
+    code = models.CharField(max_length=40)
+    name = models.CharField(max_length=180)
+    aliases = models.JSONField(default=list, blank=True)
+    raw_data = models.JSONField(default=dict, blank=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["taluka__district__name", "taluka__name", "name"]
+        unique_together = [("taluka", "code")]
+        indexes = [
+            models.Index(fields=["code"], name="app_ror_vil_code_idx"),
+            models.Index(fields=["name"], name="app_ror_vil_name_idx"),
+            models.Index(fields=["taluka", "name"], name="app_ror_vil_tn_idx"),
+        ]
+
+    def __str__(self):
+        return f"{self.name} ({self.code})"
+
+
+class RorSurveyNumber(models.Model):
+    district = models.CharField(max_length=150)
+    taluka = models.CharField(max_length=150)
+    village = models.CharField(max_length=180)
+    gut_number = models.CharField(max_length=50)
+    survey_number = models.CharField(max_length=100)
+    hissa_number = models.CharField(max_length=80, blank=True)
+    raw_data = models.JSONField(default=dict, blank=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["gut_number", "survey_number"]
+        unique_together = [("district", "taluka", "village", "gut_number", "survey_number")]
+        indexes = [
+            models.Index(
+                fields=["district", "taluka", "village", "gut_number"],
+                name="app_ror_survey_loc_idx",
+            ),
+            models.Index(fields=["survey_number"], name="app_ror_survey_no_idx"),
+        ]
+
+    def __str__(self):
+        return self.survey_number
+
+
+# =========================================================
+# 🔹 Notification Tool (अधिसूचना साधन)
+# =========================================================
+
+class NotificationCommonInfo(models.Model):
+    """CPI (सामायिक प्रकल्प माहिती) — project-wide info shared across notifications."""
+
+    SCOPE_GLOBAL = "global"
+    SCOPE_DIVISION = "division"
+    SCOPE_DISTRICT = "district"
+    SCOPE_CHOICES = [
+        (SCOPE_GLOBAL, "Global"),
+        (SCOPE_DIVISION, "Division"),
+        (SCOPE_DISTRICT, "District"),
+    ]
+
+    created_by_user_id = models.PositiveBigIntegerField(default=1)
+    scope_type = models.CharField(max_length=20, choices=SCOPE_CHOICES, default=SCOPE_GLOBAL, db_index=True)
+    division_code = models.CharField(max_length=20, blank=True, db_index=True)
+    division_name = models.CharField(max_length=150, blank=True)
+    district_code = models.CharField(max_length=20, blank=True, db_index=True)
+    district_name = models.CharField(max_length=150, blank=True)
+    project_name = models.CharField(max_length=255, blank=True)
+    project_purpose = models.CharField(max_length=255, blank=True)
+    approval_no = models.CharField(max_length=150, blank=True)
+    approval_date = models.DateField(null=True, blank=True)
+    agency_name = models.CharField(max_length=255, blank=True)
+    special_project_name = models.CharField(max_length=255, blank=True)
+    officer1_name = models.CharField(max_length=150, blank=True)
+    officer1_post = models.CharField(max_length=150, blank=True)
+    officer2_name = models.CharField(max_length=150, blank=True)
+    officer2_post = models.CharField(max_length=150, blank=True)
+    officer3_name = models.CharField(max_length=150, blank=True)
+    officer3_post = models.CharField(max_length=150, blank=True)
+    officer3_email = models.EmailField(max_length=254, blank=True)
+    officer3_phone = models.CharField(max_length=50, blank=True)
+    officer3_order_file = models.FileField(upload_to="notification_common_info/", blank=True, max_length=1000)
+    officer3_order_original_name = models.CharField(max_length=255, blank=True)
+    officer4_name = models.CharField(max_length=150, blank=True)
+    officer4_post = models.CharField(max_length=150, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-updated_at"]
+        indexes = [
+            models.Index(fields=["scope_type", "division_code"], name="notif_cpi_scope_div_idx"),
+            models.Index(fields=["scope_type", "district_code"], name="notif_cpi_scope_dist_idx"),
+        ]
+
+    def __str__(self):
+        return self.project_name or "Common Project Info"
+
+
+class Notification(models.Model):
+    STATUS_DRAFT = "draft"
+    STATUS_COMPLETE = "complete"
+    STATUS_CHOICES = [
+        (STATUS_DRAFT, "Draft"),
+        (STATUS_COMPLETE, "Complete"),
+    ]
+
+    created_by_user_id = models.PositiveBigIntegerField(default=1)
+    common_info = models.ForeignKey(
+        NotificationCommonInfo, on_delete=models.SET_NULL, null=True, blank=True, related_name="notifications"
+    )
+    district = models.CharField(max_length=100)
+    taluka = models.CharField(max_length=100)
+    village = models.CharField(max_length=150)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=STATUS_DRAFT)
+    current_step = models.PositiveSmallIntegerField(default=1)
+    is_verified = models.BooleanField(default=False)
+    sections = models.JSONField(default=dict, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-updated_at"]
+        indexes = [
+            models.Index(fields=["district", "taluka", "village"], name="notif_location_idx"),
+        ]
+
+    def __str__(self):
+        return f"{self.village} | {self.get_status_display()}"
+
+
+class NotificationFile(models.Model):
+    notification = models.ForeignKey(Notification, on_delete=models.CASCADE, related_name="files")
+    field_key = models.CharField(max_length=160)
+    file = models.FileField(upload_to="notification/", max_length=1000)
+    original_name = models.CharField(max_length=255, blank=True)
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["field_key", "id"]
+        indexes = [
+            models.Index(fields=["field_key"], name="notif_file_field_idx"),
+        ]
+
+    def __str__(self):
+        return self.original_name or self.file.name
+
+
