@@ -10627,7 +10627,7 @@ def notification_list_api(request):
         sections = record.sections or {}
         rows.append({
             "id": record.id,
-            "notification_type": "कलम ३ अधिसूचना",
+            "notification_type": "प्रकरण ६ अधिसूचना",
             "notification_number": sections.get("sec3_pub_no", ""),
             "notification_date": sections.get("sec3_pub_date", ""),
             "district": record.district,
