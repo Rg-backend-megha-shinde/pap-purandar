@@ -1095,7 +1095,7 @@
                   <thead>
 	                    <tr><th><label class="inline-flex items-center gap-1"><input type="checkbox" class="nt-select-all h-4 w-4"> निवडा</label></th><th>अ. क्र.</th><th class="pc-wrap-th">जिल्हा</th><th class="pc-wrap-th">तालुका</th><th class="pc-wrap-th">गाव</th><th class="pc-wrap-th">गट क्रमांक</th><th class="pc-wrap-th">हिस्सा नंबर</th><th class="pc-wrap-th">७.१२ प्रमाणे क्षेत्र</th><th class="pc-wrap-th">संयुक्त मोजणीप्रमाणे संपादन क्षेत्र</th><th>संपादित करा</th></tr>
                   </thead>
-                  <tbody id="ntCascadeSec181"></tbody>
+                  <tbody id="ntCascadeSec181" data-nt-hissa-wise="1"></tbody>
                 </table>
               </div>
               <div class="mt-4">
@@ -1755,12 +1755,14 @@
     });
   }
 
-  function applyCommonGutCells(container, { rowSelector, gutSelector, areaSelector, proposedSelector, actionSelector = "" }) {
+  function applyCommonGutCells(container, { rowSelector, gutSelector, areaSelector, proposedSelector, actionSelector = "", allSelectors = [] }) {
     if (!container) return;
     const rows = Array.from(container.querySelectorAll(rowSelector)).filter((row) => !row.classList.contains("nt-gut-total-row"));
-    const fieldSelectors = [areaSelector, proposedSelector];
+    // A column left out of the merge stays per-row; it still has to be un-merged
+    // from an earlier render, hence allSelectors.
+    const fieldSelectors = [areaSelector, proposedSelector].filter(Boolean);
     const mergedSelectors = actionSelector ? [...fieldSelectors, actionSelector] : fieldSelectors;
-    resetMergedGutCells(rows, mergedSelectors);
+    resetMergedGutCells(rows, [...new Set([...mergedSelectors, ...allSelectors])].filter(Boolean));
     syncSameGutValues(rows, gutSelector, fieldSelectors);
 
     let currentGut = "";
@@ -1791,7 +1793,7 @@
     mergeGroup();
   }
 
-  function renderGutTotalRows(container, { rowSelector, gutSelector, areaSelector, proposedSelector }) {
+  function renderGutTotalRows(container, { rowSelector, gutSelector, areaSelector, proposedSelector, sumEveryRow = false }) {
     if (!container) return;
     container.querySelectorAll(".nt-gut-total-row").forEach((row) => row.remove());
     const rows = Array.from(container.querySelectorAll(rowSelector)).filter((row) => !row.classList.contains("nt-gut-total-row"));
@@ -1801,9 +1803,10 @@
       if (gut && !gutRows.has(gut)) gutRows.set(gut, row);
     });
     if (!gutRows.size || !rows.length) return;
-    const totalRows = Array.from(gutRows.values());
-    const areaTotal = totalRows.reduce((sum, row) => sum + decimalValue(ntInputValue(row, areaSelector)), 0);
-    const proposedTotal = totalRows.reduce((sum, row) => sum + decimalValue(ntInputValue(row, proposedSelector)), 0);
+    const areaRows = Array.from(gutRows.values());
+    const proposedRows = sumEveryRow ? rows.filter((row) => ntInputValue(row, gutSelector)) : areaRows;
+    const areaTotal = areaRows.reduce((sum, row) => sum + decimalValue(ntInputValue(row, areaSelector)), 0);
+    const proposedTotal = proposedRows.reduce((sum, row) => sum + decimalValue(ntInputValue(row, proposedSelector)), 0);
     rows[rows.length - 1].insertAdjacentHTML("afterend", `
       <tr class="nt-gut-total-row bg-[#f8fbff]">
         <td colspan="7" class="text-right font-bold text-[#244271]">एकूण</td>
@@ -1830,18 +1833,26 @@
   }
 
   function syncCascadeCommonFields(container) {
+    // कलम १८(१) is हिस्सा-wise: every हिस्सा keeps its own ७.१२ / संयुक्त मोजणी क्षेत्र,
+    // so the गट-level cell merging (and the value copying that comes with it) is
+    // skipped there and the एकूण row adds up every row instead of one per गट.
+    const hissaWise = container?.dataset?.ntHissaWise === "1";
     applyCommonGutCells(container, {
       rowSelector: "tr",
       gutSelector: ".nt-cascade-gut",
       areaSelector: ".nt-cascade-712",
-      proposedSelector: ".nt-cascade-proposed",
-      actionSelector: ".nl-view-btn",
+      // कलम १८(१) keeps ७.१२ प्रमाणे क्षेत्र as one गट-level cell but leaves the
+      // संयुक्त मोजणी क्षेत्र (and its संपादित करा) on each हिस्सा row.
+      proposedSelector: hissaWise ? "" : ".nt-cascade-proposed",
+      actionSelector: hissaWise ? "" : ".nl-view-btn",
+      allSelectors: [".nt-cascade-712", ".nt-cascade-proposed", ".nl-view-btn"],
     });
     renderGutTotalRows(container, {
       rowSelector: "tr",
       gutSelector: ".nt-cascade-gut",
       areaSelector: ".nt-cascade-712",
       proposedSelector: ".nt-cascade-proposed",
+      sumEveryRow: hissaWise,
     });
   }
 
@@ -2212,6 +2223,66 @@
       .filter((row) => row.gut_number || row.hissa_number || row.area_712 || row.proposed_area);
   }
 
+  // पुरवणी कलम १८(१) follows the same rule as the main one: only गट that this
+  // पुरवणी's कलम १५(२) rows *and* संयुक्त मोजणी both hold, listed हिस्सा-wise with
+  // each हिस्सा's own संयुक्त मोजणी क्षेत्र rather than one figure for the whole गट.
+  function normalizeGutKey(value) {
+    const text = String(value || "").replace(/[०-९]/g, (d) => "०१२३४५६७८९".indexOf(d)).toLowerCase();
+    const numbers = text.match(/\d+[a-z]?/g);
+    return numbers ? numbers.join("/") : text.replace(/[^\w]+/g, "");
+  }
+
+  function normalizeHissaKey(value) {
+    return String(value || "")
+      .replace(/[०-९]/g, (d) => "०१२३४५६७८९".indexOf(d))
+      .toLowerCase()
+      .replace(/[\\-]/g, "/")
+      .replace(/\s+/g, "")
+      .replace(/\/+/g, "/")
+      .replace(/^\/|\/$/g, "");
+  }
+
+  function jointSurveyRowsForCascade() {
+    return Array.from(jsRowsBody?.querySelectorAll(".nt-js-row") || []).map((row) => ({
+      gut_number: row.querySelector(".nt-js-gut")?.value.trim() || "",
+      hissa_number: row.querySelector(".nt-js-hissa")?.value.trim() || "",
+      total_area_712: row.querySelector(".nt-js-total-712")?.value.trim() || "",
+      acquired_total_area: row.querySelector(".nt-js-acquired-total")?.value.trim() || "",
+    })).filter((row) => row.gut_number);
+  }
+
+  function sec181RowsFromAreaRows(areaRows) {
+    const surveyRows = jointSurveyRowsForCascade();
+    if (!surveyRows.length) return areaRows.map((row) => ({ ...row, acquired_area: row.proposed_area || "" }));
+    const byHissa = new Map();
+    const byGut = new Map();
+    surveyRows.forEach((row) => {
+      const gut = normalizeGutKey(row.gut_number);
+      const hissa = normalizeHissaKey(row.hissa_number);
+      if (gut && hissa && !byHissa.has(`${gut}/${hissa}`)) byHissa.set(`${gut}/${hissa}`, row);
+      if (gut && !byGut.has(gut)) byGut.set(gut, row);
+    });
+    const hissaCountPerGut = new Map();
+    areaRows.forEach((row) => {
+      const gut = normalizeGutKey(row.gut_number);
+      if (gut) hissaCountPerGut.set(gut, (hissaCountPerGut.get(gut) || 0) + 1);
+    });
+    return areaRows.map((row) => {
+      const gut = normalizeGutKey(row.gut_number);
+      const hissa = normalizeHissaKey(row.hissa_number);
+      const hissaMatch = hissa ? byHissa.get(`${gut}/${hissa}`) : null;
+      if (hissaMatch) {
+        return { ...row, acquired_area: hissaMatch.acquired_total_area || row.proposed_area || "" };
+      }
+      const gutMatch = byGut.get(gut);
+      if (!gutMatch) return null;
+      const acquired = (hissaCountPerGut.get(gut) || 0) <= 1
+        ? (gutMatch.acquired_total_area || row.proposed_area || "")
+        : (row.proposed_area || "");
+      return { ...row, acquired_area: acquired };
+    }).filter(Boolean);
+  }
+
   function puravaniCascadeRowsHtml(rows, prefix, { acquiredMode = false } = {}) {
     return rows.map((row, idx) => {
       const editableArea = formatArea4(acquiredMode ? (row.acquired_area || row.proposed_area || "") : (row.proposed_area || ""));
@@ -2261,7 +2332,7 @@
 	            <thead>
 	              <tr><th><label class="inline-flex items-center gap-1"><input type="checkbox" class="nt-select-all h-4 w-4"> निवडा</label></th><th>अ. क्र.</th><th class="pc-wrap-th">जिल्हा</th><th class="pc-wrap-th">तालुका</th><th class="pc-wrap-th">गाव</th><th class="pc-wrap-th">गट क्रमांक</th><th class="pc-wrap-th">हिस्सा नंबर</th><th class="pc-wrap-th">७.१२ प्रमाणे क्षेत्र</th><th class="pc-wrap-th">${escapeHtml(col8Label)}</th><th>संपादित करा</th></tr>
 	            </thead>
-            <tbody>${puravaniCascadeRowsHtml(rows, prefix, { acquiredMode })}</tbody>
+            <tbody${String(prefix).startsWith("puravani_sec181") ? ' data-nt-hissa-wise="1"' : ""}>${puravaniCascadeRowsHtml(rows, prefix, { acquiredMode })}</tbody>
           </table>
         </div>
         <div class="mt-4 flex flex-wrap items-center gap-2">
@@ -2374,11 +2445,13 @@
         const wrap = document.getElementById(wrapId);
         if (!wrap) return;
         const currentPub = currentPubValues[prefix] || {};
+        const blockRows = wrapId === "ntPuravaniSec181Wrap" ? sec181RowsFromAreaRows(rows) : rows;
+        if (wrapId === "ntPuravaniSec181Wrap" && !blockRows.length) return;
         wrap.insertAdjacentHTML("beforeend", puravaniTableBlockHtml({
           id: `${prefix}_block`,
           title,
           subtitle: `(${subtitle})`,
-          rows,
+          rows: blockRows,
           prefix,
           col8Label,
           includePub,
@@ -3230,7 +3303,7 @@
 	      sec3_rows: cascadeRows,
       sec152_rows: cascadeRows,
       sec154_bhusampadan_rows: cascadeRows,
-      sec181_rows: cascadeRows,
+      sec181_rows: sec181RowsFromAreaRows(cascadeRows),
     });
   }
 
@@ -3509,6 +3582,7 @@
       return;
     }
     const prefix = options.prefix || bodyId.replace(/^ntCascade/, "").toLowerCase();
+    if (prefix === "sec181") body.dataset.ntHissaWise = "1";
     body.innerHTML = rows.map((row, idx) => {
       const editableArea = cascadeAreaValue(row, options.acquiredMode);
       return `

@@ -111,6 +111,6 @@ urlpatterns = [
     path('api/notification/cpi/delete/<int:cpi_id>/', views.notification_cpi_delete_api, name='notification_cpi_delete_api'),
     path('api/notification/cpi/locations/', views.notification_cpi_locations_api, name='notification_cpi_locations_api'),
     path('api/notification/parse-area-rows/', views.notification_parse_area_rows_api, name='notification_parse_area_rows_api'),
-    path('tools/api/process-chart/owners-from-712/', views.get_land_record_owner_names, name='process_chart_owners_from_712'),
+    path('tools/api/process-chart/owners-from-712/', views.process_chart_owners_from_712, name='process_chart_owners_from_712'),
 ]
 
