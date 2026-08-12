@@ -630,6 +630,153 @@
                 </div>
             </div>
 
+            <!-- Accordion 4: अधिसूचना साधन -->
+            <div class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition-all duration-200" style="border-left: 4px solid #6366f1;">
+                <button class="accordion-toggle w-full flex items-center justify-between px-5 py-4 text-left hover:bg-slate-50/80 transition-colors duration-150" data-target="accordion-notification">
+                    <div class="flex items-center gap-4">
+                        <div class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl text-white" style="background:linear-gradient(135deg,#6366f1,#4338ca); box-shadow: 0 4px 10px rgba(99, 102, 241, 0.3);">
+                            <span class="material-symbols-outlined text-[20px]">campaign</span>
+                        </div>
+                        <div>
+                            <h3 class="text-sm font-extrabold text-slate-800 sm:text-base">अधिसूचना साधन</h3>
+                            <p class="text-xs text-slate-400 font-medium">कलमनिहाय गावे, प्रलंबित स्थिती आणि गटांची संख्या</p>
+                        </div>
+                    </div>
+                    <span class="material-symbols-outlined text-slate-400 transition-transform duration-200 rotate-icon">expand_more</span>
+                </button>
+                <div id="accordion-notification" class="accordion-content hidden border-t border-slate-100">
+                    <div class="p-5">
+                        <div class="mb-4 rounded-xl border border-indigo-100 bg-indigo-50/40 p-3">
+                            <div class="mb-2 flex items-center gap-2">
+                                <span class="material-symbols-outlined text-[16px] text-indigo-600">filter_alt</span>
+                                <span class="text-[13px] font-extrabold text-indigo-700">अधिसूचना फिल्टर</span>
+                            </div>
+                            <div class="grid grid-cols-1 gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
+                                <div>
+                                    <label class="mb-1 block text-[11px] font-bold text-slate-500" for="ntAnFilterDistrict">जिल्हा</label>
+                                    <select id="ntAnFilterDistrict" class="analytics-select w-full"><option value="">सर्व जिल्हे</option></select>
+                                </div>
+                                <div>
+                                    <label class="mb-1 block text-[11px] font-bold text-slate-500" for="ntAnFilterTaluka">तालुका</label>
+                                    <select id="ntAnFilterTaluka" class="analytics-select w-full" disabled><option value="">सर्व तालुके</option></select>
+                                </div>
+                                <div>
+                                    <label class="mb-1 block text-[11px] font-bold text-slate-500" for="ntAnFilterKalam">अधिसूचना प्रकार</label>
+                                    <select id="ntAnFilterKalam" class="analytics-select w-full">
+                                        <option value="">सर्व कलम</option>
+                                        <option value="sec3">प्रकरण ६</option>
+                                        <option value="sec152">कलम ३२(२)</option>
+                                        <option value="sec181">कलम ३२(१)</option>
+                                    </select>
+                                </div>
+                                <div class="flex items-end gap-2">
+                                    <button type="button" id="ntAnApplyFilters" class="inline-flex flex-1 items-center justify-center gap-1 rounded-lg bg-indigo-600 px-3 py-2 text-xs font-extrabold text-white hover:bg-indigo-700">
+                                        <span class="material-symbols-outlined text-[15px]">search</span> लागू करा
+                                    </button>
+                                    <button type="button" id="ntAnResetFilters" class="inline-flex items-center justify-center gap-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-extrabold text-slate-600 hover:bg-slate-50">
+                                        रीसेट
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3 flex flex-wrap items-center justify-between gap-2">
+                            <div class="flex items-center gap-2">
+                                <span class="material-symbols-outlined rounded-lg bg-indigo-50 p-1.5 text-[16px] text-indigo-600">summarize</span>
+                                <h4 class="text-base font-extrabold text-slate-900">कलमनिहाय सारांश</h4>
+                            </div>
+                            <span class="inline-flex items-center gap-1.5 rounded-full bg-indigo-50 px-3 py-1 text-[11px] font-extrabold text-indigo-700">
+                                <span class="material-symbols-outlined text-[13px]">location_on</span>
+                                एकूण <span id="ntAnTotalVillages">{{ notification_total_villages|default:0 }}</span> गावे
+                            </span>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-2.5 sm:grid-cols-3 xl:grid-cols-4">
+                            <div class="rounded-xl border border-emerald-100 bg-emerald-50/40 p-3">
+                                <p class="text-[11px] font-bold leading-tight text-emerald-700">प्रकरण ६ अधिसूचना झालेली गावे</p>
+                                <p id="ntAnSec3Done" class="mt-1.5 text-2xl font-black leading-none text-emerald-800">0</p>
+                            </div>
+                            <div class="rounded-xl border border-orange-100 bg-orange-50/40 p-3">
+                                <p class="text-[11px] font-bold leading-tight text-orange-700">प्रकरण ६ अधिसूचना प्रलंबीत गावे</p>
+                                <p id="ntAnSec3Pending" class="mt-1.5 text-2xl font-black leading-none text-orange-800">0</p>
+                            </div>
+                            <div class="rounded-xl border border-emerald-100 bg-emerald-50/40 p-3">
+                                <p class="text-[11px] font-bold leading-tight text-emerald-700">कलम ३२(२) झालेली गावे</p>
+                                <p id="ntAnSec152Done" class="mt-1.5 text-2xl font-black leading-none text-emerald-800">0</p>
+                            </div>
+                            <div class="rounded-xl border border-orange-100 bg-orange-50/40 p-3">
+                                <p class="text-[11px] font-bold leading-tight text-orange-700">कलम ३२(२) प्रलंबीत गावे</p>
+                                <p id="ntAnSec152Pending" class="mt-1.5 text-2xl font-black leading-none text-orange-800">0</p>
+                            </div>
+                            <div class="rounded-xl border border-blue-100 bg-blue-50/40 p-3">
+                                <p class="text-[11px] font-bold leading-tight text-blue-700">प्रकरण ६ झालेल्या गटांची संख्या</p>
+                                <p id="ntAnSec3Guts" class="mt-1.5 text-2xl font-black leading-none text-blue-800">0</p>
+                            </div>
+                            <div class="rounded-xl border border-blue-100 bg-blue-50/40 p-3">
+                                <p class="text-[11px] font-bold leading-tight text-blue-700">कलम ३२(२) झालेल्या गटांची संख्या</p>
+                                <p id="ntAnSec152Guts" class="mt-1.5 text-2xl font-black leading-none text-blue-800">0</p>
+                            </div>
+                            <div class="rounded-xl border border-emerald-100 bg-emerald-50/40 p-3">
+                                <p class="text-[11px] font-bold leading-tight text-emerald-700">संयुक्त मोजणी पूर्ण गावे</p>
+                                <p id="ntAnJointDone" class="mt-1.5 text-2xl font-black leading-none text-emerald-800">0</p>
+                            </div>
+                            <div class="rounded-xl border border-orange-100 bg-orange-50/40 p-3">
+                                <p class="text-[11px] font-bold leading-tight text-orange-700">संयुक्त मोजणी अपूर्ण गावे</p>
+                                <p id="ntAnJointPending" class="mt-1.5 text-2xl font-black leading-none text-orange-800">0</p>
+                            </div>
+                            <div class="rounded-xl border border-emerald-100 bg-emerald-50/40 p-3">
+                                <p class="text-[11px] font-bold leading-tight text-emerald-700">कलम ३२(१) झालेली गावे</p>
+                                <p id="ntAnSec181Done" class="mt-1.5 text-2xl font-black leading-none text-emerald-800">0</p>
+                            </div>
+                            <div class="rounded-xl border border-orange-100 bg-orange-50/40 p-3">
+                                <p class="text-[11px] font-bold leading-tight text-orange-700">कलम ३२(१) प्रलंबीत गावे</p>
+                                <p id="ntAnSec181Pending" class="mt-1.5 text-2xl font-black leading-none text-orange-800">0</p>
+                            </div>
+                            <div class="rounded-xl border border-blue-100 bg-blue-50/40 p-3">
+                                <p class="text-[11px] font-bold leading-tight text-blue-700">कलम ३२(१) झालेल्या गटांची संख्या</p>
+                                <p id="ntAnSec181Guts" class="mt-1.5 text-2xl font-black leading-none text-blue-800">0</p>
+                            </div>
+                        </div>
+
+                        <div class="mt-4 grid grid-cols-1 gap-3 xl:grid-cols-2">
+                            <div class="rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
+                                <div class="mb-2 flex items-center gap-2">
+                                    <span class="material-symbols-outlined rounded-lg bg-indigo-50 p-1.5 text-[16px] text-indigo-600">stacked_bar_chart</span>
+                                    <h4 class="text-base font-extrabold text-slate-900">कलमनिहाय झालेली / प्रलंबीत गावे</h4>
+                                </div>
+                                <div id="ntAnStageChart" class="w-full h-[320px]"></div>
+                            </div>
+                            <div class="rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
+                                <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
+                                    <div class="flex items-center gap-2">
+                                        <span class="material-symbols-outlined rounded-lg bg-indigo-50 p-1.5 text-[16px] text-indigo-600">table_rows</span>
+                                        <h4 class="text-base font-extrabold text-slate-900">गावनिहाय कलम सारांश</h4>
+                                    </div>
+                                    <span id="ntAnResultCount" class="text-[11px] font-bold text-slate-400"></span>
+                                </div>
+                                <div class="max-h-[320px] overflow-auto rounded-lg border border-slate-100">
+                                    <table class="w-full min-w-[560px] text-left text-xs">
+                                        <thead id="ntAnVillageTableHead" class="sticky top-0 z-10 bg-slate-50 text-[11px] uppercase tracking-wide text-slate-500"></thead>
+                                        <tbody id="ntAnVillageTableBody" class="divide-y divide-slate-100"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 bg-slate-50/60 px-5 py-3 text-xs font-bold text-slate-500">
+                        <span class="inline-flex items-center gap-1.5">
+                            <span class="material-symbols-outlined text-[14px]">calendar_month</span>
+                            शेवटचे अपडेट: <span id="ntAnLastUpdated">{{ notification_last_updated|default:"माहिती उपलब्ध नाही" }}</span>
+                        </span>
+                        <a href="{% url 'notification_list' %}" class="inline-flex items-center gap-1 font-extrabold text-indigo-600 hover:text-indigo-700">
+                            सविस्तर पहा
+                            <span class="material-symbols-outlined text-[14px]">arrow_forward</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
         </div>
     </div>
 </div>
@@ -1616,6 +1763,232 @@
             return data;
         }
 
+        // -------------------------------------------------------------
+        // अधिसूचना साधन analytics — कलम names follow this project's अधिसूचना tool.
+        // -------------------------------------------------------------
+        const NT_AN_STAGES = [
+            { key: 'sec3', label: 'प्रकरण ६', gutKey: 'sec3_guts' },
+            { key: 'sec152', label: 'कलम ३२(२)', gutKey: 'sec152_guts' },
+            { key: 'joint_survey', label: 'संयुक्त मोजणी', gutKey: '' },
+            { key: 'sec181', label: 'कलम ३२(१)', gutKey: 'sec181_guts' }
+        ];
+
+        function ntAnEscapeHtml(value) {
+            return String(value ?? '')
+                .replaceAll('&', '&amp;')
+                .replaceAll('<', '&lt;')
+                .replaceAll('>', '&gt;')
+                .replaceAll('"', '&quot;')
+                .replaceAll("'", '&#39;');
+        }
+
+        function reflowNotificationCharts() {
+            if (window.ntAnStageChartInstance) window.ntAnStageChartInstance.reflow();
+        }
+
+        function ntAnStatusChip(done, doneLabel, pendingLabel) {
+            return done
+                ? '<span class="inline-flex rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-extrabold text-emerald-700">' + (doneLabel || 'झाले') + '</span>'
+                : '<span class="inline-flex rounded-full bg-orange-100 px-2 py-0.5 text-[10px] font-extrabold text-orange-700">' + (pendingLabel || 'प्रलंबीत') + '</span>';
+        }
+
+        function ntAnVillageCell(row) {
+            const place = [row.taluka, row.district].filter(Boolean).join(', ');
+            return '<td class="px-2.5 py-2"><div class="font-bold text-slate-800">' + ntAnEscapeHtml(row.village || '-') + '</div>'
+                + (place ? '<div class="text-[10px] text-slate-400">' + ntAnEscapeHtml(place) + '</div>' : '')
+                + '</td>';
+        }
+
+        function ntAnSelectedKalam() {
+            return document.getElementById('ntAnFilterKalam')?.value || '';
+        }
+
+        function renderNotificationVillageTable(rows) {
+            const head = document.getElementById('ntAnVillageTableHead');
+            const body = document.getElementById('ntAnVillageTableBody');
+            const countEl = document.getElementById('ntAnResultCount');
+            if (!head || !body) return;
+            rows = Array.isArray(rows) ? rows : [];
+
+            const stage = NT_AN_STAGES.find((item) => item.key === ntAnSelectedKalam());
+
+            // One कलम selected -> गावाचे नाव + पूर्ण/अपूर्ण. Otherwise the full grid.
+            if (stage) {
+                head.innerHTML = '<tr>'
+                    + '<th class="px-2.5 py-2 font-extrabold">गावाचे नाव</th>'
+                    + '<th class="px-2.5 py-2 text-center font-extrabold">' + stage.label + '</th>'
+                    + '<th class="px-2.5 py-2 text-center font-extrabold">गटांची संख्या</th>'
+                    + '</tr>';
+                const done = rows.filter((row) => row[stage.key]).length;
+                if (countEl) countEl.textContent = rows.length ? `पूर्ण ${done} / अपूर्ण ${rows.length - done}` : '';
+                body.innerHTML = rows.length
+                    ? rows.map((row) => '<tr class="hover:bg-slate-50/70">'
+                        + ntAnVillageCell(row)
+                        + '<td class="px-2.5 py-2 text-center">' + ntAnStatusChip(row[stage.key], 'पूर्ण', 'अपूर्ण') + '</td>'
+                        + '<td class="px-2.5 py-2 text-center font-bold text-slate-700">'
+                        + Number(row[stage.gutKey] || 0) + '</td></tr>').join('')
+                    : '<tr><td colspan="3" class="px-2.5 py-6 text-center text-slate-400">माहिती उपलब्ध नाही</td></tr>';
+                return;
+            }
+
+            head.innerHTML = '<tr>'
+                + '<th class="px-2.5 py-2 font-extrabold">गावाचे नाव</th>'
+                + '<th class="px-2.5 py-2 text-center font-extrabold">प्रकरण ६</th>'
+                + '<th class="px-2.5 py-2 text-center font-extrabold">कलम ३२(२)</th>'
+                + '<th class="px-2.5 py-2 text-center font-extrabold">संयुक्त मोजणी</th>'
+                + '<th class="px-2.5 py-2 text-center font-extrabold">कलम ३२(१)</th>'
+                + '<th class="px-2.5 py-2 text-center font-extrabold">गट (६ / ३२(२) / ३२(१))</th>'
+                + '</tr>';
+            if (countEl) countEl.textContent = rows.length ? `${rows.length} गावे` : '';
+            body.innerHTML = rows.length
+                ? rows.map((row) => '<tr class="hover:bg-slate-50/70">'
+                    + ntAnVillageCell(row)
+                    + '<td class="px-2.5 py-2 text-center">' + ntAnStatusChip(row.sec3) + '</td>'
+                    + '<td class="px-2.5 py-2 text-center">' + ntAnStatusChip(row.sec152) + '</td>'
+                    + '<td class="px-2.5 py-2 text-center">' + ntAnStatusChip(row.joint_survey) + '</td>'
+                    + '<td class="px-2.5 py-2 text-center">' + ntAnStatusChip(row.sec181) + '</td>'
+                    + '<td class="px-2.5 py-2 text-center font-bold text-slate-700">'
+                    + Number(row.sec3_guts || 0) + ' / ' + Number(row.sec152_guts || 0) + ' / ' + Number(row.sec181_guts || 0)
+                    + '</td></tr>').join('')
+                : '<tr><td colspan="6" class="px-2.5 py-6 text-center text-slate-400">माहिती उपलब्ध नाही</td></tr>';
+        }
+
+        function renderNotificationStageChart(data = {}) {
+            if (typeof Highcharts === 'undefined') return;
+            const doneSeries = [
+                Number(data.notification_sec3_done_villages || 0),
+                Number(data.notification_sec152_done_villages || 0),
+                Number(data.notification_joint_survey_done_villages || 0),
+                Number(data.notification_sec181_done_villages || 0)
+            ];
+            const pendingSeries = [
+                Number(data.notification_sec3_pending_villages || 0),
+                Number(data.notification_sec152_pending_villages || 0),
+                Number(data.notification_joint_survey_pending_villages || 0),
+                Number(data.notification_sec181_pending_villages || 0)
+            ];
+            const categories = NT_AN_STAGES.map((stage) => stage.label);
+
+            if (window.ntAnStageChartInstance) {
+                window.ntAnStageChartInstance.xAxis[0].setCategories(categories, false);
+                window.ntAnStageChartInstance.series[0].setData(doneSeries, false);
+                window.ntAnStageChartInstance.series[1].setData(pendingSeries, false);
+                window.ntAnStageChartInstance.redraw();
+                return;
+            }
+            window.ntAnStageChartInstance = Highcharts.chart('ntAnStageChart', {
+                chart: { type: 'column', backgroundColor: 'transparent', style: { fontFamily: 'inherit' } },
+                title: { text: null },
+                credits: { enabled: false },
+                xAxis: { categories: categories, labels: { style: { fontWeight: '700', fontSize: '11px' } } },
+                yAxis: { min: 0, allowDecimals: false, title: { text: 'गावे', style: { fontSize: '11px' } } },
+                legend: { itemStyle: { fontSize: '11px', fontWeight: '700' } },
+                tooltip: { shared: true },
+                plotOptions: { column: { stacking: 'normal', borderRadius: 3, borderWidth: 0 } },
+                series: [
+                    { name: 'झालेली', data: doneSeries, color: '#10b981' },
+                    { name: 'प्रलंबीत', data: pendingSeries, color: '#f97316' }
+                ]
+            });
+        }
+
+        function updateNotificationDashboardFromApi(data = {}) {
+            setDashboardCount('ntAnTotalVillages', data.notification_total_villages);
+            setDashboardCount('ntAnSec3Done', data.notification_sec3_done_villages);
+            setDashboardCount('ntAnSec3Pending', data.notification_sec3_pending_villages);
+            setDashboardCount('ntAnSec152Done', data.notification_sec152_done_villages);
+            setDashboardCount('ntAnSec152Pending', data.notification_sec152_pending_villages);
+            setDashboardCount('ntAnSec3Guts', data.notification_sec3_guts);
+            setDashboardCount('ntAnSec152Guts', data.notification_sec152_guts);
+            setDashboardCount('ntAnJointDone', data.notification_joint_survey_done_villages);
+            setDashboardCount('ntAnJointPending', data.notification_joint_survey_pending_villages);
+            setDashboardCount('ntAnSec181Done', data.notification_sec181_done_villages);
+            setDashboardCount('ntAnSec181Pending', data.notification_sec181_pending_villages);
+            setDashboardCount('ntAnSec181Guts', data.notification_sec181_guts);
+
+            const lastUpdatedEl = document.getElementById('ntAnLastUpdated');
+            if (lastUpdatedEl) lastUpdatedEl.textContent = data.notification_last_updated || 'माहिती उपलब्ध नाही';
+
+            window.ntAnVillageRows = Array.isArray(data.notification_village_rows) ? data.notification_village_rows : [];
+            renderNotificationVillageTable(window.ntAnVillageRows);
+            renderNotificationStageChart(data);
+        }
+
+        // This section has its own जिल्हा/तालुका selects; when either is set they win
+        // over the universal dashboard filters, for this section only.
+        function notificationQueryParams() {
+            const district = document.getElementById('ntAnFilterDistrict')?.value || '';
+            const taluka = document.getElementById('ntAnFilterTaluka')?.value || '';
+            if (district || taluka) {
+                const params = new URLSearchParams();
+                if (district) params.set('district', district);
+                if (taluka) params.set('taluka', taluka);
+                return params;
+            }
+            return dashboardLocationQueryParams();
+        }
+
+        async function fetchNotificationAnalytics() {
+            const params = notificationQueryParams();
+            const suffix = params.toString() ? `?${params.toString()}` : '';
+            const data = await fetchJSON(`/api/analytics/notification/${suffix}`);
+            updateNotificationDashboardFromApi(data);
+            return data;
+        }
+
+        async function loadNotificationDistricts() {
+            const select = document.getElementById('ntAnFilterDistrict');
+            if (!select) return;
+            const data = await fetchJSON('/api/locations/?lang=mr');
+            setSelectOptions(select, data.data || [], 'सर्व जिल्हे');
+        }
+
+        async function loadNotificationTalukas() {
+            const districtSelect = document.getElementById('ntAnFilterDistrict');
+            const talukaSelect = document.getElementById('ntAnFilterTaluka');
+            if (!talukaSelect) return;
+            if (!districtSelect?.value) {
+                setSelectOptions(talukaSelect, [], 'सर्व तालुके');
+                talukaSelect.disabled = true;
+                return;
+            }
+            const data = await fetchJSON(`/api/locations/?district=${encodeURIComponent(districtSelect.value)}&lang=mr`);
+            setSelectOptions(talukaSelect, data.data || [], 'सर्व तालुके');
+            talukaSelect.disabled = !(data.data && data.data.length);
+        }
+
+        document.getElementById('ntAnFilterDistrict')?.addEventListener('change', async () => {
+            await loadNotificationTalukas();
+        });
+
+        // कलम choice only reshapes the result table — no refetch needed.
+        document.getElementById('ntAnFilterKalam')?.addEventListener('change', () => {
+            renderNotificationVillageTable(window.ntAnVillageRows || []);
+        });
+
+        document.getElementById('ntAnApplyFilters')?.addEventListener('click', async () => {
+            try {
+                await fetchNotificationAnalytics();
+            } catch (error) {
+                console.error('अधिसूचना analytics filter failed', error);
+            }
+        });
+
+        document.getElementById('ntAnResetFilters')?.addEventListener('click', async () => {
+            const districtSelect = document.getElementById('ntAnFilterDistrict');
+            const kalamSelect = document.getElementById('ntAnFilterKalam');
+            if (districtSelect) districtSelect.value = '';
+            if (kalamSelect) kalamSelect.value = '';
+            await loadNotificationTalukas();
+            try {
+                await fetchNotificationAnalytics();
+            } catch (error) {
+                console.error('अधिसूचना analytics reset failed', error);
+            }
+        });
+
+        loadNotificationDistricts().catch((error) => console.error('अधिसूचना जिल्हा list failed', error));
+
         function updateDocumentsDashboardFromApi(data = {}) {
             setDashboardCount('documentsTotalCount', data.documents_total);
             setDashboardCount('documentsGeneralCount', data.documents_general);
@@ -2149,6 +2522,8 @@
                             reflowInspectionCharts();
                         } else if (targetId === 'accordion-landrecords') {
                             reflowLandRecordsCharts();
+                        } else if (targetId === 'accordion-notification') {
+                            reflowNotificationCharts();
                         } else if (targetId === 'accordion-stages') {
                             reflowBhusampadanKalamCharts();
                             if (window.stagesAwardStatusChartInstance) window.stagesAwardStatusChartInstance.reflow();
@@ -2417,6 +2792,7 @@
             await Promise.all([
                 fetchReadyReckonerAnalytics(),
                 fetchVillageInfoAnalytics(),
+                fetchNotificationAnalytics(),
                 fetchInspectionAnalytics(),
                 fetchLandRecordAnalytics(),
                 fetchDocumentsAnalytics(),

@@ -61,33 +61,43 @@
                 aria-label="Open menu" aria-expanded="false" aria-controls="mobileMenu">
                 <span class="material-symbols-outlined text-xl">menu</span>
             </button>
-            <div
-               class="order-3 grid w-full grid-cols-1 gap-2 sm:grid-cols-2 md:grid-cols-5 xl:order-none xl:flex xl:min-w-0 xl:w-auto xl:flex-1 xl:items-center xl:justify-center xl:gap-2">
+            <!-- फिल्टर panel — opens under the header, over the map, like the
+                 multitenant dashboard, so the header row stays uncluttered. -->
+            <div id="locationFilterPanel"
+               class="absolute inset-x-3 top-full z-[9998] mt-2 hidden rounded-xl border border-slate-200 bg-white p-3 shadow-lg dark:border-slate-800 dark:bg-slate-900 sm:inset-x-4 xl:left-80 xl:right-80">
+              <div class="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:flex lg:flex-wrap lg:items-center lg:gap-3">
                 <select id="districtSelect"
-                    class="form-select h-10 w-full min-w-0 rounded-lg border-none bg-slate-100 px-3 pr-8 text-xs font-medium focus:ring-primary dark:bg-slate-800 xl:w-28 xl:px-2 xl:pr-7 2xl:w-36 2xl:px-3 2xl:pr-8">
+                    class="form-select h-10 w-full min-w-0 rounded-lg border-none bg-slate-100 px-3 pr-8 text-xs font-medium focus:ring-primary dark:bg-slate-800 lg:flex-1">
                     <option value="">Select District</option>
                 </select>
                 <select id="talukaSelect"
-                    class="form-select h-10 w-full min-w-0 rounded-lg border-none bg-slate-100 px-3 pr-8 text-xs font-medium focus:ring-primary dark:bg-slate-800 xl:w-28 xl:px-2 xl:pr-7 2xl:w-36 2xl:px-3 2xl:pr-8"
+                    class="form-select h-10 w-full min-w-0 rounded-lg border-none bg-slate-100 px-3 pr-8 text-xs font-medium focus:ring-primary dark:bg-slate-800 lg:flex-1"
                     disabled>
                     <option value="">Select Taluka</option>
                 </select>
                 <select id="villageSelect"
-                    class="form-select h-10 w-full min-w-0 rounded-lg border-none bg-slate-100 px-3 pr-8 text-xs font-medium focus:ring-primary dark:bg-slate-800 xl:w-28 xl:px-2 xl:pr-7 2xl:w-36 2xl:px-3 2xl:pr-8"
+                    class="form-select h-10 w-full min-w-0 rounded-lg border-none bg-slate-100 px-3 pr-8 text-xs font-medium focus:ring-primary dark:bg-slate-800 lg:flex-1"
                     disabled>
                     <option value="">Select Village</option>
                 </select>
                 <select id="gutSelect"
-                    class="form-select h-10 w-full min-w-0 rounded-lg border-none bg-slate-100 px-3 pr-8 text-xs font-medium focus:ring-primary dark:bg-slate-800 xl:w-28 xl:px-2 xl:pr-7 2xl:w-36 2xl:px-3 2xl:pr-8"
+                    class="form-select h-10 w-full min-w-0 rounded-lg border-none bg-slate-100 px-3 pr-8 text-xs font-medium focus:ring-primary dark:bg-slate-800 lg:flex-1"
                     disabled>
                     <option value="">Select Gut Number</option>
                 </select>
                 <button id="resetFiltersBtn" type="button" aria-label="Reset location filters" title="Reset filters"
-                    class="flex h-10 w-full items-center justify-center rounded-lg bg-slate-100 text-slate-500 transition hover:bg-slate-200 hover:text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 xl:w-10 xl:shrink-0">
+                    class="flex h-10 w-full items-center justify-center rounded-lg bg-slate-100 text-slate-500 transition hover:bg-slate-200 hover:text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 lg:w-10 lg:justify-self-start">
                     <span class="material-symbols-outlined text-lg">filter_alt_off</span>
                 </button>
+              </div>
             </div>
             <div class="flex min-w-0 items-center justify-end gap-2 xl:col-start-3 xl:justify-self-end xl:gap-3">
+                <button type="button" id="filtersToggleBtn" title="Filters"
+                    aria-expanded="false" aria-controls="locationFilterPanel"
+                    class="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-primary px-3 text-sm font-semibold text-white transition hover:bg-primary/90">
+                    <span class="material-symbols-outlined text-lg">filter_alt</span>
+                    <span class="hidden sm:inline">Filters</span>
+                </button>
                 <nav class="hidden items-center gap-2 xl:flex" aria-label="Primary navigation">
                     {% if request.user.is_superuser %}
                     <a href="/"
@@ -534,7 +544,20 @@
         }
     </style>
     <script>
-        let map, currentLayer, osmLayer, satelliteLayer, terrainLayer;
+        let map, currentLayer, osmLayer, satelliteLayer, greyLayer, darkLayer;
+        const BASE_LAYER_KEYS = ['osm', 'grey', 'dark', 'satellite'];
+
+        function baseLayerKey(value) {
+            const key = String(value || '').toLowerCase();
+            return BASE_LAYER_KEYS.includes(key) ? key : 'osm';
+        }
+
+        function baseLayerFor(key) {
+            if (key === 'satellite') return satelliteLayer;
+            if (key === 'grey') return greyLayer;
+            if (key === 'dark') return darkLayer;
+            return osmLayer;
+        }
         let districtLayer, talukaLayer, aoiLayer, villagesBoundaryLayer, villagesGutLayer, gutBoundaryLayer, villageGutBoundariesLayer;
         let assetLayers = {}; // Store asset layers
         let currentVillage = null; // Track current selected village
@@ -767,24 +790,27 @@
                 preload: Infinity
             });
 
-            terrainLayer = new ol.layer.Tile({
+            greyLayer = new ol.layer.Tile({
                 source: new ol.source.XYZ({
-                    url: 'https://{a-c}.tile.opentopomap.org/{z}/{x}/{y}.png',
-                    attributions: 'OpenTopoMap',
+                    url: 'https://{a-c}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
+                    attributions: '© OpenStreetMap contributors, © CARTO',
                     preload: 3
                 }),
                 preload: Infinity
             });
 
-            // Set default layer to Satellite (or override from URL)
-            currentBaseLayer = initialUrlState.baselayer || 'satellite';
-            if (currentBaseLayer === 'osm') {
-                currentLayer = osmLayer;
-            } else if (currentBaseLayer === 'terrain') {
-                currentLayer = terrainLayer;
-            } else {
-                currentLayer = satelliteLayer;
-            }
+            darkLayer = new ol.layer.Tile({
+                source: new ol.source.XYZ({
+                    url: 'https://{a-c}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png',
+                    attributions: '© OpenStreetMap contributors, © CARTO',
+                    preload: 3
+                }),
+                preload: Infinity
+            });
+
+            // OSM is the default; ?baselayer= can still pick grey / dark / satellite.
+            currentBaseLayer = baseLayerKey(initialUrlState.baselayer);
+            currentLayer = baseLayerFor(currentBaseLayer);
             map.addLayer(currentLayer);
             setBaseLayerButtonState(currentBaseLayer);
 
@@ -829,13 +855,7 @@
                     map.removeLayer(currentLayer);
 
                     // Add new layer
-                    if (layerType === 'osm') {
-                        currentLayer = osmLayer;
-                    } else if (layerType === 'satellite') {
-                        currentLayer = satelliteLayer;
-                    } else if (layerType === 'terrain') {
-                        currentLayer = terrainLayer;
-                    }
+                    currentLayer = baseLayerFor(baseLayerKey(layerType));
                     map.addLayer(currentLayer);
 
                     // Update button styles
@@ -846,8 +866,8 @@
                     this.classList.add('bg-primary', 'text-white');
                     this.classList.remove('text-slate-600', 'dark:text-slate-300');
 
-                    currentBaseLayer = layerType;
-                    setBaseLayerButtonState(layerType);
+                    currentBaseLayer = baseLayerKey(layerType);
+                    setBaseLayerButtonState(currentBaseLayer);
                     updateUrlParams();
                 });
             });
@@ -1047,6 +1067,35 @@
             }
 
             resetFiltersBtn?.addEventListener('click', resetLocationFilters);
+
+            // Filters button opens the panel over the map; a click outside closes it.
+            const filtersToggleBtn = document.getElementById('filtersToggleBtn');
+            const locationFilterPanel = document.getElementById('locationFilterPanel');
+            if (filtersToggleBtn && locationFilterPanel) {
+                filtersToggleBtn.addEventListener('click', (event) => {
+                    event.stopPropagation();
+                    const isOpen = !locationFilterPanel.classList.toggle('hidden');
+                    filtersToggleBtn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+                });
+                document.addEventListener('click', (event) => {
+                    if (locationFilterPanel.classList.contains('hidden')) return;
+                    // The search-dropdowns re-render their options on change, so the
+                    // clicked node is already detached by the time this runs —
+                    // composedPath() still carries the panel, which is what keeps the
+                    // panel open while values are being picked.
+                    const path = typeof event.composedPath === 'function' ? event.composedPath() : [];
+                    if (path.includes(locationFilterPanel) || path.includes(filtersToggleBtn)) return;
+                    if (locationFilterPanel.contains(event.target) || filtersToggleBtn.contains(event.target)) return;
+                    if (event.target instanceof Node && !event.target.isConnected) return;
+                    locationFilterPanel.classList.add('hidden');
+                    filtersToggleBtn.setAttribute('aria-expanded', 'false');
+                });
+                document.addEventListener('keydown', (event) => {
+                    if (event.key !== 'Escape') return;
+                    locationFilterPanel.classList.add('hidden');
+                    filtersToggleBtn.setAttribute('aria-expanded', 'false');
+                });
+            }
 
             document.addEventListener('click', (event) => {
                 locationSearchSelects.forEach(control => {

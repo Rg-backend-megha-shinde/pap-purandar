@@ -9230,6 +9230,215 @@ def villageinfo_analytics(request):
     return JsonResponse(_villageinfo_analytics_data(_analytics_project_village_keys(request)))
 
 
+# --- अधिसूचना साधन analytics -------------------------------------------------
+# Stage names follow this project's अधिसूचना tool: प्रकरण ६, कलम ३२(२), कलम ३२(१).
+# The keys stay sec3/sec152/sec181 because that is what Notification.sections holds.
+NOTIFICATION_KALAM_STAGES = (
+    {"key": "sec3", "label": "प्रकरण ६ अधिसूचना", "pub_no": "sec3_pub_no", "pub_date": "sec3_pub_date", "cascade": "sec3_rows"},
+    {"key": "sec152", "label": "कलम ३२(२) अधिसूचना", "pub_no": "sec152_pub_no", "pub_date": "sec152_pub_date", "cascade": "sec152_rows"},
+    {"key": "sec181", "label": "कलम ३२(१) अधिसूचना", "pub_no": "sec181_pub_no", "pub_date": "sec181_pub_date", "cascade": "sec181_rows"},
+)
+
+def _notification_stage_done(sections, stage):
+    """A कलम counts as done once its अधिसूचना क्रमांक or दिनांक is filled in."""
+    return bool(
+        clean_optional_char(sections.get(stage["pub_no"]))
+        or clean_optional_char(sections.get(stage["pub_date"]))
+    )
+
+
+def _notification_puravani_stage_done(block, stage):
+    return bool(
+        clean_optional_char(block.get(stage["pub_no"]))
+        or clean_optional_char(block.get(stage["pub_date"]))
+    )
+
+
+def _notification_joint_survey_done(sections):
+    joint_survey = sections.get("joint_survey") or {}
+    if clean_optional_char(joint_survey.get("mo_r_no")) or clean_optional_char(joint_survey.get("survey_date")):
+        return True
+    return any(
+        clean_optional_char((row or {}).get("gut_number"))
+        for row in (joint_survey.get("rows") or [])
+        if isinstance(row, dict)
+    )
+
+
+def _notification_gut_keys(cascade, cascade_key):
+    """गट numbers a stage covers, normalised so the same गट is not counted twice."""
+    keys = set()
+    for row in (cascade.get(cascade_key) or []):
+        if not isinstance(row, dict):
+            continue
+        gut = normalize_gut_value(row.get("gut_number"))
+        if gut:
+            keys.add(gut)
+    return keys
+
+
+def _notification_area_gut_keys(rows):
+    keys = set()
+    for row in (rows or []):
+        if not isinstance(row, dict):
+            continue
+        gut = normalize_gut_value(row.get("gut_number"))
+        if gut:
+            keys.add(gut)
+    return keys
+
+
+def _analytics_marathi_location_maps(rows):
+    """
+    English project name -> Marathi, for the analytics tables.
+
+    Three bulk queries instead of one per row; keys are upper-cased and trimmed.
+    """
+    maps = {"district": {}, "taluka": {}, "village": {}}
+    queries = {
+        "district": """
+            SELECT UPPER(TRIM(a.name)), NULLIF(TRIM(dm.district_name_m), '')
+            FROM purandar_airport.prj_district a
+            LEFT JOIN public.district_master dm ON a.district_id = dm.id
+            WHERE UPPER(TRIM(a.name)) = ANY(%s)
+        """,
+        "taluka": """
+            SELECT UPPER(TRIM(c.taluka)), NULLIF(TRIM(tm.taluka_name_m), '')
+            FROM purandar_airport.prj_taluka c
+            LEFT JOIN public.taluka_master tm ON c.taluka_id = tm.id
+            WHERE UPPER(TRIM(c.taluka)) = ANY(%s)
+        """,
+        "village": """
+            SELECT UPPER(TRIM(d.village)), NULLIF(TRIM(vm.village_name_m), '')
+            FROM purandar_airport.prj_village d
+            LEFT JOIN public.village_master vm ON d.village_id = vm.id
+            WHERE UPPER(TRIM(d.village)) = ANY(%s)
+        """,
+    }
+    for field, sql in queries.items():
+        wanted = sorted({str(row.get(field) or "").strip().upper() for row in rows if str(row.get(field) or "").strip()})
+        if not wanted:
+            continue
+        try:
+            with connection.cursor() as cursor:
+                cursor.execute(sql, [wanted])
+                for key, marathi_name in cursor.fetchall():
+                    if key and marathi_name:
+                        maps[field].setdefault(key, marathi_name)
+        except Exception:
+            logger.exception("Marathi %s lookup failed for analytics rows", field)
+    return maps
+
+
+def _notification_analytics_data(project_village_keys=None):
+    if project_village_keys is None:
+        project_village_keys = _analytics_project_village_keys()
+
+    rows_by_key = {}
+
+    def blank_row(district, taluka, village, has_record):
+        return {
+            "district": district,
+            "taluka": taluka,
+            "village": village,
+            "has_record": has_record,
+            "joint_survey": False,
+            **{stage["key"]: False for stage in NOTIFICATION_KALAM_STAGES},
+            **{f'{stage["key"]}_gut_keys': set() for stage in NOTIFICATION_KALAM_STAGES},
+        }
+
+    matching_ids = []
+    for record in Notification.objects.exclude(village__exact="").order_by("updated_at", "id"):
+        # अधिसूचना stores the ROR/Marathi spelling while the project scope keys are
+        # the English प्रकल्प ones, so resolve before keying or nothing ever matches.
+        district, taluka, village = resolve_location_to_english(record.district, record.taluka, record.village)
+        key = (normalize_match_text(district), normalize_match_text(taluka), normalize_match_text(village))
+        if project_village_keys and key not in project_village_keys:
+            continue
+        matching_ids.append(record.id)
+        sections = record.sections if isinstance(record.sections, dict) else {}
+        try:
+            cascade = compute_cascade(sections, {"district": district, "taluka": taluka, "village": village})
+        except Exception:
+            logger.exception("अधिसूचना cascade failed for notification %s", record.id)
+            cascade = {}
+
+        # One row per village — several अधिसूचना for the same गाव merge, a stage
+        # counting as done when any of them has it done.
+        row = rows_by_key.setdefault(key, blank_row(district, taluka, village, True))
+        row["has_record"] = True
+        puravani_blocks = [block for block in (sections.get("puravani_blocks") or []) if isinstance(block, dict)]
+        for stage in NOTIFICATION_KALAM_STAGES:
+            if _notification_stage_done(sections, stage):
+                row[stage["key"]] = True
+                row[f'{stage["key"]}_gut_keys'] |= _notification_gut_keys(cascade, stage["cascade"])
+            for block in puravani_blocks:
+                if _notification_puravani_stage_done(block, stage):
+                    row[stage["key"]] = True
+                    row[f'{stage["key"]}_gut_keys'] |= _notification_area_gut_keys(block.get("area_rows"))
+        if _notification_joint_survey_done(sections):
+            row["joint_survey"] = True
+
+    # प्रलंबीत counts against every village in the project, not only those that
+    # already have an अधिसूचना record, so the tiles reconcile with the गावनिहाय table.
+    for scope_row in _analytics_project_scope()[0]:
+        key = (
+            normalize_match_text(scope_row.get("district")),
+            normalize_match_text(scope_row.get("taluka")),
+            normalize_match_text(scope_row.get("village")),
+        )
+        if not key[2] or key in rows_by_key:
+            continue
+        rows_by_key[key] = blank_row(
+            scope_row.get("district") or "", scope_row.get("taluka") or "", scope_row.get("village") or "", False,
+        )
+
+    total = len(rows_by_key)
+    payload = {"notification_total_villages": total}
+    for stage in NOTIFICATION_KALAM_STAGES:
+        stage_key = stage["key"]
+        done = sum(1 for row in rows_by_key.values() if row[stage_key])
+        gut_total = len(set().union(*(row[f"{stage_key}_gut_keys"] for row in rows_by_key.values())) if rows_by_key else set())
+        payload[f"notification_{stage_key}_done_villages"] = done
+        payload[f"notification_{stage_key}_pending_villages"] = max(total - done, 0)
+        payload[f"notification_{stage_key}_guts"] = gut_total
+    joint_done = sum(1 for row in rows_by_key.values() if row["joint_survey"])
+    payload["notification_joint_survey_done_villages"] = joint_done
+    payload["notification_joint_survey_pending_villages"] = max(total - joint_done, 0)
+
+    village_rows = []
+    # The table shows गावाचे नाव, so display the Marathi spellings even though the
+    # rows are keyed on the English प्रकल्प names.
+    marathi = _analytics_marathi_location_maps(rows_by_key.values())
+
+    def marathi_name(field, value):
+        text = str(value or "").strip()
+        return marathi[field].get(text.upper(), text) if text else ""
+
+    for row in sorted(rows_by_key.values(), key=lambda item: (item["taluka"] or "", item["village"] or "")):
+        village_row = {
+            "district": marathi_name("district", row["district"]),
+            "taluka": marathi_name("taluka", row["taluka"]),
+            "village": marathi_name("village", row["village"]),
+            "has_record": row["has_record"],
+            "joint_survey": row["joint_survey"],
+        }
+        for stage in NOTIFICATION_KALAM_STAGES:
+            village_row[stage["key"]] = row[stage["key"]]
+            village_row[f'{stage["key"]}_guts'] = len(row[f'{stage["key"]}_gut_keys'])
+        village_rows.append(village_row)
+    payload["notification_village_rows"] = village_rows
+
+    last_record = Notification.objects.filter(id__in=matching_ids).order_by("-updated_at", "-id").first()
+    payload["notification_last_updated"] = _format_analytics_last_updated(last_record)
+    return payload
+
+
+@login_required
+def notification_analytics(request):
+    return JsonResponse(_notification_analytics_data(_analytics_project_village_keys(request)))
+
+
 def _documents_analytics_data(request=None):
     qs = Document.objects.all()
     if request is not None:
@@ -9621,12 +9830,14 @@ def analytics(request):
     project_village_keys = _analytics_project_village_keys()
     readyrecnor_data = _readyrecnor_analytics_data(project_village_keys)
     villageinfo_data = _villageinfo_analytics_data(project_village_keys)
+    notification_data = _notification_analytics_data(project_village_keys)
     documents_data = _documents_analytics_data()
     land_record_712_last_record = LandRecord712.objects.order_by("-updated_at", "-id").first()
 
     return render(request, 'analytics.html', {
         **readyrecnor_data,
         **villageinfo_data,
+        **notification_data,
         **documents_data,
         "land_record_712_last_updated": _format_analytics_last_updated(land_record_712_last_record),
     })
