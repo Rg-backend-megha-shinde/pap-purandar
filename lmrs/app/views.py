@@ -9904,21 +9904,42 @@ def land_record_712_api(request):
     })
 
 
-def _project_district_keys():
-    """Districts the project location tables actually carry, as match keys."""
+def _project_districts_by_key():
+    """
+    Project districts as {match key: (district_id, name)}.
+
+    The key set says which ROR districts belong to the project; the id lets the
+    dropdowns cascade into prj_taluka / prj_village by id instead of by name.
+    """
     try:
         with connection.cursor() as cursor:
-            cursor.execute("SELECT DISTINCT name FROM purandar_airport.prj_district WHERE name IS NOT NULL")
-            names = [row[0] for row in cursor.fetchall()]
+            cursor.execute(
+                "SELECT DISTINCT district_id, name FROM purandar_airport.prj_district WHERE name IS NOT NULL"
+            )
+            rows = cursor.fetchall()
     except Exception:
         logger.exception('Project district lookup failed')
-        return set()
+        return {}
     return {
-        key
-        for name in names
+        key: (district_id, name)
+        for district_id, name in rows
         for alias in ror_location_values(name)
         if (key := ror_location_key(alias))
     }
+
+
+def _project_district_keys():
+    """Districts the project location tables actually carry, as match keys."""
+    return set(_project_districts_by_key())
+
+
+def _project_district_for(district_payload, project_districts):
+    """The prj_district (id, name) a ROR district payload maps to, if any."""
+    for value in [district_payload['name'], *(district_payload['aliases'] or [])]:
+        key = ror_location_key(value)
+        if key and key in project_districts:
+            return project_districts[key]
+    return None
 
 
 def _district_in_project(district_payload, project_keys):
@@ -9983,9 +10004,16 @@ def _ror_locations_payload(request):
     # even though ROR returns the whole पुणे विभाग. When the project tables name
     # a district the ROR cache has no match for, say so instead of quietly
     # falling back to every district in the division.
-    project_keys = _project_district_keys()
+    project_districts = _project_districts_by_key()
+    project_keys = set(project_districts)
     if project_keys:
         districts = [item for item in districts if _district_in_project(item, project_keys)]
+        # Carry the प्रकल्प district id/name so तालुका and गाव can be pulled from
+        # prj_taluka / prj_village — the same tables the dashboard filters use.
+        for item in districts:
+            matched = _project_district_for(item, project_districts)
+            item['project_id'] = str(matched[0]) if matched else ''
+            item['project_name'] = matched[1] if matched else ''
         if not districts:
             warning = warning or 'प्रकल्पाच्या जिल्ह्याशी जुळणारा ROR जिल्हा सापडला नाही. ROR स्थान cache refresh करा.'
     else:

@@ -1805,13 +1805,13 @@
     if (!gutRows.size || !rows.length) return;
     const areaRows = Array.from(gutRows.values());
     const proposedRows = sumEveryRow ? rows.filter((row) => ntInputValue(row, gutSelector)) : areaRows;
-    const areaTotal = areaRows.reduce((sum, row) => sum + decimalValue(ntInputValue(row, areaSelector)), 0);
-    const proposedTotal = proposedRows.reduce((sum, row) => sum + decimalValue(ntInputValue(row, proposedSelector)), 0);
+    const areaTotal = sumAreaValues(areaRows.map((row) => ntInputValue(row, areaSelector)));
+    const proposedTotal = sumAreaValues(proposedRows.map((row) => ntInputValue(row, proposedSelector)));
     rows[rows.length - 1].insertAdjacentHTML("afterend", `
       <tr class="nt-gut-total-row bg-[#f8fbff]">
         <td colspan="7" class="text-right font-bold text-[#244271]">एकूण</td>
-        <td><input class="pc-input pc-input-autofill nt-gut-total-712" value="${formatTotal(areaTotal)}" readonly></td>
-        <td><input class="pc-input pc-input-autofill nt-gut-total-proposed" value="${formatTotal(proposedTotal)}" readonly></td>
+        <td><input class="pc-input pc-input-autofill nt-gut-total-712" value="${areaTotal}" readonly></td>
+        <td><input class="pc-input pc-input-autofill nt-gut-total-proposed" value="${proposedTotal}" readonly></td>
         <td></td>
       </tr>
     `);
@@ -1952,9 +1952,9 @@
     row.querySelector(".nt-area-district").value = data.district || loc.district;
     row.querySelector(".nt-area-taluka").value = data.taluka || loc.taluka;
 	    row.querySelector(".nt-area-village").value = data.village || loc.village;
-	    row.querySelector(".nt-area-712").value = formatArea4(data.area_712 || "");
+	    row.querySelector(".nt-area-712").value = formatAreaDisplay(data.area_712 || "");
 	    row.querySelector(".nt-area-hissa").value = data.hissa_number || "";
-	    row.querySelector(".nt-area-proposed").value = formatArea4(data.proposed_area || "");
+	    row.querySelector(".nt-area-proposed").value = formatAreaDisplay(data.proposed_area || "");
 	    row.querySelector(".nt-area-remark").value = data.remark || "";
 	    wireRemoveButton(row);
 	    const syncArea = () => {
@@ -2071,7 +2071,7 @@
       if (!response.ok) return;
 	      const data = await response.json();
 	      const area = data.area_summary?.total_area || data.area_summary?.area_712 || "";
-	      if (area) row.querySelector(".nt-area-712").value = formatArea4(area);
+	      if (area) row.querySelector(".nt-area-712").value = formatAreaDisplay(area);
 	      syncAreaCommonFields(row.closest("tbody"));
 	      renderTotals();
 	    } catch (err) {
@@ -2106,11 +2106,11 @@
 	    }
 	  }
 
-  // Manual क्षेत्र entry also gets capped at 4 decimals when the field is left.
+  // Manual क्षेत्र entry is normalised to हे.आर.चौ.मी. when the field is left.
   document.addEventListener("blur", (event) => {
     const input = event.target;
     if (!input?.matches?.(".nt-area-712, .nt-area-proposed, .nt-cascade-712, .nt-cascade-proposed")) return;
-    const formatted = formatArea4(input.value);
+    const formatted = formatAreaDisplay(input.value);
     if (formatted === input.value) return;
     input.value = formatted;
     input.dispatchEvent(new Event("input", { bubbles: true }));
@@ -2285,7 +2285,7 @@
 
   function puravaniCascadeRowsHtml(rows, prefix, { acquiredMode = false } = {}) {
     return rows.map((row, idx) => {
-      const editableArea = formatArea4(acquiredMode ? (row.acquired_area || row.proposed_area || "") : (row.proposed_area || ""));
+      const editableArea = formatAreaDisplay(acquiredMode ? (row.acquired_area || row.proposed_area || "") : (row.proposed_area || ""));
       return `
         <tr>
           <td class="text-center"><input type="checkbox" class="nt-row-check h-4 w-4"></td>
@@ -2295,7 +2295,7 @@
           <td><input class="pc-input nt-cascade-village" value="${escapeHtml(row.village || "")}" readonly></td>
           <td><input class="pc-input nt-cascade-gut" value="${escapeHtml(row.gut_number || "")}" readonly></td>
           <td><input class="pc-input nt-cascade-hissa" value="${escapeHtml(row.hissa_number || "")}" readonly></td>
-          <td><input class="pc-input nt-cascade-712" value="${escapeHtml(formatArea4(row.area_712 || ""))}" readonly></td>
+          <td><input class="pc-input nt-cascade-712" value="${escapeHtml(formatAreaDisplay(row.area_712 || ""))}" readonly></td>
           <td><span class="nt-proposed-display">${escapeHtml(editableArea)}</span><input class="pc-input nt-cascade-proposed" value="${escapeHtml(editableArea)}" style="display:none" placeholder="Manual Entry" readonly></td>
           <td class="text-center"><button type="button" class="nl-view-btn" onclick="ntToggleRowEdit(this)">✎ संपादित करा</button></td>
         </tr>
@@ -3366,12 +3366,12 @@
 	  const shuddhipatrakRowsBody = document.getElementById("ntShuddhipatrakRows");
   function renderShuddhipatrakTotals() {
     const rows = Array.from(shuddhipatrakRowsBody?.querySelectorAll(".nt-shuddhi-row") || []);
-    const oldTotal = rows.reduce((sum, row) => sum + decimalValue(row.querySelector(".nt-shuddhi-area-old")?.value), 0);
-    const newTotal = rows.reduce((sum, row) => sum + decimalValue(row.querySelector(".nt-shuddhi-area-new")?.value), 0);
+    const oldTotal = sumAreaValues(rows.map((row) => row.querySelector(".nt-shuddhi-area-old")?.value));
+    const newTotal = sumAreaValues(rows.map((row) => row.querySelector(".nt-shuddhi-area-new")?.value));
     const oldInput = document.getElementById("ntShuddhiTotalOld");
     const newInput = document.getElementById("ntShuddhiTotalNew");
-    if (oldInput) oldInput.value = formatTotal(oldTotal);
-    if (newInput) newInput.value = formatTotal(newTotal);
+    if (oldInput) oldInput.value = oldTotal;
+    if (newInput) newInput.value = newTotal;
   }
 
 		  function addShuddhipatrakRow(data = {}) {
@@ -3414,8 +3414,8 @@
   // Cascade rendering
   // ---------------------------------------------------------------------
   function cascadeAreaValue(row, acquiredMode = false) {
-    if (acquiredMode) return formatArea4(row.acquired_area || row.acquired_total_area || row.proposed_area || "");
-    return formatArea4(row.proposed_area || "");
+    if (acquiredMode) return formatAreaDisplay(row.acquired_area || row.acquired_total_area || row.proposed_area || "");
+    return formatAreaDisplay(row.proposed_area || "");
   }
 
   function cascadePlaceholderRow(body) {
@@ -3441,7 +3441,7 @@
       <td><input class="pc-input nt-cascade-village" value="${escapeHtml(data.village || loc.village || "")}"></td>
       <td><input class="pc-input nt-cascade-gut" value="${escapeHtml(data.gut_number || "")}"></td>
       <td><input class="pc-input nt-cascade-hissa" value="${escapeHtml(data.hissa_number || "")}"></td>
-      <td><input class="pc-input nt-cascade-712" value="${escapeHtml(formatArea4(data.area_712 || data.total_area_712 || ""))}"></td>
+      <td><input class="pc-input nt-cascade-712" value="${escapeHtml(formatAreaDisplay(data.area_712 || data.total_area_712 || ""))}"></td>
       <td><span class="nt-proposed-display" style="display:none">${escapeHtml(editableArea)}</span><input class="pc-input nt-cascade-proposed" value="${escapeHtml(editableArea)}" placeholder="Manual Entry"></td>
       <td class="text-center"><button type="button" class="nl-view-btn" data-editing="1" onclick="ntToggleRowEdit(this)" style="background:#dcfce7;color:#15803d;border-color:#bbf7d0;">✓ जतन करा</button></td>
     `;
@@ -3454,13 +3454,13 @@
 
   function updateCascadeRowFromData(row, data, { acquiredMode = false } = {}) {
     if (!row) return;
-    const areaValue = formatArea4(acquiredMode ? (data.acquired_area || data.proposed_area || "") : (data.proposed_area || ""));
+    const areaValue = formatAreaDisplay(acquiredMode ? (data.acquired_area || data.proposed_area || "") : (data.proposed_area || ""));
     row.querySelector(".nt-cascade-district").value = data.district || "";
     row.querySelector(".nt-cascade-taluka").value = data.taluka || "";
     row.querySelector(".nt-cascade-village").value = data.village || "";
     row.querySelector(".nt-cascade-gut").value = data.gut_number || "";
     row.querySelector(".nt-cascade-hissa").value = data.hissa_number || "";
-    row.querySelector(".nt-cascade-712").value = formatArea4(data.area_712 || "");
+    row.querySelector(".nt-cascade-712").value = formatAreaDisplay(data.area_712 || "");
     const areaInput = row.querySelector(".nt-cascade-proposed");
     const areaDisplay = row.querySelector(".nt-proposed-display");
     if (areaInput) areaInput.value = areaValue;
@@ -3594,7 +3594,7 @@
 	        <td><input class="pc-input nt-cascade-village" value="${escapeHtml(row.village || "")}" readonly></td>
 	        <td><input class="pc-input nt-cascade-gut" value="${escapeHtml(row.gut_number || "")}" readonly></td>
 	        <td><input class="pc-input nt-cascade-hissa" value="${escapeHtml(row.hissa_number || "")}" readonly></td>
-	        <td><input class="pc-input nt-cascade-712" value="${escapeHtml(formatArea4(row.area_712 || row.total_area_712 || ""))}" readonly></td>
+	        <td><input class="pc-input nt-cascade-712" value="${escapeHtml(formatAreaDisplay(row.area_712 || row.total_area_712 || ""))}" readonly></td>
 	        <td><span class="nt-proposed-display">${escapeHtml(editableArea)}</span><input class="pc-input nt-cascade-proposed" value="${escapeHtml(editableArea)}" style="display:none" placeholder="Manual Entry" readonly></td>
 	        <td class="text-center"><button type="button" class="nl-view-btn" onclick="ntToggleRowEdit(this)">✎ संपादित करा</button></td>
 	      </tr>
@@ -3613,6 +3613,47 @@
     const decimals = text.split(".")[1] || "";
     if (decimals.length <= 4) return text;
     return Number.parseFloat(text).toFixed(4);
+  }
+
+  // Areas are हेक्टर.आर.चौ.मी. — "2.37.75" is 2 हे. 37 आर 75 चौ.मी., not 2.37. They
+  // therefore have to be added in square units, the same way the server does it
+  // (_parse_area_to_sqm / _format_sqm_to_har), and rendered back as H.AA.SS.
+  function areaToSqm(value) {
+    const text = String(value ?? "").trim();
+    if (!text || ["-", "none", "null"].includes(text.toLowerCase())) return 0;
+    const parts = text.split(/[.\-]/).filter((part) => part !== "");
+    if (parts.length >= 2) {
+      const digits = parts.map((part) => Number.parseInt(String(part).replace(/[^0-9]/g, ""), 10) || 0);
+      // Two parts with a long tail is a decimal हेक्टर value ("2.3745"), not H.AA.
+      if (!(parts.length === 2 && String(parts[1]).replace(/[^0-9]/g, "").length > 2)) {
+        return digits[0] * 10000 + (digits[1] || 0) * 100 + (digits[2] || 0);
+      }
+    }
+    const decimal = Number.parseFloat(text.replace(/[^\d.-]/g, ""));
+    return Number.isFinite(decimal) ? Math.round(decimal * 10000) : 0;
+  }
+
+  function formatHectareAre(sqm) {
+    const total = Math.max(0, Math.round(Number(sqm) || 0));
+    const hectare = Math.floor(total / 10000);
+    const remainder = total % 10000;
+    const aar = Math.floor(remainder / 100);
+    const squareMetre = remainder % 100;
+    return `${hectare}.${String(aar).padStart(2, "0")}.${String(squareMetre).padStart(2, "0")}`;
+  }
+
+  // Display helper for every area cell: keep H.AA.SS as it is, turn a plain
+  // decimal into H.AA.SS, and leave anything non-numeric untouched.
+  function formatAreaDisplay(value) {
+    const text = String(value ?? "").trim();
+    if (!text) return "";
+    if (/^\d+\.\d{1,2}\.\d{1,2}$/.test(text)) return text;
+    if (!/^-?\d+(\.\d+)?$/.test(text)) return formatArea4(text);
+    return formatHectareAre(areaToSqm(text));
+  }
+
+  function sumAreaValues(values) {
+    return formatHectareAre((values || []).reduce((total, value) => total + areaToSqm(value), 0));
   }
 
   function decimalValue(value) {
@@ -3689,25 +3730,28 @@
 	    if (!body) return;
 	    const baseRows = uniqueRowsByGut(sec3SummaryRows());
 	    const purRows = uniqueRowsByGut(puravaniSec3SummaryRows());
-    const baseArea = baseRows.reduce((sum, row) => sum + decimalValue(summaryArea(row)), 0);
-    const purArea = purRows.reduce((sum, row) => sum + decimalValue(summaryArea(row)), 0);
+    const baseAreaSqm = baseRows.reduce((sum, row) => sum + areaToSqm(summaryArea(row)), 0);
+    const purAreaSqm = purRows.reduce((sum, row) => sum + areaToSqm(summaryArea(row)), 0);
+    const baseArea = formatHectareAre(baseAreaSqm);
+    const purArea = formatHectareAre(purAreaSqm);
+    const grandArea = formatHectareAre(baseAreaSqm + purAreaSqm);
     body.innerHTML = `
       <tr>
         <th>एकूण मूळ/पुरवणी/गट</th>
         <td>${baseRows.length}</td>
         <td>${purRows.length}</td>
-        <td>${formatTotal(baseArea)}</td>
-        <td>${formatTotal(purArea)}</td>
-        <td>${formatTotal(baseArea)}</td>
-        <td>${formatTotal(purArea)}</td>
+        <td>${baseArea}</td>
+        <td>${purArea}</td>
+        <td>${baseArea}</td>
+        <td>${purArea}</td>
       </tr>
       <tr>
         <th>एकूण</th>
         <td>${baseRows.length + purRows.length}</td>
         <td></td>
-        <td>${formatTotal(baseArea + purArea)}</td>
+        <td>${grandArea}</td>
         <td></td>
-        <td>${formatTotal(baseArea + purArea)}</td>
+        <td>${grandArea}</td>
         <td></td>
       </tr>
     `;
@@ -3804,6 +3848,7 @@
       if (id) option.dataset.id = id;
       if (typeof item === "object") {
         if (item?.code) option.dataset.code = item.code;
+        if (item?.project_id) option.dataset.projectId = item.project_id;
         if (item?.aliases) option.dataset.aliases = JSON.stringify(item.aliases || []);
       }
       if (
@@ -3842,6 +3887,7 @@
       option.dataset.aliases = JSON.stringify(item.aliases || []);
       option.dataset.divisionCode = item.division_code || "";
       option.dataset.divisionName = item.division_name || "";
+      option.dataset.projectId = item.project_id || "";
       if (
         locationKey(item.name) === locationKey(currentValue)
         || (item.aliases || []).some((alias) => locationKey(alias) === locationKey(currentValue))
@@ -3878,23 +3924,50 @@
   function selectedOptionCode(select) {
     return select?.selectedOptions?.[0]?.dataset.code || "";
   }
+  function selectedOptionProjectId(select) {
+    return select?.selectedOptions?.[0]?.dataset.projectId || "";
+  }
+  // तालुका / गाव come from the project tables (prj_taluka / prj_village) — the
+  // same source the dashboard filters use — so only this project's तालुका and
+  // गावे are offered. The stored value stays the Marathi name, with the English
+  // प्रकल्प spelling kept as an alias for matching.
+  async function fetchProjectLocations(params = {}) {
+    const query = new URLSearchParams({ lang: "mr", ...params });
+    try {
+      const response = await fetch(`{% url 'get_locations' %}?${query.toString()}`);
+      if (!response.ok) return [];
+      const payload = await response.json();
+      return (payload.data || []).map((item) => ({
+        code: "",
+        id: item.id,
+        project_id: item.id,
+        value: item.label || item.value,
+        label: item.label || item.value,
+        name: item.label || item.value,
+        aliases: [item.value, item.label].filter(Boolean),
+      }));
+    } catch (error) {
+      return [];
+    }
+  }
   async function fetchRorTalukas(district) {
-    if (!district?.value) return [];
-    const payload = await fetchCpiLocationCache({
-      district_code: selectedOptionCode(district),
-      district_name: district.value,
-    });
-    return payload.talukas || [];
+    const districtProjectId = selectedOptionProjectId(district);
+    if (!district?.value && !districtProjectId) return [];
+    return fetchProjectLocations(districtProjectId
+      ? { district_id: districtProjectId }
+      : { district: district.value });
   }
   async function fetchRorVillages(district, taluka) {
-    if (!district?.value || !taluka?.value) return [];
-    const payload = await fetchCpiLocationCache({
-      district_code: selectedOptionCode(district),
-      district_name: district.value,
-      taluka_code: selectedOptionCode(taluka),
-      taluka_name: taluka.value,
+    if (!taluka?.value) return [];
+    const talukaProjectId = selectedOptionProjectId(taluka);
+    if (talukaProjectId) return fetchProjectLocations({ taluka_id: talukaProjectId });
+    const districtProjectId = selectedOptionProjectId(district);
+    if (!districtProjectId && !district?.value) return [];
+    return fetchProjectLocations({
+      district_id: districtProjectId,
+      district: districtProjectId ? "" : district.value,
+      taluka: taluka.value,
     });
-    return payload.villages || [];
   }
   function syncCpiLocationScope() {
     const division = document.getElementById("ntDivision");
