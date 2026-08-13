@@ -3244,7 +3244,7 @@
                                 <button type="button" class="mt-2 hidden rounded-full px-2 text-sm font-bold text-[#d33]" data-pc-doc-delete-for="court_payment_receipt_file" title="Remove">&times;</button>
                             </div>
                             <div><label class="pc-label">संबंधित विधिज्ञ बाब तपशील</label><input class="pc-input"
-                                    name="court_legal_matter_detail" type="text"></div>
+                                    id="pcCourtLegalMatterDetail" name="court_legal_matter_detail" type="text"></div>
                         </div>
                     </div>
                 </div>
@@ -4689,7 +4689,7 @@
             witness: {
                 bodyId: 'pcAgreementWitnessCaptureRows',
                 prefix: 'agreement_witness_capture',
-                defaultName: 'साक्षीदार 1',
+                defaultName: '',
             },
         };
 
@@ -4723,7 +4723,7 @@
         function buildAgreementCaptureRow(type = 'owner', row = {}, index = 0) {
             const config = getAgreementCaptureConfig(type);
             const idPrefix = `${config.prefix}_${index}`;
-            const fallbackName = type === 'witness' ? `साक्षीदार ${index + 1}` : '';
+            const fallbackName = '';
             const nameValue = row.name || row.owner_name || row.witness_name || fallbackName;
             const hasCapture = row.photo || row.signature || row.biometric_captured_at || row.fingerprint_template || row.fingerprint_image;
             const removeButton = index === 0 || config.fixedRows
@@ -7740,6 +7740,23 @@
             return `${Number.parseInt(day, 10)} ${monthLabel} ${year}`;
         }
 
+        function formatNoticeShortDate(value) {
+            const raw = String(value || '').trim();
+            if (!raw) return '';
+            let day;
+            let month;
+            let year;
+            let match = raw.match(/^(\d{1,2})[-/.](\d{1,2})[-/.](\d{2,4})$/);
+            if (match) {
+                [, day, month, year] = match;
+            } else {
+                match = raw.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+                if (!match) return raw;
+                [, year, month, day] = match;
+            }
+            return `${String(day).padStart(2, '0')}/${String(month).padStart(2, '0')}/${year}`;
+        }
+
         function addWorkingDays(startDate, workingDays) {
             const result = new Date(startDate);
             result.setHours(12, 0, 0, 0);
@@ -9001,7 +9018,10 @@
             if (Object.prototype.hasOwnProperty.call(sectionData, 'demarcation_not_received_reason')) {
                 const reasonField = document.querySelector('[name="demarcation_not_received_reason"]');
                 if (reasonField instanceof HTMLInputElement && !reasonField.dataset?.pcPrefillSource) {
-                    reasonField.value = sectionData.demarcation_not_received_reason || '';
+                    const savedReason = sectionData.demarcation_not_received_reason || '';
+                    if (savedReason || !String(reasonField.value || '').trim()) {
+                        reasonField.value = savedReason;
+                    }
                 }
             }
             if (Object.prototype.hasOwnProperty.call(sectionData, 'demarcation_village_files_json')) {
@@ -12712,20 +12732,24 @@
             const villageData = villageDataPayload?.data || {};
             const numberField = document.getElementById('pcAwardNumber') || processChartForm?.querySelector('[name="award_number"]');
             const dateField = document.getElementById('pcAwardDate') || processChartForm?.querySelector('[name="award_date"]');
+            const courtDetailField = document.getElementById('pcCourtLegalMatterDetail') || processChartForm?.querySelector('[name="court_legal_matter_detail"]');
             const files = Array.isArray(villageDataPayload?.files?.sec23_files) ? villageDataPayload.files.sec23_files : [];
 
             [
                 [numberField, villageData.sec23_kramank || ''],
                 [dateField, villageData.sec23_date || ''],
+                [courtDetailField, villageData.sec24_court_details || ''],
             ].forEach(([field, value]) => {
                 if (!(field instanceof HTMLInputElement)) return;
                 markVillageManagedField(field, 'sec23');
-                field.value = value || '';
-                field.setAttribute('value', value || '');
-                field.readOnly = true;
-                field.setAttribute('readonly', 'readonly');
-                field.classList.add('pc-readonly-lock');
-                field.tabIndex = -1;
+                if (value || field.hasAttribute('readonly')) {
+                    field.value = value || '';
+                    field.setAttribute('value', value || '');
+                    field.readOnly = true;
+                    field.setAttribute('readonly', 'readonly');
+                    field.classList.add('pc-readonly-lock');
+                    field.tabIndex = -1;
+                }
             });
 
             currentVillageFiles.sec23_files = files;
@@ -13138,7 +13162,12 @@
 
             const reasonField = processChartForm?.querySelector('[name="demarcation_not_received_reason"]');
             if (reasonField instanceof HTMLInputElement) {
-                reasonField.value = data.reason || '';
+                if (data.reason || mode === 'no') {
+                    reasonField.value = data.reason || '';
+                    if (data.reason) {
+                        lockPrefilledControl(reasonField, 'village-info');
+                    }
+                }
             }
 
             const filesField = document.getElementById('demarcationVillageFilesJson');
@@ -13148,7 +13177,7 @@
                     name: file.name || 'अपलोड केलेली प्रत',
                 })));
             }
-            lockFieldsWithValues([kramankField, dateField], 'village-info');
+            lockFieldsWithValues([kramankField, dateField, reasonField], 'village-info');
             renderDemarcationVillageFiles(parseDemarcationVillageFiles());
             toggleDemarcationFields();
         }
@@ -14072,7 +14101,7 @@
                 : [{ name: sec3OfficerName }];
             const witnessCaptureSource = agreementWitnessCaptureRows.length
                 ? agreementWitnessCaptureRows
-                : [{ name: 'साक्षीदार 1' }];
+                : [{ name: '' }];
             const witnessSignatureBlock = (label, name = '', address = '', aadhaarNumber = '') => `
                 <div class="witness-box">
                     <p><strong>${label}</strong></p>
@@ -16033,12 +16062,16 @@ function buildPuravaniAwardDraftHtml() {
             const primarySec3Row = sec3Rows[0] || {};
             const projectPurpose = getFieldValue('[name="project_purpose"]') || '________';
             const generatedAt = new Date();
-            const hearingNoticeDate = dateToInputValue(addWorkingDays(generatedAt, 15));
             const hearingNoticeDateField = processChartForm?.querySelector('[name="section323_notice_date"]');
-            if (hearingNoticeDateField instanceof HTMLInputElement) {
-                hearingNoticeDateField.value = hearingNoticeDate;
+            let hearingNoticeDate = hearingNoticeDateField instanceof HTMLInputElement ? hearingNoticeDateField.value : '';
+            if (!hearingNoticeDate) {
+                hearingNoticeDate = dateToInputValue(addWorkingDays(generatedAt, 15));
+                if (hearingNoticeDateField instanceof HTMLInputElement) {
+                    hearingNoticeDateField.value = hearingNoticeDate;
+                }
             }
             const hearingNoticeDateLong = formatNoticeLongDate(hearingNoticeDate);
+            const noticeHeaderDate = formatNoticeShortDate(hearingNoticeDate) || generatedDate;
             const publicNoticeDate = getFieldValue(section32NoticeDateInput);
             const publicNoticeDateLong = formatNoticeLongDate(publicNoticeDate) || '________';
             const sec2NotificationNumber = getFieldValue('#pcSec2AdhisuchanaKramank');
@@ -16103,7 +16136,7 @@ function buildPuravaniAwardDraftHtml() {
                     <div class="header-rule">----------------------------------------------------------------------------------------------------</div>
                     <div class="header-meta">
                         <p class="notice-title">महाराष्ट्र औदयोगिक विकास अधिनियम -1961<br>चे कलम 32(3) अन्वये सुनावणीची नोटीस</p>
-                        <p class="header-ref"><span class="red">क्र.उपजि/भूसं/ निवाडा/ कावि /</span><br><span class="red">दि.${getDisplayValue(generatedDate)}</span></p>
+                        <p class="header-ref"><span class="red">क्र.उपजि/भूसं/ निवाडा/ कावि /</span><br><span class="red">दि.${getDisplayValue(noticeHeaderDate)}</span></p>
                     </div>
                     <p class="paragraph">प्रति,</p>
                     <p class="paragraph">${red(applicantName)}</p>
