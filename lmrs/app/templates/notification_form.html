@@ -1117,12 +1117,12 @@
 	              </div>
 	            </div>
 
-	            <div class="pc-section">
+	            <!-- <div class="pc-section">
 	              <h3 class="mb-4 text-base font-bold text-[#244271]">कलम १७ सुनावणी निर्णय</h3>
 	              <div><label class="pc-label">आक्षेप व निर्णय तपशील</label><input name="sec17_decision_details" id="ntSec17DecisionDetails" class="pc-input" placeholder="आक्षेप व निर्णय तपशील"></div>
-	            </div>
+	            </div> -->
 
-	            <div class="pc-section">
+	            <!-- <div class="pc-section">
 	              <h3 class="mb-4 text-base font-bold text-[#244271]">कलम १९-ब जाहीर नोटीस</h3>
 	              <div class="grid gap-4 md:grid-cols-2">
 	                <div class="rounded-xl border border-[#dfe8f5] p-3">
@@ -1140,7 +1140,7 @@
 	                  </div>
 	                </div>
 	              </div>
-	            </div>
+	            </div> -->
 	            <div id="ntPuravaniSec181Wrap" class="space-y-4"></div>
 
 	            <div class="pc-section" style="border-color:#c6dcf8;background:#f0f6ff;">
@@ -4265,17 +4265,25 @@
   // ---------------------------------------------------------------------
   // Init from server-rendered detail payload (edit mode)
   // ---------------------------------------------------------------------
+  function setInputValue(id, val) {
+    const el = document.getElementById(id);
+    if (el) el.value = val ?? "";
+  }
+
   function initFromDetail() {
     const sections = ntDetail.sections || {};
     applyCpiToForm(ntDetail.cpi || {});
-    (sections.required_areas || []).forEach((row) => addAreaRow(areaRowsBody, row));
-    if (!areaRowsBody.children.length) addAreaRow(areaRowsBody);
-    document.getElementById("ntSec3PubNo").value = sections.sec3_pub_no || "";
-	    setDisplayDateValue("ntSec3PubDate", sections.sec3_pub_date || "");
+    if (areaRowsBody) {
+      (sections.required_areas || []).forEach((row) => addAreaRow(areaRowsBody, row));
+      if (!areaRowsBody.children.length) addAreaRow(areaRowsBody);
+    }
+    setInputValue("ntSec3PubNo", sections.sec3_pub_no);
+    setDisplayDateValue("ntSec3PubDate", sections.sec3_pub_date || "");
     loadPaperFields(sections, "sec3", "ntSec3");
 
     const hasPuravani = sections.has_puravani === "1";
-    notificationForm.querySelector(`input[name="has_puravani"][value="${hasPuravani ? "yes" : "no"}"]`).checked = true;
+    const hasPuravaniRadio = notificationForm.querySelector(`input[name="has_puravani"][value="${hasPuravani ? "yes" : "no"}"]`);
+    if (hasPuravaniRadio) hasPuravaniRadio.checked = true;
     (sections.puravani_blocks || []).forEach((block, idx) => {
       addPuravaniBlock({
         ...block,
@@ -4286,36 +4294,42 @@
     });
     togglePuravani();
 
-    document.getElementById("ntSec152PubNo").value = sections.sec152_pub_no || "";
-	    setDisplayDateValue("ntSec152PubDate", sections.sec152_pub_date || "");
+    setInputValue("ntSec152PubNo", sections.sec152_pub_no);
+    setDisplayDateValue("ntSec152PubDate", sections.sec152_pub_date || "");
     loadPaperFields(sections, "sec152", "ntSec152");
-    document.getElementById("ntSec154PubNo").value = sections.sec154_pub_no || "";
-	    setDisplayDateValue("ntSec154PubDate", sections.sec154_pub_date || "");
-    document.getElementById("ntSec154NotifPubNo").value = sections.sec154_notif_pub_no || "";
-	    setDisplayDateValue("ntSec154NotifPubDate", sections.sec154_notif_pub_date || "");
 
-    (sections.sdo_rows || []).forEach((row) => addSdoRow(row));
-    if (!sdoRowsBody.children.length) addSdoRow();
+    setInputValue("ntSec154PubNo", sections.sec154_pub_no);
+    setDisplayDateValue("ntSec154PubDate", sections.sec154_pub_date || "");
+    setInputValue("ntSec154NotifPubNo", sections.sec154_notif_pub_no);
+    setDisplayDateValue("ntSec154NotifPubDate", sections.sec154_notif_pub_date || "");
+
+    if (sdoRowsBody) {
+      (sections.sdo_rows || []).forEach((row) => addSdoRow(row));
+      if (!sdoRowsBody.children.length) addSdoRow();
+    }
 
     const js = sections.joint_survey || {};
-    document.getElementById("ntJsMoRNo").value = js.mo_r_no || "";
-	    setDisplayDateValue("ntJsSurveyDate", js.survey_date || "");
-    document.getElementById("ntJsSurveyorName").value = js.surveyor_name || "";
+    setInputValue("ntJsMoRNo", js.mo_r_no);
+    setDisplayDateValue("ntJsSurveyDate", js.survey_date || "");
+    setInputValue("ntJsSurveyorName", js.surveyor_name);
     (js.rows || []).forEach((row) => addJsRow(row));
 
-    document.getElementById("ntSec181PubNo").value = sections.sec181_pub_no || "";
-	    setDisplayDateValue("ntSec181PubDate", sections.sec181_pub_date || "");
-    document.getElementById("ntSec17DecisionDetails").value = sections.sec17_decision_details || "";
+    setInputValue("ntSec181PubNo", sections.sec181_pub_no);
+    setDisplayDateValue("ntSec181PubDate", sections.sec181_pub_date || "");
+    setInputValue("ntSec17DecisionDetails", sections.sec17_decision_details);
     loadPaperFields(sections, "sec19b", "ntSec19b");
 
-	    const shuddhipatrakDone = sections.shuddhipatrak_done === "1";
-	    notificationForm.querySelector(`input[name="shuddhipatrak_done"][value="${shuddhipatrakDone ? "yes" : "no"}"]`).checked = true;
-	    document.getElementById("ntShuddhipatrakNo").value = sections.shuddhipatrak_no || "";
-		    setDisplayDateValue("ntShuddhipatrakDate", sections.shuddhipatrak_date || "");
-	    document.getElementById("ntShuddhipatrakPubNo").value = sections.shuddhipatrak_pub_no || "";
-		    setDisplayDateValue("ntShuddhipatrakPubDate", sections.shuddhipatrak_pub_date || "");
-	    (sections.shuddhipatrak_rows || []).forEach((row) => addShuddhipatrakRow(row));
-	    toggleShuddhipatrak();
+    const shuddhipatrakDone = sections.shuddhipatrak_done === "1";
+    const shuddhipatrakRadio = notificationForm.querySelector(`input[name="shuddhipatrak_done"][value="${shuddhipatrakDone ? "yes" : "no"}"]`);
+    if (shuddhipatrakRadio) shuddhipatrakRadio.checked = true;
+
+    setInputValue("ntShuddhipatrakNo", sections.shuddhipatrak_no);
+    setDisplayDateValue("ntShuddhipatrakDate", sections.shuddhipatrak_date || "");
+    setInputValue("ntShuddhipatrakPubNo", sections.shuddhipatrak_pub_no);
+    setDisplayDateValue("ntShuddhipatrakPubDate", sections.shuddhipatrak_pub_date || "");
+
+    (sections.shuddhipatrak_rows || []).forEach((row) => addShuddhipatrakRow(row));
+    toggleShuddhipatrak();
 
     renderCascade(ntDetail.cascade || {});
   }
