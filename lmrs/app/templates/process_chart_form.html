@@ -2854,7 +2854,8 @@
                                 <button type="button" class="mt-2 hidden rounded-full px-2 text-sm font-bold text-[#d33]" data-pc-doc-delete-for="consent_letter_file" title="Remove">&times;</button>
                             </div>
                             <div><label class="pc-label">संमतीचा निर्णय</label><select class="pc-input"
-                                    id="pcConsentDecision" name="consent_decision">
+                                    id="pcConsentDecision" name="consent_decision"
+                                    onchange="window.pcToggleConsentSubmittedFields && window.pcToggleConsentSubmittedFields()">
                                     <option>स्वीकार</option>
                                     <option>अस्वीकार</option>
                                 </select></div>
@@ -3217,7 +3218,7 @@
 
 
 
-                    <div class="pc-section">
+                    <div class="pc-section" id="pcCourtDepositSection">
                         <h3 class="mb-4 text-lg font-bold text-[#244271]">मोबदला न्यायालयात जमा करणे</h3>
                         <div class="grid gap-4 md:grid-cols-3">
                             <div><label class="pc-label">न्यायालयाचे नाव</label><input class="pc-input"
@@ -3373,7 +3374,7 @@
                         </div>
                     </div>
 
-                    <div class="pc-section">
+                    <div class="pc-section" id="pcArbitrationSection">
                         <h3 class="mb-4 text-lg font-bold text-[#244271]">मा. लवादासमोर कार्यवाही करण्यात आले आहे काय ?
                         </h3>
                         <div class="grid gap-4 md:grid-cols-3">
@@ -12625,32 +12626,53 @@
             const yesFields = document.getElementById('pcConsentYesFields');
             const noFields = document.getElementById('pcConsentNoFields');
             const reasonField = document.getElementById('pcConsentNotSubmittedReason');
-            if (!yesFields || !noFields) return;
+            const courtDepositSection = document.getElementById('pcCourtDepositSection');
+            const arbitrationSection = document.getElementById('pcArbitrationSection');
+            const consentDecisionVal = (document.getElementById('pcConsentDecision')?.value || '').trim();
 
-            if (selectedValue === 'yes') {
-                yesFields.classList.remove('hidden');
-                noFields.classList.add('hidden');
-                yesFields.style.removeProperty('display');
-                noFields.style.setProperty('display', 'none', 'important');
-                if (reasonField instanceof HTMLInputElement) {
-                    reasonField.value = '';
+            if (yesFields && noFields) {
+                if (selectedValue === 'yes') {
+                    yesFields.classList.remove('hidden');
+                    noFields.classList.add('hidden');
+                    yesFields.style.removeProperty('display');
+                    noFields.style.setProperty('display', 'none', 'important');
+                    if (reasonField instanceof HTMLInputElement) {
+                        reasonField.value = '';
+                    }
+                } else if (selectedValue === 'no') {
+                    yesFields.classList.add('hidden');
+                    noFields.classList.remove('hidden');
+                    yesFields.style.setProperty('display', 'none', 'important');
+                    noFields.style.removeProperty('display');
+                } else {
+                    yesFields.classList.remove('hidden');
+                    noFields.classList.add('hidden');
+                    yesFields.style.removeProperty('display');
+                    noFields.style.setProperty('display', 'none', 'important');
                 }
-                return;
             }
 
-            if (selectedValue === 'no') {
-                yesFields.classList.add('hidden');
-                noFields.classList.remove('hidden');
-                yesFields.style.setProperty('display', 'none', 'important');
-                noFields.style.removeProperty('display');
-                return;
+            const shouldShowCourtAndArbitration = (selectedValue === 'yes' && consentDecisionVal === 'अस्वीकार');
+
+            if (courtDepositSection) {
+                if (shouldShowCourtAndArbitration) {
+                    courtDepositSection.classList.remove('hidden');
+                    courtDepositSection.style.removeProperty('display');
+                } else {
+                    courtDepositSection.classList.add('hidden');
+                    courtDepositSection.style.setProperty('display', 'none', 'important');
+                }
             }
 
-            // nothing selected yet
-            yesFields.classList.remove('hidden');
-            noFields.classList.add('hidden');
-            yesFields.style.removeProperty('display');
-            noFields.style.setProperty('display', 'none', 'important');
+            if (arbitrationSection) {
+                if (shouldShowCourtAndArbitration) {
+                    arbitrationSection.classList.remove('hidden');
+                    arbitrationSection.style.removeProperty('display');
+                } else {
+                    arbitrationSection.classList.add('hidden');
+                    arbitrationSection.style.setProperty('display', 'none', 'important');
+                }
+            }
         }
         window.pcToggleConsentSubmittedFields = toggleConsentSubmittedFields;
 
@@ -17280,6 +17302,10 @@ function buildPuravaniAwardDraftHtml() {
             radio.addEventListener('change', () => toggleConsentSubmittedFields());
             radio.addEventListener('click', () => toggleConsentSubmittedFields());
         });
+        const consentDecisionSelect = document.getElementById('pcConsentDecision');
+        if (consentDecisionSelect) {
+            consentDecisionSelect.addEventListener('change', () => toggleConsentSubmittedFields());
+        }
         processChartForm?.querySelectorAll('input[name="interested_in_10_percent_plot"]').forEach((radio) => {
             radio.addEventListener('change', () => {
                 updateCompensationFields(currentProcessChartPrefill, { resetPlotCompensation: true });
@@ -17304,7 +17330,7 @@ function buildPuravaniAwardDraftHtml() {
         // event bubbling is interrupted.
         const consentToggleHandler = (event) => {
             const target = event.target;
-            if (target instanceof HTMLInputElement && target.name === 'consent_submitted') {
+            if ((target instanceof HTMLInputElement && target.name === 'consent_submitted') || (target instanceof HTMLSelectElement && (target.id === 'pcConsentDecision' || target.name === 'consent_decision'))) {
                 toggleConsentSubmittedFields();
             }
             if (target instanceof HTMLInputElement && target.name === 'interested_in_10_percent_plot') {
