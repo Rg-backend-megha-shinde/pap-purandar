@@ -8054,8 +8054,12 @@
         function renderRepeatableAssetRows(container, rows = []) {
             if (!container) return;
             container.innerHTML = '';
+            if (!rows || !rows.length) {
+                updateTotalAssetValuation();
+                return;
+            }
             const groupedRows = new Map();
-            (rows.length ? rows : [{}]).forEach((row) => {
+            rows.forEach((row) => {
                 const prefix = container.dataset.namePrefix || '';
                 const ownerName = row?.[`${prefix}_related_owner_name`] || '';
                 const assetOwnerName = row?.[`${prefix}_owner_name`] || '';
@@ -8084,7 +8088,7 @@
                     assetOwnerName
                 );
             });
-            const nextRows = groupedRows.size ? Array.from(groupedRows.values()) : [{}];
+            const nextRows = Array.from(groupedRows.values());
             nextRows.forEach((row) => appendRepeatableAssetRow(container, row));
             updateTotalAssetValuation();
         }
@@ -8243,18 +8247,19 @@
             ].join('||');
         }
 
-        function ensureRepeatableAssetRows(container, count = 1) {
+        function ensureRepeatableAssetRows(container, count = 0) {
             if (!container) return;
+            const targetCount = Math.max(0, Number(count) || 0);
             const existingCount = container.children.length;
-            const rowsToAdd = Math.max(1, count) - existingCount;
+            const rowsToAdd = targetCount - existingCount;
             for (let index = 0; index < rowsToAdd; index += 1) {
                 appendRepeatableAssetRow(container);
             }
         }
 
-        function setRepeatableAssetRowCount(container, count = 1) {
+        function setRepeatableAssetRowCount(container, count = 0) {
             if (!container) return;
-            const targetCount = Math.max(1, Number(count) || 1);
+            const targetCount = Math.max(0, Number(count) || 0);
             while (container.children.length < targetCount) {
                 appendRepeatableAssetRow(container);
             }
@@ -8268,8 +8273,9 @@
             const suffixes = ['related_owner_name', 'owner_name', 'component_item', 'component_detail', 'component_count', 'component_valuation'];
             return suffixes.reduce((maxCount, suffix) => {
                 const value = sectionData[`${prefix}_${suffix}`];
-                return Array.isArray(value) ? Math.max(maxCount, value.length) : maxCount;
-            }, 1);
+                if (!value) return maxCount;
+                return Array.isArray(value) ? Math.max(maxCount, value.length) : Math.max(maxCount, 1);
+            }, 0);
         }
 
         function buildRepeatableAssetRowsFromSectionData(sectionData = {}, prefix = '') {
@@ -8467,34 +8473,47 @@
             });
 
             ['water_supply', 'agriculture', 'construction', 'forest', 'other_department'].forEach((prefix) => {
-                const ownerValues = Array.isArray(data[`${prefix}_related_owner_name`])
+                const ownerValues = (Array.isArray(data[`${prefix}_related_owner_name`])
                     ? data[`${prefix}_related_owner_name`]
-                    : (data[`${prefix}_related_owner_name`] ? [data[`${prefix}_related_owner_name`]] : []);
-                const assetOwnerValues = Array.isArray(data[`${prefix}_owner_name`])
+                    : (data[`${prefix}_related_owner_name`] ? [data[`${prefix}_related_owner_name`]] : [])
+                ).map((val) => String(val || '').trim());
+                const assetOwnerValues = (Array.isArray(data[`${prefix}_owner_name`])
                     ? data[`${prefix}_owner_name`]
-                    : (data[`${prefix}_owner_name`] ? [data[`${prefix}_owner_name`]] : []);
-                const itemValues = Array.isArray(data[`${prefix}_component_item`])
+                    : (data[`${prefix}_owner_name`] ? [data[`${prefix}_owner_name`]] : [])
+                ).map((val) => String(val || '').trim());
+                const itemValues = (Array.isArray(data[`${prefix}_component_item`])
                     ? data[`${prefix}_component_item`]
-                    : (data[`${prefix}_component_item`] ? [data[`${prefix}_component_item`]] : []);
-                const detailValues = Array.isArray(data[`${prefix}_component_detail`])
+                    : (data[`${prefix}_component_item`] ? [data[`${prefix}_component_item`]] : [])
+                ).map((val) => String(val || '').trim());
+                const detailValues = (Array.isArray(data[`${prefix}_component_detail`])
                     ? data[`${prefix}_component_detail`]
-                    : (data[`${prefix}_component_detail`] ? [data[`${prefix}_component_detail`]] : []);
-                const countValues = Array.isArray(data[`${prefix}_component_count`])
+                    : (data[`${prefix}_component_detail`] ? [data[`${prefix}_component_detail`]] : [])
+                ).map((val) => String(val || '').trim());
+                const countValues = (Array.isArray(data[`${prefix}_component_count`])
                     ? data[`${prefix}_component_count`]
-                    : (data[`${prefix}_component_count`] ? [data[`${prefix}_component_count`]] : []);
-                const valuationValues = Array.isArray(data[`${prefix}_component_valuation`])
+                    : (data[`${prefix}_component_count`] ? [data[`${prefix}_component_count`]] : [])
+                ).map((val) => String(val || '').trim());
+                const valuationValues = (Array.isArray(data[`${prefix}_component_valuation`])
                     ? data[`${prefix}_component_valuation`]
-                    : (data[`${prefix}_component_valuation`] ? [data[`${prefix}_component_valuation`]] : []);
+                    : (data[`${prefix}_component_valuation`] ? [data[`${prefix}_component_valuation`]] : [])
+                ).map((val) => String(val || '').trim());
+
+                const hasAnyData = ownerValues.some(Boolean) || assetOwnerValues.some(Boolean) || itemValues.some(Boolean) || detailValues.some(Boolean) || countValues.some(Boolean) || valuationValues.some(Boolean);
+                if (!hasAnyData) return;
+
                 const rowCount = Math.max(ownerValues.length, assetOwnerValues.length, itemValues.length, detailValues.length, countValues.length, valuationValues.length);
-                if (!rowCount) return;
-                snapshot.sections[prefix] = Array.from({ length: rowCount }, (_item, index) => ({
+                const rows = Array.from({ length: rowCount }, (_item, index) => ({
                     [`${prefix}_related_owner_name`]: ownerValues[index] || '',
                     [`${prefix}_owner_name`]: assetOwnerValues[index] || '',
                     [`${prefix}_component_item`]: itemValues[index] || '',
                     [`${prefix}_component_detail`]: detailValues[index] || '',
                     [`${prefix}_component_count`]: countValues[index] || '',
                     [`${prefix}_component_valuation`]: valuationValues[index] || '',
-                }));
+                })).filter((row) => Object.values(row).some((val) => String(val || '').trim()));
+
+                if (rows.length) {
+                    snapshot.sections[prefix] = rows;
+                }
             });
 
             return snapshot;
@@ -8508,9 +8527,12 @@
             const hasData = hasTab7SnapshotData(snapshot);
             if (!hasData) return false;
 
-            Object.entries(sections).forEach(([prefix, rows]) => {
+            ['water_supply', 'agriculture', 'construction', 'forest', 'other_department'].forEach((prefix) => {
                 const container = tab7Panel.querySelector(`[data-repeatable-asset-rows][data-name-prefix="${CSS.escape(prefix)}"]`);
-                if (container) renderRepeatableAssetRows(container, Array.isArray(rows) ? rows : []);
+                if (!container) return;
+                const rawRows = Array.isArray(sections[prefix]) ? sections[prefix] : [];
+                const rows = rawRows.filter((row) => Object.values(row || {}).some((v) => String(v || '').trim()));
+                renderRepeatableAssetRows(container, rows);
             });
             Object.entries(fields).forEach(([key, value]) => {
                 const matchedFields = Array.from(tab7Panel.querySelectorAll(`[name="${CSS.escape(key)}"]`) || []);
@@ -8531,36 +8553,49 @@
             let applied = false;
 
             ['water_supply', 'agriculture', 'construction', 'forest', 'other_department'].forEach((prefix) => {
-                const ownerValues = Array.isArray(data[`${prefix}_related_owner_name`])
+                const ownerValues = (Array.isArray(data[`${prefix}_related_owner_name`])
                     ? data[`${prefix}_related_owner_name`]
-                    : (data[`${prefix}_related_owner_name`] ? [data[`${prefix}_related_owner_name`]] : []);
-                const assetOwnerValues = Array.isArray(data[`${prefix}_owner_name`])
+                    : (data[`${prefix}_related_owner_name`] ? [data[`${prefix}_related_owner_name`]] : [])
+                ).map((val) => String(val || '').trim());
+                const assetOwnerValues = (Array.isArray(data[`${prefix}_owner_name`])
                     ? data[`${prefix}_owner_name`]
-                    : (data[`${prefix}_owner_name`] ? [data[`${prefix}_owner_name`]] : []);
-                const itemValues = Array.isArray(data[`${prefix}_component_item`])
+                    : (data[`${prefix}_owner_name`] ? [data[`${prefix}_owner_name`]] : [])
+                ).map((val) => String(val || '').trim());
+                const itemValues = (Array.isArray(data[`${prefix}_component_item`])
                     ? data[`${prefix}_component_item`]
-                    : (data[`${prefix}_component_item`] ? [data[`${prefix}_component_item`]] : []);
-                const detailValues = Array.isArray(data[`${prefix}_component_detail`])
+                    : (data[`${prefix}_component_item`] ? [data[`${prefix}_component_item`]] : [])
+                ).map((val) => String(val || '').trim());
+                const detailValues = (Array.isArray(data[`${prefix}_component_detail`])
                     ? data[`${prefix}_component_detail`]
-                    : (data[`${prefix}_component_detail`] ? [data[`${prefix}_component_detail`]] : []);
-                const countValues = Array.isArray(data[`${prefix}_component_count`])
+                    : (data[`${prefix}_component_detail`] ? [data[`${prefix}_component_detail`]] : [])
+                ).map((val) => String(val || '').trim());
+                const countValues = (Array.isArray(data[`${prefix}_component_count`])
                     ? data[`${prefix}_component_count`]
-                    : (data[`${prefix}_component_count`] ? [data[`${prefix}_component_count`]] : []);
-                const valuationValues = Array.isArray(data[`${prefix}_component_valuation`])
+                    : (data[`${prefix}_component_count`] ? [data[`${prefix}_component_count`]] : [])
+                ).map((val) => String(val || '').trim());
+                const valuationValues = (Array.isArray(data[`${prefix}_component_valuation`])
                     ? data[`${prefix}_component_valuation`]
-                    : (data[`${prefix}_component_valuation`] ? [data[`${prefix}_component_valuation`]] : []);
-                const rowCount = Math.max(ownerValues.length, assetOwnerValues.length, itemValues.length, detailValues.length, countValues.length, valuationValues.length);
+                    : (data[`${prefix}_component_valuation`] ? [data[`${prefix}_component_valuation`]] : [])
+                ).map((val) => String(val || '').trim());
+
+                const hasAnyData = ownerValues.some(Boolean) || assetOwnerValues.some(Boolean) || itemValues.some(Boolean) || detailValues.some(Boolean) || countValues.some(Boolean) || valuationValues.some(Boolean);
                 const container = tab7Panel.querySelector(`[data-repeatable-asset-rows][data-name-prefix="${CSS.escape(prefix)}"]`);
-                if (!container || !rowCount) return;
-                renderRepeatableAssetRows(container, Array.from({ length: rowCount }, (_item, index) => ({
+                if (!container) return;
+                if (!hasAnyData) {
+                    renderRepeatableAssetRows(container, []);
+                    return;
+                }
+                const rowCount = Math.max(ownerValues.length, assetOwnerValues.length, itemValues.length, detailValues.length, countValues.length, valuationValues.length);
+                const rows = Array.from({ length: rowCount }, (_item, index) => ({
                     [`${prefix}_related_owner_name`]: ownerValues[index] || '',
                     [`${prefix}_owner_name`]: assetOwnerValues[index] || '',
                     [`${prefix}_component_item`]: itemValues[index] || '',
                     [`${prefix}_component_detail`]: detailValues[index] || '',
                     [`${prefix}_component_count`]: countValues[index] || '',
                     [`${prefix}_component_valuation`]: valuationValues[index] || '',
-                })));
-                applied = true;
+                })).filter((row) => Object.values(row).some((val) => String(val || '').trim()));
+                renderRepeatableAssetRows(container, rows);
+                if (rows.length) applied = true;
             });
 
             Object.entries(data).forEach(([key, value]) => {
@@ -8595,25 +8630,30 @@
                 const detailValue = data[`${prefix}_component_detail`];
                 const countValue = data[`${prefix}_component_count`];
                 const valuationValue = data[`${prefix}_component_valuation`];
-                const ownerValues = Array.isArray(ownerValue) ? ownerValue : (ownerValue ? [ownerValue] : []);
-                const assetOwnerValues = Array.isArray(assetOwnerValue) ? assetOwnerValue : (assetOwnerValue ? [assetOwnerValue] : []);
-                const itemValues = Array.isArray(itemValue) ? itemValue : (itemValue ? [itemValue] : []);
-                const detailValues = Array.isArray(detailValue) ? detailValue : (detailValue ? [detailValue] : []);
-                const countValues = Array.isArray(countValue) ? countValue : (countValue ? [countValue] : []);
-                const valuationValues = Array.isArray(valuationValue) ? valuationValue : (valuationValue ? [valuationValue] : []);
-                const rowCount = Math.max(ownerValues.length, assetOwnerValues.length, itemValues.length, detailValues.length, countValues.length, valuationValues.length);
+                const ownerValues = (Array.isArray(ownerValue) ? ownerValue : (ownerValue ? [ownerValue] : [])).map((v) => String(v || '').trim());
+                const assetOwnerValues = (Array.isArray(assetOwnerValue) ? assetOwnerValue : (assetOwnerValue ? [assetOwnerValue] : [])).map((v) => String(v || '').trim());
+                const itemValues = (Array.isArray(itemValue) ? itemValue : (itemValue ? [itemValue] : [])).map((v) => String(v || '').trim());
+                const detailValues = (Array.isArray(detailValue) ? detailValue : (detailValue ? [detailValue] : [])).map((v) => String(v || '').trim());
+                const countValues = (Array.isArray(countValue) ? countValue : (countValue ? [countValue] : [])).map((v) => String(v || '').trim());
+                const valuationValues = (Array.isArray(valuationValue) ? valuationValue : (valuationValue ? [valuationValue] : [])).map((v) => String(v || '').trim());
+                const hasAnyData = ownerValues.some(Boolean) || assetOwnerValues.some(Boolean) || itemValues.some(Boolean) || detailValues.some(Boolean) || countValues.some(Boolean) || valuationValues.some(Boolean);
                 const container = tab7Panel.querySelector(`[data-repeatable-asset-rows][data-name-prefix="${prefix}"]`);
-                if (!container || !rowCount) return;
-
-                renderRepeatableAssetRows(container, Array.from({ length: rowCount }, (_item, index) => ({
+                if (!container) return;
+                if (!hasAnyData) {
+                    renderRepeatableAssetRows(container, []);
+                    return;
+                }
+                const rowCount = Math.max(ownerValues.length, assetOwnerValues.length, itemValues.length, detailValues.length, countValues.length, valuationValues.length);
+                const rows = Array.from({ length: rowCount }, (_item, index) => ({
                     [`${prefix}_related_owner_name`]: ownerValues[index] || '',
                     [`${prefix}_owner_name`]: assetOwnerValues[index] || '',
                     [`${prefix}_component_item`]: itemValues[index] || '',
                     [`${prefix}_component_detail`]: detailValues[index] || '',
                     [`${prefix}_component_count`]: countValues[index] || '',
                     [`${prefix}_component_valuation`]: valuationValues[index] || '',
-                })));
-                restored = true;
+                })).filter((row) => Object.values(row).some((val) => String(val || '').trim()));
+                renderRepeatableAssetRows(container, rows);
+                if (rows.length) restored = true;
             });
 
             [
@@ -17310,7 +17350,6 @@ function buildPuravaniAwardDraftHtml() {
         toggleConsentSubmittedFields();
         toggleDemarcationFields();
         document.querySelectorAll('[data-repeatable-asset-rows]').forEach((container) => {
-            ensureRepeatableAssetRows(container, 1);
             syncRepeatableAssetRowButtons(container);
         });
         processChartForm?.addEventListener('click', async (event) => {
