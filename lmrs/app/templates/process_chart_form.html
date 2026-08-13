@@ -2816,11 +2816,15 @@
                             <div class="mb-2 flex flex-wrap items-center justify-between gap-3">
                                 <span class="pc-label mb-0">कराराद्वारे संमती निर्णय घोषित करण्यासाठी संमतीपत्र दाखल
                                     केले आहे का?</span>
-                                <button type="button" id="pcConsentOptionNoticeGenerateBtn"
-                                    class="pc-generate-notice-btn" title="Notice will be generated"
-                                    aria-label="Generate Notice">
-                                    Generate Notice
-                                </button>
+                                <div class="flex items-center gap-3">
+                                    <button type="button" id="pcConsentOptionNoticeGenerateBtn"
+                                        class="pc-generate-notice-btn" title="Notice will be generated"
+                                        aria-label="Generate Notice">
+                                        Generate Notice
+                                    </button>
+                                    <button type="button" id="pcFetchConsentNamesBtn"
+                                        class="rounded-lg bg-[#0f766e] px-4 py-2 text-sm font-semibold text-white">भूधारक नावे भरा</button>
+                                </div>
                             </div>
                             <div class="flex gap-4">
                                 <label><input type="radio" name="consent_submitted" value="yes"
@@ -3611,6 +3615,22 @@
     </div>
 </div>
 
+<div id="pcConsentOwnerNamesModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/40 p-4">
+    <div class="w-full max-w-4xl rounded-lg bg-white shadow-xl">
+        <div class="flex items-center justify-between border-b px-4 py-3">
+            <h3 class="text-base font-semibold text-[#244271]">संयुक्त मोजणीतील भूधारक नावे निवडा</h3>
+            <button type="button" id="closePcConsentOwnerNamesModalBtn" class="text-xl leading-none text-gray-500 hover:text-gray-700">&times;</button>
+        </div>
+        <div class="max-h-[70vh] overflow-y-auto px-4 py-4">
+            <div id="pcConsentOwnerNamesList" class="space-y-2"></div>
+        </div>
+        <div class="flex justify-end gap-3 border-t px-4 py-3">
+            <button type="button" id="closePcConsentOwnerNamesModalFooterBtn" class="rounded bg-gray-700 px-3 py-1.5 text-sm text-white hover:bg-gray-800">बंद करा</button>
+            <button type="button" id="applyPcConsentOwnerNamesBtn" class="rounded bg-[#0f766e] px-4 py-1.5 text-sm font-semibold text-white hover:bg-[#0b5e58]">निवडलेली नावे भरा</button>
+        </div>
+    </div>
+</div>
+
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script src="{% static 'js/biometric/mockBiometricAdapter.js' %}"></script>
@@ -3802,6 +3822,8 @@
             const bankName = escapeHtml(values.step9_bank_name || '');
             const bankBranch = escapeHtml(values.step9_bank_branch || matchedStep10.bank_branch || '');
             const accountNumber = escapeHtml(values.step9_bank_account_number || '');
+            const totalCompensationRaw = String(getFieldValue('#pcCompensation11') || '').replace(/,/g, '').trim();
+            const payableAmount = escapeHtml(values.step9_payable_amount || totalCompensationRaw || '');
             const distributionAmount = escapeHtml(values.step9_distribution_amount || '');
             const ifscCode = escapeHtml(String(values.step9_ifsc_code || '').toUpperCase());
 
@@ -3830,6 +3852,10 @@
                         <div>
                             <label class="pc-label">खाते क्रमांक</label>
                             <input class="pc-input" name="step9_bank_account_number" type="text" inputmode="numeric" maxlength="18" pattern="[0-9]{9,18}" value="${accountNumber}" placeholder="9 ते 18 अंक" title="बँक खाते क्रमांक 9 ते 18 अंकांचा असावा.">
+                        </div>
+                        <div>
+                            <label class="pc-label">वितरण करायचा एकूण मोबदला</label>
+                            <input class="pc-input pc-step9-payable-amount bg-gray-50" name="step9_payable_amount" type="number" step="0.01" value="${payableAmount}" placeholder="वितरण करायचा एकूण मोबदला" readonly>
                         </div>
                         <div>
                             <label class="pc-label">वितरण करायचा मोबदला</label>
@@ -3921,37 +3947,96 @@
                 step9_ifsc_code: Array.isArray(sectionData.step9_ifsc_code) ? (sectionData.step9_ifsc_code[index] || '') : '',
             }));
             step9PaymentRowsContainer.innerHTML = rows.map((values, index) => buildStep9PaymentRow(index, values)).join('');
+            validateStep9DistributionAmounts();
         }
 
-        function applyStep9DistributionAmounts({ onlyBlank = false } = {}) {
+        function validateStep9DistributionAmounts({ report = false } = {}) {
+            if (!step9PaymentRowsContainer) return true;
+            const rows = Array.from(step9PaymentRowsContainer.querySelectorAll('.pc-step9-payment-row'));
+            if (!rows.length) return true;
+
+            const totalLimit = Number.parseFloat(String(getFieldValue('#pcCompensation11') || '0').replace(/,/g, '')) || 0;
+            const errorMessage = 'वितरण करायचा मोबदला हा वितरण करायचा एकूण मोबदला यापेक्षा जास्त असू नये.';
+            let isValid = true;
+            let sumDistributed = 0;
+
+            rows.forEach((row) => {
+                const distInput = row.querySelector('input[name="step9_distribution_amount"]');
+                const payableInput = row.querySelector('input[name="step9_payable_amount"]');
+                if (!distInput) return;
+
+                const valStr = String(distInput.value || '').trim();
+                const distVal = Number.parseFloat(valStr.replace(/,/g, '')) || 0;
+                const rowTotal = Number.parseFloat(String(payableInput?.value || totalLimit).replace(/,/g, '')) || totalLimit;
+
+                sumDistributed += distVal;
+
+                if (valStr && distVal > rowTotal && rowTotal > 0) {
+                    distInput.setCustomValidity(errorMessage);
+                    distInput.classList.add('border-red-500');
+                    isValid = false;
+                    if (report) distInput.reportValidity();
+                } else {
+                    distInput.setCustomValidity('');
+                    distInput.classList.remove('border-red-500');
+                }
+            });
+
+            if (totalLimit > 0 && sumDistributed > totalLimit) {
+                rows.forEach((row) => {
+                    const distInput = row.querySelector('input[name="step9_distribution_amount"]');
+                    if (distInput && !distInput.validationMessage) {
+                        distInput.setCustomValidity(errorMessage);
+                        distInput.classList.add('border-red-500');
+                    }
+                });
+                if (report) alert(errorMessage);
+                isValid = false;
+            }
+
+            return isValid;
+        }
+
+        function applyStep9DistributionAmounts({ onlyBlank = false, force = false } = {}) {
             if (!step9PaymentRowsContainer) return;
             const distributionMode = document.querySelector('input[name="step9_distribution_equal"]:checked')?.value || '';
-            if (!distributionMode) return;
 
             const rows = Array.from(step9PaymentRowsContainer.querySelectorAll('.pc-step9-payment-row'));
             if (!rows.length) return;
 
             const totalAmount = Number.parseFloat(String(getFieldValue('#pcCompensation11') || '0').replace(/,/g, ''));
             const safeTotal = Number.isFinite(totalAmount) ? totalAmount : 0;
+            const displayTotal = Number.isInteger(safeTotal) ? String(safeTotal) : (safeTotal ? safeTotal.toFixed(2) : '');
+
+            rows.forEach((row) => {
+                const payableInput = row.querySelector('input[name="step9_payable_amount"]');
+                if (payableInput) payableInput.value = displayTotal;
+            });
+
+            if (!distributionMode) return;
+
             const calculatedAmount = distributionMode === 'yes'
-                ? safeTotal / rows.length
+                ? (rows.length > 0 ? safeTotal / rows.length : safeTotal)
                 : safeTotal;
             const displayAmount = Number.isInteger(calculatedAmount)
                 ? String(calculatedAmount)
-                : calculatedAmount.toFixed(2);
+                : (Number.isFinite(calculatedAmount) && calculatedAmount > 0 ? calculatedAmount.toFixed(2) : '');
 
             rows.forEach((row) => {
                 const amountInput = row.querySelector('input[name="step9_distribution_amount"]');
                 if (!(amountInput instanceof HTMLInputElement)) return;
                 if (onlyBlank && String(amountInput.value || '').trim()) return;
-                amountInput.readOnly = false;
-                amountInput.value = displayAmount;
+                if (distributionMode === 'yes' || force || !String(amountInput.value || '').trim()) {
+                    amountInput.value = displayAmount;
+                }
             });
+
+            validateStep9DistributionAmounts();
         }
 
         function refreshStep9DistributionAfterRowChange() {
             const distributionMode = document.querySelector('input[name="step9_distribution_equal"]:checked')?.value || '';
-            applyStep9DistributionAmounts({ onlyBlank: distributionMode !== 'yes' });
+            applyStep9DistributionAmounts({ onlyBlank: distributionMode !== 'yes', force: distributionMode === 'yes' });
         }
 
         function appendStep9PaymentRow(values = {}) {
@@ -10453,6 +10538,122 @@
             closeTab12OwnerNamesModal();
         }
 
+        const consentOwnerNamesModal = document.getElementById('pcConsentOwnerNamesModal');
+        const consentOwnerNamesList = document.getElementById('pcConsentOwnerNamesList');
+
+        function selectedConsentOwnerNames() {
+            const field = document.getElementById('pcConsentApplicantName') || document.querySelector('[name="consent_applicant_name"]');
+            return new Set(String(field?.value || '')
+                .split(/[,;\n]+/)
+                .map((name) => (typeof normalizeOwnerName === 'function' ? normalizeOwnerName(name) : String(name || '').trim().toLowerCase()))
+                .filter(Boolean));
+        }
+
+        function getTab1OwnerAddress(name) {
+            const norm = (v) => String(v || '').trim().toLowerCase();
+            const target = norm(name);
+            if (!target) return '';
+            let found = '';
+            const ownerRows = document.getElementById('pcOwnerInfoBody');
+            ownerRows?.querySelectorAll('tr').forEach((row) => {
+                if (found) return;
+                const rowName = norm(row.querySelector('[name="owner_info_owner_name"]')?.value || row.querySelector('[name="single_khata_owner_name"]')?.value || '');
+                if (rowName && rowName === target) {
+                    found = row.querySelector('[name="owner_info_address"]')?.value || row.querySelector('[name="single_khata_address"]')?.value || '';
+                }
+            });
+            return found;
+        }
+
+        function openConsentOwnerNamesModal() {
+            const modal = document.getElementById('pcConsentOwnerNamesModal');
+            const list = document.getElementById('pcConsentOwnerNamesList');
+            if (!modal || !list) return;
+            const rows = collectTab4AcquisitionOwnerRows();
+            const selectedNames = selectedConsentOwnerNames();
+            list.innerHTML = rows.length
+                ? `
+                    <label class="flex cursor-pointer items-center gap-3 rounded border border-[#c9d9ef] bg-white px-3 py-3">
+                        <input type="checkbox" class="pc-consent-owner-select-all">
+                        <span class="text-sm font-semibold text-[#244271]">Select all / सर्व निवडा</span>
+                    </label>
+                    ${rows.map((row, index) => {
+                        const key = typeof normalizeOwnerName === 'function' ? normalizeOwnerName(row.owner_name) : String(row.owner_name || '').trim().toLowerCase();
+                        return `<label class="flex cursor-pointer items-center gap-3 rounded border border-[#dbe8f8] bg-[#f8fbff] px-3 py-3">
+                            <input type="checkbox" class="pc-consent-owner-name-checkbox" data-row-index="${index}" ${selectedNames.has(key) ? 'checked' : ''}>
+                            <span class="text-sm text-[#244271]">
+                                <strong>नाव:</strong> ${escapeHtml(row.owner_name || '')}
+                                ${row.acquisition_area ? `<span class="ml-3 text-[#5c78a5]"><strong>क्षेत्र:</strong> ${escapeHtml(row.acquisition_area)}</span>` : ''}
+                            </span>
+                        </label>`;
+                    }).join('')}`
+                : '<div class="rounded border border-dashed border-[#d6e3f5] px-3 py-3 text-sm font-semibold text-[#6b7d99]">टॅब 4 संयुक्त मोजणीतील नावे उपलब्ध नाहीत.</div>';
+            syncOwnerModalSelectAllState(modal, '.pc-consent-owner-select-all', '.pc-consent-owner-name-checkbox');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeConsentOwnerNamesModal() {
+            const modal = document.getElementById('pcConsentOwnerNamesModal');
+            if (!modal) return;
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        function populateConsentDetailRowsFromSelection() {
+            const modal = document.getElementById('pcConsentOwnerNamesModal');
+            if (!modal) return;
+            const sourceRows = collectTab4AcquisitionOwnerRows();
+            const selectedCheckboxes = Array.from(modal.querySelectorAll('.pc-consent-owner-name-checkbox:checked'));
+            const selectedRows = selectedCheckboxes.map((checkbox) => sourceRows[Number(checkbox.dataset.rowIndex || -1)]).filter(Boolean);
+            const selectedNames = selectedRows.map((row) => String(row.owner_name || '').trim()).filter(Boolean);
+            const selectedAreas = selectedRows.map((row) => String(row.acquisition_area || '').trim()).filter(Boolean);
+
+            const nameInput = document.getElementById('pcConsentApplicantName') || document.querySelector('[name="consent_applicant_name"]');
+            const areaInput = document.getElementById('pcConsentArea') || document.querySelector('[name="consent_area"]');
+            const addressInput = document.getElementById('pcConsentApplicantAddress') || document.querySelector('[name="consent_applicant_address"]');
+
+            if (nameInput) {
+                nameInput.value = selectedNames.join(', ');
+                nameInput.dispatchEvent(new Event('input', { bubbles: true }));
+                nameInput.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+
+            if (areaInput && selectedAreas.length) {
+                let totalArea = 0;
+                let validAreaCount = 0;
+                selectedAreas.forEach((areaStr) => {
+                    const num = parseFloat(String(areaStr).replace(/,/g, '').trim());
+                    if (!isNaN(num)) {
+                        totalArea += num;
+                        validAreaCount++;
+                    }
+                });
+                if (validAreaCount > 0) {
+                    areaInput.value = totalArea.toFixed(4);
+                } else {
+                    areaInput.value = selectedAreas[0] || '';
+                }
+                areaInput.dispatchEvent(new Event('input', { bubbles: true }));
+                areaInput.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+
+            if (addressInput && selectedNames.length) {
+                const fetchedAddress = selectedNames.map((name) => getTab1OwnerAddress(name)).find(Boolean) || '';
+                if (fetchedAddress) {
+                    addressInput.value = fetchedAddress;
+                    addressInput.dispatchEvent(new Event('input', { bubbles: true }));
+                    addressInput.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+            }
+
+            closeConsentOwnerNamesModal();
+        }
+
+        window.openConsentOwnerNamesModal = openConsentOwnerNamesModal;
+        window.closeConsentOwnerNamesModal = closeConsentOwnerNamesModal;
+        window.populateConsentDetailRowsFromSelection = populateConsentDetailRowsFromSelection;
+
 
         function populateAssetOwnerFieldFromSelection(prefill = currentProcessChartPrefill, targetId = '') {
             const container = targetId ? document.getElementById(targetId) : null;
@@ -11862,6 +12063,7 @@
             compensation11Field.value = formatCalculationNumber(compensation11);
             compensation12Field.value = compensation11 ? numberToMarathiWords(compensation11) : '';
             updateArbitrationRemainingCompensation();
+            applyStep9DistributionAmounts();
         }
 
         function applyCompensationPrefill(prefill = currentProcessChartPrefill) {
@@ -16839,7 +17041,11 @@ function buildPuravaniAwardDraftHtml() {
 
         function setStep(step) {
             const previousStep = currentStep;
-            currentStep = Math.max(1, Math.min(totalSteps, Number(step) || 1));
+            const targetStep = Math.max(1, Math.min(totalSteps, Number(step) || 1));
+            if (previousStep === 9 && targetStep > 9) {
+                if (!validateStep9DistributionAmounts({ report: true })) return;
+            }
+            currentStep = targetStep;
             const isFinalizedCase = currentCaseStatus === 'submitted' || currentCaseStatus === 'approved';
             dots.forEach((dot) => {
                 const dotStep = Number(dot.dataset.pcStep);
@@ -17358,6 +17564,28 @@ function buildPuravaniAwardDraftHtml() {
             }
             if (event.target.closest('.pc-tab12-owner-name-checkbox')) {
                 syncOwnerModalSelectAllState(modal, '.pc-tab12-owner-select-all', '.pc-tab12-owner-name-checkbox');
+            }
+        });
+
+        document.getElementById('pcFetchConsentNamesBtn')?.addEventListener('click', openConsentOwnerNamesModal);
+        document.getElementById('closePcConsentOwnerNamesModalBtn')?.addEventListener('click', closeConsentOwnerNamesModal);
+        document.getElementById('closePcConsentOwnerNamesModalFooterBtn')?.addEventListener('click', closeConsentOwnerNamesModal);
+        document.getElementById('applyPcConsentOwnerNamesBtn')?.addEventListener('click', populateConsentDetailRowsFromSelection);
+        document.getElementById('pcConsentOwnerNamesModal')?.addEventListener('click', (event) => {
+            if (event.target === event.currentTarget) closeConsentOwnerNamesModal();
+        });
+        document.getElementById('pcConsentOwnerNamesModal')?.addEventListener('change', (event) => {
+            const modal = event.currentTarget;
+            const selectAll = event.target.closest('.pc-consent-owner-select-all');
+            if (selectAll) {
+                modal.querySelectorAll('.pc-consent-owner-name-checkbox').forEach((checkbox) => {
+                    checkbox.checked = selectAll.checked;
+                });
+                syncOwnerModalSelectAllState(modal, '.pc-consent-owner-select-all', '.pc-consent-owner-name-checkbox');
+                return;
+            }
+            if (event.target.closest('.pc-consent-owner-name-checkbox')) {
+                syncOwnerModalSelectAllState(modal, '.pc-consent-owner-select-all', '.pc-consent-owner-name-checkbox');
             }
         });
 
@@ -18061,8 +18289,19 @@ function buildPuravaniAwardDraftHtml() {
 
         document.querySelectorAll('input[name="step9_distribution_equal"]').forEach((radio) => {
             radio.addEventListener('change', () => {
-                applyStep9DistributionAmounts();
+                applyStep9DistributionAmounts({ force: true });
             });
+        });
+
+        step9PaymentRowsContainer?.addEventListener('input', (event) => {
+            if (event.target?.name === 'step9_distribution_amount') {
+                validateStep9DistributionAmounts();
+            }
+        });
+        step9PaymentRowsContainer?.addEventListener('change', (event) => {
+            if (event.target?.name === 'step9_distribution_amount') {
+                validateStep9DistributionAmounts();
+            }
         });
 
         setStep(1);
