@@ -376,17 +376,25 @@ def _puravani_blocks(post_data):
     for idx in range(count):
         prefix = f"puravani_block_{idx}"
         display_idx = idx + 1
+        sec3_has_pub = _truthy(post_data.get(f"{prefix}_sec3_has_pub") or post_data.get(f"puravani_sec3_{display_idx}_has_pub"))
+        sec152_has_pub = _truthy(post_data.get(f"{prefix}_sec152_has_pub") or post_data.get(f"puravani_sec152_{display_idx}_has_pub"))
+        sec154_has_pub = _truthy(post_data.get(f"{prefix}_sec154_has_pub") or post_data.get(f"puravani_sec154_{display_idx}_has_pub"))
+        sec181_has_pub = _truthy(post_data.get(f"{prefix}_sec181_has_pub") or post_data.get(f"puravani_sec181_{display_idx}_has_pub"))
         block = {
-            "pub_no": clean_text(post_data.get(f"{prefix}_sec3_pub_no") or post_data.get(f"puravani_sec3_{display_idx}_pub_no") or post_data.get(f"{prefix}_pub_no")),
-            "pub_date": clean_text(post_data.get(f"{prefix}_sec3_pub_date") or post_data.get(f"puravani_sec3_{display_idx}_pub_date") or post_data.get(f"{prefix}_pub_date")),
-            "sec3_pub_no": clean_text(post_data.get(f"{prefix}_sec3_pub_no") or post_data.get(f"puravani_sec3_{display_idx}_pub_no") or post_data.get(f"{prefix}_pub_no")),
-            "sec3_pub_date": clean_text(post_data.get(f"{prefix}_sec3_pub_date") or post_data.get(f"puravani_sec3_{display_idx}_pub_date") or post_data.get(f"{prefix}_pub_date")),
-            "sec152_pub_no": clean_text(post_data.get(f"{prefix}_sec152_pub_no") or post_data.get(f"puravani_sec152_{display_idx}_pub_no")),
-            "sec152_pub_date": clean_text(post_data.get(f"{prefix}_sec152_pub_date") or post_data.get(f"puravani_sec152_{display_idx}_pub_date")),
-            "sec154_pub_no": clean_text(post_data.get(f"{prefix}_sec154_pub_no") or post_data.get(f"puravani_sec154_{display_idx}_pub_no")),
-            "sec154_pub_date": clean_text(post_data.get(f"{prefix}_sec154_pub_date") or post_data.get(f"puravani_sec154_{display_idx}_pub_date")),
-            "sec181_pub_no": clean_text(post_data.get(f"{prefix}_sec181_pub_no") or post_data.get(f"puravani_sec181_{display_idx}_pub_no")),
-            "sec181_pub_date": clean_text(post_data.get(f"{prefix}_sec181_pub_date") or post_data.get(f"puravani_sec181_{display_idx}_pub_date")),
+            "sec3_has_pub": "1" if sec3_has_pub else "",
+            "sec152_has_pub": "1" if sec152_has_pub else "",
+            "sec154_has_pub": "1" if sec154_has_pub else "",
+            "sec181_has_pub": "1" if sec181_has_pub else "",
+            "pub_no": clean_text(post_data.get(f"{prefix}_sec3_pub_no") or post_data.get(f"puravani_sec3_{display_idx}_pub_no") or post_data.get(f"{prefix}_pub_no")) if sec3_has_pub else "",
+            "pub_date": clean_text(post_data.get(f"{prefix}_sec3_pub_date") or post_data.get(f"puravani_sec3_{display_idx}_pub_date") or post_data.get(f"{prefix}_pub_date")) if sec3_has_pub else "",
+            "sec3_pub_no": clean_text(post_data.get(f"{prefix}_sec3_pub_no") or post_data.get(f"puravani_sec3_{display_idx}_pub_no") or post_data.get(f"{prefix}_pub_no")) if sec3_has_pub else "",
+            "sec3_pub_date": clean_text(post_data.get(f"{prefix}_sec3_pub_date") or post_data.get(f"puravani_sec3_{display_idx}_pub_date") or post_data.get(f"{prefix}_pub_date")) if sec3_has_pub else "",
+            "sec152_pub_no": clean_text(post_data.get(f"{prefix}_sec152_pub_no") or post_data.get(f"puravani_sec152_{display_idx}_pub_no")) if sec152_has_pub else "",
+            "sec152_pub_date": clean_text(post_data.get(f"{prefix}_sec152_pub_date") or post_data.get(f"puravani_sec152_{display_idx}_pub_date")) if sec152_has_pub else "",
+            "sec154_pub_no": clean_text(post_data.get(f"{prefix}_sec154_pub_no") or post_data.get(f"puravani_sec154_{display_idx}_pub_no")) if sec154_has_pub else "",
+            "sec154_pub_date": clean_text(post_data.get(f"{prefix}_sec154_pub_date") or post_data.get(f"puravani_sec154_{display_idx}_pub_date")) if sec154_has_pub else "",
+            "sec181_pub_no": clean_text(post_data.get(f"{prefix}_sec181_pub_no") or post_data.get(f"puravani_sec181_{display_idx}_pub_no")) if sec181_has_pub else "",
+            "sec181_pub_date": clean_text(post_data.get(f"{prefix}_sec181_pub_date") or post_data.get(f"puravani_sec181_{display_idx}_pub_no")) if sec181_has_pub else "",
             "area_rows": _area_rows(post_data, f"{prefix}_area"),
         }
         if (
@@ -536,6 +544,11 @@ def _cascade_deleted_rows(post_data, prefix):
 
 
 def parse_notification_sections(post_data):
+    has_sec3_pub = _truthy(post_data.get("has_sec3_pub"))
+    has_sec152_pub = _truthy(post_data.get("has_sec152_pub"))
+    has_sec154_pub = _truthy(post_data.get("has_sec154_pub"))
+    has_sec154_notif_pub = _truthy(post_data.get("has_sec154_notif_pub"))
+    has_sec181_pub = _truthy(post_data.get("has_sec181_pub"))
     has_puravani = _truthy(post_data.get("has_puravani"))
     shuddhipatrak_done = _truthy(post_data.get("shuddhipatrak_done"))
     cascade_edits = {
@@ -546,22 +559,35 @@ def parse_notification_sections(post_data):
     }
     sections = {
         "required_areas": _area_rows(post_data, "area"),
-        "sec3_pub_no": clean_text(post_data.get("sec3_pub_no")),
-        "sec3_pub_date": clean_text(post_data.get("sec3_pub_date")),
-        **_paper_fields(post_data, "sec3"),
+        "has_sec3_pub": "1" if has_sec3_pub else "",
+        "sec3_pub_no": clean_text(post_data.get("sec3_pub_no")) if has_sec3_pub else "",
+        "sec3_pub_date": clean_text(post_data.get("sec3_pub_date")) if has_sec3_pub else "",
+        **(_paper_fields(post_data, "sec3") if has_sec3_pub else {
+            f"sec3_paper{index}_{field}": ""
+            for index in (1, 2)
+            for field in ("name", "date")
+        }),
         "has_puravani": "1" if has_puravani else "",
         "puravani_blocks": _puravani_blocks(post_data),
-        "sec152_pub_no": clean_text(post_data.get("sec152_pub_no")),
-        "sec152_pub_date": clean_text(post_data.get("sec152_pub_date")),
-        **_paper_fields(post_data, "sec152"),
-        "sec154_pub_no": clean_text(post_data.get("sec154_pub_no")),
-        "sec154_pub_date": clean_text(post_data.get("sec154_pub_date")),
-        "sec154_notif_pub_no": clean_text(post_data.get("sec154_notif_pub_no")),
-        "sec154_notif_pub_date": clean_text(post_data.get("sec154_notif_pub_date")),
+        "has_sec152_pub": "1" if has_sec152_pub else "",
+        "sec152_pub_no": clean_text(post_data.get("sec152_pub_no")) if has_sec152_pub else "",
+        "sec152_pub_date": clean_text(post_data.get("sec152_pub_date")) if has_sec152_pub else "",
+        **(_paper_fields(post_data, "sec152") if has_sec152_pub else {
+            f"sec152_paper{index}_{field}": ""
+            for index in (1, 2)
+            for field in ("name", "date")
+        }),
+        "has_sec154_pub": "1" if has_sec154_pub else "",
+        "sec154_pub_no": clean_text(post_data.get("sec154_pub_no")) if has_sec154_pub else "",
+        "sec154_pub_date": clean_text(post_data.get("sec154_pub_date")) if has_sec154_pub else "",
+        "has_sec154_notif_pub": "1" if has_sec154_notif_pub else "",
+        "sec154_notif_pub_no": clean_text(post_data.get("sec154_notif_pub_no")) if has_sec154_notif_pub else "",
+        "sec154_notif_pub_date": clean_text(post_data.get("sec154_notif_pub_date")) if has_sec154_notif_pub else "",
         "sdo_rows": _sdo_rows(post_data),
         "joint_survey": _joint_survey(post_data),
-        "sec181_pub_no": clean_text(post_data.get("sec181_pub_no")),
-        "sec181_pub_date": clean_text(post_data.get("sec181_pub_date")),
+        "has_sec181_pub": "1" if has_sec181_pub else "",
+        "sec181_pub_no": clean_text(post_data.get("sec181_pub_no")) if has_sec181_pub else "",
+        "sec181_pub_date": clean_text(post_data.get("sec181_pub_date")) if has_sec181_pub else "",
         "sec17_decision_details": clean_text(post_data.get("sec17_decision_details")),
         **_paper_fields(post_data, "sec19b"),
         "shuddhipatrak_done": "1" if shuddhipatrak_done else "",
@@ -573,6 +599,9 @@ def parse_notification_sections(post_data):
         "cascade_edits": {key: value for key, value in cascade_edits.items() if value},
         "cascade_deleted": {
             "sec3_rows": _cascade_deleted_rows(post_data, "cascade_sec3"),
+            "sec152_rows": _cascade_deleted_rows(post_data, "cascade_sec152"),
+            "sec154_bhusampadan_rows": _cascade_deleted_rows(post_data, "cascade_sec154"),
+            "sec181_rows": _cascade_deleted_rows(post_data, "cascade_sec181"),
         },
     }
     return sections
