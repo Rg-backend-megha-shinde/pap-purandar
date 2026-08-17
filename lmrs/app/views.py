@@ -9813,9 +9813,112 @@ def _bhusampadan_analytics_data(request):
     valuation_data = _bhusampadan_valuation_data(request, records)
     total_count = sum(row["y"] for row in valuation_data["rows"])
     total_amount = sum(Decimal(str(row["amount"])) for row in valuation_data["rows"])
+
+    # Aggregate Agreement, Compensation, and Consent Status Data
+    today = timezone.localdate()
+    total_agreements = 0
+    today_agreements = 0
+    pending_agreements = 0
+
+    distributed_compensation_total = Decimal("0.00")
+    distributed_compensation_today = Decimal("0.00")
+    pending_compensation_total = Decimal("0.00")
+
+    consent_count = 0
+    non_consent_count = 0
+
+    for record in records:
+        step_data_all = list(record.step_data.all())
+        step8 = next((row for row in step_data_all if row.step_no == 8), None)
+        step9 = next((row for row in step_data_all if row.step_no == 9), None)
+        step10 = next((row for row in step_data_all if row.step_no == 10), None)
+
+        s8_fields = step_fields(step8) if step8 else {}
+        s9_fields = step_fields(step9) if step9 else {}
+        s10_fields = step_fields(step10) if step10 else {}
+
+        # 1. Agreements
+        ag_num = clean_optional_char(s9_fields.get("agreement_number") or s9_fields.get("pcAgreementNumber"))
+        ag_date_str = clean_optional_char(s9_fields.get("agreement_date") or s9_fields.get("pcAgreementDate"))
+        ag_file = clean_optional_char(s9_fields.get("agreement_upload_file") or s9_fields.get("agreement_letter_file"))
+        has_owner_captures = bool(s9_fields.get("pcAgreementOwnerCaptureRows") or s9_fields.get("owner_captures"))
+
+        is_agreed = bool(ag_num or ag_date_str or ag_file or has_owner_captures)
+        if is_agreed:
+            total_agreements += 1
+            is_today = False
+            if ag_date_str:
+                try:
+                    dt = datetime_date.fromisoformat(ag_date_str)
+                    if dt == today:
+                        is_today = True
+                except ValueError:
+                    pass
+            if not is_today and step9 and step9.updated_at.date() == today:
+                is_today = True
+            if is_today:
+                today_agreements += 1
+        else:
+            pending_agreements += 1
+
+        # 2. Compensation
+        comp_str = clean_optional_char(
+            s8_fields.get("pcCompensation11") or
+            s8_fields.get("pcCompensation8") or
+            s8_fields.get("compensation_total") or
+            s8_fields.get("total_amount")
+        )
+        try:
+            case_comp_val = Decimal(comp_str.replace(",", "")) if comp_str else Decimal("0.00")
+        except Exception:
+            case_comp_val = Decimal("0.00")
+
+        if case_comp_val == Decimal("0.00"):
+            case_comp_val = sum((row.valuation for row in record.department_rows.all() if row.valuation), Decimal("0.00"))
+
+        is_distributed = bool(
+            (step10 and has_value(s10_fields)) or
+            s9_fields.get("pcStep9PaymentRows") or
+            s9_fields.get("payment_rows")
+        )
+
+        if is_distributed:
+            distributed_compensation_total += case_comp_val
+            is_dist_today = False
+            if step10 and step10.updated_at.date() == today:
+                is_dist_today = True
+            elif step9 and step9.updated_at.date() == today:
+                is_dist_today = True
+            if is_dist_today:
+                distributed_compensation_today += case_comp_val
+        else:
+            pending_compensation_total += case_comp_val
+
+        # 3. Consent Status
+        consent_val = clean_optional_char(s9_fields.get("consent_submitted")).lower()
+        consent_dec = clean_optional_char(s9_fields.get("consent_decision")).lower()
+        if consent_val in {"yes", "हो", "होय", "true", "1"} or consent_dec in {"स्वीकार", "accept", "approved", "yes"} or getattr(record, "is_with_consent", False):
+            consent_count += 1
+        else:
+            non_consent_count += 1
+
     return {
         "kalam": {"total": len(records), "items": item_payload},
         "valuation": {"values": valuation_data["rows"], "record_count": valuation_data["record_count"], "count": total_count, "amount": float(total_amount)},
+        "agreements": {
+            "total": total_agreements,
+            "today": today_agreements,
+            "pending": pending_agreements,
+        },
+        "compensation": {
+            "distributed_total": float(distributed_compensation_total),
+            "distributed_today": float(distributed_compensation_today),
+            "pending_total": float(pending_compensation_total),
+        },
+        "consent": {
+            "consent_count": consent_count,
+            "non_consent_count": non_consent_count,
+        },
         "filters": {"components": valuation_data["components"]},
     }
 

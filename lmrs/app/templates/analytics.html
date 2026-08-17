@@ -593,6 +593,68 @@
                             <div id="bhusampadanKalamLegend" class="mt-4 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-sm font-extrabold text-slate-700"></div>
                         </div>
                     </div>
+                    <!-- 2. Agreements Overview (करारनामे) -->
+                    <div class="border-t border-slate-100 px-5 py-5">
+                        <div class="mb-4 flex items-center gap-2">
+                            <span class="material-symbols-outlined rounded-lg bg-indigo-50 p-1.5 text-[16px] text-indigo-600">handshake</span>
+                            <h4 class="text-base font-extrabold text-slate-800">करारनामे तपशील</h4>
+                        </div>
+                        <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                            <div class="rounded-xl bg-blue-50/50 border border-blue-100 px-4 py-3 shadow-sm">
+                                <p class="text-[13px] font-bold uppercase tracking-widest text-blue-600">आजपर्यंत झालेले करारनामे</p>
+                                <p id="bhusampadanTotalAgreements" class="mt-1 text-3xl font-black text-slate-900 tracking-tight">0</p>
+                            </div>
+                            <div class="rounded-xl bg-emerald-50/50 border border-emerald-100 px-4 py-3 shadow-sm">
+                                <p class="text-[13px] font-bold uppercase tracking-widest text-emerald-600">आज झालेले करारनामे</p>
+                                <p id="bhusampadanTodayAgreements" class="mt-1 text-3xl font-black text-slate-900 tracking-tight">0</p>
+                            </div>
+                            <div class="rounded-xl bg-amber-50/50 border border-amber-100 px-4 py-3 shadow-sm">
+                                <p class="text-[13px] font-bold uppercase tracking-widest text-amber-600">प्रलंबीत करारनामे</p>
+                                <p id="bhusampadanPendingAgreements" class="mt-1 text-3xl font-black text-slate-900 tracking-tight">0</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 3. Compensation Overview (मावेजा वाटप) -->
+                    <div class="border-t border-slate-100 px-5 py-5">
+                        <div class="mb-4 flex items-center gap-2">
+                            <span class="material-symbols-outlined rounded-lg bg-emerald-50 p-1.5 text-[16px] text-emerald-600">payments</span>
+                            <h4 class="text-base font-extrabold text-slate-800">मावेजा वाटप तपशील</h4>
+                        </div>
+                        <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                            <div class="rounded-xl bg-indigo-50/50 border border-indigo-100 px-4 py-3 shadow-sm">
+                                <p class="text-[13px] font-bold uppercase tracking-widest text-indigo-600">आजपर्यंत वाटप केलेला मावेजा</p>
+                                <p id="bhusampadanTotalCompensation" class="mt-1 text-3xl font-black text-slate-900 tracking-tight">₹ 0</p>
+                            </div>
+                            <div class="rounded-xl bg-teal-50/50 border border-teal-100 px-4 py-3 shadow-sm">
+                                <p class="text-[13px] font-bold uppercase tracking-widest text-teal-600">आज वाटप केलेला मावेजा</p>
+                                <p id="bhusampadanTodayCompensation" class="mt-1 text-3xl font-black text-slate-900 tracking-tight">₹ 0</p>
+                            </div>
+                            <div class="rounded-xl bg-rose-50/50 border border-rose-100 px-4 py-3 shadow-sm">
+                                <p class="text-[13px] font-bold uppercase tracking-widest text-rose-600">प्रलंबीत मावेजा</p>
+                                <p id="bhusampadanPendingCompensation" class="mt-1 text-3xl font-black text-slate-900 tracking-tight">₹ 0</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 4. Consent Status Overview (संमती प्रकार) -->
+                    <div class="border-t border-slate-100 px-5 py-5">
+                        <div class="mb-4 flex items-center gap-2">
+                            <span class="material-symbols-outlined rounded-lg bg-purple-50 p-1.5 text-[16px] text-purple-600">verified_user</span>
+                            <h4 class="text-base font-extrabold text-slate-800">संमती प्रकार (Consent / Non-Consent Status)</h4>
+                        </div>
+                        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                            <div class="rounded-xl bg-emerald-50/50 border border-emerald-100 px-4 py-3 shadow-sm">
+                                <p class="text-[13px] font-bold uppercase tracking-widest text-emerald-600">संमती (Consent)</p>
+                                <p id="bhusampadanConsentCount" class="mt-1 text-3xl font-black text-slate-900 tracking-tight">0</p>
+                            </div>
+                            <div class="rounded-xl bg-rose-50/50 border border-rose-100 px-4 py-3 shadow-sm">
+                                <p class="text-[13px] font-bold uppercase tracking-widest text-rose-600">विनासंमती (Non-Consent)</p>
+                                <p id="bhusampadanNonConsentCount" class="mt-1 text-3xl font-black text-slate-900 tracking-tight">0</p>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="border-t border-slate-100 px-5 py-5">
                             <div class="mb-3 flex flex-wrap items-center justify-between gap-3">
                                 <div class="flex items-center gap-2">
@@ -2762,6 +2824,10 @@
 
         function bhusampadanAnalyticsQueryParams() {
             const params = new URLSearchParams();
+            if (filterDistrict?.value) params.set('district', filterDistrict.value);
+            if (filterTaluka?.value) params.set('taluka', filterTaluka.value);
+            if (filterVillage?.value) params.set('village', filterVillage.value);
+            if (filterGutNumber?.value) params.set('gut_number', filterGutNumber.value);
             if (bhusampadanValuationComponent?.value && bhusampadanValuationComponent.value !== 'all') params.set('component', bhusampadanValuationComponent.value);
             return params;
         }
@@ -2778,6 +2844,39 @@
                 data?.valuation?.count || 0,
                 data?.valuation?.amount || 0
             );
+
+            // Formatters
+            function formatVal(num) {
+                return (num || 0).toLocaleString('en-IN');
+            }
+            function formatMoney(amount) {
+                const val = Number(amount) || 0;
+                if (val >= 10000000) return `₹ ${(val / 10000000).toFixed(2)} कोटी`;
+                if (val >= 100000) return `₹ ${(val / 100000).toFixed(2)} लाख`;
+                return `₹ ${val.toLocaleString('en-IN')}`;
+            }
+
+            // Agreement summary
+            const elAgTotal = document.getElementById('bhusampadanTotalAgreements');
+            const elAgToday = document.getElementById('bhusampadanTodayAgreements');
+            const elAgPending = document.getElementById('bhusampadanPendingAgreements');
+            if (elAgTotal) elAgTotal.textContent = formatVal(data?.agreements?.total);
+            if (elAgToday) elAgToday.textContent = formatVal(data?.agreements?.today);
+            if (elAgPending) elAgPending.textContent = formatVal(data?.agreements?.pending);
+
+            // Compensation summary
+            const elCompTotal = document.getElementById('bhusampadanTotalCompensation');
+            const elCompToday = document.getElementById('bhusampadanTodayCompensation');
+            const elCompPending = document.getElementById('bhusampadanPendingCompensation');
+            if (elCompTotal) elCompTotal.textContent = formatMoney(data?.compensation?.distributed_total);
+            if (elCompToday) elCompToday.textContent = formatMoney(data?.compensation?.distributed_today);
+            if (elCompPending) elCompPending.textContent = formatMoney(data?.compensation?.pending_total);
+
+            // Consent summary
+            const elConsentCount = document.getElementById('bhusampadanConsentCount');
+            const elNonConsentCount = document.getElementById('bhusampadanNonConsentCount');
+            if (elConsentCount) elConsentCount.textContent = formatVal(data?.consent?.consent_count);
+            if (elNonConsentCount) elNonConsentCount.textContent = formatVal(data?.consent?.non_consent_count);
         }
 
         async function fetchBhusampadanAnalytics(preserveComponent = true, updateKalamCharts = true) {
