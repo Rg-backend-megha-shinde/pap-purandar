@@ -435,6 +435,57 @@
     transition: background 120ms ease;
   }
   .nt-generate-btn:hover { background: #b91c1c; }
+  .nt-current-village-banner {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    margin-bottom: 1.25rem;
+    border: 1px solid #bfd4ee;
+    border-left: 5px solid #125fcb;
+    border-radius: 0.75rem;
+    background: #f8fbff;
+    box-shadow: 0 8px 20px rgba(18, 95, 203, 0.08);
+  }
+  .nt-current-village-banner__inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.9rem 1rem;
+  }
+  .nt-current-village-banner__label {
+    margin-bottom: 0.2rem;
+    font-size: 0.78rem;
+    font-weight: 800;
+    letter-spacing: 0;
+    color: #5c78a5;
+  }
+  .nt-current-village-banner__name {
+    color: #163f7d;
+    font-size: 1.35rem;
+    font-weight: 800;
+    line-height: 1.2;
+    overflow-wrap: anywhere;
+  }
+  .nt-current-village-banner__meta {
+    color: #60708a;
+    font-size: 0.88rem;
+    font-weight: 600;
+    text-align: right;
+    overflow-wrap: anywhere;
+  }
+  @media (max-width: 640px) {
+    .nt-current-village-banner__inner {
+      align-items: flex-start;
+      flex-direction: column;
+    }
+    .nt-current-village-banner__name {
+      font-size: 1.1rem;
+    }
+    .nt-current-village-banner__meta {
+      text-align: left;
+    }
+  }
   .nt-note {
     border: 1px solid #d7e5f6;
     border-radius: 0.75rem;
@@ -682,6 +733,16 @@
           <button type="button" class="nt-step-dot relative z-10 flex flex-col items-center gap-1 text-center" data-nt-step="3"><span>३</span><small class="font-semibold text-[#8897ab]">कलम ३२(२)</small></button>
           <button type="button" class="nt-step-dot relative z-10 flex flex-col items-center gap-1 text-center" data-nt-step="4"><span>४</span><small class="font-semibold text-[#8897ab]">संयुक्त मोजणी</small></button>
           <button type="button" class="nt-step-dot relative z-10 flex flex-col items-center gap-1 text-center" data-nt-step="5"><span>५</span><small class="font-semibold text-[#8897ab]">कलम ३२(१)</small></button>
+        </div>
+      </div>
+
+      <div id="nt-current-village-banner" class="nt-current-village-banner" aria-live="polite">
+        <div class="nt-current-village-banner__inner">
+          <div class="min-w-0">
+            <div class="nt-current-village-banner__label">सध्या नोंद करत असलेले गाव</div>
+            <div id="nt-current-village-name" class="nt-current-village-banner__name">गाव निवडा</div>
+          </div>
+          <div id="nt-current-village-meta" class="nt-current-village-banner__meta">जिल्हा / तालुका निवडा</div>
         </div>
       </div>
 
@@ -4156,6 +4217,30 @@
     document.getElementById("ntCpiDistrictCode").value = match?.code || "";
     document.getElementById("ntCpiDistrictName").value = match?.name || districtLabel || "";
   }
+  function updateNotificationVillageSummaryBanner() {
+    const district = document.getElementById("ntDistrict");
+    const taluka = document.getElementById("ntTaluka");
+    const village = document.getElementById("ntVillage");
+    const villageNameEl = document.getElementById("nt-current-village-name");
+    const villageMetaEl = document.getElementById("nt-current-village-meta");
+    if (!villageNameEl || !villageMetaEl) return;
+
+    const getLabel = (select) => {
+      if (!select || !select.value) return "";
+      const opt = select.selectedOptions?.[0];
+      const text = (opt?.textContent || select.value || "").trim();
+      return (text && !text.includes("निवडा") && !text.includes("लोड होत आहे")) ? text : "";
+    };
+
+    const districtLabel = getLabel(district);
+    const talukaLabel = getLabel(taluka);
+    const villageLabel = getLabel(village);
+
+    villageNameEl.textContent = villageLabel || "गाव निवडा";
+    const metaParts = [talukaLabel, districtLabel].filter(Boolean);
+    villageMetaEl.textContent = metaParts.length ? metaParts.join(", ") : "जिल्हा / तालुका निवडा";
+  }
+
   async function initLocationDropdowns() {
     const division = document.getElementById("ntDivision");
     const district = document.getElementById("ntDistrict");
@@ -4172,6 +4257,7 @@
     if (district.value && taluka.value) populateSelect(village, "गाव निवडा", await fetchRorVillages(district, taluka), currentVillage);
     syncAreaRowsToTab1Location();
     refreshCpiForSelectedDistrict();
+    updateNotificationVillageSummaryBanner();
     division.addEventListener("change", () => {
       populateDistrictSelect(district, filteredRorDistricts(division.value));
       populateSelect(taluka, "तालुका निवडा", []);
@@ -4179,6 +4265,7 @@
       syncCpiLocationScope();
       syncAreaRowsToTab1Location();
       refreshCpiForSelectedDistrict();
+      updateNotificationVillageSummaryBanner();
     });
     district.addEventListener("change", async () => {
       syncCpiLocationScope();
@@ -4186,15 +4273,18 @@
       populateSelect(village, "गाव निवडा", []);
       syncAreaRowsToTab1Location();
       refreshCpiForSelectedDistrict();
+      updateNotificationVillageSummaryBanner();
     });
     taluka.addEventListener("change", async () => {
       populateSelect(village, "गाव निवडा", district.value && taluka.value ? await fetchRorVillages(district, taluka) : []);
       syncAreaRowsToTab1Location();
       refreshCpiForSelectedDistrict();
+      updateNotificationVillageSummaryBanner();
     });
     village.addEventListener("change", () => {
       syncAreaRowsToTab1Location();
       refreshCpiForSelectedDistrict();
+      updateNotificationVillageSummaryBanner();
     });
   }
 

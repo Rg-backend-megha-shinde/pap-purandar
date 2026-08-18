@@ -88,27 +88,88 @@
     }
 
     .pc-case-summary {
+        position: sticky;
+        top: 0;
+        z-index: 20;
+        margin: -0.75rem 0 1.5rem;
+        border: 1px solid #d7e5f6;
+        border-left: 5px solid #125fcb;
+        border-radius: 0.75rem;
+        background: #f8fbff;
+        box-shadow: 0 8px 20px rgba(18, 95, 203, 0.08);
+    }
+
+    .pc-case-summary.hidden,
+    .pc-case-summary-item.hidden {
+        display: none;
+    }
+
+    .pc-case-summary-inner {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        padding: 0.9rem 1rem;
+    }
+
+    .pc-case-summary-label {
+        margin-bottom: 0.2rem;
+        color: #5c78a5;
+        font-size: 0.78rem;
+        font-weight: 800;
+        letter-spacing: 0;
+    }
+
+    .pc-case-summary-name {
+        color: #163f7d;
+        font-size: 1.35rem;
+        font-weight: 800;
+        line-height: 1.2;
+        overflow-wrap: anywhere;
+    }
+
+    .pc-case-summary-meta {
+        color: #60708a;
+        font-size: 0.88rem;
+        font-weight: 600;
+        text-align: right;
+        overflow-wrap: anywhere;
+    }
+
+    .pc-case-summary-details {
         display: flex;
         flex-wrap: wrap;
-        gap: 0.75rem;
-        margin: -0.75rem 0 1.5rem;
-        padding: 0.8rem 1rem;
-        border: 1px solid #d8e4f2;
-        border-radius: 0.65rem;
-        background: #f8fbff;
+        gap: 0.85rem;
+        margin-top: 0.35rem;
     }
 
     .pc-case-summary-item {
         display: inline-flex;
         align-items: center;
-        gap: 0.45rem;
-        color: #244271;
-        font-size: 0.9rem;
+        gap: 0.35rem;
+        color: #3b5278;
+        font-size: 0.88rem;
         font-weight: 700;
     }
 
     .pc-case-summary-value {
         color: #125fcb;
+        font-weight: 800;
+    }
+
+    @media (max-width: 640px) {
+        .pc-case-summary-inner {
+            align-items: flex-start;
+            flex-direction: column;
+        }
+
+        .pc-case-summary-name {
+            font-size: 1.1rem;
+        }
+
+        .pc-case-summary-meta {
+            text-align: left;
+        }
     }
 
     #pcNoticePublicationAreaWrap,
@@ -1304,13 +1365,22 @@
                 </div>
 
                 <div id="pcCaseSummary" class="pc-case-summary hidden" aria-live="polite">
-                    <div class="pc-case-summary-item">
-                        <span>गट / सर्वे क्रमांक:</span>
-                        <span id="pcCaseSummaryGut" class="pc-case-summary-value">-</span>
-                    </div>
-                    <div id="pcCaseSummaryAreaWrap" class="pc-case-summary-item hidden">
-                        <span>संपादन क्षेत्र:</span>
-                        <span id="pcCaseSummaryArea" class="pc-case-summary-value">-</span>
+                    <div class="pc-case-summary-inner">
+                        <div class="min-w-0">
+                            <div class="pc-case-summary-label">सध्या नोंद करत असलेले गाव</div>
+                            <div id="pcCaseSummaryVillage" class="pc-case-summary-name">गाव निवडा</div>
+                            <div class="pc-case-summary-details">
+                                <div class="pc-case-summary-item">
+                                    <span>गट / सर्वे क्रमांक:</span>
+                                    <span id="pcCaseSummaryGut" class="pc-case-summary-value">-</span>
+                                </div>
+                                <div id="pcCaseSummaryAreaWrap" class="pc-case-summary-item hidden">
+                                    <span>संपादन क्षेत्र:</span>
+                                    <span id="pcCaseSummaryArea" class="pc-case-summary-value">-</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="pcCaseSummaryLocation" class="pc-case-summary-meta">जिल्हा / तालुका निवडा</div>
                     </div>
                 </div>
 
@@ -4389,17 +4459,38 @@
         function updateProcessChartCaseSummary() {
             if (!caseSummary || !caseSummaryGut || !caseSummaryAreaWrap || !caseSummaryArea) return;
 
+            const villageName = (villageSelect?.value ? getSelectDisplayText(villageSelect) : '')
+                || currentProcessChartLocation.village
+                || currentProcessChartPrefill?.land_record?.village
+                || '';
+            const districtName = (districtSelect?.value ? getSelectDisplayText(districtSelect) : '')
+                || currentProcessChartLocation.district
+                || currentProcessChartPrefill?.land_record?.district
+                || '';
+            const talukaName = (talukaSelect?.value ? getSelectDisplayText(talukaSelect) : '')
+                || currentProcessChartLocation.taluka
+                || currentProcessChartPrefill?.land_record?.taluka
+                || '';
+
             const gutNumber = (gutSelect?.value ? getSelectDisplayText(gutSelect) : '')
                 || currentProcessChartLocation.gut_number
                 || currentProcessChartPrefill?.land_record?.gut_number
                 || '-';
-            const showSummary = currentStep >= 2;
+            const showSummary = currentStep >= 1 && (Boolean(villageName) || gutNumber !== '-');
             const acquisitionArea = currentStep >= 5 ? getSavedAcquisitionAreaForSummary() : '';
 
             caseSummary.classList.toggle('hidden', !showSummary);
+
+            const caseSummaryVillage = document.getElementById('pcCaseSummaryVillage');
+            if (caseSummaryVillage) caseSummaryVillage.textContent = villageName || 'गाव निवडा';
+
             caseSummaryGut.textContent = gutNumber;
-            caseSummaryAreaWrap.classList.toggle('hidden', currentStep < 5);
+            caseSummaryAreaWrap.classList.toggle('hidden', currentStep < 5 || !acquisitionArea);
             caseSummaryArea.textContent = acquisitionArea || 'उपलब्ध नाही';
+
+            const caseSummaryLocation = document.getElementById('pcCaseSummaryLocation');
+            const metaParts = [talukaName, districtName].filter(Boolean);
+            if (caseSummaryLocation) caseSummaryLocation.textContent = metaParts.length ? metaParts.join(', ') : 'जिल्हा / तालुका निवडा';
         }
 
         function getCookie(name) {

@@ -5,6 +5,65 @@
 {% block content %}
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
     <style>
+        .vi-current-village-banner {
+            position: sticky;
+            top: 0;
+            z-index: 20;
+            margin-bottom: 1rem;
+            border: 1px solid #bfd4ee;
+            border-left: 5px solid #125fcb;
+            border-radius: 0.75rem;
+            background: #f8fbff;
+            box-shadow: 0 8px 20px rgba(18, 95, 203, 0.08);
+        }
+
+        .vi-current-village-banner__inner {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            padding: 0.9rem 1rem;
+        }
+
+        .vi-current-village-banner__label {
+            margin-bottom: 0.2rem;
+            font-size: 0.78rem;
+            font-weight: 800;
+            letter-spacing: 0;
+            color: #5c78a5;
+        }
+
+        .vi-current-village-banner__name {
+            color: #163f7d;
+            font-size: 1.35rem;
+            font-weight: 800;
+            line-height: 1.2;
+            overflow-wrap: anywhere;
+        }
+
+        .vi-current-village-banner__meta {
+            color: #60708a;
+            font-size: 0.88rem;
+            font-weight: 600;
+            text-align: right;
+            overflow-wrap: anywhere;
+        }
+
+        @media (max-width: 640px) {
+            .vi-current-village-banner__inner {
+                align-items: flex-start;
+                flex-direction: column;
+            }
+
+            .vi-current-village-banner__name {
+                font-size: 1.1rem;
+            }
+
+            .vi-current-village-banner__meta {
+                text-align: left;
+            }
+        }
+
         .tool-tabs-shell {
             border: 1px solid #d8e4f2;
             background: #f8fbff;
@@ -621,6 +680,16 @@
                                 class="flex h-12 w-12 items-center justify-center rounded-full border-2 border-[#cad8ea] bg-white text-lg font-bold text-[#8a99ad]">8</span>
                             <span class="text-sm font-semibold text-[#8897ab]">निवाडा</span>
                         </button>
+                    </div>
+                </div>
+
+                <div id="vi-current-village-banner" class="vi-current-village-banner" aria-live="polite">
+                    <div class="vi-current-village-banner__inner">
+                        <div class="min-w-0">
+                            <div class="vi-current-village-banner__label">सध्या नोंद करत असलेले गाव</div>
+                            <div id="vi-current-village-name" class="vi-current-village-banner__name">गाव निवडा</div>
+                        </div>
+                        <div id="vi-current-village-meta" class="vi-current-village-banner__meta">जिल्हा / तालुका निवडा</div>
                     </div>
                 </div>
 
@@ -3293,21 +3362,48 @@
             });
         }
 
+        function selectedOptionLabel(selectEl) {
+            if (!selectEl || !selectEl.value) return '';
+            const selected = selectEl.options?.[selectEl.selectedIndex];
+            const text = (selected?.textContent || selectEl.value || '').trim();
+            return (text && text !== 'लोड होत आहे...' && text !== 'जिल्हा निवडा' && text !== 'तालुका निवडा' && text !== 'गाव निवडा') ? text : '';
+        }
+
+        function updateVillageContextHeader() {
+            const currentVillageNameEl = document.getElementById('vi-current-village-name');
+            const currentVillageMetaEl = document.getElementById('vi-current-village-meta');
+            if (!currentVillageNameEl || !currentVillageMetaEl) return;
+            const districtLabel = selectedOptionLabel(districtSel);
+            const talukaLabel = selectedOptionLabel(talukaSel);
+            const villageLabel = selectedOptionLabel(villageSel);
+            currentVillageNameEl.textContent = villageLabel || 'गाव निवडा';
+            const metaParts = [talukaLabel, districtLabel].filter(Boolean);
+            currentVillageMetaEl.textContent = metaParts.length ? metaParts.join(', ') : 'जिल्हा / तालुका निवडा';
+        }
+
         async function loadTalukasForDistrict(district, selectedTaluka = '') {
             fillSelect(talukaSel, [], 'आधी जिल्हा निवडा');
             fillSelect(villageSel, [], 'आधी तालुका निवडा');
-            if (!district) return;
+            if (!district) {
+                updateVillageContextHeader();
+                return;
+            }
             const data = await fetchJSON(`/api/locations/?district=${encodeURIComponent(district)}&lang=mr`);
             fillSelect(talukaSel, data.data || [], 'तालुका निवडा');
             talukaSel.value = selectedTaluka || '';
+            updateVillageContextHeader();
         }
 
         async function loadVillagesForTaluka(district, taluka, selectedVillage = '') {
             fillSelect(villageSel, [], 'आधी तालुका निवडा');
-            if (!district || !taluka) return;
+            if (!district || !taluka) {
+                updateVillageContextHeader();
+                return;
+            }
             const data = await fetchJSON(`/api/locations/?district=${encodeURIComponent(district)}&taluka=${encodeURIComponent(taluka)}&lang=mr`);
             fillSelect(villageSel, data.data || [], 'गाव निवडा');
             villageSel.value = selectedVillage || '';
+            updateVillageContextHeader();
         }
 
         async function openFormForRecord(district, taluka, village) {
@@ -5596,14 +5692,17 @@
             districtSel.addEventListener('change', async () => {
                 renderSec15Rows([], 'गाव निवडा');
                 await loadTalukasForDistrict(districtSel.value, '');
+                updateVillageContextHeader();
             });
 
             talukaSel.addEventListener('change', async () => {
                 renderSec15Rows([], 'गाव निवडा');
                 await loadVillagesForTaluka(districtSel.value, talukaSel.value, '');
+                updateVillageContextHeader();
             });
 
             villageSel.addEventListener('change', async () => {
+                updateVillageContextHeader();
                 await loadNotifiedAreaGutOptions();
                 if (isEditingRecord) {
                     await Promise.all([loadVillageData(), loadSec15ForSelectedVillage()]);
@@ -5613,6 +5712,7 @@
                     await checkVillageInfoDuplicateAndToggleFields();
                 }
             });
+            updateVillageContextHeader();
         }
 
         saveNextButtons.forEach(btn => btn.addEventListener('click', () => saveVillageInfo({ goNext: true })));
