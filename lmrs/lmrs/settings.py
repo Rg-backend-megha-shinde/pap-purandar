@@ -68,6 +68,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'app.context_processors.geoserver',
             ],
         },
     },
@@ -96,6 +97,23 @@ DATABASES = {
             }
         }
     }
+
+# GeoServer (see GEOSERVER_* keys in .env). GEOSERVER_URL is the base URL;
+# the /wms and /ows endpoints are built from it in the map templates.
+GEOSERVER_URL = os.getenv(
+    'GEOSERVER_URL', 'https://purandar-airport.rottengrapes.tech/geoserver'
+).rstrip('/')
+# Boundary layers (project/district/taluka/village) come from the multi-tenant
+# workspace; the Purandar imagery and per-asset layers (Purandar_img, tree,
+# borewell, well, structures, purandar_farmers) from the Purandar workspace;
+# gut boundaries and prj_ass_* from the legacy one.
+GEOSERVER_WORKSPACE = os.getenv('GEOSERVER_WORKSPACE', 'pap_purandar')
+GEOSERVER_PURANDAR_WORKSPACE = os.getenv(
+    'GEOSERVER_PURANDAR_WORKSPACE', 'Purandar_New'
+)
+# Layers not yet migrated to the multi-tenant workspace (prj_gut_bd, prj_ass_*).
+GEOSERVER_LEGACY_WORKSPACE = os.getenv('GEOSERVER_LEGACY_WORKSPACE', 'pune_rr')
+
 # Password validation
 # https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validators
 
