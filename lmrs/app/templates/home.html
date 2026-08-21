@@ -6,7 +6,7 @@
     {% load static %}
     <meta charset="utf-8" />
     <meta content="width=device-width, initial-scale=1.0" name="viewport" />
-    <title>Dashboard - Purandar Airport Project</title>
+    <title>Dashboard - PAP Purandar Airport Project</title>
     <link rel="icon" type="image/png" href="{% static 'logo/purandar_airport.png' %}?v=20260619" />
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
     <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700&amp;display=swap"
@@ -53,7 +53,7 @@
                     <span class="hidden h-8 w-px flex-shrink-0 bg-slate-200 dark:bg-slate-700 sm:block"></span>
                     <h2
                         class="truncate text-lg font-bold leading-tight tracking-tight text-slate-900 dark:text-white sm:text-xl">
-                        Purandar Airport</h2>
+                        PAP Purandar Airport</h2>
                 </div>
             </div>
             <button id="mobileMenuBtn" type="button"
@@ -566,11 +566,14 @@
         let defaultAllTalukasLayer = null; // Default all talukas layer
         let loadingTiles = 0;
 
-        // GeoServer configuration
-        const GEOSERVER_URL = "https://purandar-airport.rottengrapes.tech/geoserver/wms";
-        const WORKSPACE = "pune_rr";
-        const PURANDAR_WORKSPACE = "Purandar_New";
-        const PURANDAR_IMG_LAYER = "Purandar_New:Purandar_img";
+        // GeoServer configuration (GEOSERVER_URL / GEOSERVER_WORKSPACE in .env)
+        const GEOSERVER_BASE_URL = "{{ geoserver_url|escapejs }}";
+        const GEOSERVER_URL = `${GEOSERVER_BASE_URL}/wms`;
+        const GEOSERVER_OWS_URL = `${GEOSERVER_BASE_URL}/ows`;
+        const WORKSPACE = "{{ geoserver_workspace|escapejs }}";
+        const GEOSERVER_LEGACY_WORKSPACE = "{{ geoserver_legacy_workspace|escapejs }}";
+        const PURANDAR_WORKSPACE = "{{ geoserver_purandar_workspace|escapejs }}";
+        const PURANDAR_IMG_LAYER = `${PURANDAR_WORKSPACE}:Purandar_img`;
         const PURANDAR_ASSET_LAYERS = {
             'prj_ass_pt': ['tree'],
             'prj_ass_pl': ['borewell', 'well'],
@@ -580,6 +583,34 @@
         const PROJECT_NAME = "Purandar Airport";
         const PROJECT_SCHEMA = "purandar_airport";
         const GEOSERVER_VIEWPARAMS = `a:${PROJECT_SCHEMA};project_name:${PROJECT_NAME}`;
+
+        // Layer routing. GEOSERVER_WORKSPACE (multi-tenant) serves the boundary
+        // layers under their own names and styles; the imagery/asset layers live in
+        // GEOSERVER_PURANDAR_WORKSPACE, and anything unmapped (prj_gut_bd, prj_ass_*)
+        // still comes from GEOSERVER_LEGACY_WORKSPACE.
+        const LAYER_SOURCES = {
+            'prj_bd':        { workspace: WORKSPACE, name: 'project_master',   style: 'multi-project_bd' },
+            'prj_dist_poly': { workspace: WORKSPACE, name: 'district_boundry', style: 'multi-dist' },
+            'prj_taluka_bd': { workspace: WORKSPACE, name: 'taluka_master',    style: 'multi-taluka' },
+            'prj_vlg_bd':    { workspace: WORKSPACE, name: 'village_master',   style: 'multi-vlg' },
+            'purandar_aoi':                 { workspace: PURANDAR_WORKSPACE },
+            'purandar_tehsil':              { workspace: PURANDAR_WORKSPACE },
+            'purandhar_airport_villages':   { workspace: PURANDAR_WORKSPACE },
+            'purandhar_airport_village_bo': { workspace: PURANDAR_WORKSPACE }
+        };
+
+        // "workspace:layer" for a logical layer key.
+        function wmsLayer(key) {
+            const src = LAYER_SOURCES[key];
+            if (!src) return `${GEOSERVER_LEGACY_WORKSPACE}:${key}`;
+            return `${src.workspace}:${src.name || key}`;
+        }
+
+        // GeoServer style for a layer key, or '' for the layer's default style.
+        function wmsStyle(key) {
+            const src = LAYER_SOURCES[key];
+            return (src && src.style) || '';
+        }
 
         // WMS layer options
         const wmsOptions = {
@@ -1339,12 +1370,12 @@
                 const source = new ol.source.TileWMS({
                     url: GEOSERVER_URL,
                     params: {
-                        'LAYERS': `${WORKSPACE}:prj_bd`,
+                        'LAYERS': wmsLayer('prj_bd'),
                         'viewparams': GEOSERVER_VIEWPARAMS,
                         'FORMAT': 'image/png',
                         'TRANSPARENT': true,
                         'VERSION': '1.1.0',
-                        'STYLES': ''
+                        'STYLES': wmsStyle('prj_bd')
                     },
                     serverType: 'geoserver',
                     crossOrigin: 'anonymous',
@@ -1409,7 +1440,7 @@
             }
 
             function fitLayerExtentFromWFS(layerName, cqlFilter = null, maxZoom = 14, padding = [60, 60, 60, 60]) {
-                const typeName = `${WORKSPACE}:${layerName}`;
+                const typeName = wmsLayer(layerName);
                 const params = new URLSearchParams({
                     service: 'WFS',
                     version: '1.1.0',
@@ -1421,7 +1452,7 @@
                 });
                 if (cqlFilter) params.set('cql_filter', cqlFilter);
 
-                const wfsUrl = `${GEOSERVER_URL.replace('/wms', '/ows')}?${params.toString()}`;
+                const wfsUrl = `${GEOSERVER_OWS_URL}?${params.toString()}`;
 
                 fetch(wfsUrl)
                     .then(response => response.ok ? response.json() : null)
@@ -1458,12 +1489,12 @@
                 const source = new ol.source.TileWMS({
                     url: GEOSERVER_URL,
                     params: {
-                        'LAYERS': `${WORKSPACE}:prj_taluka_bd`,
+                        'LAYERS': wmsLayer('prj_taluka_bd'),
                         'viewparams': GEOSERVER_VIEWPARAMS,
                         'FORMAT': 'image/png',
                         'TRANSPARENT': true,
                         'VERSION': '1.1.0',
-                        'STYLES': ''
+                        'STYLES': wmsStyle('prj_taluka_bd')
                     },
                     serverType: 'geoserver',
                     crossOrigin: 'anonymous',
@@ -1677,7 +1708,8 @@
                 const source = new ol.source.TileWMS({
                     url: GEOSERVER_URL,
                     params: {
-                        'LAYERS': `${WORKSPACE}:prj_dist_poly`,
+                        'LAYERS': wmsLayer('prj_dist_poly'),
+                        'STYLES': wmsStyle('prj_dist_poly'),
                         'CQL_FILTER': cqlFilter,
                         'FORMAT': 'image/png',
                         'TRANSPARENT': true,
@@ -1726,14 +1758,14 @@
                 if (talukaLayer) map.removeLayer(talukaLayer);
 
                 const escapedTaluka = taluka.replace(/'/g, "''");
-                const cqlFilter = talukaId
-                    ? `taluka_id=${Number(talukaId)}`
-                    : `taluka='${escapedTaluka}'`;
+                // taluka_master exposes taluka_name only - `id`/`taluka_id` are not published.
+                const cqlFilter = `taluka_name='${escapedTaluka}'`;
 
                 const source = new ol.source.TileWMS({
                     url: GEOSERVER_URL,
                     params: {
-                        'LAYERS': `${WORKSPACE}:prj_taluka_bd`,
+                        'LAYERS': wmsLayer('prj_taluka_bd'),
+                        'STYLES': wmsStyle('prj_taluka_bd'),
                         'CQL_FILTER': cqlFilter,
                         'FORMAT': 'image/png',
                         'TRANSPARENT': true,
@@ -1773,14 +1805,14 @@
                 if (villagesBoundaryLayer) map.removeLayer(villagesBoundaryLayer);
 
                 const escapedVillage = village.replace(/'/g, "''");
-                const cqlFilter = villageId
-                    ? `village_id=${Number(villageId)}`
-                    : `village_name='${escapedVillage}'`;
+                // village_master exposes village_name only - `id`/`village_id` are not published.
+                const cqlFilter = `village_name='${escapedVillage}'`;
 
                 const source = new ol.source.TileWMS({
                     url: GEOSERVER_URL,
                     params: {
-                        'LAYERS': `${WORKSPACE}:prj_vlg_bd`,
+                        'LAYERS': wmsLayer('prj_vlg_bd'),
+                        'STYLES': wmsStyle('prj_vlg_bd'),
                         'viewparams': GEOSERVER_VIEWPARAMS,
                         'CQL_FILTER': cqlFilter,
                         'FORMAT': 'image/png',
@@ -1844,7 +1876,7 @@
                     const source = new ol.source.TileWMS({
                         url: GEOSERVER_URL,
                         params: {
-                            'LAYERS': `${WORKSPACE}:prj_gut_bd`,
+                            'LAYERS': wmsLayer('prj_gut_bd'),
                             'viewparams': GEOSERVER_VIEWPARAMS,
                             'CQL_FILTER': gutCqlFilter,
                             'FORMAT': 'image/png',
@@ -1897,7 +1929,7 @@
                     const source = new ol.source.TileWMS({
                         url: GEOSERVER_URL,
                         params: {
-                            'LAYERS': `${WORKSPACE}:prj_gut_bd`,
+                            'LAYERS': wmsLayer('prj_gut_bd'),
                             'viewparams': GEOSERVER_VIEWPARAMS,
                             'CQL_FILTER': cqlFilter,
                             'FORMAT': 'image/png',
@@ -2036,7 +2068,8 @@
                 const source = new ol.source.TileWMS({
                     url: GEOSERVER_URL,
                     params: {
-                        'LAYERS': `${WORKSPACE}:prj_dist_poly`,
+                        'LAYERS': wmsLayer('prj_dist_poly'),
+                        'STYLES': wmsStyle('prj_dist_poly'),
                         'FORMAT': 'image/png',
                         'TRANSPARENT': true,
                         'VERSION': '1.1.0'
@@ -2073,7 +2106,7 @@
                 const source = new ol.source.TileWMS({
                     url: GEOSERVER_URL,
                     params: {
-                        'LAYERS': `${WORKSPACE}:purandar_tehsil`,
+                        'LAYERS': wmsLayer('purandar_tehsil'),
                         'STYLES': 'taluka_style',
                         'FORMAT': 'image/png',
                         'TRANSPARENT': true,
@@ -2118,7 +2151,7 @@
                 const source = new ol.source.TileWMS({
                     url: GEOSERVER_URL,
                     params: {
-                        'LAYERS': `${WORKSPACE}:purandar_aoi`,
+                        'LAYERS': wmsLayer('purandar_aoi'),
                         'STYLES': 'aoi_style',
                         'FORMAT': 'image/png',
                         'TRANSPARENT': true,
@@ -2149,7 +2182,7 @@
                     source: new ol.source.TileWMS({
                         url: GEOSERVER_URL,
                         params: {
-                            'LAYERS': `${WORKSPACE}:purandhar_airport_village_bo`,
+                            'LAYERS': wmsLayer('purandhar_airport_village_bo'),
                             'STYLES': 'village_style',
                             'FORMAT': 'image/png',
                             'TRANSPARENT': true,
@@ -2186,7 +2219,7 @@
                     source: new ol.source.TileWMS({
                         url: GEOSERVER_URL,
                         params: {
-                            'LAYERS': `${WORKSPACE}:purandhar_airport_villages`,
+                            'LAYERS': wmsLayer('purandhar_airport_villages'),
                             'STYLES': 'village_style',
                             'FORMAT': 'image/png',
                             'TRANSPARENT': true,
@@ -2875,7 +2908,7 @@
                     ? [PURANDAR_IMG_LAYER]
                     : purandarLayerNames.length
                         ? purandarLayerNames.map(layerName => `${PURANDAR_WORKSPACE}:${layerName}`)
-                        : [`${WORKSPACE}:${assetName}`];
+                        : [wmsLayer(assetName)];
                 const wmsLayers = wmsLayerNames.join(',');
 
                 // Build CQL filter for asset layers (not for prj_bd)
