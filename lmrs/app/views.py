@@ -2769,7 +2769,7 @@ def _dashboard_affected_counts_cache_key(*, project_id, tenant_id, district_id, 
         "village_name": village_name or "",
     }
     digest = hashlib.sha256(json.dumps(payload, sort_keys=True, separators=(",", ":")).encode("utf-8")).hexdigest()
-    return f"dashboard_affected_counts:v2:{digest}"
+    return f"dashboard_affected_counts:v3:{digest}"
 
 
 DASHBOARD_PROJECT_STATS_CACHE_TIMEOUT = 300
@@ -2856,17 +2856,20 @@ def get_dashboard_affected_counts(request):
                 SELECT id, COALESCE(NULLIF(schema_name, ''), 'purandar_airport') AS schema_name
                 FROM public.project_master
                 WHERE {' AND '.join(project_conditions)}
-                ORDER BY id
-                LIMIT 1;
+                ORDER BY id;
                 """,
                 project_params,
             )
-            project_row = cursor.fetchone()
-            if not project_row:
+            project_rows = cursor.fetchall()
+            if not project_rows:
                 return JsonResponse(zero_payload)
 
-            resolved_project_id = int(project_row[0])
-            project_schema = _safe_schema_name(project_row[1])
+            # A tenant's acquisition area is split across several project_master
+            # rows (one per village block), so the counts below run against the
+            # union of them all rather than whichever row sorts first.
+            project_ids = [int(row[0]) for row in project_rows]
+            resolved_project_id = int(project_rows[0][0])
+            project_schema = _safe_schema_name(project_rows[0][1])
 
             district_table = resolve_project_table_name(cursor, "prj_district", schemas=(project_schema, "purandar_airport"))
             taluka_table = resolve_project_table_name(cursor, "prj_taluka", schemas=(project_schema, "purandar_airport"))
@@ -2951,10 +2954,10 @@ def get_dashboard_affected_counts(request):
             taluka_filter = ""
             village_filter = ""
             gut_filter = ""
-            district_params = [resolved_project_id]
-            taluka_params = [resolved_project_id]
-            village_params = [resolved_project_id]
-            gut_params = [resolved_project_id]
+            district_params = [project_ids]
+            taluka_params = [project_ids]
+            village_params = [project_ids]
+            gut_params = [project_ids]
 
             if district_id is not None:
                 district_filter += " AND dm.id = %s"
@@ -2991,9 +2994,9 @@ def get_dashboard_affected_counts(request):
             cursor.execute(
                 f"""
                 WITH p AS (
-                    SELECT ST_MakeValid(geom) AS geom
+                    SELECT ST_Union(ST_MakeValid(geom)) AS geom
                     FROM public.project_master
-                    WHERE id = %s
+                    WHERE id = ANY(%s)
                 )
                 SELECT COUNT(DISTINCT dm.id)
                 FROM {district_table} pd
@@ -3011,9 +3014,9 @@ def get_dashboard_affected_counts(request):
             cursor.execute(
                 f"""
                 WITH p AS (
-                    SELECT ST_MakeValid(geom) AS geom
+                    SELECT ST_Union(ST_MakeValid(geom)) AS geom
                     FROM public.project_master
-                    WHERE id = %s
+                    WHERE id = ANY(%s)
                 )
                 SELECT COUNT(DISTINCT tm.id)
                 FROM {taluka_table} pt
@@ -3031,9 +3034,9 @@ def get_dashboard_affected_counts(request):
             cursor.execute(
                 f"""
                 WITH p AS (
-                    SELECT ST_MakeValid(geom) AS geom
+                    SELECT ST_Union(ST_MakeValid(geom)) AS geom
                     FROM public.project_master
-                    WHERE id = %s
+                    WHERE id = ANY(%s)
                 )
                 SELECT COUNT(DISTINCT vm.id)
                 FROM {village_table} pv
@@ -3058,9 +3061,9 @@ def get_dashboard_affected_counts(request):
                 cursor.execute(
                     f"""
                     WITH p AS (
-                        SELECT ST_MakeValid(geom) AS geom
+                        SELECT ST_Union(ST_MakeValid(geom)) AS geom
                         FROM public.project_master
-                        WHERE id = %s
+                        WHERE id = ANY(%s)
                     )
                     SELECT COUNT(DISTINCT g.id)
                     FROM {gut_table} g
@@ -3079,9 +3082,9 @@ def get_dashboard_affected_counts(request):
                 cursor.execute(
                     f"""
                     WITH p AS (
-                        SELECT ST_MakeValid(geom) AS geom
+                        SELECT ST_Union(ST_MakeValid(geom)) AS geom
                         FROM public.project_master
-                        WHERE id = %s
+                        WHERE id = ANY(%s)
                     ),
                     intersections AS (
                         SELECT ST_Intersection(p.geom, {gut_geom}) AS i_geom

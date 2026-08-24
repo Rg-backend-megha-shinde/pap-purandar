@@ -190,10 +190,14 @@ LOGGING = {
 
 X_FRAME_OPTIONS = 'SAMEORIGIN'
 
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
 CSRF_TRUSTED_ORIGINS = [
     "https://pune-ringroad.rottengrapes.tech",
     "https://purandar-airport.rottengrapes.tech",
+    "https://pap-purandar.rottengrapes.tech",
 ]
+
 
 
 

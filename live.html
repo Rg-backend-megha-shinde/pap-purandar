@@ -1,0 +1,3420 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+    
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Dashboard - PAP Purandar Airport Project</title>
+    <link rel="icon" type="image/png" href="/static/logo/purandar_airport.png?v=20260619" />
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ol@v10.2.1/ol.css" />
+    <script src="https://cdn.jsdelivr.net/npm/ol@v10.2.1/dist/ol.js"></script>
+
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#1269e2",
+                        "background-light": "#f6f7f8",
+                        "background-dark": "#101822",
+                    },
+                    fontFamily: {
+                        "display": ["Public Sans", "sans-serif"]
+                    },
+                    borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" },
+                },
+            },
+        }
+    </script>
+</head>
+
+<body class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100 antialiased">
+    <div class="relative flex h-screen w-full flex-col overflow-x-hidden">
+        <header
+            class="relative flex flex-wrap items-center justify-between gap-3 border-b border-solid border-slate-200 bg-white px-4 py-3 dark:border-slate-800 dark:bg-slate-900 sm:px-6 xl:grid xl:grid-cols-[auto_minmax(0,1fr)_auto] xl:items-center xl:gap-3 sticky top-0 z-[9999]">
+            <div class="flex min-w-0 flex-1 items-center gap-4 xl:col-start-1 xl:flex-none xl:justify-self-start">
+                <div class="flex items-center gap-3 text-primary sm:gap-4">
+                    <img src="/static/img/GOM_LOGO.png" alt="Government of Maharashtra"
+                        class="h-10 w-auto flex-shrink-0 object-contain">
+                    <img src="/static/img/login_logo.png" alt="MIDC"
+                        class="h-10 w-auto flex-shrink-0 object-contain">
+                    <span class="hidden h-8 w-px flex-shrink-0 bg-slate-200 dark:bg-slate-700 sm:block"></span>
+                    <h2
+                        class="truncate text-lg font-bold leading-tight tracking-tight text-slate-900 dark:text-white sm:text-xl">
+                        PAP Purandar Airport</h2>
+                </div>
+            </div>
+            <button id="mobileMenuBtn" type="button"
+                class="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-100 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 xl:hidden"
+                aria-label="Open menu" aria-expanded="false" aria-controls="mobileMenu">
+                <span class="material-symbols-outlined text-xl">menu</span>
+            </button>
+            <!-- फिल्टर panel — opens under the header, over the map, like the
+                 multitenant dashboard, so the header row stays uncluttered. -->
+            <div id="locationFilterPanel"
+               class="absolute inset-x-3 top-full z-[9998] mt-2 hidden rounded-xl border border-slate-200 bg-white p-3 shadow-lg dark:border-slate-800 dark:bg-slate-900 sm:inset-x-4 xl:left-80 xl:right-80">
+              <div class="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:flex lg:flex-wrap lg:items-center lg:gap-3">
+                <select id="districtSelect"
+                    class="form-select h-10 w-full min-w-0 rounded-lg border-none bg-slate-100 px-3 pr-8 text-xs font-medium focus:ring-primary dark:bg-slate-800 lg:flex-1">
+                    <option value="">Select District</option>
+                </select>
+                <select id="talukaSelect"
+                    class="form-select h-10 w-full min-w-0 rounded-lg border-none bg-slate-100 px-3 pr-8 text-xs font-medium focus:ring-primary dark:bg-slate-800 lg:flex-1"
+                    disabled>
+                    <option value="">Select Taluka</option>
+                </select>
+                <select id="villageSelect"
+                    class="form-select h-10 w-full min-w-0 rounded-lg border-none bg-slate-100 px-3 pr-8 text-xs font-medium focus:ring-primary dark:bg-slate-800 lg:flex-1"
+                    disabled>
+                    <option value="">Select Village</option>
+                </select>
+                <select id="gutSelect"
+                    class="form-select h-10 w-full min-w-0 rounded-lg border-none bg-slate-100 px-3 pr-8 text-xs font-medium focus:ring-primary dark:bg-slate-800 lg:flex-1"
+                    disabled>
+                    <option value="">Select Gut Number</option>
+                </select>
+                <button id="resetFiltersBtn" type="button" aria-label="Reset location filters" title="Reset filters"
+                    class="flex h-10 w-full items-center justify-center rounded-lg bg-slate-100 text-slate-500 transition hover:bg-slate-200 hover:text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 lg:w-10 lg:justify-self-start">
+                    <span class="material-symbols-outlined text-lg">filter_alt_off</span>
+                </button>
+              </div>
+            </div>
+            <div class="flex min-w-0 items-center justify-end gap-2 xl:col-start-3 xl:justify-self-end xl:gap-3">
+                <button type="button" id="filtersToggleBtn" title="Filters"
+                    aria-expanded="false" aria-controls="locationFilterPanel"
+                    class="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-primary px-3 text-sm font-semibold text-white transition hover:bg-primary/90">
+                    <span class="material-symbols-outlined text-lg">filter_alt</span>
+                    <span class="hidden sm:inline">Filters</span>
+                </button>
+                <nav class="hidden items-center gap-2 xl:flex" aria-label="Primary navigation">
+                    
+                    <a href="/"
+                        class="inline-flex items-center gap-2 whitespace-nowrap rounded-lg px-3 py-2 text-sm font-semibold bg-primary/10 text-primary">
+                        <span class="material-symbols-outlined text-lg">dashboard</span>
+                            Dashboard
+                    </a>
+                    <a href="/analytics/"
+                        class="inline-flex items-center gap-2 whitespace-nowrap rounded-lg px-3 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800">
+                        <span class="material-symbols-outlined text-lg">monitoring</span>
+                            Analytics
+                    </a>
+                    
+
+                    
+                    <a href="/tools/"
+                        class="inline-flex items-center gap-2 whitespace-nowrap rounded-lg px-3 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800">
+                        <span class="material-symbols-outlined text-lg">construction</span>
+                            Tools
+                    </a>
+                    
+                </nav>
+
+                <div class="relative">
+                    <button id="accountMenuBtn" type="button"
+                        class="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-left hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:hover:bg-slate-800 2xl:px-3"
+                        aria-label="Open account menu" aria-expanded="false" aria-controls="accountMenu">
+                        <span
+                            class="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-sm font-bold text-white">
+                            M
+                        </span>
+                        <span class="hidden flex-col leading-tight 2xl:flex">
+                            <span class="max-w-32 truncate text-sm font-semibold text-slate-800 dark:text-white">
+                                megha
+                            </span>
+                            
+                            <span class="text-[11px] font-medium text-green-700">Admin</span>
+                            
+                        </span>
+                        <span class="material-symbols-outlined text-lg text-slate-400">expand_more</span>
+                    </button>
+
+                    <div id="accountMenu"
+                        class="hidden absolute right-0 mt-2 w-52 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-lg dark:border-slate-800 dark:bg-slate-900">
+                        <div class="border-b border-slate-100 px-4 py-3 dark:border-slate-800 sm:hidden">
+                            <p class="truncate text-sm font-semibold text-slate-800 dark:text-white">
+                                megha
+                            </p>
+                            
+                            <p class="text-xs font-medium text-green-700">Admin</p>
+                            
+                        </div>
+
+                        
+                        <a href="/"
+                            class="flex items-center gap-2 px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800 sm:hidden">
+                            <span class="material-symbols-outlined text-lg">dashboard</span>
+                            Dashboard
+                        </a>
+                        <a href="/analytics/"
+                            class="flex items-center gap-2 px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800 sm:hidden">
+                            <span class="material-symbols-outlined text-lg">monitoring</span>
+                            Analytics
+                        </a>
+                        
+
+                        
+                        <a href="/tools/"
+                            class="flex items-center gap-2 px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800 sm:hidden">
+                            <span class="material-symbols-outlined text-lg">construction</span>
+                            Tools
+                        </a>
+                        
+
+                        <a href="/logout/"
+                            class="flex items-center gap-2 px-4 py-3 text-sm font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30">
+                            <span class="material-symbols-outlined text-lg">logout</span>
+                            Logout
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <div id="mobileMenu"
+                class="hidden w-full rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900 xl:hidden">
+                <nav class="flex flex-col gap-2" aria-label="Mobile navigation">
+                    
+                    <a href="/"
+                        class="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold bg-primary/10 text-primary">
+                        <span class="material-symbols-outlined text-lg">dashboard</span>
+                            Dashboard
+                    </a>
+                    <a href="/analytics/"
+                        class="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800">
+                        <span class="material-symbols-outlined text-lg">monitoring</span>
+                            Analytics
+                    </a>
+                    
+
+                    
+                    <a href="/tools/"
+                        class="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800">
+                        <span class="material-symbols-outlined text-lg">construction</span>
+                            Tools
+                    </a>
+                    
+
+                    <div class="mt-3 rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-950/80">
+                        <p class="truncate text-sm font-semibold text-slate-900 dark:text-white">megha</p>
+                        
+                        <p class="text-[11px] font-medium text-green-700">Admin</p>
+                        
+                        <a href="/logout/"
+                            class="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-md bg-red-50 px-3 py-2 text-sm font-semibold text-red-600 hover:bg-red-100 dark:bg-red-950/40 dark:text-red-300 dark:hover:bg-red-900">
+                            <span class="material-symbols-outlined text-lg">logout</span>
+                            Logout
+                        </a>
+                    </div>
+                </nav>
+            </div>
+        </header>
+        <main class="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-3 sm:p-4 xl:flex-row xl:overflow-hidden">
+            
+<aside class="flex w-full shrink-0 flex-col gap-4 overflow-visible xl:w-72 xl:overflow-y-auto xl:pr-2 custom-scrollbar">
+                <div class="flex flex-col gap-4">
+                    <div class="flex flex-col px-1">
+                        <h1 class="text-slate-900 dark:text-white text-lg font-bold">Project Summary</h1>
+                        <p class="text-slate-500 text-xs font-normal">Real-time land acquisition metrics</p>
+                    </div>
+                    <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-1">
+                        <div
+                            class="flex flex-col gap-1 rounded-xl p-4 bg-white dark:bg-slate-900 shadow-sm border border-slate-200 dark:border-slate-800">
+                            <div class="flex justify-between items-start">
+                                <span class="text-slate-500 text-xs font-semibold uppercase tracking-wider">Total
+                                    Compensation</span>
+                                <span class="material-symbols-outlined text-primary text-lg">payments</span>
+                            </div>
+                            <p id="totalCompensation" class="text-slate-900 dark:text-white text-2xl font-bold leading-tight">0</p>
+                            <div class="mt-2 h-1 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                                <div class="bg-primary h-full w-[65%]"></div>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div
+                                class="flex min-h-[104px] flex-col gap-1 rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                                <span class="text-slate-500 text-[11px] font-semibold uppercase tracking-wide">Affected Districts</span>
+                                <p id="affectedDistrictsCount" class="text-slate-900 dark:text-white text-2xl font-bold">0</p>
+                            </div>
+                            <div
+                                class="flex min-h-[104px] flex-col gap-1 rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                                <span class="text-slate-500 text-[11px] font-semibold uppercase tracking-wide">Affected Talukas</span>
+                                <p id="affectedTalukasCount" class="text-slate-900 dark:text-white text-2xl font-bold">0</p>
+                            </div>
+                            <div
+                                class="flex min-h-[104px] flex-col gap-1 rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                                <span class="text-slate-500 text-[11px] font-semibold uppercase tracking-wide">Affected Villages</span>
+                                <p id="affectedVillagesCount" class="text-slate-900 dark:text-white text-2xl font-bold">0</p>
+                            </div>
+                            <div
+                                class="flex min-h-[104px] flex-col gap-1 rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                                <span class="text-slate-500 text-[11px] font-semibold uppercase tracking-wide">Affected Guts</span>
+                                <p id="affectedGutsCount" class="text-slate-900 dark:text-white text-2xl font-bold">0</p>
+                            </div>
+                            <div
+                                class="flex min-h-[104px] flex-col gap-1 rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                                <span class="text-slate-500 text-[11px] font-semibold uppercase tracking-wide">Area Acquired</span>
+                                <p id="areaAcquired" class="text-slate-900 dark:text-white text-2xl font-bold">0 Ha</p>
+                            </div>
+                            <div
+                                class="flex min-h-[104px] flex-col gap-1 rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                                <span class="text-slate-500 text-[11px] font-semibold uppercase tracking-wide">Total Assets</span>
+                                <p id="totalAssetsCount" class="text-slate-900 dark:text-white text-2xl font-bold">0</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-1">
+                        <div
+                            class="flex flex-col gap-3 rounded-xl p-4 bg-white dark:bg-slate-900 shadow-sm border border-slate-200 dark:border-slate-800">
+                            <div class="flex items-start justify-between gap-3">
+                                <div>
+                                    <p class="text-slate-900 dark:text-white text-sm font-semibold">गाव माहिती प्रगती</p>
+                                    <p class="text-slate-500 text-[10px] font-medium uppercase">डेटा भरण्याची स्थिती</p>
+                                </div>
+                                <span id="villageInfoProgressPercent"
+                                    class="text-primary text-lg font-bold leading-none">0%</span>
+                            </div>
+                            <div class="h-2 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+                                <div id="villageInfoProgressBar"
+                                    class="h-full w-0 rounded-full bg-primary transition-all duration-300"></div>
+                            </div>
+                            <div class="grid grid-cols-2 gap-x-3 gap-y-1 text-[11px]">
+                                <div class="flex justify-between gap-2 text-slate-500">
+                                    <span>एकूण</span>
+                                    <span id="villageInfoTotal" class="font-semibold text-slate-800 dark:text-slate-200">0</span>
+                                </div>
+                                <div class="flex justify-between gap-2 text-slate-500">
+                                    <span>पूर्ण</span>
+                                    <span id="villageInfoCompleted" class="font-semibold text-emerald-600">0</span>
+                                </div>
+                                <div class="flex justify-between gap-2 text-slate-500">
+                                    <span>मसुदा</span>
+                                    <span id="villageInfoDraft" class="font-semibold text-amber-600">0</span>
+                                </div>
+                                <div class="flex justify-between gap-2 text-slate-500">
+                                    <span>सुरू नाही</span>
+                                    <span id="villageInfoNotStarted" class="font-semibold text-slate-700 dark:text-slate-300">0</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div
+                            class="flex flex-col gap-3 rounded-xl p-4 bg-white dark:bg-slate-900 shadow-sm border border-slate-200 dark:border-slate-800">
+                            <div class="flex items-start justify-between gap-3">
+                                <div>
+                                    <p class="text-slate-900 dark:text-white text-sm font-semibold">भूसंपादन प्रक्रिया प्रगती</p>
+                                    <p class="text-slate-500 text-[10px] font-medium uppercase">गटनिहाय फॉर्म स्थिती</p>
+                                </div>
+                                <span id="bhusampadanaProgressPercent"
+                                    class="text-primary text-lg font-bold leading-none">0%</span>
+                            </div>
+                            <div class="h-2 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+                                <div id="bhusampadanaProgressBar"
+                                    class="h-full w-0 rounded-full bg-primary transition-all duration-300"></div>
+                            </div>
+                            <div class="grid grid-cols-2 gap-x-3 gap-y-1 text-[11px]">
+                                <div class="flex justify-between gap-2 text-slate-500">
+                                    <span>एकूण</span>
+                                    <span id="bhusampadanaTotal" class="font-semibold text-slate-800 dark:text-slate-200">0</span>
+                                </div>
+                                <div class="flex justify-between gap-2 text-slate-500">
+                                    <span>पूर्ण</span>
+                                    <span id="bhusampadanaCompleted" class="font-semibold text-emerald-600">0</span>
+                                </div>
+                                <div class="flex justify-between gap-2 text-slate-500">
+                                    <span>मसुदा</span>
+                                    <span id="bhusampadanaDraft" class="font-semibold text-amber-600">0</span>
+                                </div>
+                                <div class="flex justify-between gap-2 text-slate-500">
+                                    <span>सुरू नाही</span>
+                                    <span id="bhusampadanaNotStarted" class="font-semibold text-slate-700 dark:text-slate-300">0</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 gap-3 md:grid-cols-2 xl:flex xl:flex-col">
+                        <details id="assetLayersDetails"
+                            class="group rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 overflow-hidden">
+                            <summary class="flex cursor-pointer items-center justify-between p-4 list-none">
+                                <div class="flex items-center gap-3">
+                                    <span class="material-symbols-outlined text-primary">account_tree</span>
+                                    <p class="text-slate-900 dark:text-white text-sm font-semibold">Asset Layers</p>
+                                </div>
+                                <span
+                                    class="material-symbols-outlined group-open:rotate-180 transition-transform text-slate-400">expand_more</span>
+                            </summary>
+                            <div id="assetLayersList" class="px-4 pb-4 flex flex-col gap-2">
+                                <!-- Asset layers will be loaded dynamically -->
+                            </div>
+                        </details>
+                    </div>
+                </div>
+            </aside>
+            <section class="flex min-h-[65vh] w-full flex-col xl:min-h-0 xl:min-w-0 xl:flex-1">
+                <div
+                    class="relative h-full min-h-[65vh] rounded-xl overflow-hidden border border-slate-200 bg-white shadow-inner dark:border-slate-800 dark:bg-slate-900 xl:min-h-0">
+                    <div id="map" class="absolute inset-0 z-0"></div>
+                    <div class="absolute top-4 right-4 flex flex-row-reverse items-start gap-2 z-[1000]">
+                        <button id="layersBtn"
+                            class="flex size-10 items-center justify-center rounded-lg bg-white dark:bg-slate-900 shadow-xl text-slate-700 dark:text-slate-300 hover:bg-slate-50">
+                            <span class="material-symbols-outlined">layers</span>
+                        </button>
+                        <div id="layerMenu"
+                            class="hidden bg-white/90 dark:bg-slate-900/90 backdrop-blur-md p-1 rounded-lg flex-col shadow-lg border border-white/20">
+                            <button data-layer="osm"
+                                class="layer-btn px-4 py-1.5 rounded-md bg-primary text-white text-xs font-bold">OSM</button>
+                            <button data-layer="grey"
+                                class="layer-btn px-4 py-1.5 rounded-md text-slate-600 dark:text-slate-300 text-xs font-bold hover:bg-slate-100 dark:hover:bg-slate-800">Grey</button>
+                            <button data-layer="dark"
+                                class="layer-btn px-4 py-1.5 rounded-md text-slate-600 dark:text-slate-300 text-xs font-bold hover:bg-slate-100 dark:hover:bg-slate-800">Dark</button>
+                            <button data-layer="satellite"
+                                class="layer-btn px-4 py-1.5 rounded-md text-slate-600 dark:text-slate-300 text-xs font-bold hover:bg-slate-100 dark:hover:bg-slate-800">Satellite</button>
+                        </div>
+                    </div>
+                    <div
+                        class="absolute bottom-4 left-4 max-w-[calc(100%-5.5rem)] bg-white/90 dark:bg-slate-900/90 backdrop-blur-md p-3 rounded-xl shadow-2xl border border-white/20 sm:max-w-xs">
+                        <h4 class="text-[10px] font-bold text-slate-400 uppercase mb-1.5">Map Legend</h4>
+                        <div class="flex flex-col gap-1.5">
+                            <div class="flex items-center gap-2 text-[10px]">
+                                <div class="w-3 h-3 rounded-sm border-2 border-red-500 bg-red-500/20"
+                                    style="border-style: solid;"></div>
+                                <span class="text-slate-700 dark:text-slate-200">Project Boundary</span>
+                            </div>
+                            <div class="flex items-center gap-2 text-[10px]">
+                                <div class="w-3 h-3 rounded-sm border-2 border-amber-400 bg-amber-400/20"
+                                    style="border-style: solid;"></div>
+                                <span class="text-slate-700 dark:text-slate-200">Taluka Boundary</span>
+                            </div>
+                            <div class="flex items-center gap-2 text-[10px]">
+                                <div class="w-3 h-3 rounded-sm border-2 border-emerald-500 bg-emerald-500/20"
+                                    style="border-style: solid;"></div>
+                                <span class="text-slate-700 dark:text-slate-200">Village Boundary</span>
+                            </div>
+                            <div class="flex items-center gap-2 text-[10px]">
+                                <div class="w-3 h-3 rounded-sm border-2 border-slate-500 bg-slate-500/10"
+                                    style="border-style: dashed;"></div>
+                                <span class="text-slate-700 dark:text-slate-200">Gut Boundaries</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="absolute bottom-6 right-6 flex flex-col gap-2 z-[1000]">
+                        <button id="zoomIn" aria-label="Zoom In"
+                            class="flex size-10 items-center justify-center rounded-lg bg-white dark:bg-slate-900 shadow-xl text-slate-700 dark:text-slate-300 hover:bg-slate-50">
+                            <span class="material-symbols-outlined">add</span>
+                        </button>
+                        <button id="zoomOut" aria-label="Zoom Out"
+                            class="flex size-10 items-center justify-center rounded-lg bg-white dark:bg-slate-900 shadow-xl text-slate-700 dark:text-slate-300 hover:bg-slate-50">
+                            <span class="material-symbols-outlined">remove</span>
+                        </button>
+                        <button id="myLocation"
+                            class="flex size-10 items-center justify-center rounded-lg bg-white dark:bg-slate-900 shadow-xl text-slate-700 dark:text-slate-300 hover:bg-slate-50">
+                            <span class="material-symbols-outlined">my_location</span>
+                        </button>
+                    </div>
+                </div>
+            </section>
+            <aside class="flex w-full shrink-0 flex-col gap-4 overflow-visible xl:w-72 xl:overflow-y-auto xl:pl-2 custom-scrollbar">
+                <div class="flex flex-col gap-4">
+                    <div class="flex flex-col px-1">
+                        <h3 class="text-slate-900 dark:text-white text-base font-bold">Analytics</h3>
+                        <p class="text-slate-500 text-xs">Village-level distributions</p>
+                    </div>
+
+                    <details id="analyticsDocumentsDetails"
+                        class="group rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 overflow-hidden"
+                        open>
+                        <summary class="flex cursor-pointer items-center justify-between p-4 list-none">
+                            <p class="text-slate-700 dark:text-slate-300 text-xs font-bold uppercase">Documents</p>
+                            <span
+                                class="material-symbols-outlined group-open:rotate-180 transition-transform text-slate-400">expand_more</span>
+                        </summary>
+                        <div id="filterDocsList" class="px-4 pb-4 flex flex-col gap-1 max-h-48 overflow-y-auto">
+                            <p class="text-[10px] text-slate-400 text-center py-3">Select a filter to view documents</p>
+                        </div>
+                    </details>  
+
+                    <details id="assetClassificationAnalyticsDetails"
+                            class="group rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 overflow-hidden"
+                            open>
+                            <summary class="flex cursor-pointer items-center justify-between p-4 list-none">
+                                <div class="flex items-center gap-3">
+                                    <span class="material-symbols-outlined text-primary">landscape</span>
+                                    <p class="text-slate-900 dark:text-white text-sm font-semibold">Asset Classification
+                                    </p>
+                                </div>
+                                <span
+                                    class="material-symbols-outlined group-open:rotate-180 transition-transform text-slate-400">expand_more</span>
+                            </summary>
+                            <div id="assetClassificationAnalyticsList" class="px-4 pb-4 flex flex-col gap-2">
+                                <!-- Land classification will be loaded dynamically -->
+                            </div>
+                        </details>
+                        
+
+                   
+
+                    <details id="analyticsDistributionDetails"
+                        class="group rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 overflow-hidden">
+                        <summary class="flex cursor-pointer items-center justify-between p-4 list-none">
+                            <p class="text-slate-700 dark:text-slate-300 text-xs font-bold uppercase">Assets Distribution</p>
+                            <span
+                                class="material-symbols-outlined group-open:rotate-180 transition-transform text-slate-400">expand_more</span>
+                        </summary>
+                        <div class="px-4 pb-4">
+                            <div class="py-2 text-center">
+                                <p id="analyticsAssetsTotal" class="text-slate-900 dark:text-white text-2xl font-bold leading-tight">--</p>
+                                <p class="text-[10px] text-slate-500">Total</p>
+                            </div>
+                            <div id="assetsDistributionList" class="flex flex-col gap-1">
+                                <p class="text-[10px] text-slate-400 text-center py-2">No data available</p>
+                            </div>
+                        </div>
+                    </details>
+
+                </div>
+            </aside>
+
+
+        </main>
+    </div>
+    <style>
+        /* ensure the page and map container occupy the full viewport so
+           no body background peeks through at the bottom */
+        html,
+        body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(18, 105, 226, 0.2);
+            border-radius: 10px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: rgba(18, 105, 226, 0.4);
+        }
+
+        #map {
+            height: 100%;
+            width: 100%;
+            position: relative;
+        }
+
+        /* Loading indicator for map tiles */
+        #map-loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255, 255, 255, 0.9);
+            padding: 20px 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            z-index: 1000;
+            display: none;
+            align-items: center;
+            gap: 12px;
+        }
+
+        #map-loading.active {
+            display: flex;
+        }
+
+        .loading-spinner {
+            width: 24px;
+            height: 24px;
+            border: 3px solid #e2e8f0;
+            border-top-color: #1269e2;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .ol-control {
+            display: none !important;
+        }
+
+        .gut-label {
+            background: rgba(255, 255, 255, 0.85);
+            border: 1px solid #000;
+            border-radius: 3px;
+            padding: 2px 6px;
+            font-weight: bold;
+            font-size: 11px;
+            color: #000;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+            white-space: nowrap;
+        }
+
+        .dark .gut-label {
+            background: rgba(0, 0, 0, 0.85);
+            border-color: #fff;
+            color: #fff;
+        }
+
+        /* Clickable gut boundaries cursor */
+        .ol-viewport {
+            cursor: default;
+        }
+
+        .ol-viewport.clickable {
+            cursor: pointer !important;
+        }
+
+        /* Map cursor when village is selected (for gut clicking) */
+        .map-clickable-for-guts {
+            cursor: crosshair !important;
+        }
+
+        .map-clickable-for-guts * {
+            cursor: crosshair !important;
+        }
+
+        @keyframes slide-in {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .animate-slide-in {
+            animation: slide-in 0.3s ease-out;
+        }
+
+        .native-location-select-hidden {
+            display: none !important;
+        }
+
+            .location-search-select {
+                flex: 0 0 auto;
+                position: relative;
+                width: 160px;
+                min-width: 160px;
+                max-width: 160px;
+                box-sizing: border-box;
+            }
+
+            .location-search-select[data-select-id="districtSelect"],
+            .location-search-select[data-select-id="talukaSelect"],
+            .location-search-select[data-select-id="villageSelect"],
+            .location-search-select[data-select-id="gutSelect"] {
+                width: 100%;
+                min-width: 0;
+            }
+
+            .location-search-select__button {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 0.5rem;
+
+                width: 100%;
+                min-width: 0;
+                height: 2.5rem;
+
+                padding: 0 0.75rem;
+                box-sizing: border-box;
+                overflow: hidden;
+
+                border-radius: 0.5rem;
+                background: #f1f5f9;
+
+                font-size: 0.75rem;
+                font-weight: 500;
+                color: #0f172a;
+
+                outline: none;
+            }
+
+            .location-search-select__button:focus {
+                box-shadow: 0 0 0 2px #1269e2;
+            }
+
+            .location-search-select.is-open .location-search-select__button {
+                box-shadow: 0 0 0 2px #1269e2;
+            }
+
+            .location-search-select.is-disabled .location-search-select__button {
+                cursor: not-allowed;
+                opacity: 0.55;
+            }
+
+            .location-search-select__label {
+                flex: 1 1 auto;
+                min-width: 0;
+
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+
+            .location-search-select__button .material-symbols-outlined {
+                flex: 0 0 auto;
+                flex-shrink: 0;
+            }
+
+            .location-search-select__menu {
+                position: absolute;
+                top: calc(100% + 0.25rem);
+                left: 0;
+                right: 0;
+
+                z-index: 10000;
+                display: none;
+
+                width: 100%;
+                min-width: 100%;
+                box-sizing: border-box;
+
+                overflow: hidden;
+
+                border: 1px solid #dbe3ef;
+                border-radius: 0.5rem;
+                background: #ffffff;
+                box-shadow: 0 18px 35px rgba(15, 23, 42, 0.18);
+            }
+
+            .location-search-select.is-open .location-search-select__menu {
+                display: block;
+            }
+
+            .location-search-select__search-wrap {
+                padding: 0.5rem;
+                border-bottom: 1px solid #e2e8f0;
+            }
+
+            .location-search-select__search {
+                width: 100%;
+                height: 2rem;
+
+                padding: 0 0.625rem;
+                box-sizing: border-box;
+
+                border: 1px solid #dbe3ef;
+                border-radius: 0.375rem;
+
+                font-size: 0.75rem;
+                outline: none;
+            }
+
+            .location-search-select__search:focus {
+                border-color: #1269e2;
+                box-shadow: 0 0 0 1px #1269e2;
+            }
+
+            .location-search-select__options {
+                max-height: 14rem;
+                overflow-y: auto;
+                padding: 0.25rem;
+            }
+
+            .location-search-select__option {
+                display: block;
+                width: 100%;
+
+                padding: 0.5rem 0.625rem;
+                border-radius: 0.375rem;
+
+                text-align: left;
+                font-size: 0.75rem;
+                color: #334155;
+
+                box-sizing: border-box;
+            }
+
+            .location-search-select__option:hover,
+            .location-search-select__option.is-active {
+                background: #1269e2;
+                color: #ffffff;
+            }
+
+            .location-search-select__empty {
+                padding: 0.75rem;
+
+                text-align: center;
+                font-size: 0.75rem;
+                color: #64748b;
+            }
+
+            /* IMPORTANT: if parent uses flex/grid */
+            .location-search-select,
+            .location-search-select * {
+                min-width: 0;
+            }
+
+        .dark .location-search-select__button {
+            background: #1e293b;
+            color: #f8fafc;
+        }
+
+        .dark .location-search-select__menu {
+            border-color: #334155;
+            background: #0f172a;
+        }
+
+        .dark .location-search-select__search-wrap {
+            border-color: #334155;
+        }
+
+        .dark .location-search-select__search {
+            border-color: #334155;
+            background: #1e293b;
+            color: #f8fafc;
+        }
+
+        .dark .location-search-select__option {
+            color: #cbd5e1;
+        }
+    </style>
+    <script>
+        let map, currentLayer, osmLayer, satelliteLayer, greyLayer, darkLayer;
+        const BASE_LAYER_KEYS = ['osm', 'grey', 'dark', 'satellite'];
+
+        function baseLayerKey(value) {
+            const key = String(value || '').toLowerCase();
+            return BASE_LAYER_KEYS.includes(key) ? key : 'osm';
+        }
+
+        function baseLayerFor(key) {
+            if (key === 'satellite') return satelliteLayer;
+            if (key === 'grey') return greyLayer;
+            if (key === 'dark') return darkLayer;
+            return osmLayer;
+        }
+        let districtLayer, talukaLayer, aoiLayer, villagesBoundaryLayer, villagesGutLayer, gutBoundaryLayer, villageGutBoundariesLayer;
+        let assetLayers = {}; // Store asset layers
+        let currentVillage = null; // Track current selected village
+        let currentGutNumber = null; // Track current selected gut number
+        let defaultProjectBoundaryLayer = null; // Default project boundary layer
+        let defaultAllTalukasLayer = null; // Default all talukas layer
+        let loadingTiles = 0;
+
+        // GeoServer configuration (GEOSERVER_URL / GEOSERVER_WORKSPACE in .env)
+        const GEOSERVER_BASE_URL = "https://purandar\u002Dairport.rottengrapes.tech/geoserver";
+        const GEOSERVER_URL = `${GEOSERVER_BASE_URL}/wms`;
+        const GEOSERVER_OWS_URL = `${GEOSERVER_BASE_URL}/ows`;
+        const WORKSPACE = "pap_purandar";
+        const GEOSERVER_LEGACY_WORKSPACE = "pune_rr";
+        const PURANDAR_WORKSPACE = "Purandar_New";
+        const PURANDAR_IMG_LAYER = `${PURANDAR_WORKSPACE}:Purandar_img`;
+        const PURANDAR_ASSET_LAYERS = {
+            'prj_ass_pt': ['tree'],
+            'prj_ass_pl': ['borewell', 'well'],
+            'prj_ass_poly': ['structures'],
+            'prj_farmer': ['purandar_farmers']
+        };
+        const PROJECT_NAME = "Purandar Airport";
+        const PROJECT_SCHEMA = "purandar_airport";
+        const GEOSERVER_VIEWPARAMS = `a:${PROJECT_SCHEMA};project_name:${PROJECT_NAME}`;
+
+        // Layer routing. GEOSERVER_WORKSPACE (multi-tenant) serves the boundary
+        // layers under their own names and styles; the imagery/asset layers live in
+        // GEOSERVER_PURANDAR_WORKSPACE, and anything unmapped (prj_gut_bd, prj_ass_*)
+        // still comes from GEOSERVER_LEGACY_WORKSPACE.
+        const LAYER_SOURCES = {
+            'prj_bd':        { workspace: WORKSPACE, name: 'project_master',   style: 'multi-project_bd' },
+            'prj_dist_poly': { workspace: WORKSPACE, name: 'district_boundry', style: 'multi-dist' },
+            'prj_taluka_bd': { workspace: WORKSPACE, name: 'taluka_master',    style: 'multi-taluka' },
+            'prj_vlg_bd':    { workspace: WORKSPACE, name: 'village_master',   style: 'multi-vlg' },
+            'purandar_aoi':                 { workspace: PURANDAR_WORKSPACE },
+            'purandar_tehsil':              { workspace: PURANDAR_WORKSPACE },
+            'purandhar_airport_villages':   { workspace: PURANDAR_WORKSPACE },
+            'purandhar_airport_village_bo': { workspace: PURANDAR_WORKSPACE }
+        };
+
+        // "workspace:layer" for a logical layer key.
+        function wmsLayer(key) {
+            const src = LAYER_SOURCES[key];
+            if (!src) return `${GEOSERVER_LEGACY_WORKSPACE}:${key}`;
+            return `${src.workspace}:${src.name || key}`;
+        }
+
+        // GeoServer style for a layer key, or '' for the layer's default style.
+        function wmsStyle(key) {
+            const src = LAYER_SOURCES[key];
+            return (src && src.style) || '';
+        }
+
+        // WMS layer options
+        const wmsOptions = {
+            format: "image/png",
+            transparent: true,
+            version: "1.1.0",
+            srs: "EPSG:3857",
+            attribution: "GeoServer",
+            crossOrigin: "anonymous",
+        };
+
+        // Track current selections
+        let currentDistrict = null;
+        let currentTaluka = null;
+        let currentDistrictId = null;
+        let currentTalukaId = null;
+        let currentVillageId = null;
+        let currentBaseLayer = 'satellite';
+
+        // URL state helpers
+        let isApplyingUrlState = false;
+
+        function parseUrlState() {
+            const params = new URLSearchParams(window.location.search);
+            return {
+                district: params.get('district') || '',
+                taluka: params.get('taluka') || '',
+                village: params.get('village') || '',
+                gut: params.get('gut') || '',
+                baselayer: params.get('baselayer') || '',
+                layers: params.get('layers') ? params.get('layers').split(',').filter(Boolean) : []
+            };
+        }
+
+        const initialUrlState = parseUrlState();
+        const hasInitialLocationFilter = Boolean(
+            initialUrlState.district || initialUrlState.taluka || initialUrlState.village || initialUrlState.gut
+        );
+        if (!hasInitialLocationFilter) {
+            initialUrlState.layers = ['prj_bd', 'purandar_img'];
+        }
+
+        function getSelectedLayers() {
+            return [...document.querySelectorAll('.asset-layer-toggle:checked')]
+                .map(el => el.dataset.asset)
+                .filter(Boolean);
+        }
+
+        function setBaseLayerButtonState(layerType) {
+            document.querySelectorAll('.layer-btn').forEach(btn => {
+                if (btn.dataset.layer === layerType) {
+                    btn.classList.add('bg-primary', 'text-white');
+                    btn.classList.remove('text-slate-600', 'dark:text-slate-300');
+                } else {
+                    btn.classList.remove('bg-primary', 'text-white');
+                    btn.classList.add('text-slate-600', 'dark:text-slate-300');
+                }
+            });
+        }
+
+        function updateUrlParams() {
+            if (isApplyingUrlState) return;
+
+            const params = new URLSearchParams();
+
+            if (currentDistrict) params.set('district', currentDistrict);
+            if (currentTaluka) params.set('taluka', currentTaluka);
+            if (currentVillage) params.set('village', currentVillage);
+            if (currentGutNumber) params.set('gut', currentGutNumber);
+            if (currentBaseLayer) params.set('baselayer', currentBaseLayer);
+
+            const layers = getSelectedLayers();
+            if (layers.length) {
+                params.set('layers', layers.join(','));
+            }
+
+            const queryString = params.toString();
+            const newUrl = queryString ? `${window.location.pathname}?${queryString}` : window.location.pathname;
+            window.history.replaceState(null, '', newUrl);
+        }
+
+        function applyUrlState(initialState) {
+            isApplyingUrlState = true;
+
+            const districtSelect = document.getElementById('districtSelect');
+            const talukaSelect = document.getElementById('talukaSelect');
+            const villageSelect = document.getElementById('villageSelect');
+            const gutSelect = document.getElementById('gutSelect');
+
+            if (initialState.district) {
+                districtSelect.value = initialState.district;
+                districtSelect.dispatchEvent(new Event('change'));
+            }
+
+            const layerList = initialState.layers || [];
+            if (layerList.length) {
+                document.querySelectorAll('.asset-layer-toggle').forEach(toggle => {
+                    const asset = toggle.dataset.asset;
+                    if (asset && layerList.includes(asset)) {
+                        toggle.checked = true;
+                        if (assetLayers[asset] === undefined) {
+                            loadAssetLayerFromGeoServer(asset);
+                        }
+                    } else if (asset && !layerList.includes(asset)) {
+                        toggle.checked = false;
+                        removeAssetLayer(asset);
+                    }
+                });
+            }
+
+            isApplyingUrlState = false;
+            updateUrlParams();
+        }
+
+        function hasLocationSelection() {
+            return Boolean(currentDistrict || currentTaluka || currentVillage || currentGutNumber);
+        }
+
+        // Show/hide loading indicator
+        function showMapLoading() {
+            loadingTiles++;
+            const loader = document.getElementById('map-loading');
+            if (loader) loader.classList.add('active');
+        }
+
+        function hideMapLoading() {
+            loadingTiles--;
+            if (loadingTiles <= 0) {
+                loadingTiles = 0;
+                const loader = document.getElementById('map-loading');
+                if (loader) loader.classList.remove('active');
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            // Fetch project statistics
+            fetchProjectStats();
+
+            // Accordion behavior for Asset Classification and Asset Layers
+            const assetClassificationDetails = document.getElementById('assetClassificationDetails');
+            const assetLayersDetails = document.getElementById('assetLayersDetails');
+
+            function closeAssetPanels() {
+                if (assetClassificationDetails) {
+                    assetClassificationDetails.open = false;
+                    assetClassificationDetails.removeAttribute('open');
+                }
+                if (assetLayersDetails) {
+                    assetLayersDetails.open = false;
+                    assetLayersDetails.removeAttribute('open');
+                }
+            }
+
+            if (assetClassificationDetails) {
+                assetClassificationDetails.addEventListener('toggle', function () {
+                    if (this.open) {
+                        assetLayersDetails?.removeAttribute('open');
+                    }
+                });
+            }
+
+            if (assetLayersDetails) {
+                assetLayersDetails.addEventListener('toggle', function () {
+                    if (this.open) {
+                        assetClassificationDetails?.removeAttribute('open');
+                    }
+                });
+            }
+
+            closeAssetPanels();
+            requestAnimationFrame(closeAssetPanels);
+            window.addEventListener('load', closeAssetPanels);
+
+            // Initialize map centered on Purandar, Pune
+            map = new ol.Map({
+                target: 'map',
+                view: new ol.View({
+                    center: ol.proj.fromLonLat([74.0194, 18.2811]),
+                    zoom: 12
+                }),
+                controls: [],
+                loadTilesWhileAnimating: true,
+                loadTilesWhileInteracting: true
+            });
+            // ensure OpenLayers recalculates size once the container is fully rendered
+            // fixes blank/grey area at bottom before first interaction
+            setTimeout(() => map.updateSize(), 100);
+
+            const mapElement = document.getElementById('map');
+            if (window.ResizeObserver && mapElement) {
+                new ResizeObserver(() => map.updateSize()).observe(mapElement);
+            }
+
+            // Define base layers
+            osmLayer = new ol.layer.Tile({
+                source: new ol.source.OSM({
+                    preload: 3
+                }),
+                preload: Infinity
+            });
+
+            satelliteLayer = new ol.layer.Tile({
+                source: new ol.source.XYZ({
+                    url: 'http://mt0.google.com/vt/lyrs=y&hl=en&x={x}&y={y}&z={z}',
+                    attributions: 'Google',
+                    preload: 3
+                }),
+                preload: Infinity
+            });
+
+            greyLayer = new ol.layer.Tile({
+                source: new ol.source.XYZ({
+                    url: 'https://{a-c}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
+                    attributions: '© OpenStreetMap contributors, © CARTO',
+                    preload: 3
+                }),
+                preload: Infinity
+            });
+
+            darkLayer = new ol.layer.Tile({
+                source: new ol.source.XYZ({
+                    url: 'https://{a-c}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png',
+                    attributions: '© OpenStreetMap contributors, © CARTO',
+                    preload: 3
+                }),
+                preload: Infinity
+            });
+
+            // OSM is the default; ?baselayer= can still pick grey / dark / satellite.
+            currentBaseLayer = baseLayerKey(initialUrlState.baselayer);
+            currentLayer = baseLayerFor(currentBaseLayer);
+            map.addLayer(currentLayer);
+            setBaseLayerButtonState(currentBaseLayer);
+
+            // Default boundary layers will be loaded after districts are loaded
+            // See loadDistricts() section below
+
+            // fix OpenLayers when container dimensions change (e.g. window resize)
+            window.addEventListener('resize', () => {
+                map.updateSize();
+            });
+
+            // Zoom controls
+            document.getElementById('zoomIn').addEventListener('click', () => {
+                const view = map.getView();
+                view.setZoom(view.getZoom() + 1);
+            });
+            document.getElementById('zoomOut').addEventListener('click', () => {
+                const view = map.getView();
+                view.setZoom(view.getZoom() - 1);
+            });
+            document.getElementById('myLocation').addEventListener('click', () => {
+                const view = map.getView();
+                view.setCenter(ol.proj.fromLonLat([74.0194, 18.2811]));
+                view.setZoom(13);
+            });
+
+            // Layer menu toggle
+            const layersBtn = document.getElementById('layersBtn');
+            const layerMenu = document.getElementById('layerMenu');
+
+            layersBtn.addEventListener('click', () => {
+                layerMenu.classList.toggle('hidden');
+                layerMenu.classList.toggle('flex');
+            });
+
+            // Layer switching
+            document.querySelectorAll('.layer-btn').forEach(btn => {
+                btn.addEventListener('click', function () {
+                    const layerType = this.getAttribute('data-layer');
+
+                    // Remove current layer
+                    map.removeLayer(currentLayer);
+
+                    // Add new layer
+                    currentLayer = baseLayerFor(baseLayerKey(layerType));
+                    map.addLayer(currentLayer);
+
+                    // Update button styles
+                    document.querySelectorAll('.layer-btn').forEach(b => {
+                        b.classList.remove('bg-primary', 'text-white');
+                        b.classList.add('text-slate-600', 'dark:text-slate-300');
+                    });
+                    this.classList.add('bg-primary', 'text-white');
+                    this.classList.remove('text-slate-600', 'dark:text-slate-300');
+
+                    currentBaseLayer = baseLayerKey(layerType);
+                    setBaseLayerButtonState(currentBaseLayer);
+                    updateUrlParams();
+                });
+            });
+
+            // Close layer menu when clicking outside
+            document.addEventListener('click', (e) => {
+                if (!layersBtn.contains(e.target) && !layerMenu.contains(e.target)) {
+                    layerMenu.classList.add('hidden');
+                    layerMenu.classList.remove('flex');
+                }
+            });
+
+            // Hierarchical dropdown functionality
+            const districtSelect = document.getElementById('districtSelect');
+            const talukaSelect = document.getElementById('talukaSelect');
+            const villageSelect = document.getElementById('villageSelect');
+            const gutSelect = document.getElementById('gutSelect');
+            const locationSearchSelects = [districtSelect, talukaSelect, villageSelect, gutSelect]
+                .filter(Boolean)
+                .map(initLocationSearchSelect);
+            const resetFiltersBtn = document.getElementById('resetFiltersBtn');
+
+            function initLocationSearchSelect(select) {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'location-search-select';
+                wrapper.dataset.selectId = select.id;
+
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.className = 'location-search-select__button';
+                button.setAttribute('aria-haspopup', 'listbox');
+                button.setAttribute('aria-expanded', 'false');
+
+                const label = document.createElement('span');
+                label.className = 'location-search-select__label';
+
+                const icon = document.createElement('span');
+                icon.className = 'material-symbols-outlined text-base text-slate-400';
+                icon.textContent = 'expand_more';
+
+                const menu = document.createElement('div');
+                menu.className = 'location-search-select__menu';
+
+                const searchWrap = document.createElement('div');
+                searchWrap.className = 'location-search-select__search-wrap';
+
+                const search = document.createElement('input');
+                search.type = 'search';
+                search.className = 'location-search-select__search';
+                search.placeholder = 'Search...';
+                search.autocomplete = 'off';
+
+                const optionsBox = document.createElement('div');
+                optionsBox.className = 'location-search-select__options';
+                optionsBox.setAttribute('role', 'listbox');
+
+                button.append(label, icon);
+                searchWrap.appendChild(search);
+                menu.append(searchWrap, optionsBox);
+                wrapper.append(button, menu);
+                select.insertAdjacentElement('afterend', wrapper);
+                select.classList.add('native-location-select-hidden');
+
+                const close = () => {
+                    wrapper.classList.remove('is-open');
+                    button.setAttribute('aria-expanded', 'false');
+                    search.value = '';
+                    renderOptions('');
+                };
+
+                const open = () => {
+                    if (select.disabled) return;
+                    refresh();
+                    wrapper.classList.add('is-open');
+                    button.setAttribute('aria-expanded', 'true');
+                    setTimeout(() => search.focus(), 0);
+                };
+
+                const selectedLabel = () => {
+                    const selected = select.options[select.selectedIndex];
+                    return selected?.textContent?.trim() || select.options[0]?.textContent?.trim() || 'Select';
+                };
+
+                const refresh = () => {
+                    label.textContent = selectedLabel();
+                    wrapper.classList.toggle('is-disabled', select.disabled);
+                    button.disabled = select.disabled;
+                    renderOptions(search.value);
+                };
+
+                const renderOptions = (query = '') => {
+                    const normalizedQuery = query.trim().toLowerCase();
+                    const options = Array.from(select.options).filter(option => option.value !== '');
+                    optionsBox.innerHTML = '';
+
+                    const matches = options.filter(option => {
+                        const text = option.textContent.trim().toLowerCase();
+                        return !normalizedQuery || text.includes(normalizedQuery);
+                    });
+
+                    if (!matches.length) {
+                        const empty = document.createElement('div');
+                        empty.className = 'location-search-select__empty';
+                        empty.textContent = 'No results found';
+                        optionsBox.appendChild(empty);
+                        return;
+                    }
+
+                    matches.forEach(option => {
+                        const item = document.createElement('button');
+                        item.type = 'button';
+                        item.className = 'location-search-select__option';
+                        item.textContent = option.textContent;
+                        item.dataset.value = option.value;
+                        item.setAttribute('role', 'option');
+                        item.setAttribute('aria-selected', option.selected ? 'true' : 'false');
+                        if (option.selected) item.classList.add('is-active');
+                        item.addEventListener('click', () => {
+                            select.value = option.value;
+                            select.dispatchEvent(new CustomEvent('change', {
+                                bubbles: true,
+                                detail: { userSelected: true }
+                            }));
+                            refreshAllLocationSearchSelects();
+                            close();
+                        });
+                        optionsBox.appendChild(item);
+                    });
+                };
+
+                button.addEventListener('click', (event) => {
+                    event.stopPropagation();
+                    wrapper.classList.contains('is-open') ? close() : open();
+                });
+                search.addEventListener('click', event => event.stopPropagation());
+                search.addEventListener('input', () => renderOptions(search.value));
+                search.addEventListener('keydown', (event) => {
+                    if (event.key === 'Escape') {
+                        event.preventDefault();
+                        close();
+                        button.focus();
+                    }
+                });
+                select.addEventListener('change', () => setTimeout(refreshAllLocationSearchSelects, 0));
+
+                new MutationObserver(refresh).observe(select, {
+                    attributes: true,
+                    attributeFilter: ['disabled'],
+                    childList: true,
+                    subtree: true
+                });
+
+                refresh();
+                return { wrapper, refresh, close };
+            }
+
+            function refreshAllLocationSearchSelects() {
+                locationSearchSelects.forEach(control => control.refresh());
+            }
+            function resetLocationFilters() {
+                currentDistrict = null;
+                currentTaluka = null;
+                currentVillage = null;
+                currentGutNumber = null;
+                currentDistrictId = null;
+                currentTalukaId = null;
+                currentVillageId = null;
+
+                districtSelect.value = '';
+                talukaSelect.value = '';
+                villageSelect.value = '';
+                gutSelect.value = '';
+                talukaSelect.disabled = true;
+                villageSelect.disabled = true;
+                gutSelect.disabled = true;
+                talukaSelect.innerHTML = '<option value="">Select Taluka</option>';
+                villageSelect.innerHTML = '<option value="">Select Village</option>';
+                gutSelect.innerHTML = '<option value="">Select Gut Number</option>';
+
+                if (window.selectedGutOverlay) {
+                    map.removeLayer(window.selectedGutOverlay);
+                    window.selectedGutOverlay = null;
+                }
+
+                clearAllLayers();
+                loadDefaultProjectBoundary();
+                loadDefaultAllTalukas();
+
+                fitMapToProjectBoundary();
+
+                fetchProjectStats();
+                reloadActiveAssetLayers();
+                refreshAllLocationSearchSelects();
+                updateUrlParams();
+                showNotification('Filters reset', 'success');
+                location.replace("/")
+            }
+
+            resetFiltersBtn?.addEventListener('click', resetLocationFilters);
+
+            // Filters button opens the panel over the map; a click outside closes it.
+            const filtersToggleBtn = document.getElementById('filtersToggleBtn');
+            const locationFilterPanel = document.getElementById('locationFilterPanel');
+            if (filtersToggleBtn && locationFilterPanel) {
+                filtersToggleBtn.addEventListener('click', (event) => {
+                    event.stopPropagation();
+                    const isOpen = !locationFilterPanel.classList.toggle('hidden');
+                    filtersToggleBtn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+                });
+                document.addEventListener('click', (event) => {
+                    if (locationFilterPanel.classList.contains('hidden')) return;
+                    // The search-dropdowns re-render their options on change, so the
+                    // clicked node is already detached by the time this runs —
+                    // composedPath() still carries the panel, which is what keeps the
+                    // panel open while values are being picked.
+                    const path = typeof event.composedPath === 'function' ? event.composedPath() : [];
+                    if (path.includes(locationFilterPanel) || path.includes(filtersToggleBtn)) return;
+                    if (locationFilterPanel.contains(event.target) || filtersToggleBtn.contains(event.target)) return;
+                    if (event.target instanceof Node && !event.target.isConnected) return;
+                    locationFilterPanel.classList.add('hidden');
+                    filtersToggleBtn.setAttribute('aria-expanded', 'false');
+                });
+                document.addEventListener('keydown', (event) => {
+                    if (event.key !== 'Escape') return;
+                    locationFilterPanel.classList.add('hidden');
+                    filtersToggleBtn.setAttribute('aria-expanded', 'false');
+                });
+            }
+
+            document.addEventListener('click', (event) => {
+                locationSearchSelects.forEach(control => {
+                    if (!control.wrapper.contains(event.target)) control.close();
+                });
+            });
+
+            // Load districts on page load
+            loadDistricts();
+
+            // Load only default project boundary when URL has no location filters.
+            if (!initialUrlState.district && !initialUrlState.taluka && !initialUrlState.village && !initialUrlState.gut) {
+                loadDefaultProjectBoundary();
+            }
+
+            // District selection
+            districtSelect.addEventListener('change', function () {
+                // Remove default layers when user makes a selection
+                if (defaultProjectBoundaryLayer) {
+                    map.removeLayer(defaultProjectBoundaryLayer);
+                    defaultProjectBoundaryLayer = null;
+                }
+                if (defaultAllTalukasLayer) {
+                    map.removeLayer(defaultAllTalukasLayer);
+                    defaultAllTalukasLayer = null;
+                }
+
+                clearAllLayers();
+                currentDistrict = this.value;
+                currentDistrictId = this.options[this.selectedIndex]?.dataset?.id || null;
+                currentTaluka = null;
+                currentTalukaId = null;
+                currentVillage = null;
+                currentVillageId = null;
+                currentGutNumber = null;
+
+                if (this.value) {
+                    loadDistrictLayer(this.value, currentDistrictId);
+                    loadTalukas(this.value, currentDistrictId);
+                    talukaSelect.disabled = false; // Re-enable in case it was disabled
+                    villageSelect.disabled = true;
+                    gutSelect.disabled = true;
+                    talukaSelect.value = '';
+                    villageSelect.value = '';
+                    gutSelect.value = '';
+                    // Fetch district-wise statistics
+                    fetchProjectStats(this.value);
+                    // Reload active asset layers with district filter
+                    reloadActiveAssetLayers();
+                } else {
+                    currentDistrictId = null;
+                    currentTalukaId = null;
+                    currentVillageId = null;
+                    talukaSelect.disabled = true;
+                    villageSelect.disabled = true;
+                    gutSelect.disabled = true;
+                    talukaSelect.innerHTML = '<option value="">Select Taluka</option>';
+                    villageSelect.innerHTML = '<option value="">Select Village</option>';
+                    gutSelect.innerHTML = '<option value="">Select Gut Number</option>';
+                    // Reload only default project boundary when deselecting
+                    loadDefaultProjectBoundary();
+                    fetchProjectStats();
+                    // Reload active asset layers without filters
+                    reloadActiveAssetLayers();
+                }
+                updateUrlParams();
+            });
+
+            // Taluka selection
+            talukaSelect.addEventListener('change', function () {
+                // Remove taluka and village layers
+                if (talukaLayer) map.removeLayer(talukaLayer);
+                if (villagesBoundaryLayer) map.removeLayer(villagesBoundaryLayer);
+                if (villagesGutLayer) map.removeLayer(villagesGutLayer);
+                if (gutBoundaryLayer) map.removeLayer(gutBoundaryLayer);
+                if (villageGutBoundariesLayer) map.removeLayer(villageGutBoundariesLayer);
+
+                currentTaluka = this.value;
+                currentTalukaId = this.options[this.selectedIndex]?.dataset?.id || null;
+                currentVillage = null;
+                currentVillageId = null;
+                currentGutNumber = null;
+
+                if (this.value && currentDistrict) {
+                    loadTalukaLayer(currentDistrict, this.value, currentDistrictId, currentTalukaId);
+                    loadVillages(currentDistrict, this.value, currentDistrictId, currentTalukaId);
+                    villageSelect.disabled = false; // Re-enable in case it was disabled
+                    gutSelect.disabled = true;
+                    villageSelect.value = '';
+                    gutSelect.value = '';
+                    // Fetch taluka-wise statistics
+                    fetchProjectStats(currentDistrict, this.value);
+                    // Reload active asset layers with taluka filter
+                    reloadActiveAssetLayers();
+                } else {
+                    currentTalukaId = null;
+                    currentVillageId = null;
+                    villageSelect.disabled = true;
+                    gutSelect.disabled = true;
+                    villageSelect.innerHTML = '<option value="">Select Village</option>';
+                    gutSelect.innerHTML = '<option value="">Select Gut Number</option>';
+                    // Reset to district statistics
+                    if (currentDistrict) {
+                        fetchProjectStats(currentDistrict);
+                        // Reload active asset layers with district filter
+                        reloadActiveAssetLayers();
+                    } else {
+                        fetchProjectStats();
+                        // Reload active asset layers without filters
+                        reloadActiveAssetLayers();
+                    }
+                }
+                updateUrlParams();
+            });
+
+            // Village selection
+            villageSelect.addEventListener('change', function () {
+                console.log(`Village selection changed to: ${this.value}`);
+
+                // Remove existing village layers
+                if (villagesBoundaryLayer) map.removeLayer(villagesBoundaryLayer);
+                if (villagesGutLayer) map.removeLayer(villagesGutLayer);
+                if (gutBoundaryLayer) map.removeLayer(gutBoundaryLayer);
+                if (villageGutBoundariesLayer) map.removeLayer(villageGutBoundariesLayer);
+
+                // Clean up selected gut overlay
+                if (window.selectedGutOverlay) {
+                    map.removeLayer(window.selectedGutOverlay);
+                    window.selectedGutOverlay = null;
+                }
+
+                if (this.value && currentDistrict && currentTaluka) {
+                    currentVillage = this.value;
+                    currentVillageId = this.options[this.selectedIndex]?.dataset?.id || null;
+                    currentGutNumber = null; // Clear gut selection when changing village
+
+                    // Clear gut dropdown
+                    gutSelect.value = '';
+
+                    console.log(`Loading layers for village: ${this.value}`);
+                    loadVillageLayer(currentDistrict, currentTaluka, this.value, currentDistrictId, currentTalukaId, currentVillageId);
+                    loadGuts(currentDistrict, currentTaluka, this.value, currentDistrictId, currentTalukaId, currentVillageId);
+                    gutSelect.disabled = false; // Re-enable in case it was disabled
+                    // Fetch village-wise statistics
+                    fetchProjectStats(currentDistrict, currentTaluka, this.value);
+                    // Reload active asset layers with village filter
+                    reloadActiveAssetLayers();
+                } else {
+                    console.log('No village selected, clearing layers');
+                    currentVillage = null;
+                    currentVillageId = null;
+                    currentGutNumber = null;
+
+                    gutSelect.disabled = true;
+                    gutSelect.innerHTML = '<option value="">Select Gut Number</option>';
+                    // Reset to taluka statistics when no village selected
+                    if (currentTaluka && currentDistrict) {
+                        fetchProjectStats(currentDistrict, currentTaluka);
+                        // Reload active asset layers with taluka filter
+                        reloadActiveAssetLayers();
+                    } else if (currentDistrict) {
+                        fetchProjectStats(currentDistrict);
+                        // Reload active asset layers with district filter
+                        reloadActiveAssetLayers();
+                    } else {
+                        fetchProjectStats();
+                        // Reload active asset layers without filters
+                        reloadActiveAssetLayers();
+                    }
+                }
+                updateUrlParams();
+            });
+
+            gutSelect.addEventListener('change', function () {
+                console.log(`🔍 Gut dropdown changed to: ${this.value}`);
+
+                if (this.value && currentVillage && currentDistrict && currentTaluka) {
+                    currentGutNumber = this.value;
+
+                    console.log(`✅ Gut selected from dropdown: ${currentGutNumber} in village: ${currentVillage}`);
+
+                    // Reload village gut boundaries to update styling
+                    loadVillageGutBoundaries(currentDistrict, currentTaluka, currentVillage, currentDistrictId, currentTalukaId, currentVillageId);
+
+                    const gutFilter = `village_id=${Number(currentVillageId)} AND gut_no='${String(this.value).replace(/'/g, "''")}'`;
+                    fitLayerExtentFromApi('prj_gut_bd', {
+                        district: currentDistrict,
+                        taluka: currentTaluka,
+                        village: currentVillage,
+                        district_id: currentDistrictId,
+                        taluka_id: currentTalukaId,
+                        village_id: currentVillageId,
+                        gut_number: this.value
+                    }, 19, [100, 100, 100, 100], () => {
+                        fitLayerExtentFromWFS('prj_gut_bd', gutFilter, 18, [90, 90, 90, 90]);
+                    });
+
+                    // Fetch gut-wise statistics
+                    fetchProjectStats(currentDistrict, currentTaluka, currentVillage, this.value);
+
+                    // Reload active asset layers with gut filter
+                    reloadActiveAssetLayers();
+
+                    // Show notification
+                    showNotification(`Selected Gut ${currentGutNumber} in ${currentVillage}`, 'success');
+                } else {
+                    currentGutNumber = null;
+                    console.log('✅ Gut deselected, showing all guts');
+
+                    // Reload village gut boundaries to clear selection styling
+                    if (currentVillage && currentDistrict && currentTaluka) {
+                        loadVillageGutBoundaries(currentDistrict, currentTaluka, currentVillage, currentDistrictId, currentTalukaId, currentVillageId);
+                        // Reset to village statistics
+                        fetchProjectStats(currentDistrict, currentTaluka, currentVillage);
+                        // Reload active asset layers with village filter
+                        reloadActiveAssetLayers();
+                    }
+                }
+                updateUrlParams();
+            });
+
+            // Function to clear all GeoServer layers
+            function clearAllLayers() {
+                if (districtLayer) map.removeLayer(districtLayer);
+                if (talukaLayer) map.removeLayer(talukaLayer);
+                if (villagesBoundaryLayer) map.removeLayer(villagesBoundaryLayer);
+                if (villagesGutLayer) map.removeLayer(villagesGutLayer);
+                if (gutBoundaryLayer) map.removeLayer(gutBoundaryLayer);
+                if (villageGutBoundariesLayer) map.removeLayer(villageGutBoundariesLayer);
+            }
+
+            // Load Default Project Boundary (prj_bd) - Shows at startup
+            function loadDefaultProjectBoundary() {
+
+                console.log('🔄 Loading default project boundary (prj_bd)...');
+
+                if (defaultProjectBoundaryLayer) {
+                    map.removeLayer(defaultProjectBoundaryLayer);
+                }
+
+                const source = new ol.source.TileWMS({
+                    url: GEOSERVER_URL,
+                    params: {
+                        'LAYERS': wmsLayer('prj_bd'),
+                        'viewparams': GEOSERVER_VIEWPARAMS,
+                        'FORMAT': 'image/png',
+                        'TRANSPARENT': true,
+                        'VERSION': '1.1.0',
+                        'STYLES': wmsStyle('prj_bd')
+                    },
+                    serverType: 'geoserver',
+                    crossOrigin: 'anonymous',
+                    transition: 0
+                });
+
+                defaultProjectBoundaryLayer = new ol.layer.Tile({
+                    source: source,
+                    zIndex: 5,
+                    preload: Infinity
+                });
+
+                map.addLayer(defaultProjectBoundaryLayer);
+                fitMapToProjectBoundary();
+
+                console.log('✅ Purandar project boundary loaded');
+            }
+
+            function fitMapToProjectBoundary() {
+                fitLayerExtentFromApi('prj_bd', {}, 15, [80, 80, 80, 80], () => {
+                    fitLayerExtentFromWFS('prj_bd', null, 14, [80, 80, 80, 80]);
+                });
+            }
+
+            function fitLayerExtentFromApi(layerName, filters = {}, maxZoom = 16, padding = [60, 60, 60, 60], fallback = null) {
+                const params = new URLSearchParams();
+                Object.entries(filters).forEach(([key, value]) => {
+                    if (value !== undefined && value !== null && value !== '') {
+                        params.set(key, value);
+                    }
+                });
+
+                const url = `/api/layer-bounds/${encodeURIComponent(layerName)}/${params.toString() ? `?${params.toString()}` : ''}`;
+
+                fetch(url)
+                    .then(response => response.ok ? response.json() : null)
+                    .then(data => {
+                        if (!data || !data.bounds) {
+                            if (typeof fallback === 'function') fallback();
+                            return;
+                        }
+
+                        const extent = ol.proj.transformExtent(
+                            [data.bounds.minLng, data.bounds.minLat, data.bounds.maxLng, data.bounds.maxLat],
+                            'EPSG:4326',
+                            'EPSG:3857'
+                        );
+
+                        if (!ol.extent.isEmpty(extent)) {
+                            map.getView().fit(extent, {
+                                padding: padding,
+                                duration: 700,
+                                maxZoom: maxZoom
+                            });
+                        } else if (typeof fallback === 'function') {
+                            fallback();
+                        }
+                    })
+                    .catch(() => {
+                        if (typeof fallback === 'function') fallback();
+                    });
+            }
+
+            function fitLayerExtentFromWFS(layerName, cqlFilter = null, maxZoom = 14, padding = [60, 60, 60, 60]) {
+                const typeName = wmsLayer(layerName);
+                const params = new URLSearchParams({
+                    service: 'WFS',
+                    version: '1.1.0',
+                    request: 'GetFeature',
+                    typeName: typeName,
+                    outputFormat: 'application/json',
+                    srsName: 'EPSG:4326',
+                    viewparams: GEOSERVER_VIEWPARAMS
+                });
+                if (cqlFilter) params.set('cql_filter', cqlFilter);
+
+                const wfsUrl = `${GEOSERVER_OWS_URL}?${params.toString()}`;
+
+                fetch(wfsUrl)
+                    .then(response => response.ok ? response.json() : null)
+                    .then(data => {
+                        if (!data || !data.features || data.features.length === 0) return;
+
+                        const features = new ol.format.GeoJSON().readFeatures(data, {
+                            dataProjection: 'EPSG:4326',
+                            featureProjection: 'EPSG:3857'
+                        });
+                        if (!features.length) return;
+
+                        const extent = ol.extent.createEmpty();
+                        features.forEach(feature => ol.extent.extend(extent, feature.getGeometry().getExtent()));
+
+                        if (!ol.extent.isEmpty(extent)) {
+                            map.getView().fit(extent, {
+                                padding: padding,
+                                duration: 700,
+                                maxZoom: maxZoom
+                            });
+                        }
+                    })
+                    .catch(() => {});
+            }
+            // Load Default All Talukas (prj_taluka_bd) - Shows at startup
+            function loadDefaultAllTalukas() {
+                console.log('🔄 Loading default all talukas (prj_taluka_bd)...');
+
+                if (defaultAllTalukasLayer) {
+                    map.removeLayer(defaultAllTalukasLayer);
+                }
+
+                const source = new ol.source.TileWMS({
+                    url: GEOSERVER_URL,
+                    params: {
+                        'LAYERS': wmsLayer('prj_taluka_bd'),
+                        'viewparams': GEOSERVER_VIEWPARAMS,
+                        'FORMAT': 'image/png',
+                        'TRANSPARENT': true,
+                        'VERSION': '1.1.0',
+                        'STYLES': wmsStyle('prj_taluka_bd')
+                    },
+                    serverType: 'geoserver',
+                    crossOrigin: 'anonymous',
+                    transition: 0
+                });
+
+                source.on('tileloadstart', showMapLoading);
+                source.on('tileloadend', hideMapLoading);
+                source.on('tileloaderror', (event) => {
+                    console.error('❌ Error loading all talukas:', event);
+                    hideMapLoading();
+                });
+
+                defaultAllTalukasLayer = new ol.layer.Tile({
+                    source: source,
+                    zIndex: 6,
+                    preload: Infinity
+                });
+
+                map.addLayer(defaultAllTalukasLayer);
+                console.log('✅ Default all talukas (prj_taluka_bd) layer added');
+
+                // Zoom to fit the project area
+                setTimeout(() => {
+                    // Prevent startup default zoom from overriding URL/user village zoom.
+                    if (hasLocationSelection()) {
+                        console.log('Skipping default project zoom because a location is selected');
+                        return;
+                    }
+                    const view = map.getView();
+                    view.setCenter(ol.proj.fromLonLat([73.8567, 18.5204]));
+                    view.setZoom(10);
+                    console.log('✅ Map centered on project area');
+                }, 500);
+            }
+
+            // Load Districts from API
+            function loadDistricts() {
+                fetch('/api/locations/?lang=mr')
+                    .then(response => response.json())
+                    .then(data => {
+                        const districtSelect = document.getElementById('districtSelect');
+                        districtSelect.innerHTML = '<option value="">Select District</option>';
+
+                        if (data.data && data.data.length > 0) {
+                            const districtValues = [];
+                            data.data.forEach(district => {
+                                const value = typeof district === 'string' ? district : (district.value || '');
+                                const label = typeof district === 'string' ? district : (district.label || district.value || '');
+                                if (!value) return;
+                                const option = document.createElement('option');
+                                option.value = value;
+                                if (district && typeof district === 'object' && district.id !== undefined && district.id !== null) {
+                                    option.dataset.id = district.id;
+                                }
+                                option.textContent = label;
+                                districtSelect.appendChild(option);
+                                districtValues.push(value);
+                            });
+                            console.log(`✅ Loaded ${data.data.length} districts`);
+
+                            if (initialUrlState.district && districtValues.includes(initialUrlState.district)) {
+                                districtSelect.value = initialUrlState.district;
+                                districtSelect.dispatchEvent(new Event('change'));
+                            }
+                        } else {
+                            console.warn('⚠️ No districts found');
+                            showNotification('No districts available', 'info');
+                            districtSelect.disabled = true;
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error loading districts:', error);
+                        showNotification('Error loading districts', 'error');
+                    });
+            }
+
+            // Load Talukas by District
+            function loadTalukas(district, districtId = null) {
+                const url = districtId
+                    ? `/api/locations/?district_id=${encodeURIComponent(districtId)}&district=${encodeURIComponent(district)}&lang=mr`
+                    : `/api/locations/?district=${encodeURIComponent(district)}&lang=mr`;
+                fetch(url)
+                    .then(response => response.json())
+                    .then(data => {
+                        const talukaSelect = document.getElementById('talukaSelect');
+                        talukaSelect.innerHTML = '<option value="">Select Taluka</option>';
+
+                        if (data.data && data.data.length > 0) {
+                            const talukaValues = [];
+                            data.data.forEach(taluka => {
+                                const value = typeof taluka === 'string' ? taluka : (taluka.value || '');
+                                const label = typeof taluka === 'string' ? taluka : (taluka.label || taluka.value || '');
+                                if (!value) return;
+                                const option = document.createElement('option');
+                                option.value = value;
+                                if (taluka && typeof taluka === 'object' && taluka.id !== undefined && taluka.id !== null) {
+                                    option.dataset.id = taluka.id;
+                                }
+                                option.textContent = label;
+                                talukaSelect.appendChild(option);
+                                talukaValues.push(value);
+                            });
+                            console.log(`✅ Loaded ${data.data.length} talukas for ${district}`);
+
+                            if (initialUrlState.taluka && talukaValues.includes(initialUrlState.taluka)) {
+                                talukaSelect.value = initialUrlState.taluka;
+                                talukaSelect.dispatchEvent(new Event('change'));
+                            }
+                        } else {
+                            console.warn(`⚠️ No talukas found for ${district}`);
+                            showNotification(`No talukas available for ${district}`, 'info');
+                            talukaSelect.disabled = true;
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error loading talukas:', error);
+                        showNotification('Error loading talukas', 'error');
+                    });
+            }
+
+            // Load Villages by Taluka
+            function loadVillages(district, taluka, districtId = null, talukaId = null) {
+                const url = talukaId
+                    ? `/api/locations/?district_id=${encodeURIComponent(districtId || '')}&taluka_id=${encodeURIComponent(talukaId)}&district=${encodeURIComponent(district)}&taluka=${encodeURIComponent(taluka)}&lang=mr`
+                    : `/api/locations/?district=${encodeURIComponent(district)}&taluka=${encodeURIComponent(taluka)}&lang=mr`;
+                fetch(url)
+                    .then(response => response.json())
+                    .then(data => {
+                        const villageSelect = document.getElementById('villageSelect');
+                        villageSelect.innerHTML = '<option value="">Select Village</option>';
+
+                        if (data.data && data.data.length > 0) {
+                            const villageValues = [];
+                            data.data.forEach(village => {
+                                const value = typeof village === 'string' ? village : (village.value || '');
+                                const label = typeof village === 'string' ? village : (village.label || village.value || '');
+                                if (!value) return;
+                                const option = document.createElement('option');
+                                option.value = value;
+                                if (village && typeof village === 'object' && village.id !== undefined && village.id !== null) {
+                                    option.dataset.id = village.id;
+                                }
+                                option.textContent = label;
+                                villageSelect.appendChild(option);
+                                villageValues.push(value);
+                            });
+                            console.log(`✅ Loaded ${data.data.length} villages for ${taluka}`);
+
+                            if (initialUrlState.village && villageValues.includes(initialUrlState.village)) {
+                                villageSelect.value = initialUrlState.village;
+                                villageSelect.dispatchEvent(new Event('change'));
+                            }
+                        } else {
+                            console.warn(`⚠️ No villages found for ${taluka} in ${district}`);
+                            showNotification(`No villages available for ${taluka}`, 'info');
+                            villageSelect.disabled = true;
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error loading villages:', error);
+                        showNotification('Error loading villages', 'error');
+                    });
+            }
+
+            // Load Guts by Village
+            function loadGuts(district, taluka, village, districtId = null, talukaId = null, villageId = null) {
+                const url = villageId
+                    ? `/api/locations/?district_id=${encodeURIComponent(districtId || '')}&taluka_id=${encodeURIComponent(talukaId || '')}&village_id=${encodeURIComponent(villageId)}&district=${encodeURIComponent(district)}&taluka=${encodeURIComponent(taluka)}&village=${encodeURIComponent(village)}`
+                    : `/api/locations/?district=${encodeURIComponent(district)}&taluka=${encodeURIComponent(taluka)}&village=${encodeURIComponent(village)}`;
+                fetch(url)
+                    .then(response => response.json())
+                    .then(data => {
+                        const gutSelect = document.getElementById('gutSelect');
+                        gutSelect.innerHTML = '<option value="">Select Gut Number</option>';
+
+                        if (data.data && data.data.length > 0) {
+                            data.data.forEach(gut => {
+                                const option = document.createElement('option');
+                                option.value = gut;
+                                option.textContent = gut;
+                                gutSelect.appendChild(option);
+                            });
+                            console.log(`✅ Loaded ${data.data.length} guts for ${village}`);
+
+                            if (initialUrlState.gut && data.data.includes(initialUrlState.gut)) {
+                                gutSelect.value = initialUrlState.gut;
+                                gutSelect.dispatchEvent(new Event('change'));
+                            }
+                        } else {
+                            console.warn(`⚠️ No guts found for ${village} in ${taluka}`);
+                            showNotification(`No gut numbers available for ${village}`, 'info');
+                            gutSelect.disabled = true;
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error loading guts:', error);
+                        showNotification('Error loading gut numbers', 'error');
+                    });
+            }
+
+            // Load District Layer from WMS
+            function loadDistrictLayer(district, districtId = null) {
+                if (districtLayer) map.removeLayer(districtLayer);
+
+                console.log(`🔄 Loading district layer for: ${district}`);
+
+                const escapedDistrict = district.replace(/'/g, "''");
+                const cqlFilter = `district_name='${escapedDistrict}'`;
+
+                const source = new ol.source.TileWMS({
+                    url: GEOSERVER_URL,
+                    params: {
+                        'LAYERS': wmsLayer('prj_dist_poly'),
+                        'STYLES': wmsStyle('prj_dist_poly'),
+                        'CQL_FILTER': cqlFilter,
+                        'FORMAT': 'image/png',
+                        'TRANSPARENT': true,
+                        'VERSION': '1.1.0'
+                    },
+                    serverType: 'geoserver',
+                    crossOrigin: 'anonymous',
+                    transition: 0
+                });
+
+                source.on('tileloadstart', () => {
+                    console.log('🔄 Loading district tiles...');
+                    showMapLoading();
+                });
+                source.on('tileloadend', () => {
+                    console.log('✅ District tiles loaded');
+                    hideMapLoading();
+                });
+                source.on('tileloaderror', (event) => {
+                    console.error('❌ District tile load error:', event);
+                    hideMapLoading();
+                });
+
+                districtLayer = new ol.layer.Tile({
+                    source: source,
+                    zIndex: 10,
+                    preload: Infinity
+                });
+                map.addLayer(districtLayer);
+
+                console.log(`✅ District layer loaded for: ${district} with CQL: ${cqlFilter}`);
+
+                // Zoom to show full district boundary unless a deeper URL selection is being restored.
+                if (!currentTaluka && !currentVillage && !currentGutNumber && !initialUrlState.taluka && !initialUrlState.village && !initialUrlState.gut) {
+                    map.getView().animate({
+                        center: ol.proj.fromLonLat([73.8567, 18.5204]),
+                        zoom: 9,
+                        duration: 600
+                    });
+                }
+
+            }
+
+            // Load Taluka Layer from WMS
+            function loadTalukaLayer(district, taluka, districtId = null, talukaId = null) {
+                if (talukaLayer) map.removeLayer(talukaLayer);
+
+                const escapedTaluka = taluka.replace(/'/g, "''");
+                // taluka_master exposes taluka_name only - `id`/`taluka_id` are not published.
+                const cqlFilter = `taluka_name='${escapedTaluka}'`;
+
+                const source = new ol.source.TileWMS({
+                    url: GEOSERVER_URL,
+                    params: {
+                        'LAYERS': wmsLayer('prj_taluka_bd'),
+                        'STYLES': wmsStyle('prj_taluka_bd'),
+                        'CQL_FILTER': cqlFilter,
+                        'FORMAT': 'image/png',
+                        'TRANSPARENT': true,
+                        'VERSION': '1.1.0'
+                    },
+                    serverType: 'geoserver',
+                    crossOrigin: 'anonymous',
+                    transition: 0
+                });
+
+                source.on('tileloadstart', showMapLoading);
+                source.on('tileloadend', hideMapLoading);
+                source.on('tileloaderror', hideMapLoading);
+
+                talukaLayer = new ol.layer.Tile({
+                    source: source,
+                    zIndex: 10,
+                    preload: Infinity
+                });
+                map.addLayer(talukaLayer);
+
+                console.log(`✅ Taluka layer loaded for: ${taluka} in ${district}`);
+
+                // Zoom to show the taluka boundary unless a deeper URL selection is being restored.
+                if (!currentVillage && !currentGutNumber && !initialUrlState.village && !initialUrlState.gut) {
+                    const view = map.getView();
+                    view.animate({
+                        center: ol.proj.fromLonLat([73.8567, 18.5204]),
+                        zoom: 10,
+                        duration: 500
+                    });
+                }
+            }
+
+            // Load Village Layer from WMS
+            function loadVillageLayer(district, taluka, village, districtId = null, talukaId = null, villageId = null) {
+                if (villagesBoundaryLayer) map.removeLayer(villagesBoundaryLayer);
+
+                const escapedVillage = village.replace(/'/g, "''");
+                // village_master exposes village_name only - `id`/`village_id` are not published.
+                const cqlFilter = `village_name='${escapedVillage}'`;
+
+                const source = new ol.source.TileWMS({
+                    url: GEOSERVER_URL,
+                    params: {
+                        'LAYERS': wmsLayer('prj_vlg_bd'),
+                        'STYLES': wmsStyle('prj_vlg_bd'),
+                        'viewparams': GEOSERVER_VIEWPARAMS,
+                        'CQL_FILTER': cqlFilter,
+                        'FORMAT': 'image/png',
+                        'TRANSPARENT': true,
+                        'VERSION': '1.1.0'
+                    },
+                    serverType: 'geoserver',
+                    crossOrigin: 'anonymous',
+                    transition: 0
+                });
+
+                source.on('tileloadstart', showMapLoading);
+                source.on('tileloadend', hideMapLoading);
+                source.on('tileloaderror', hideMapLoading);
+
+                villagesBoundaryLayer = new ol.layer.Tile({
+                    source: source,
+                    zIndex: 10,
+                    preload: Infinity
+                });
+                map.addLayer(villagesBoundaryLayer);
+
+                // Zoom directly to the selected village boundary from project DB bounds.
+                fitLayerExtentFromApi('prj_vlg_bd', {
+                    district: district,
+                    taluka: taluka,
+                    village: village,
+                    district_id: districtId,
+                    taluka_id: talukaId,
+                    village_id: villageId
+                }, 16, [70, 70, 70, 70], () => {
+                    fitLayerExtentFromWFS('prj_vlg_bd', cqlFilter, 16, [70, 70, 70, 70]);
+                });
+
+                // Load gut boundaries for this village
+                loadVillageGutBoundaries(district, taluka, village, districtId, talukaId, villageId);
+
+                // Intentionally skip legacy bounds API fit to avoid overriding centered WFS fit.
+            }
+
+            // Load All Gut Boundaries for a Village from WMS
+            function loadVillageGutBoundaries(district, taluka, village, districtId = null, talukaId = null, villageId = null) {
+                console.log(`🔍 Loading gut boundaries for village: ${village}, taluka: ${taluka}`);
+
+                if (villageGutBoundariesLayer) map.removeLayer(villageGutBoundariesLayer);
+                if (gutBoundaryLayer) {
+                    map.removeLayer(gutBoundaryLayer);
+                    gutBoundaryLayer = null;
+                }
+
+                const escapedVillage = village.replace(/'/g, "''");
+                const baseVillageFilter = villageId
+                    ? `village_id=${Number(villageId)}`
+                    : `(village='${escapedVillage}' OR village_name='${escapedVillage}')`;
+
+                // If a specific gut is selected, show ONLY that gut
+                if (currentGutNumber) {
+                    const gutCqlFilter = `${baseVillageFilter} AND gut_no='${currentGutNumber}'`;
+                    console.log(`🔍 Selected Gut CQL Filter: ${gutCqlFilter}`);
+
+                    const source = new ol.source.TileWMS({
+                        url: GEOSERVER_URL,
+                        params: {
+                            'LAYERS': wmsLayer('prj_gut_bd'),
+                            'viewparams': GEOSERVER_VIEWPARAMS,
+                            'CQL_FILTER': gutCqlFilter,
+                            'FORMAT': 'image/png',
+                            'TRANSPARENT': true,
+                            'VERSION': '1.1.0',
+                            'STYLES': '' // Use default style with highlight
+                        },
+                        serverType: 'geoserver',
+                        crossOrigin: 'anonymous'
+                    });
+
+                    source.on('tileloadstart', () => {
+                        console.log('🔄 Loading selected gut tile...');
+                        showMapLoading();
+                    });
+                    source.on('tileloadend', () => {
+                        console.log('✅ Selected gut tile loaded');
+                        hideMapLoading();
+                    });
+                    source.on('tileloaderror', (event) => {
+                        console.error('❌ Selected gut tile load error:', event);
+                        hideMapLoading();
+                    });
+
+                    gutBoundaryLayer = new ol.layer.Tile({
+                        source: source,
+                        zIndex: 650,
+                        opacity: 1.0
+                    });
+                    map.addLayer(gutBoundaryLayer);
+
+                    console.log(`✅ Selected gut boundary loaded: ${currentGutNumber}`);
+
+                    fitLayerExtentFromApi('prj_gut_bd', {
+                        district: district,
+                        taluka: taluka,
+                        village: village,
+                        district_id: districtId,
+                        taluka_id: talukaId,
+                        village_id: villageId,
+                        gut_number: currentGutNumber
+                    }, 19, [100, 100, 100, 100], () => {
+                        fitLayerExtentFromWFS('prj_gut_bd', gutCqlFilter, 18, [90, 90, 90, 90]);
+                    });
+                } else {
+                    // No gut selected, show all gut boundaries in the village
+                    const cqlFilter = baseVillageFilter;
+                    console.log(`🔍 All Guts CQL Filter: ${cqlFilter}`);
+
+                    const source = new ol.source.TileWMS({
+                        url: GEOSERVER_URL,
+                        params: {
+                            'LAYERS': wmsLayer('prj_gut_bd'),
+                            'viewparams': GEOSERVER_VIEWPARAMS,
+                            'CQL_FILTER': cqlFilter,
+                            'FORMAT': 'image/png',
+                            'TRANSPARENT': true,
+                            'VERSION': '1.1.0',
+                            'STYLES': '' // Use default style
+                        },
+                        serverType: 'geoserver',
+                        crossOrigin: 'anonymous'
+                    });
+
+                    source.on('tileloadstart', () => {
+                        console.log('🔄 Loading gut tiles...');
+                        showMapLoading();
+                    });
+                    source.on('tileloadend', () => {
+                        console.log('✅ Gut tiles loaded');
+                        hideMapLoading();
+                    });
+                    source.on('tileloaderror', (event) => {
+                        console.error('❌ Gut tile load error:', event);
+                        hideMapLoading();
+                    });
+
+                    villageGutBoundariesLayer = new ol.layer.Tile({
+                        source: source,
+                        zIndex: 600,
+                        opacity: 1.0
+                    });
+                    map.addLayer(villageGutBoundariesLayer);
+
+                    console.log(`✅ All gut boundaries loaded for village: ${village}`);
+
+                    // Keep village-centered view when no specific gut is selected.
+                }
+
+                // Enable click detection using GetFeatureInfo
+                map.un('singleclick', handleGutClick);
+                map.on('singleclick', handleGutClick);
+
+                // Change cursor to pointer when over gut boundaries
+                map.getTargetElement().style.cursor = 'pointer';
+            }
+
+            // Handle map clicks for gut selection using WMS GetFeatureInfo
+            function handleGutClick(e) {
+                if (!currentVillage || !villageGutBoundariesLayer) return;
+
+                const coordinate = e.coordinate;
+                const lonLat = ol.proj.toLonLat(coordinate);
+                console.log(`🔍 Map clicked at: ${lonLat[1]}, ${lonLat[0]}`);
+
+                const viewResolution = map.getView().getResolution();
+                const source = villageGutBoundariesLayer.getSource();
+
+                const escapedVillage = currentVillage.replace(/'/g, "''");
+                const cqlFilter = currentVillageId
+                    ? `village_id=${Number(currentVillageId)}`
+                    : `(village='${escapedVillage}' OR village_name='${escapedVillage}')`;
+
+                const url = source.getFeatureInfoUrl(
+                    coordinate,
+                    viewResolution,
+                    'EPSG:3857',
+                    {
+                        'INFO_FORMAT': 'application/json',
+                        'FEATURE_COUNT': 1,
+                        'CQL_FILTER': cqlFilter
+                    }
+                );
+
+                if (url) {
+                    console.log(`🔍 GetFeatureInfo URL: ${url}`);
+
+                    fetch(url)
+                        .then(r => r.json())
+                        .then(data => {
+                            console.log(`🔍 GetFeatureInfo response:`, data);
+                            if (data.features && data.features.length > 0) {
+                                const gutNumber = data.features[0].properties.gut_no ||
+                                    data.features[0].properties.Gut_Number;
+                                if (gutNumber) {
+                                    currentGutNumber = String(gutNumber);
+                                    console.log(`✅ Gut clicked: ${gutNumber}`);
+
+                                    // Update dropdown
+                                    const gutSelect = document.getElementById('gutSelect');
+                                    if (gutSelect) {
+                                        gutSelect.value = currentGutNumber;
+                                        refreshAllLocationSearchSelects();
+                                    }
+
+                                    // Reload gut boundaries to show selection
+                                    loadVillageGutBoundaries(currentDistrict, currentTaluka, currentVillage, currentDistrictId, currentTalukaId, currentVillageId);
+
+                                    // Show notification
+                                    showNotification(`Selected Gut ${gutNumber} in ${currentVillage}`, 'success');
+
+                                    const clickedGutFilter = `village_id=${Number(currentVillageId)} AND gut_no='${String(currentGutNumber).replace(/'/g, "''")}'`;
+                                    fitLayerExtentFromApi('prj_gut_bd', {
+                                        district: currentDistrict,
+                                        taluka: currentTaluka,
+                                        village: currentVillage,
+                                        district_id: currentDistrictId,
+                                        taluka_id: currentTalukaId,
+                                        village_id: currentVillageId,
+                                        gut_number: currentGutNumber
+                                    }, 19, [100, 100, 100, 100], () => {
+                                        fitLayerExtentFromWFS('prj_gut_bd', clickedGutFilter, 18, [90, 90, 90, 90]);
+                                    });
+                                }
+                            } else {
+                                console.log('🔍 No gut found at clicked location');
+                            }
+                        })
+                        .catch(err => {
+                            console.error('🚨 GetFeatureInfo error:', err);
+                        });
+                }
+            }
+
+            // Function to clear all GeoServer layers
+            function clearAllLayers() {
+                if (districtLayer) map.removeLayer(districtLayer);
+                if (talukaLayer) map.removeLayer(talukaLayer);
+                if (villagesBoundaryLayer) map.removeLayer(villagesBoundaryLayer);
+                if (villagesGutLayer) map.removeLayer(villagesGutLayer);
+                if (gutBoundaryLayer) map.removeLayer(gutBoundaryLayer);
+                if (villageGutBoundariesLayer) map.removeLayer(villageGutBoundariesLayer);
+            }
+
+            // Load District Boundary
+            function loadDistrictBoundary() {
+                if (districtLayer) map.removeLayer(districtLayer);
+
+                const source = new ol.source.TileWMS({
+                    url: GEOSERVER_URL,
+                    params: {
+                        'LAYERS': wmsLayer('prj_dist_poly'),
+                        'STYLES': wmsStyle('prj_dist_poly'),
+                        'FORMAT': 'image/png',
+                        'TRANSPARENT': true,
+                        'VERSION': '1.1.0'
+                    },
+                    serverType: 'geoserver',
+                    crossOrigin: 'anonymous',
+                    transition: 0
+                });
+
+                source.on('tileloadstart', showMapLoading);
+                source.on('tileloadend', hideMapLoading);
+                source.on('tileloaderror', hideMapLoading);
+
+                districtLayer = new ol.layer.Tile({
+                    source: source,
+                    zIndex: 10,
+                    preload: Infinity
+                });
+                map.addLayer(districtLayer);
+
+                // Zoom to fit full prj_dist_poly extent (Pune district bounds)
+                const extent = ol.proj.transformExtent(
+                    [73.322, 17.894, 75.163, 19.396],
+                    'EPSG:4326',
+                    'EPSG:3857'
+                );
+                map.getView().fit(extent, { padding: [50, 50, 50, 50], duration: 500 });
+            }
+
+            // Load Taluka Boundary
+            function loadTalukaBoundary() {
+                if (talukaLayer) map.removeLayer(talukaLayer);
+
+                const source = new ol.source.TileWMS({
+                    url: GEOSERVER_URL,
+                    params: {
+                        'LAYERS': wmsLayer('purandar_tehsil'),
+                        'STYLES': 'taluka_style',
+                        'FORMAT': 'image/png',
+                        'TRANSPARENT': true,
+                        'VERSION': '1.1.0'
+                    },
+                    serverType: 'geoserver',
+                    crossOrigin: 'anonymous',
+                    transition: 0
+                });
+
+                source.on('tileloadstart', showMapLoading);
+                source.on('tileloadend', hideMapLoading);
+                source.on('tileloaderror', hideMapLoading);
+
+                talukaLayer = new ol.layer.Tile({
+                    source: source,
+                    zIndex: 10,
+                    preload: Infinity
+                });
+                map.addLayer(talukaLayer);
+
+                // Fetch bounds from API to zoom properly
+                fetch('/api/layer-bounds/purandar_tehsil/')
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.bounds) {
+                            const extent = ol.proj.transformExtent(
+                                [data.bounds.minLng, data.bounds.minLat, data.bounds.maxLng, data.bounds.maxLat],
+                                'EPSG:4326',
+                                'EPSG:3857'
+                            );
+                            map.getView().fit(extent, { padding: [50, 50, 50, 50] });
+                        }
+                    })
+                    .catch(error => console.error('Error fetching taluka bounds:', error));
+            }
+
+            // Load AOI Boundary
+            function loadAOIBoundary() {
+                if (aoiLayer) map.removeLayer(aoiLayer);
+
+                const source = new ol.source.TileWMS({
+                    url: GEOSERVER_URL,
+                    params: {
+                        'LAYERS': wmsLayer('purandar_aoi'),
+                        'STYLES': 'aoi_style',
+                        'FORMAT': 'image/png',
+                        'TRANSPARENT': true,
+                        'VERSION': '1.1.0'
+                    },
+                    serverType: 'geoserver',
+                    crossOrigin: 'anonymous',
+                    transition: 0
+                });
+
+                source.on('tileloadstart', showMapLoading);
+                source.on('tileloadend', hideMapLoading);
+                source.on('tileloaderror', hideMapLoading);
+
+                aoiLayer = new ol.layer.Tile({
+                    source: source,
+                    zIndex: 10,
+                    preload: Infinity
+                });
+                map.addLayer(aoiLayer);
+            }
+
+            // Load Villages Boundary
+            function loadVillagesBoundary() {
+                if (villagesBoundaryLayer) map.removeLayer(villagesBoundaryLayer);
+
+                villagesBoundaryLayer = new ol.layer.Tile({
+                    source: new ol.source.TileWMS({
+                        url: GEOSERVER_URL,
+                        params: {
+                            'LAYERS': wmsLayer('purandhar_airport_village_bo'),
+                            'STYLES': 'village_style',
+                            'FORMAT': 'image/png',
+                            'TRANSPARENT': true,
+                            'VERSION': '1.1.0'
+                        },
+                        serverType: 'geoserver',
+                        crossOrigin: 'anonymous'
+                    }),
+                    zIndex: 10
+                });
+                map.addLayer(villagesBoundaryLayer);
+
+                // Fetch bounds from API to zoom properly
+                fetch('/api/layer-bounds/purandhar_airport_village_bo/')
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.bounds) {
+                            const extent = ol.proj.transformExtent(
+                                [data.bounds.minLng, data.bounds.minLat, data.bounds.maxLng, data.bounds.maxLat],
+                                'EPSG:4326',
+                                'EPSG:3857'
+                            );
+                            map.getView().fit(extent, { padding: [50, 50, 50, 50] });
+                        }
+                    })
+                    .catch(error => console.error('Error fetching villages bounds:', error));
+            }
+
+            // Load Villages with Gut Numbers
+            function loadVillagesWithGut() {
+                if (villagesGutLayer) map.removeLayer(villagesGutLayer);
+
+                villagesGutLayer = new ol.layer.Tile({
+                    source: new ol.source.TileWMS({
+                        url: GEOSERVER_URL,
+                        params: {
+                            'LAYERS': wmsLayer('purandhar_airport_villages'),
+                            'STYLES': 'village_style',
+                            'FORMAT': 'image/png',
+                            'TRANSPARENT': true,
+                            'VERSION': '1.1.0'
+                        },
+                        serverType: 'geoserver',
+                        crossOrigin: 'anonymous'
+                    }),
+                    zIndex: 10
+                });
+                map.addLayer(villagesGutLayer);
+
+                // Fetch bounds from API to zoom properly
+                fetch('/api/layer-bounds/purandhar_airport_villages/')
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.bounds) {
+                            const extent = ol.proj.transformExtent(
+                                [data.bounds.minLng, data.bounds.minLat, data.bounds.maxLng, data.bounds.maxLat],
+                                'EPSG:4326',
+                                'EPSG:3857'
+                            );
+                            map.getView().fit(extent, { padding: [50, 50, 50, 50] });
+                        }
+                    })
+                    .catch(error => console.error('Error fetching villages gut bounds:', error));
+            }
+
+            // Load Gut Numbers List for selected village
+            function loadGutNumbersList(villageName) {
+                fetch(`/api/gut-numbers/${encodeURIComponent(villageName)}/`)
+                    .then(response => response.json())
+                    .then(data => {
+                        const gutSelect = document.getElementById('gutSelect');
+                        gutSelect.innerHTML = '<option value="">Select Gut Number</option>';
+
+                        data.gut_numbers.forEach(gutNumber => {
+                            const option = document.createElement('option');
+                            option.value = gutNumber;
+                            option.textContent = gutNumber;
+                            gutSelect.appendChild(option);
+                        });
+                    })
+                    .catch(error => console.error('Error loading gut numbers:', error));
+            }
+
+            // Load Villages List - Simple Django API approach
+            function loadVillagesList() {
+                console.log(`🔍 Fetching villages from Django API: /api/villages-list/`);
+
+                fetch('/api/villages-list/')
+                    .then(response => {
+                        console.log(`📡 Response status: ${response.status}`);
+                        if (!response.ok) {
+                            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                        }
+                        return response.text(); // Get as text first to see what we're receiving
+                    })
+                    .then(text => {
+                        console.log(`📄 Raw response:`, text);
+                        const data = JSON.parse(text); // Then parse as JSON
+                        console.log(`✅ Parsed JSON:`, data);
+
+                        const villageSelect = document.getElementById('villageSelect');
+                        villageSelect.innerHTML = '<option value="">Select Village</option>';
+
+                        if (data.villages && data.villages.length > 0) {
+                            data.villages.forEach(village => {
+                                const option = document.createElement('option');
+                                option.value = village;
+                                option.textContent = village;
+                                villageSelect.appendChild(option);
+                            });
+                            console.log(`✅ Loaded ${data.villages.length} villages`);
+                        } else {
+                            console.warn('⚠️ No villages found in response');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('❌ Error loading villages list:', error);
+                        console.error('❌ Error details:', error.message);
+                    });
+            }
+
+            // Fetch Gut Statistics
+            function fetchGutStats(villageName, gutNumber) {
+                console.log(`Fetching stats for gut: ${villageName}/${gutNumber}`);
+
+                fetch(`/api/gut-stats/${encodeURIComponent(villageName)}/${encodeURIComponent(gutNumber)}/`)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        console.log('Gut stats:', data);
+
+                        // Update affected farmers
+                        const affectedFarmersElement = document.getElementById('affectedFarmersCount');
+                        if (affectedFarmersElement) {
+                            affectedFarmersElement.textContent = data.affected_farmers.toLocaleString();
+                        }
+
+                        // Update area acquired
+                        const areaAcquiredElement = document.getElementById('areaAcquired');
+                        if (areaAcquiredElement) {
+                            areaAcquiredElement.textContent = data.area_acquired.toLocaleString('en-IN', { maximumFractionDigits: 2 }) + ' Ha';
+                        }
+
+                        // Update total compensation
+                        const totalCompensationElement = document.getElementById('totalCompensation');
+                        if (totalCompensationElement) {
+                            totalCompensationElement.textContent = formatCurrency(data.total_compensation);
+                        }
+
+                        // Calculate and display total assets from land classification (matches Assets Distribution)
+                        if (data.land_classification) {
+                            const totalAssets = (data.land_classification.trees_total || 0) +
+                                (data.land_classification.structures_total || 0) +
+                                (data.land_classification.water_total || 0);
+                            const totalAssetsElement = document.getElementById('totalAssetsCount');
+                            if (totalAssetsElement) {
+                                totalAssetsElement.textContent = totalAssets.toLocaleString();
+                            }
+                        }
+
+                        // Populate asset layers with gut-specific counts
+                        if (data.assets) {
+                            populateAssetLayers(data.assets);
+                        }
+
+                        // Populate land classification with gut-specific data
+                        if (data.land_classification) {
+                            populateLandClassification(data.land_classification);
+                            populateAssetsDistribution(data.land_classification);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error loading gut stats:', error);
+                        showNotification(`Failed to load gut statistics: ${error.message}`, 'error');
+                    });
+            }
+
+            function toSafeNumber(value) {
+                const numeric = Number(value);
+                return Number.isFinite(numeric) ? numeric : 0;
+            }
+
+            function setAffectedCardsLoading() {
+                const loadingValue = '...';
+                const ids = [
+                    'affectedDistrictsCount',
+                    'affectedTalukasCount',
+                    'affectedVillagesCount',
+                    'affectedGutsCount'
+                ];
+                ids.forEach((id) => {
+                    const el = document.getElementById(id);
+                    if (el) el.textContent = loadingValue;
+                });
+
+                const areaEl = document.getElementById('areaAcquired');
+                if (areaEl) areaEl.textContent = `${loadingValue} Ha`;
+            }
+
+            function updateAffectedCards(data) {
+                const affectedDistricts = toSafeNumber(data?.affected_districts);
+                const affectedTalukas = toSafeNumber(data?.affected_talukas);
+                const affectedVillages = toSafeNumber(data?.affected_villages);
+                const affectedGuts = toSafeNumber(data?.affected_guts);
+                const affectedArea = toSafeNumber(data?.affected_area_ha);
+
+                const districtEl = document.getElementById('affectedDistrictsCount');
+                if (districtEl) districtEl.textContent = affectedDistricts.toLocaleString('en-IN');
+
+                const talukaEl = document.getElementById('affectedTalukasCount');
+                if (talukaEl) talukaEl.textContent = affectedTalukas.toLocaleString('en-IN');
+
+                const villageEl = document.getElementById('affectedVillagesCount');
+                if (villageEl) villageEl.textContent = affectedVillages.toLocaleString('en-IN');
+
+                const gutEl = document.getElementById('affectedGutsCount');
+                if (gutEl) gutEl.textContent = affectedGuts.toLocaleString('en-IN');
+
+                const areaEl = document.getElementById('areaAcquired');
+                if (areaEl) {
+                    areaEl.textContent = `${affectedArea.toLocaleString('en-IN', { maximumFractionDigits: 2 })} Ha`;
+                }
+            }
+
+            const AFFECTED_COUNTS_CACHE_TTL_MS = 5 * 60 * 1000;
+
+            function getAffectedCountsCacheKey(params) {
+                return `lmrs:affected-counts:${params.toString()}`;
+            }
+
+            function readDashboardSessionCache(cacheKey) {
+                try {
+                    const raw = sessionStorage.getItem(cacheKey);
+                    if (!raw) return null;
+
+                    const cached = JSON.parse(raw);
+                    if (!cached || Date.now() - Number(cached.savedAt || 0) > AFFECTED_COUNTS_CACHE_TTL_MS) {
+                        sessionStorage.removeItem(cacheKey);
+                        return null;
+                    }
+
+                    return cached.data || null;
+                } catch (error) {
+                    return null;
+                }
+            }
+
+            function writeDashboardSessionCache(cacheKey, data) {
+                try {
+                    sessionStorage.setItem(cacheKey, JSON.stringify({
+                        savedAt: Date.now(),
+                        data: data || {}
+                    }));
+                } catch (error) {
+                    // Storage may be unavailable in private browsing; fresh fetch still updates the UI.
+                }
+            }
+
+            function fetchAffectedCounts(district = null, taluka = null, village = null, gut = null) {
+                const params = new URLSearchParams();
+
+                if (currentDistrictId) params.append('district_id', currentDistrictId);
+                if (currentTalukaId) params.append('taluka_id', currentTalukaId);
+                if (currentVillageId) params.append('village_id', currentVillageId);
+                if (district) params.append('district', district);
+                if (taluka) params.append('taluka', taluka);
+                if (village) params.append('village', village);
+                if (gut) params.append('gut_id', gut);
+
+                const projectIdFromUrl = new URLSearchParams(window.location.search).get('project_id');
+                if (projectIdFromUrl) params.append('project_id', projectIdFromUrl);
+                if (typeof PROJECT_SCHEMA !== 'undefined' && PROJECT_SCHEMA) {
+                    params.append('tenant_id', PROJECT_SCHEMA);
+                }
+
+                const cacheKey = getAffectedCountsCacheKey(params);
+                const cachedData = readDashboardSessionCache(cacheKey);
+                if (cachedData) {
+                    updateAffectedCards(cachedData);
+                } else if (hasLocationSelection()) {
+                    setAffectedCardsLoading();
+                }
+
+                fetch(`/api/dashboard/affected-counts/?${params.toString()}`)
+                    .then(async (response) => {
+                        const rawText = await response.text();
+                        let data = {};
+                        try {
+                            data = rawText ? JSON.parse(rawText) : {};
+                        } catch (parseError) {
+                            throw new Error(`Invalid JSON response (${response.status})`);
+                        }
+                        if (!response.ok) {
+                            throw new Error(data.error || `Failed with status ${response.status}`);
+                        }
+                        return data;
+                    })
+                    .then(data => {
+                        writeDashboardSessionCache(cacheKey, data || {});
+                        updateAffectedCards(data || {});
+                    })
+                    .catch(error => {
+                        console.error('Error loading affected counts:', error);
+                        if (!cachedData && hasLocationSelection()) {
+                            updateAffectedCards({});
+                        }
+                    });
+            }
+            // Fetch Project Statistics - with optional filters (district, taluka, village, gut)
+            function fetchProjectStats(district = null, taluka = null, village = null, gut = null) {
+                let url = '/api/project-stats/?';
+                const params = [];
+
+                if (district) params.push(`district=${encodeURIComponent(district)}`);
+                if (taluka) params.push(`taluka=${encodeURIComponent(taluka)}`);
+                if (village) params.push(`village=${encodeURIComponent(village)}`);
+                if (gut) params.push(`gut=${encodeURIComponent(gut)}`);
+
+                url += params.join('&');
+
+                const projectStatsCacheKey = `lmrs:project-stats:${url}`;
+                const cachedProjectStats = readDashboardSessionCache(projectStatsCacheKey);
+                if (cachedProjectStats) {
+                    populateAssetLayers(cachedProjectStats.assets || {});
+                    if (cachedProjectStats.land_classification) {
+                        populateLandClassification(cachedProjectStats.land_classification);
+                        populateAssetsDistribution(cachedProjectStats.land_classification);
+                    }
+                }
+
+                fetch(url)
+                    .then(response => response.json())
+                    .then(data => {
+                        writeDashboardSessionCache(projectStatsCacheKey, data || {});
+
+                        // Populate asset layers (always call to ensure prj_bd is shown)
+                        populateAssetLayers(data.assets || {});
+
+                        // Populate land classification
+                        if (data.land_classification) {
+                            populateLandClassification(data.land_classification);
+                            populateAssetsDistribution(data.land_classification);
+                        }
+                    })
+                    .catch(error => console.error('Error loading project stats:', error));
+
+                fetchAffectedCounts(district, taluka, village, gut);
+                fetchDashboardProgress(district, taluka, village, gut);
+
+                // Fetch documents for current filter level
+                fetchFilteredDocuments();
+            }
+
+            function updateProgressCard(prefix, data) {
+                const stats = data || {};
+                const percent = Number(stats.progress_percentage || 0);
+                const fields = {
+                    Total: stats.total || 0,
+                    Completed: stats.completed || 0,
+                    Draft: stats.draft || 0,
+                    NotStarted: stats.not_started || 0
+                };
+
+                const percentEl = document.getElementById(`${prefix}ProgressPercent`);
+                const barEl = document.getElementById(`${prefix}ProgressBar`);
+                if (percentEl) percentEl.textContent = `${percent}%`;
+                if (barEl) barEl.style.width = `${Math.max(0, Math.min(percent, 100))}%`;
+
+                Object.entries(fields).forEach(([key, value]) => {
+                    const el = document.getElementById(`${prefix}${key}`);
+                    if (el) el.textContent = Number(value || 0).toLocaleString();
+                });
+            }
+
+            function fetchDashboardProgress(district = null, taluka = null, village = null, gut = null) {
+                const params = new URLSearchParams();
+
+                if (currentDistrictId) params.append('district_id', currentDistrictId);
+                if (currentTalukaId) params.append('taluka_id', currentTalukaId);
+                if (currentVillageId) params.append('village_id', currentVillageId);
+                if (district) params.append('district', district);
+                if (taluka) params.append('taluka', taluka);
+                if (village) params.append('village', village);
+                if (gut) params.append('gut_id', gut);
+
+                fetch(`/dashboard/progress/?${params.toString()}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        updateProgressCard('villageInfo', data.village_info);
+                        updateProgressCard('bhusampadana', data.bhusampadana_prakriya);
+                    })
+                    .catch(error => {
+                        console.error('Error loading dashboard progress:', error);
+                        updateProgressCard('villageInfo', {});
+                        updateProgressCard('bhusampadana', {});
+                    });
+            }
+
+            // Fetch and display documents filtered by current selection
+            function fetchFilteredDocuments() {
+                const container = document.getElementById('filterDocsList');
+                if (!container) return;
+
+                if (!currentDistrict) {
+                    container.innerHTML = '<p class="text-[10px] text-slate-400 text-center py-3">Select a filter to view documents</p>';
+                    return;
+                }
+
+                const params = new URLSearchParams();
+                if (currentDistrict) params.append('district', currentDistrict);
+                if (currentTaluka) params.append('taluka', currentTaluka);
+                if (currentVillage) params.append('village', currentVillage);
+                if (currentGutNumber) params.append('gut', currentGutNumber);
+
+                container.innerHTML = '<p class="text-[10px] text-slate-400 text-center py-3">Loading...</p>';
+
+                fetch(`/api/filter-documents/?${params}`)
+                    .then(r => r.json())
+                    .then(data => {
+                        if (!data.documents || data.documents.length === 0) {
+                            container.innerHTML = '<p class="text-[10px] text-slate-400 text-center py-3">No documents found</p>';
+                            return;
+                        }
+                        const extColors = {
+                            pdf: 'bg-red-100 text-red-700',
+                            doc: 'bg-blue-100 text-blue-700',
+                            docx: 'bg-blue-100 text-blue-700',
+                            jpg: 'bg-green-100 text-green-700',
+                            jpeg: 'bg-green-100 text-green-700',
+                            png: 'bg-green-100 text-green-700'
+                        };
+                        container.innerHTML = data.documents.map(doc => {
+                            const extClass = extColors[doc.ext] || 'bg-slate-100 text-slate-600';
+                            return `
+                                <div class="flex items-center justify-between gap-2 py-1.5 border-b border-slate-100 dark:border-slate-800 last:border-0">
+                                    <div class="flex items-center gap-1.5 min-w-0">
+                                        <span class="text-[9px] font-semibold px-1.5 py-0.5 rounded shrink-0 ${extClass}">${(doc.ext || 'FILE').toUpperCase()}</span>
+                                        <div class="min-w-0">
+                                            <div class="text-[10px] text-slate-700 dark:text-slate-300 font-medium truncate" title="${doc.document_name}">${doc.document_name}</div>
+                                            
+                                        </div>
+                                    </div>
+                                    ${doc.file_url
+                                    ? `<a href="${doc.file_url}" target="_blank" class="text-[9px] font-semibold text-primary hover:underline shrink-0">View</a>`
+                                    : '<span class="text-[9px] text-slate-400 shrink-0">No file</span>'}
+                                </div>`;
+                        }).join('');
+                    })
+                    .catch(() => {
+                        container.innerHTML = '<p class="text-[10px] text-slate-400 text-center py-3">Error loading documents</p>';
+                    });
+            }
+
+            // Format currency in Lakh or Cr
+            function formatCurrency(amount) {
+                if (amount >= 10000000) { // 1 Crore = 10,000,000
+                    const crores = amount / 10000000;
+                    return '₹' + crores.toLocaleString('en-IN', { maximumFractionDigits: 2 }) + ' Cr';
+                } else if (amount >= 100000) { // 1 Lakh = 100,000
+                    const lakhs = amount / 100000;
+                    return '₹' + lakhs.toLocaleString('en-IN', { maximumFractionDigits: 2 }) + ' Lakh';
+                } else {
+                    return '₹' + amount.toLocaleString('en-IN', { maximumFractionDigits: 2 });
+                }
+            }
+
+            // Populate land classification list
+            function populateLandClassification(landData) {
+                const landClassificationList = document.getElementById('landClassificationList');
+                const analyticsClassificationList = document.getElementById('assetClassificationAnalyticsList');
+                if (!landClassificationList && !analyticsClassificationList) return;
+
+                // Build tree categories HTML (Fruit Tree, Forest Tree)
+                let treeCategoriesHTML = '';
+                if (landData.tree_categories && Object.keys(landData.tree_categories).length > 0) {
+                    treeCategoriesHTML = '<div class="pl-6 flex flex-col gap-1">';
+
+                    // Sort categories by count (descending)
+                    const sortedTreeCategories = Object.entries(landData.tree_categories)
+                        .sort((a, b) => b[1].count - a[1].count);
+
+                    sortedTreeCategories.forEach(([category, data]) => {
+                        treeCategoriesHTML += `
+                            <div class="flex justify-between items-center text-xs py-1">
+                                <span class="flex items-center gap-1">
+                                    <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                                    <span class="text-slate-600 dark:text-slate-400">${category}</span>
+                                </span>
+                                <div class="text-right">
+                                    <div class="font-medium text-slate-700 dark:text-slate-300">${data.count.toLocaleString()}</div>
+                                    <div class="text-[10px] text-slate-500">${formatCurrency(data.valuation)}</div>
+                                </div>
+                            </div>
+                        `;
+                    });
+
+                    treeCategoriesHTML += '</div>';
+                }
+
+                // Build other categories HTML (Structure, Other Asset)
+                let otherCategoriesHTML = '';
+                if (landData.other_categories && Object.keys(landData.other_categories).length > 0) {
+                    otherCategoriesHTML = '<div class="pl-6 flex flex-col gap-1">';
+
+                    // Sort categories by count (descending)
+                    const sortedOtherCategories = Object.entries(landData.other_categories)
+                        .sort((a, b) => b[1].count - a[1].count);
+
+                    sortedOtherCategories.forEach(([category, data]) => {
+                        const color = category === 'Structure' ? 'bg-purple-500' : 'bg-amber-500';
+                        otherCategoriesHTML += `
+                            <div class="flex justify-between items-center text-xs py-1">
+                                <span class="flex items-center gap-1">
+                                    <span class="w-2 h-2 rounded-full ${color}"></span>
+                                    <span class="text-slate-600 dark:text-slate-400">${category}</span>
+                                </span>
+                                <div class="text-right">
+                                    <div class="font-medium text-slate-700 dark:text-slate-300">${data.count.toLocaleString()}</div>
+                                    <div class="text-[10px] text-slate-500">${formatCurrency(data.valuation)}</div>
+                                </div>
+                            </div>
+                        `;
+                    });
+
+                    otherCategoriesHTML += '</div>';
+                }
+
+                const classificationHTML = `
+                    <!-- Trees Category -->
+                    <div class="mb-3">
+                        <div class="flex justify-between items-center text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                            <span class="flex items-center gap-2">
+                                <span class="material-symbols-outlined text-sm text-emerald-600">park</span>
+                                Trees
+                            </span>
+                            <div class="text-right">
+                                <div>${landData.trees_total.toLocaleString()}</div>
+                                <div class="text-xs text-slate-500 font-normal">${formatCurrency(landData.trees_valuation)}</div>
+                            </div>
+                        </div>
+                        ${treeCategoriesHTML}
+                    </div>
+                    
+                    <!-- Other Category -->
+                    <div class="pt-2 border-t border-slate-100 dark:border-slate-800">
+                        <div class="flex justify-between items-center text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                            <span class="flex items-center gap-2">
+                                <span class="material-symbols-outlined text-sm text-amber-600">category</span>
+                                Other
+                            </span>
+                            <div class="text-right">
+                                <div>${landData.other_total.toLocaleString()}</div>
+                                <div class="text-xs text-slate-500 font-normal">${formatCurrency(landData.other_valuation)}</div>
+                            </div>
+                        </div>
+                        ${otherCategoriesHTML}
+                    </div>
+                `;
+
+                if (landClassificationList) {
+                    landClassificationList.innerHTML = classificationHTML;
+                }
+
+                if (analyticsClassificationList) {
+                    analyticsClassificationList.innerHTML = classificationHTML;
+                }
+            }
+
+            function populateAssetsDistribution(landData) {
+                const assetsDistributionList = document.getElementById('assetsDistributionList');
+                const analyticsAssetsTotal = document.getElementById('analyticsAssetsTotal');
+                if (!assetsDistributionList || !analyticsAssetsTotal) return;
+
+                const categories = [
+                    { name: 'Fruit Tree', count: (landData.tree_categories && landData.tree_categories['Fruit Tree'] ? landData.tree_categories['Fruit Tree'].count : 0), dot: 'bg-emerald-500' },
+                    { name: 'Forest Tree', count: (landData.tree_categories && landData.tree_categories['Forest Tree'] ? landData.tree_categories['Forest Tree'].count : 0), dot: 'bg-green-700' },
+                    { name: 'Structure', count: landData.structures_total || 0, dot: 'bg-purple-500' },
+                    { name: 'Other Asset', count: landData.water_total || 0, dot: 'bg-amber-500' }
+                ];
+
+                const total = categories.reduce((sum, item) => sum + (item.count || 0), 0);
+                analyticsAssetsTotal.textContent = total.toLocaleString();
+
+                if (total === 0) {
+                    assetsDistributionList.innerHTML = '<p class="text-[10px] text-slate-400 text-center py-2">No data available</p>';
+                    return;
+                }
+
+                assetsDistributionList.innerHTML = categories.map(item => `
+                    <div class="flex justify-between items-center text-xs py-1 border-b border-slate-100 dark:border-slate-800 last:border-0">
+                        <span class="flex items-center gap-2 text-slate-600 dark:text-slate-400">
+                            <span class="w-2 h-2 rounded-full ${item.dot}"></span>
+                            ${item.name}
+                        </span>
+                        <span class="font-medium text-slate-700 dark:text-slate-300">${(item.count || 0).toLocaleString()}</span>
+                    </div>
+                `).join('');
+            }
+
+            // Populate asset layers list - Project Boundary and Asset Layers
+            function populateAssetLayers(assets) {
+                const assetLayersList = document.getElementById('assetLayersList');
+                if (!assetLayersList) return;
+
+                // Remember which layers are currently active before rebuilding
+                const currentlyActive = new Set(
+                    [...document.querySelectorAll('.asset-layer-toggle:checked')].map(el => el.dataset.asset)
+                );
+
+                const urlLayers = new Set(initialUrlState.layers || []);
+
+                assetLayersList.innerHTML = '';
+
+                // Define layers to show
+                const layers = [
+                    { key: 'prj_bd', name: 'Project Boundary', icon: 'border_outer' },
+                    { key: 'purandar_img', name: 'Project Image', icon: 'image' },
+                    { key: 'prj_ass_pt', name: 'Trees', icon: 'park' },
+                    { key: 'prj_ass_pl', name: 'Pipeline/BW', icon: 'water_drop' },
+                    { key: 'prj_ass_poly', name: 'Structure/Other', icon: 'apartment' },
+                    { key: 'prj_farmer', name: 'Farmers', icon: 'group' }
+                ];
+
+                // Add each layer
+                layers.forEach((layer, index) => {
+                    const isProjectBoundary = layer.key === 'prj_bd';
+                    const isDefaultOn = layer.key === 'purandar_img';
+                    // prj_bd is always on; others restore their previous state
+                    const isChecked = isProjectBoundary || isDefaultOn || currentlyActive.has(layer.key) || urlLayers.has(layer.key);
+                    const opacityControlHtml = layer.key === 'purandar_img'
+                        ? `<div class="mt-1 flex items-center gap-2">
+                                <span class="text-[10px] text-slate-500">Opacity</span>
+                                <input type="range" min="10" max="100" value="85" data-overlay-opacity="purandar_img" class="h-1.5 w-24 accent-primary">
+                           </div>`
+                        : '';
+
+                    const layerItem = document.createElement('div');
+                    layerItem.className = `flex justify-between items-center text-xs py-2 ${index < layers.length - 1 ? 'border-b border-slate-100 dark:border-slate-800' : ''}`;
+                    layerItem.innerHTML = `
+                        <div class="text-slate-600 dark:text-slate-400">
+                            <div class="flex items-center gap-2">
+                                <span class="material-symbols-outlined text-sm">${layer.icon}</span>
+                                <span class="font-medium">${layer.name}</span>
+                            </div>
+                            ${opacityControlHtml}
+                        </div>
+                        <label class="relative inline-flex items-center ${isProjectBoundary ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}">
+                            <input type="checkbox" class="sr-only peer asset-layer-toggle" data-asset="${layer.key}"
+                                ${isChecked ? 'checked' : ''} ${isProjectBoundary ? 'disabled' : ''}>
+                            <div class="w-11 h-6 bg-slate-200 dark:bg-slate-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                        </label>
+                    `;
+                    assetLayersList.appendChild(layerItem);
+
+                    // Ensure prj_bd is always loaded
+                    if (isProjectBoundary) {
+                        if (!assetLayers['prj_bd']) {
+                            loadAssetLayerFromGeoServer('prj_bd');
+                        }
+                        return; // no toggle listener needed
+                    }
+
+                    // If this layer is checked from URL/autosave, make sure layer is loaded
+                    if (isChecked) {
+                        loadAssetLayerFromGeoServer(layer.key);
+                    }
+
+                    // Add event listener to toggle for non-boundary layers
+                    const toggle = layerItem.querySelector('.asset-layer-toggle');
+                    toggle.addEventListener('change', function () {
+                        if (this.checked) {
+                            loadAssetLayerFromGeoServer(layer.key);
+                        } else {
+                            removeAssetLayer(layer.key);
+                        }
+                        updateUrlParams();
+                    });
+
+                    const opacitySlider = layerItem.querySelector('[data-overlay-opacity="purandar_img"]');
+                    if (opacitySlider) {
+                        opacitySlider.addEventListener('input', function () {
+                            const overlayLayer = assetLayers['purandar_img'];
+                            if (!overlayLayer) return;
+                            overlayLayer.setOpacity(Number(this.value) / 100);
+                        });
+                    }
+                });
+            }
+
+            // Load asset layer from GeoServer WMS with hierarchical filtering
+            function loadAssetLayerFromGeoServer(assetName) {
+                console.log(`🔍 Loading WMS layer: ${assetName}`);
+                console.log(`🔍 Current filters - District: ${currentDistrict}, Taluka: ${currentTaluka}, Village: ${currentVillage}, Gut: ${currentGutNumber}`);
+
+                // Remove existing layer
+                if (assetLayers[assetName]) {
+                    map.removeLayer(assetLayers[assetName]);
+                    delete assetLayers[assetName];
+                }
+
+                // Layer configuration
+                const layerConfig = {
+                    'prj_bd': { zIndex: 500, opacity: 0.7, name: 'Project Boundary', filterable: false },
+                    'purandar_img': { zIndex: 430, opacity: 0.85, name: 'Project Image', filterable: false },
+                    'prj_ass_pt': { zIndex: 550, opacity: 1.0, name: 'Trees', filterable: true },
+                    'prj_ass_pl': { zIndex: 560, opacity: 1.0, name: 'Pipeline/BW', filterable: true },
+                    'prj_ass_poly': { zIndex: 570, opacity: 0.8, name: 'Structure/Other', filterable: true },
+                    'prj_farmer': { zIndex: 580, opacity: 1.0, name: 'Farmers', filterable: true }
+                };
+
+                const config = layerConfig[assetName];
+                if (!config) {
+                    console.error(`❌ Unknown layer: ${assetName}`);
+                    return;
+                }
+
+                const purandarLayerNames = PURANDAR_ASSET_LAYERS[assetName] || [];
+                const wmsLayerNames = assetName === 'purandar_img'
+                    ? [PURANDAR_IMG_LAYER]
+                    : purandarLayerNames.length
+                        ? purandarLayerNames.map(layerName => `${PURANDAR_WORKSPACE}:${layerName}`)
+                        : [wmsLayer(assetName)];
+                const wmsLayers = wmsLayerNames.join(',');
+
+                // Build CQL filter for asset layers (not for prj_bd)
+                let cqlFilter = null;
+                if (config.filterable) {
+                    const filters = [];
+
+                    if (currentGutNumber && currentVillage && currentTaluka && currentDistrict) {
+                        // Gut level - most specific
+                        filters.push(`district='${currentDistrict.replace(/'/g, "''")}'`);
+                        filters.push(`taluka='${currentTaluka.replace(/'/g, "''")}'`);
+                        filters.push(`village='${currentVillage.replace(/'/g, "''")}'`);
+                        filters.push(`gut_no='${currentGutNumber.replace(/'/g, "''")}'`);
+                        cqlFilter = filters.join(' AND ');
+                        console.log(`🔍 Gut-level CQL filter: ${cqlFilter}`);
+                    } else if (currentVillage && currentTaluka && currentDistrict) {
+                        // Village level
+                        filters.push(`district='${currentDistrict.replace(/'/g, "''")}'`);
+                        filters.push(`taluka='${currentTaluka.replace(/'/g, "''")}'`);
+                        filters.push(`village='${currentVillage.replace(/'/g, "''")}'`);
+                        cqlFilter = filters.join(' AND ');
+                        console.log(`🔍 Village-level CQL filter: ${cqlFilter}`);
+                    } else if (currentTaluka && currentDistrict) {
+                        // Taluka level
+                        filters.push(`district='${currentDistrict.replace(/'/g, "''")}'`);
+                        filters.push(`taluka='${currentTaluka.replace(/'/g, "''")}'`);
+                        cqlFilter = filters.join(' AND ');
+                        console.log(`🔍 Taluka-level CQL filter: ${cqlFilter}`);
+                    } else if (currentDistrict) {
+                        // District level
+                        filters.push(`district='${currentDistrict.replace(/'/g, "''")}'`);
+                        cqlFilter = filters.join(' AND ');
+                        console.log(`🔍 District-level CQL filter: ${cqlFilter}`);
+                    } else {
+                        console.log(`🔍 No filter - showing all assets`);
+                    }
+
+                    // Log the full WMS URL for debugging
+                    if (cqlFilter) {
+                        const testUrl = `${GEOSERVER_URL}?SERVICE=WMS&VERSION=1.1.0&REQUEST=GetMap&LAYERS=${encodeURIComponent(wmsLayers)}&CQL_FILTER=${encodeURIComponent(cqlFilter)}`;
+                        console.log(`🔍 Test WMS URL: ${testUrl}`);
+                    }
+                }
+
+                const wmsParams = {
+                    'LAYERS': wmsLayers,
+                    'FORMAT': 'image/png',
+                    'TRANSPARENT': true,
+                    'VERSION': '1.1.0',
+                    'STYLES': ''
+                };
+
+                if (assetName === 'prj_bd') {
+                    wmsParams['viewparams'] = GEOSERVER_VIEWPARAMS;
+                }
+
+                // Add CQL filter if applicable
+                if (cqlFilter) {
+                    wmsParams['CQL_FILTER'] = wmsLayerNames.length > 1
+                        ? wmsLayerNames.map(() => cqlFilter).join(';')
+                        : cqlFilter;
+                    console.log(`🔍 WMS Request for ${config.name}:`);
+                    console.log(`   Layer: ${wmsLayers}`);
+                    console.log(`   CQL_FILTER: ${wmsParams['CQL_FILTER']}`);
+                }
+
+                const isProjectImage = assetName === 'purandar_img';
+                const source = isProjectImage
+                    ? new ol.source.ImageWMS({
+                        url: GEOSERVER_URL,
+                        params: wmsParams,
+                        serverType: 'geoserver',
+                        crossOrigin: 'anonymous',
+                        ratio: 1,
+                        hidpi: true
+                    })
+                    : new ol.source.TileWMS({
+                        url: GEOSERVER_URL,
+                        params: wmsParams,
+                        serverType: 'geoserver',
+                        crossOrigin: 'anonymous',
+                        transition: 0
+                    });
+
+                let tilesLoaded = false;
+                let tilesErrored = false;
+
+                source.on(isProjectImage ? 'imageloadstart' : 'tileloadstart', showMapLoading);
+                source.on(isProjectImage ? 'imageloadend' : 'tileloadend', () => {
+                    hideMapLoading();
+                    if (!tilesLoaded) {
+                        tilesLoaded = true;
+                        console.log(`✅ ${config.name} tiles loaded`);
+                    }
+                });
+                source.on(isProjectImage ? 'imageloaderror' : 'tileloaderror', (event) => {
+                    hideMapLoading();
+                    if (!tilesErrored) {
+                        tilesErrored = true;
+                        console.warn(`⚠️ Some tiles failed to load for ${config.name} (may be no data in selected area)`);
+                    }
+                });
+
+                assetLayers[assetName] = isProjectImage
+                    ? new ol.layer.Image({
+                        source: source,
+                        zIndex: config.zIndex,
+                        opacity: config.opacity
+                    })
+                    : new ol.layer.Tile({
+                        source: source,
+                        zIndex: config.zIndex,
+                        opacity: config.opacity
+                    });
+
+                map.addLayer(assetLayers[assetName]);
+
+                const filterInfo = currentGutNumber
+                    ? `Gut ${currentGutNumber}`
+                    : currentVillage
+                        ? `Village ${currentVillage}`
+                        : currentTaluka
+                            ? `Taluka ${currentTaluka}`
+                            : currentDistrict
+                                ? `District ${currentDistrict}`
+                                : 'All areas';
+
+                console.log(`✅ ${config.name} layer loaded for ${filterInfo}`);
+            }
+
+            // Remove asset layer from map
+            function removeAssetLayer(assetName) {
+                if (assetLayers[assetName]) {
+                    map.removeLayer(assetLayers[assetName]);
+                    delete assetLayers[assetName];
+                    console.log(`✅ ${assetName} layer removed`);
+                }
+            }
+
+            // Reload all currently active asset layers with new filters
+            function reloadActiveAssetLayers() {
+                console.log('🔄 Reloading active asset layers with new filters...');
+
+                // Get all currently active asset layers (checked toggles)
+                const activeToggles = document.querySelectorAll('.asset-layer-toggle:checked');
+
+                if (activeToggles.length === 0) {
+                    console.log('ℹ️ No active asset layers to reload');
+                    return;
+                }
+
+                const layerNames = [];
+                activeToggles.forEach(toggle => {
+                    const assetName = toggle.getAttribute('data-asset');
+                    console.log(`🔄 Reloading layer: ${assetName}`);
+                    loadAssetLayerFromGeoServer(assetName);
+
+                    // Get friendly name
+                    const layerConfig = {
+                        'prj_bd': 'Project Boundary',
+                        'purandar_img': 'Project Image',
+                        'prj_ass_pt': 'Trees',
+                        'prj_ass_pl': 'Pipeline/BW',
+                        'prj_ass_poly': 'Structure/Other'
+                    };
+                    layerNames.push(layerConfig[assetName] || assetName);
+                });
+
+                const filterInfo = currentGutNumber
+                    ? `Gut ${currentGutNumber}`
+                    : currentVillage
+                        ? `Village ${currentVillage}`
+                        : currentTaluka
+                            ? `Taluka ${currentTaluka}`
+                            : currentDistrict
+                                ? `District ${currentDistrict}`
+                                : 'All areas';
+
+                console.log(`✅ Reloaded ${activeToggles.length} active asset layer(s) for ${filterInfo}`);
+                // Don't show notification for gut-level updates since we already show "Selected Gut" message
+                if (!currentGutNumber) {
+                    showNotification(`Asset layers updated for ${filterInfo}`, 'success');
+                }
+            }
+
+            // Show notification toast with enhanced styling
+            function showNotification(message, type = 'info') {
+                // Create notification container if it doesn't exist
+                let container = document.getElementById('notification-container');
+                if (!container) {
+                    container = document.createElement('div');
+                    container.id = 'notification-container';
+                    container.className = 'fixed top-20 right-6 z-[9999] flex flex-col gap-2';
+                    document.body.appendChild(container);
+                }
+
+                // Create notification element
+                const notification = document.createElement('div');
+                const bgColor = type === 'error' ? 'bg-red-500' : type === 'success' ? 'bg-green-500' : 'bg-blue-500';
+                const icon = type === 'error' ? 'error' : type === 'success' ? 'check_circle' : 'info';
+
+                notification.className = `${bgColor} text-white px-4 py-3 rounded-lg shadow-2xl flex items-center gap-3 min-w-[300px] max-w-md animate-slide-in`;
+                notification.innerHTML = `
+                    <span class="material-symbols-outlined text-xl">${icon}</span>
+                    <span class="flex-1 text-sm font-medium">${message}</span>
+                    <button class="text-white hover:text-gray-200 transition-colors" onclick="this.parentElement.remove()">
+                        <span class="material-symbols-outlined text-lg">close</span>
+                    </button>
+                `;
+
+                container.appendChild(notification);
+
+                // Auto remove after 4 seconds
+                setTimeout(() => {
+                    notification.style.opacity = '0';
+                    notification.style.transform = 'translateX(100%)';
+                    notification.style.transition = 'all 0.3s ease-out';
+                    setTimeout(() => notification.remove(), 300);
+                }, 4000);
+            }
+        });
+        const mobileMenuBtn = document.getElementById("mobileMenuBtn");
+        const mobileMenu = document.getElementById("mobileMenu");
+        const accountMenuBtn = document.getElementById("accountMenuBtn");
+        const accountMenu = document.getElementById("accountMenu");
+
+        if (mobileMenuBtn && mobileMenu) {
+            mobileMenuBtn.addEventListener("click", () => {
+                const isOpen = !mobileMenu.classList.toggle("hidden");
+                mobileMenuBtn.setAttribute("aria-expanded", isOpen ? "true" : "false");
+            });
+
+            document.addEventListener("click", (e) => {
+                if (!mobileMenuBtn.contains(e.target) && !mobileMenu.contains(e.target)) {
+                    mobileMenu.classList.add("hidden");
+                    mobileMenuBtn.setAttribute("aria-expanded", "false");
+                }
+            });
+        }
+
+        if (accountMenuBtn && accountMenu) {
+            accountMenuBtn.addEventListener("click", () => {
+                const isOpen = !accountMenu.classList.toggle("hidden");
+                accountMenuBtn.setAttribute("aria-expanded", isOpen ? "true" : "false");
+            });
+
+            document.addEventListener("click", (e) => {
+                if (!accountMenuBtn.contains(e.target) && !accountMenu.contains(e.target)) {
+                    accountMenu.classList.add("hidden");
+                    accountMenuBtn.setAttribute("aria-expanded", "false");
+                }
+            });
+        }
+    </script>
+</body>
+
+</html>
