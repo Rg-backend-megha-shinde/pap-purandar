@@ -769,6 +769,68 @@ def get_land_record_gut_numbers(request):
     return JsonResponse({'gut_numbers': gut_numbers})
 
 
+@login_required
+def get_land_record_hissa_numbers(request):
+    district = (request.GET.get('district') or '').strip()
+    taluka = (request.GET.get('taluka') or '').strip()
+    village = (request.GET.get('village') or '').strip()
+    gut_number = (request.GET.get('gut_number') or '').strip()
+
+    if not all([district, taluka, village, gut_number]):
+        return JsonResponse({'hissa_numbers': [], 'data': []})
+
+    hissa_set = set()
+
+    # 1. From LandRecord712
+    records = _get_matching_land_records_for_process_chart(district, taluka, village, gut_number)
+    for rec in records:
+        if rec.hissa_number and rec.hissa_number.strip():
+            hissa_set.add(rec.hissa_number.strip())
+        if rec.gut_number and '/' in rec.gut_number:
+            parts = [p.strip() for p in rec.gut_number.split('/') if p.strip()]
+            if len(parts) >= 2:
+                hissa_set.add(parts[1])
+
+    # 2. From RorSurveyNumber
+    survey_rows = RorSurveyNumber.objects.filter(
+        district__iexact=district,
+        taluka__iexact=taluka,
+        village__iexact=village,
+        gut_number__iexact=gut_number,
+    )
+    for s_row in survey_rows:
+        if s_row.hissa_number and s_row.hissa_number.strip():
+            hissa_set.add(s_row.hissa_number.strip())
+
+    # 3. Dynamic fetch from ROR survey numbers if no cached hissa numbers found
+    if not hissa_set:
+        try:
+            options, _cache = ror_fetch_survey_numbers(district, taluka, village, gut_number)
+            for opt in options:
+                hissa = opt.get('hissa_number')
+                if hissa and hissa.strip():
+                    hissa_set.add(hissa.strip())
+                elif opt.get('value') and '/' in opt['value']:
+                    parts = [p.strip() for p in opt['value'].split('/') if p.strip()]
+                    if len(parts) >= 2:
+                        hissa_set.add(parts[1])
+        except Exception:
+            pass
+
+    def sort_key(val):
+        match = re.match(r'^(\d+)(.*)$', str(val))
+        if match:
+            return (0, int(match.group(1)), match.group(2))
+        return (1, 0, str(val))
+
+    sorted_hissas = sorted(list(hissa_set), key=sort_key)
+    return JsonResponse({
+        'success': True,
+        'hissa_numbers': sorted_hissas,
+        'data': sorted_hissas,
+    })
+
+
 def handle_document_upload(user, tool_name, files, district=None, taluka=None, village=None, gut_number=None,
                           inspection=None, rr_info=None, land_record=None, asset=None, entry=None, document_tool_record=None):
     tool = ToolMaster.objects.filter(tool_name=tool_name, pk__isnull=False).first()
@@ -954,6 +1016,56 @@ def get_marathi_name(level, district=None, taluka=None, village=None):
     except Exception:
         pass
     return district if level == 'district' else (taluka if level == 'taluka' else village)
+
+
+def find_village_data_record(district, taluka, village):
+    """
+    Robust lookup for VillageData record matching district, taluka, village.
+    Handles exact, case-insensitive, normalized text, and Marathi vs English variations.
+    """
+    if not district or not taluka or not village:
+        return None
+
+    district_str = str(district).strip()
+    taluka_str = str(taluka).strip()
+    village_str = str(village).strip()
+
+    # 1. Direct iexact match
+    direct = VillageData.objects.filter(
+        district__iexact=district_str,
+        taluka__iexact=taluka_str,
+        village__iexact=village_str
+    ).order_by('-updated_at', '-id').first()
+    if direct:
+        return direct
+
+    # 2. Key-based normalized match
+    d_norm = normalize_match_text(district_str)
+    t_norm = normalize_match_text(taluka_str)
+    v_norm = normalize_match_text(village_str)
+
+    d_mr = normalize_match_text(get_marathi_name('district', district_str))
+    t_mr = normalize_match_text(get_marathi_name('taluka', district_str, taluka_str))
+    v_mr = normalize_match_text(get_marathi_name('village', district_str, taluka_str, village_str))
+
+    for candidate in VillageData.objects.all().order_by('-updated_at', '-id'):
+        cd_norm = normalize_match_text(candidate.district)
+        ct_norm = normalize_match_text(candidate.taluka)
+        cv_norm = normalize_match_text(candidate.village)
+
+        cd_mr = normalize_match_text(get_marathi_name('district', candidate.district))
+        ct_mr = normalize_match_text(get_marathi_name('taluka', candidate.district, candidate.taluka))
+        cv_mr = normalize_match_text(get_marathi_name('village', candidate.district, candidate.taluka, candidate.village))
+
+        d_match = (d_norm in (cd_norm, cd_mr)) or (d_mr in (cd_norm, cd_mr)) or (cd_norm in (d_norm, d_mr))
+        t_match = (t_norm in (ct_norm, ct_mr)) or (t_mr in (ct_norm, ct_mr)) or (ct_norm in (t_norm, t_mr))
+        v_match = (v_norm in (cv_norm, cv_mr)) or (v_mr in (cv_norm, cv_mr)) or (cv_norm in (v_norm, v_mr))
+
+        if d_match and t_match and v_match:
+            return candidate
+
+    return None
+
 
 
 def _required_clean_text(value, field_label):
@@ -5310,6 +5422,14 @@ def process_chart_list(request):
         per_page = 10
 
     cases_qs = ProcessChartCase.objects.select_related('user').prefetch_related('step_data').all().order_by('-updated_at', '-id')
+    verification_filter = clean_optional_char(request.GET.get('verification') or request.GET.get('remark') or request.GET.get('filter_value')).lower()
+    filter_type = clean_optional_char(request.GET.get('filter_type')).lower()
+    if filter_type in {'verification', 'remark'} or verification_filter in {'verified', 'unverified'}:
+        if verification_filter == 'verified':
+            cases_qs = cases_qs.filter(is_record_authenticated=True)
+        elif verification_filter == 'unverified':
+            cases_qs = cases_qs.filter(is_record_authenticated=False)
+
     paginator = Paginator(cases_qs, per_page)
     page_obj = paginator.get_page(request.GET.get('page', 1))
     cases = list(page_obj.object_list)
@@ -6024,6 +6144,7 @@ def _serialize_process_chart_case(case):
         'taluka': case.taluka or '',
         'village': case.village or '',
         'gut_number': case.gut_number or '',
+        'hissa_number': getattr(case, 'hissa_number', '') or '',
         'project_purpose': case.project_purpose or '',
         'acquisition_type': case.acquisition_type or '',
         'current_step': case.current_step,
@@ -6712,86 +6833,130 @@ def _process_712_village_candidates(district, taluka, village):
 
 
 def _process_712_queryset(district, taluka, village, gut_number, gut_label='', village_candidates=None, hissa_number=''):
-    gut_candidates = {
-        _clean_712_value(gut_number),
-        _clean_712_value(gut_label),
-        normalize_gut_value(gut_number),
-        normalize_gut_value(gut_label),
-    }
-    for hissa_variant in _hissa_variants(hissa_number):
-        if gut_number:
-            gut_candidates.add(f"{_clean_712_value(gut_number)}/{hissa_variant}")
-        if gut_label:
-            gut_candidates.add(_clean_712_value(gut_label))
+    raw_gut = _clean_712_value(gut_number)
+    raw_label = _clean_712_value(gut_label)
+    raw_hissa = _clean_712_value(hissa_number)
+
+    inferred_hissa = raw_hissa
+    gut_candidates = set()
+
+    if raw_gut:
+        gut_candidates.add(raw_gut)
+        norm_gut = normalize_gut_value(raw_gut)
+        if norm_gut:
+            gut_candidates.add(norm_gut)
+        if '/' in raw_gut:
+            parts = [p.strip() for p in raw_gut.split('/') if p.strip()]
+            if parts:
+                gut_candidates.add(parts[0])
+                norm_main = normalize_gut_value(parts[0])
+                if norm_main:
+                    gut_candidates.add(norm_main)
+                if len(parts) >= 2 and not inferred_hissa:
+                    inferred_hissa = parts[1]
+
+    if raw_label:
+        gut_candidates.add(raw_label)
+        norm_label = normalize_gut_value(raw_label)
+        if norm_label:
+            gut_candidates.add(norm_label)
+        if '/' in raw_label:
+            parts = [p.strip() for p in raw_label.split('/') if p.strip()]
+            if parts:
+                gut_candidates.add(parts[0])
+                norm_main = normalize_gut_value(parts[0])
+                if norm_main:
+                    gut_candidates.add(norm_main)
+                if len(parts) >= 2 and not inferred_hissa:
+                    inferred_hissa = parts[1]
+
+    hissa_search_variants = _hissa_variants(inferred_hissa) if inferred_hissa else set()
+
+    for hv in hissa_search_variants:
+        if raw_gut and '/' not in raw_gut:
+            gut_candidates.add(f"{raw_gut}/{hv}")
+        if raw_label and '/' not in raw_label:
+            gut_candidates.add(f"{raw_label}/{hv}")
+
     gut_candidates = {item for item in gut_candidates if item}
     village_names = _unique_clean_values(village, *(village_candidates or []))
+
     gut_filter = Q()
     for candidate in gut_candidates:
         gut_filter |= Q(gut_number__iexact=candidate)
-        if not hissa_number and '/' not in candidate:
+        if not inferred_hissa and '/' not in candidate:
             gut_filter |= Q(gut_number__startswith=f"{candidate}/")
         normalized = normalize_gut_value(candidate)
         if normalized:
-            # Rows synced from ROR keep the system label ("ग.नं.259 पै"), so also
-            # match on the digits-only form the forms send.
             gut_filter |= Q(gut_number__iexact=normalized)
             gut_filter |= Q(gut_number__icontains=normalized)
-            if not hissa_number and '/' not in normalized:
+            if not inferred_hissa and '/' not in normalized:
                 gut_filter |= Q(gut_number__startswith=f"{normalized}/")
+
     if not gut_filter:
         return LandRecord712.objects.none()
-    hissa_number = _clean_712_value(hissa_number)
 
     def apply_hissa_filter(queryset):
-        if not hissa_number:
+        if not inferred_hissa:
             return queryset
         hissa_filter = Q()
-        for variant in _hissa_variants(hissa_number):
+        for variant in hissa_search_variants:
             hissa_filter |= Q(hissa_number__iexact=variant) | Q(hissa_number__icontains=variant)
-            if gut_number:
-                full_gut = f"{_clean_712_value(gut_number)}/{variant}"
+            if raw_gut:
+                full_gut = f"{raw_gut}/{variant}"
                 hissa_filter |= Q(gut_number__iexact=full_gut) | Q(gut_number__icontains=full_gut)
+                if '/' in raw_gut:
+                    main_p = raw_gut.split('/')[0].strip()
+                    full_gut_main = f"{main_p}/{variant}"
+                    hissa_filter |= Q(gut_number__iexact=full_gut_main) | Q(gut_number__icontains=full_gut_main)
         return queryset.filter(hissa_filter)
 
-    attempts = []
-    exact = apply_hissa_filter(_ror_api_712_rows().filter(gut_filter))
-    if district:
-        exact = exact.filter(district__iexact=district)
-    if taluka:
-        exact = exact.filter(taluka__iexact=taluka)
-    if village_names:
-        exact = exact.filter(_village_exact_filter(village_names))
-    attempts.append(exact)
+    def execute_attempts(base_qs):
+        attempts = []
+        exact = apply_hissa_filter(base_qs.filter(gut_filter))
+        if district:
+            exact = exact.filter(district__iexact=district)
+        if taluka:
+            exact = exact.filter(taluka__iexact=taluka)
+        if village_names:
+            exact = exact.filter(_village_exact_filter(village_names))
+        attempts.append(exact)
 
-    loose = apply_hissa_filter(_ror_api_712_rows().filter(gut_filter))
-    if district:
-        loose = loose.filter(_location_contains_filter('district', district))
-    if taluka:
-        loose = loose.filter(_location_contains_filter('taluka', taluka))
-    if village_names:
-        loose = loose.filter(_village_contains_filter(village_names))
-    attempts.append(loose)
+        loose = apply_hissa_filter(base_qs.filter(gut_filter))
+        if district:
+            loose = loose.filter(_location_contains_filter('district', district))
+        if taluka:
+            loose = loose.filter(_location_contains_filter('taluka', taluka))
+        if village_names:
+            loose = loose.filter(_village_contains_filter(village_names))
+        attempts.append(loose)
 
-    taluka_only = apply_hissa_filter(_ror_api_712_rows().filter(gut_filter))
-    if district:
-        taluka_only = taluka_only.filter(_location_contains_filter('district', district))
-    if taluka:
-        taluka_only = taluka_only.filter(_location_contains_filter('taluka', taluka))
-    if village_names:
-        attempts.extend(_best_village_queryset(taluka_only, village_name) for village_name in village_names)
-    else:
-        attempts.append(taluka_only)
+        taluka_only = apply_hissa_filter(base_qs.filter(gut_filter))
+        if district:
+            taluka_only = taluka_only.filter(_location_contains_filter('district', district))
+        if taluka:
+            taluka_only = taluka_only.filter(_location_contains_filter('taluka', taluka))
+        if village_names:
+            attempts.extend(_best_village_queryset(taluka_only, village_name) for village_name in village_names)
+        else:
+            attempts.append(taluka_only)
 
-    gut_only = apply_hissa_filter(_ror_api_712_rows().filter(gut_filter))
-    if village_names:
-        attempts.extend(_best_village_queryset(gut_only, village_name) for village_name in village_names)
-    else:
-        attempts.append(gut_only)
+        gut_only = apply_hissa_filter(base_qs.filter(gut_filter))
+        if village_names:
+            attempts.extend(_best_village_queryset(gut_only, village_name) for village_name in village_names)
+        else:
+            attempts.append(gut_only)
 
-    for queryset in attempts:
-        if queryset.exists():
-            return queryset
-    return LandRecord712.objects.none()
+        for queryset in attempts:
+            if queryset.exists():
+                return queryset
+        return base_qs.none()
+
+    ror_result = execute_attempts(_ror_api_712_rows())
+    if ror_result.exists():
+        return ror_result
+
+    return execute_attempts(LandRecord712.objects.all())
 
 
 @login_required
@@ -6851,11 +7016,23 @@ def process_chart_owners_from_712(request):
     })
 
 
-def _get_matching_land_records_for_process_chart(district, taluka, village, gut_number):
+def _get_matching_land_records_for_process_chart(district, taluka, village, gut_number, hissa_number=''):
+    if hissa_number and str(hissa_number).strip():
+        en_district, en_taluka, _en_village = resolve_location_to_english(district, taluka, village)
+        village_candidates = _process_712_village_candidates(district, taluka, village)
+        qs = _process_712_queryset(
+            en_district or district, en_taluka or taluka, village,
+            gut_number, '', village_candidates, hissa_number,
+        ).prefetch_related('farmers').order_by('khata_number', 'id')
+        records = list(qs)
+        if records:
+            return records
+
     district_key = normalize_match_text(district)
     taluka_key = normalize_match_text(taluka)
     village_key = normalize_match_text(village)
     gut_key = normalize_gut_value(gut_number)
+    main_gut_key = gut_key.split('/')[0] if gut_key and '/' in gut_key else gut_key
 
     records = []
     seen_ids = set()
@@ -6880,8 +7057,9 @@ def _get_matching_land_records_for_process_chart(district, taluka, village, gut_
         for candidate in normalized_candidates:
             if candidate.id in seen_ids:
                 continue
+            cand_norm = normalize_gut_value(candidate.gut_number)
             if (
-                normalize_gut_value(candidate.gut_number) == gut_key
+                (cand_norm == gut_key or (main_gut_key and cand_norm == main_gut_key))
                 and normalize_match_text(candidate.district) == district_key
                 and normalize_match_text(candidate.taluka) == taluka_key
                 and normalize_match_text(candidate.village) == village_key
@@ -6895,8 +7073,9 @@ def _get_matching_land_records_for_process_chart(district, taluka, village, gut_
         for candidate in normalized_candidates:
             if candidate.id in seen_ids:
                 continue
+            cand_norm = normalize_gut_value(candidate.gut_number)
             if (
-                normalize_gut_value(candidate.gut_number) == gut_key
+                (cand_norm == gut_key or (main_gut_key and cand_norm == main_gut_key))
                 and normalize_match_text(candidate.district) == district_key
                 and normalize_match_text(candidate.taluka) == taluka_key
                 and normalize_match_text(candidate.village) == village_key
@@ -7289,24 +7468,33 @@ def _serialize_entry_for_process_chart(entry):
     }
 
 
-def _get_process_chart_source_records(district, taluka, village, gut_number):
+def _get_process_chart_source_records(district, taluka, village, gut_number, hissa_number=''):
     district_key = normalize_match_text(district)
     taluka_key = normalize_match_text(taluka)
     village_key = normalize_match_text(village)
     gut_key = normalize_gut_value(gut_number)
+    main_gut_key = gut_key.split('/')[0] if gut_key and '/' in gut_key else gut_key
 
-    land_record = LandRecord712.objects.filter(
-        district__iexact=district,
-        taluka__iexact=taluka,
-        village__iexact=village,
-        gut_number__iexact=gut_number,
-    ).order_by('-updated_at', '-id').first()
+    land_record = None
+    if hissa_number and str(hissa_number).strip():
+        hissa_matches = _get_matching_land_records_for_process_chart(district, taluka, village, gut_number, hissa_number=hissa_number)
+        if hissa_matches:
+            land_record = hissa_matches[0]
+
+    if not land_record:
+        land_record = LandRecord712.objects.filter(
+            district__iexact=district,
+            taluka__iexact=taluka,
+            village__iexact=village,
+            gut_number__iexact=gut_number,
+        ).order_by('-updated_at', '-id').first()
 
     if not land_record and gut_key:
         land_candidates = LandRecord712.objects.all().order_by('-updated_at', '-id')
         for candidate in land_candidates:
+            cand_norm = normalize_gut_value(candidate.gut_number)
             if (
-                normalize_gut_value(candidate.gut_number) == gut_key
+                (cand_norm == gut_key or (main_gut_key and cand_norm == main_gut_key))
                 and
                 normalize_match_text(candidate.district) == district_key
                 and normalize_match_text(candidate.taluka) == taluka_key
@@ -7318,11 +7506,12 @@ def _get_process_chart_source_records(district, taluka, village, gut_number):
     if not land_record:
         land_candidates = LandRecord712.objects.filter(village__iexact=village).order_by('-updated_at', '-id')
         for candidate in land_candidates:
+            cand_norm = normalize_gut_value(candidate.gut_number)
             if (
                 normalize_match_text(candidate.district) == district_key
                 and normalize_match_text(candidate.taluka) == taluka_key
                 and normalize_match_text(candidate.village) == village_key
-                and (not gut_key or normalize_gut_value(candidate.gut_number) == gut_key)
+                and (not gut_key or cand_norm == gut_key or (main_gut_key and cand_norm == main_gut_key))
             ):
                 land_record = candidate
                 break
@@ -7383,9 +7572,9 @@ def _get_process_chart_source_records(district, taluka, village, gut_number):
     return land_record, village_data, rr_info, entry
 
 
-def _build_process_chart_prefill(district, taluka, village, gut_number):
-    land_record, village_data, rr_info, entry = _get_process_chart_source_records(district, taluka, village, gut_number)
-    matching_land_records = _get_matching_land_records_for_process_chart(district, taluka, village, gut_number)
+def _build_process_chart_prefill(district, taluka, village, gut_number, hissa_number=''):
+    land_record, village_data, rr_info, entry = _get_process_chart_source_records(district, taluka, village, gut_number, hissa_number=hissa_number)
+    matching_land_records = _get_matching_land_records_for_process_chart(district, taluka, village, gut_number, hissa_number=hissa_number)
     return {
         'land_record': _serialize_land_record_for_process_chart(land_record),
         'farmers': _serialize_farmers_for_process_chart(land_record),
@@ -7409,6 +7598,7 @@ def get_process_chart_form_data(request):
     taluka = clean_optional_char(request.GET.get('taluka'))
     village = clean_optional_char(request.GET.get('village'))
     gut_number = clean_optional_char(request.GET.get('gut_number'))
+    hissa_number = clean_optional_char(request.GET.get('hissa_number'))
 
     case = None
     if case_id:
@@ -7419,6 +7609,7 @@ def get_process_chart_form_data(request):
         taluka = taluka or case.taluka
         village = village or case.village
         gut_number = gut_number or case.gut_number
+        hissa_number = hissa_number or getattr(case, 'hissa_number', '')
 
     if not district or not taluka or not village or not gut_number:
         return JsonResponse({
@@ -7426,7 +7617,7 @@ def get_process_chart_form_data(request):
             'error': 'district, taluka, village and gut_number are required'
         }, status=400)
 
-    prefill = _build_process_chart_prefill(district, taluka, village, gut_number)
+    prefill = _build_process_chart_prefill(district, taluka, village, gut_number, hissa_number=hissa_number)
     step_data = {}
     if case:
         for row in case.step_data.all().order_by('step_no', 'id'):
@@ -7510,6 +7701,7 @@ def save_process_chart_form(request):
     taluka = clean_optional_char(payload.get('taluka'))
     village = clean_optional_char(payload.get('village'))
     gut_number = clean_optional_char(payload.get('gut_number'))
+    hissa_number = clean_optional_char(payload.get('hissa_number'))
 
     if not district or not taluka or not village or not gut_number:
         return JsonResponse({
@@ -7526,12 +7718,16 @@ def save_process_chart_form(request):
         case = ProcessChartCase.objects.filter(id=case_id).first()
         if not case:
             return JsonResponse({'success': False, 'error': 'Process chart case not found.'}, status=404)
+        if hissa_number:
+            case.hissa_number = hissa_number
+            case.save()
     else:
         case = ProcessChartCase.objects.create(
             district=district,
             taluka=taluka,
             village=village,
             gut_number=gut_number,
+            hissa_number=hissa_number,
             user=request.user,
             division=clean_optional_char(payload.get('division')),
             project_purpose=clean_optional_char(payload.get('project_purpose')),
@@ -7545,6 +7741,7 @@ def save_process_chart_form(request):
         case.acquisition_type = clean_optional_char(payload.get('acquisition_type'))
         case.current_step = int(payload.get('current_step') or case.current_step or 1)
         case.status = clean_optional_char(payload.get('status')) or case.status or 'draft'
+        case.hissa_number = hissa_number
         case.save()
         payload['case_id'] = case.id
         case_id = case.id
@@ -7571,7 +7768,7 @@ def save_process_chart_form(request):
     else:
         case.status = 'draft'
 
-    prefill = _build_process_chart_prefill(district, taluka, village, gut_number)
+    prefill = _build_process_chart_prefill(district, taluka, village, gut_number, hissa_number=hissa_number)
     case.land_record_id_ref = prefill['source_refs']['land_record_id_ref']
     case.village_data_id_ref = prefill['source_refs']['village_data_id_ref']
     case.rr_info_id_ref = prefill['source_refs']['rr_info_id_ref']
@@ -7650,68 +7847,89 @@ def save_process_chart_form(request):
                 )
                 save_debug['step_rows_written'].append(row_section_code)
 
-    if int(step_no or 0) == 1 and section_code:
-        step_one_data = section_data if isinstance(section_data, dict) else {}
-        owner_names = step_one_data.get('owner_info_owner_name')
-        owner_names = owner_names if isinstance(owner_names, list) else ([owner_names] if owner_names else [])
-        for field_prefix in ('owner_info_aadhaar_file', 'owner_info_pan_file'):
-            matching_file_keys = [
-                key for key in request.FILES
-                if key.startswith(f'{field_prefix}_') and str(key).rsplit('_', 1)[-1].isdigit()
-            ]
-            file_indexes = {
-                int(str(key).rsplit('_', 1)[-1])
-                for key in matching_file_keys
-            }
-            owner_indexes = set(range(len(owner_names)))
-            for index in sorted(owner_indexes | file_indexes):
-                _owner_name = owner_names[index] if index < len(owner_names) else ''
-                field_key = f'{field_prefix}_{index}'
-                uploaded_files = request.FILES.getlist(field_key)
-                if not uploaded_files:
-                    continue
-                uploaded_file = uploaded_files[-1]
-                ProcessChartDocument.objects.update_or_create(
-                    case=case,
-                    step_no=int(step_no),
-                    section_code=section_code,
-                    document_type=field_key,
-                    defaults={
-                        'file': uploaded_file,
-                        'remarks': str(_owner_name or '').strip(),
-                    },
-                )
-
-    if step_no and section_code:
-        multi_file_fields = {'consent_letter_file'}
-        for field_key in request.FILES:
-            if field_key.startswith('owner_info_aadhaar_file_') or field_key.startswith('owner_info_pan_file_'):
-                continue
+    step_one_data = (section_data if (int(step_no or 0) == 1 and isinstance(section_data, dict)) else {})
+    owner_names = step_one_data.get('owner_info_owner_name')
+    owner_names = owner_names if isinstance(owner_names, list) else ([owner_names] if owner_names else [])
+    for field_prefix in ('owner_info_aadhaar_file', 'owner_info_pan_file'):
+        matching_file_keys = [
+            key for key in request.FILES
+            if key.startswith(f'{field_prefix}_') and str(key).rsplit('_', 1)[-1].isdigit()
+        ]
+        file_indexes = {
+            int(str(key).rsplit('_', 1)[-1])
+            for key in matching_file_keys
+        }
+        owner_indexes = set(range(len(owner_names)))
+        for index in sorted(owner_indexes | file_indexes):
+            _owner_name = owner_names[index] if index < len(owner_names) else ''
+            field_key = f'{field_prefix}_{index}'
             uploaded_files = request.FILES.getlist(field_key)
             if not uploaded_files:
-                continue
-            if field_key in multi_file_fields:
-                for uploaded_file in uploaded_files:
-                    ProcessChartDocument.objects.create(
-                        case=case,
-                        step_no=int(step_no),
-                        section_code=section_code,
-                        document_type=field_key,
-                        file=uploaded_file,
-                        remarks='',
-                    )
                 continue
             uploaded_file = uploaded_files[-1]
             ProcessChartDocument.objects.update_or_create(
                 case=case,
-                step_no=int(step_no),
-                section_code=section_code,
                 document_type=field_key,
                 defaults={
+                    'step_no': 1,
+                    'section_code': 'step_1',
                     'file': uploaded_file,
-                    'remarks': '',
+                    'remarks': str(_owner_name or '').strip(),
                 },
             )
+
+    multi_file_fields = {'consent_letter_file'}
+    for field_key in request.FILES:
+        if field_key.startswith('owner_info_aadhaar_file_') or field_key.startswith('owner_info_pan_file_'):
+            continue
+        uploaded_files = request.FILES.getlist(field_key)
+        if not uploaded_files:
+            continue
+
+        doc_step_no = int(step_no or 1)
+        doc_section_code = section_code or f'step_{doc_step_no}'
+        if field_key.startswith('step10_'):
+            doc_step_no = 10
+            doc_section_code = 'step_10'
+        elif field_key.startswith('arbitration_'):
+            doc_step_no = 12
+            doc_section_code = 'step_12'
+        elif field_key.startswith('sec21_') or field_key in (
+            'forced_notice_served_file',
+            'court_payment_receipt_file',
+            'possession_notice_file',
+            'possession_office_letter_file',
+            'possession_handed_receipt_file',
+            'record_updated_712_file',
+        ):
+            doc_step_no = 11
+            doc_section_code = 'step_11'
+        elif field_key in ('consent_letter_file', 'consent_decision_file', 'agreement_letter_file', 'agreement_upload_file'):
+            doc_step_no = 9
+            doc_section_code = 'step_9'
+
+        if field_key in multi_file_fields:
+            for uploaded_file in uploaded_files:
+                ProcessChartDocument.objects.create(
+                    case=case,
+                    step_no=doc_step_no,
+                    section_code=doc_section_code,
+                    document_type=field_key,
+                    file=uploaded_file,
+                    remarks='',
+                )
+            continue
+        uploaded_file = uploaded_files[-1]
+        ProcessChartDocument.objects.update_or_create(
+            case=case,
+            document_type=field_key,
+            defaults={
+                'step_no': doc_step_no,
+                'section_code': doc_section_code,
+                'file': uploaded_file,
+                'remarks': '',
+            },
+        )
 
     saved_step_data = {}
     for row in case.step_data.all().order_by('step_no', 'id'):
@@ -7744,11 +7962,14 @@ def village_info(request):
         if not district or not taluka or not village:
             return JsonResponse({'success': False, 'error': 'District, Taluka and Village are required.'}, status=400)
 
-        village_data = VillageData.objects.filter(
-            district__iexact=district,
-            taluka__iexact=taluka,
-            village__iexact=village
-        ).order_by('-updated_at', '-id').first()
+        record_id = (request.POST.get('record_id') or request.POST.get('id') or '').strip()
+        village_data = None
+        if record_id and record_id.isdigit():
+            village_data = VillageData.objects.filter(id=int(record_id)).first()
+
+        if not village_data:
+            village_data = find_village_data_record(district, taluka, village)
+
         if not village_data:
             village_data = VillageData.objects.create(
                 user=request.user,
@@ -8658,9 +8879,18 @@ def delete_village_sec8_row_file(request, file_id):
 @login_required
 def get_village_info_list(request):
     try:
+        from app.models import Notification
         rows = VillageData.objects.all().order_by('-updated_at').values(
             'id', 'district', 'taluka', 'village', 'is_final_submitted', 'created_at', 'updated_at', 'user__username'
         )
+        notif_villages = set(
+            Notification.objects.values_list('district', 'taluka', 'village')
+        )
+        notif_set = {
+            (d.strip().lower(), t.strip().lower(), v.strip().lower())
+            for d, t, v in notif_villages if d and t and v
+        }
+
         payload = []
         for row in rows:
             created_at = row.get('created_at')
@@ -8668,6 +8898,12 @@ def get_village_info_list(request):
             district_en = row.get('district') or ''
             taluka_en = row.get('taluka') or ''
             village_en = row.get('village') or ''
+            
+            key = (district_en.strip().lower(), taluka_en.strip().lower(), village_en.strip().lower())
+            is_from_notif = key in notif_set
+
+            updated_by_text = 'Notification Tool' if is_from_notif else (row.get('user__username') or 'Notification Tool')
+
             district_mr = get_marathi_name('district', district_en) if district_en else ''
             taluka_mr = get_marathi_name('taluka', district_en, taluka_en) if district_en and taluka_en else ''
             village_mr = get_marathi_name('village', district_en, taluka_en, village_en) if district_en and taluka_en and village_en else ''
@@ -8680,7 +8916,7 @@ def get_village_info_list(request):
                 'taluka_en': taluka_en,
                 'village_en': village_en,
                 'is_final_submitted': bool(row.get('is_final_submitted')),
-                'updated_by': row.get('user__username') or '',
+                'updated_by': updated_by_text,
                 'created_at': created_at.isoformat() if hasattr(created_at, 'isoformat') else '',
                 'updated_at': updated_at.isoformat() if hasattr(updated_at, 'isoformat') else '',
             })
@@ -8707,11 +8943,8 @@ def check_village_info_exists(request):
         if not district or not taluka or not village:
             return JsonResponse({'exists': False, 'error': 'district, taluka and village are required'}, status=400)
 
-        exists = VillageData.objects.filter(
-            district__iexact=district,
-            taluka__iexact=taluka,
-            village__iexact=village
-        ).exists()
+        record = find_village_data_record(district, taluka, village)
+        exists = record is not None
         
         return JsonResponse({
             'exists': exists,
@@ -8762,30 +8995,13 @@ def get_village_info_data(request):
     if not district or not taluka or not village:
         return JsonResponse({'found': False, 'error': 'district, taluka and village are required'}, status=400)
 
-    village_data = VillageData.objects.filter(
-        district__iexact=district,
-        taluka__iexact=taluka,
-        village__iexact=village
-    ).order_by('-updated_at').first()
-
-    if not village_data:
-        district_key = normalize_match_text(district)
-        taluka_key = normalize_match_text(taluka)
-        village_key = normalize_match_text(village)
-        village_candidates = VillageData.objects.filter(village__iexact=village).order_by('-updated_at', '-id')
-        for candidate in village_candidates:
-            if (
-                normalize_match_text(candidate.district) == district_key
-                and normalize_match_text(candidate.taluka) == taluka_key
-                and normalize_match_text(candidate.village) == village_key
-            ):
-                village_data = candidate
-                break
+    village_data = find_village_data_record(district, taluka, village)
 
     if not village_data:
         return JsonResponse({'found': False, 'data': None})
 
-    data = {}
+
+    data = {'id': village_data.id}
     for f in _VILLAGE_SCALAR_FIELDS:
         val = getattr(village_data, f)
         data[f] = val.isoformat() if hasattr(val, 'isoformat') and val else (val or '')
@@ -8820,6 +9036,22 @@ def get_village_info_data(request):
     files_map = {}
     for vf in village_data.village_files.all():
         files_map.setdefault(vf.field_key, []).append({'id': vf.id, 'url': vf.file.url, 'name': vf.file.name.split('/')[-1]})
+    sec1_admin_row_files_map = {}
+    for key, files in files_map.items():
+        m = re.match(r'^sec1_admin_row_(\d+)$', key or '')
+        if not m:
+            continue
+        sec1_admin_row_files_map[int(m.group(1))] = files
+
+    sec1_admin_data_rows = data.get('sec1_admin_approvals') or []
+    for idx, row in enumerate(sec1_admin_data_rows):
+        if not isinstance(row, dict):
+            continue
+        row_files = sec1_admin_row_files_map.get(idx, row.get('files') or [])
+        if not row_files and idx == 0 and files_map.get('sec1_files'):
+            row_files = files_map['sec1_files']
+        row['files'] = row_files
+
     sec3_row_files_map = {}
     for key, files in files_map.items():
         m = re.match(r'^sec3_row_(\d+)$', key or '')
@@ -8890,6 +9122,15 @@ def get_village_info_data(request):
                 'nakasha_files': sec6_file_maps.get(idx, {}).get('nakasha_files', existing_files.get('nakasha_files') or []),
             }
         })
+    if not normalized_sec6_rows and (village_data.sec6_register_number or village_data.sec6_date or files_map.get('sec6_parishisht16_files') or files_map.get('sec6_nakasha_files')):
+        normalized_sec6_rows = [{
+            'register_number': village_data.sec6_register_number or '',
+            'date': village_data.sec6_date.isoformat() if village_data.sec6_date else '',
+            'files': {
+                'parishisht16_files': sec6_file_maps.get(0, {}).get('parishisht16_files', files_map.get('sec6_parishisht16_files') or []),
+                'nakasha_files': sec6_file_maps.get(0, {}).get('nakasha_files', files_map.get('sec6_nakasha_files') or []),
+            }
+        }]
     data['sec6_rows'] = normalized_sec6_rows
 
     sec25_rows = data.get('sec25_map_rows') or []
@@ -8993,17 +9234,68 @@ def get_village_info_data(request):
             key = (getattr(f, 'field_key', '') or 'main').strip() or 'main'
             if key not in files_by_key:
                 key = 'main'
-            files_by_key[key].append({'id': f.id, 'url': f.file.url, 'name': f.file.name.split('/')[-1]})
+            files_by_key[key].append({'id': f.id, 'url': f.file.url, 'name': getattr(f, 'original_name', '') or f.file.name.split('/')[-1]})
         sec8_rows.append({
             'id': row.id,
-            'adhisuchana_kramank': row.adhisuchana_kramank,
+            'adhisuchana_kramank': row.adhisuchana_kramank or '',
             'adhisuchana_date': row.adhisuchana_date.isoformat() if row.adhisuchana_date else '',
-            'paper1_name': row.paper1_name,
+            'paper1_name': row.paper1_name or '',
             'paper1_date': row.paper1_date.isoformat() if row.paper1_date else '',
-            'paper2_name': row.paper2_name,
+            'paper2_name': row.paper2_name or '',
             'paper2_date': row.paper2_date.isoformat() if row.paper2_date else '',
             'files': files_by_key,
         })
+
+    # Direct Notification fallback if sec8_rows is empty or has missing paper fields
+    from app.models import Notification
+    notif = Notification.objects.filter(district__iexact=district, taluka__iexact=taluka, village__iexact=village).order_by('-id').first()
+    if notif and isinstance(notif.sections, dict):
+        nsec = notif.sections
+        notif_p1_name = nsec.get('sec19b_paper1_name') or nsec.get('sec181_paper1_name') or ''
+        notif_p1_date = nsec.get('sec19b_paper1_date') or nsec.get('sec181_paper1_date') or ''
+        notif_p2_name = nsec.get('sec19b_paper2_name') or nsec.get('sec181_paper2_name') or ''
+        notif_p2_date = nsec.get('sec19b_paper2_date') or nsec.get('sec181_paper2_date') or ''
+        notif_no = nsec.get('sec181_pub_no') or nsec.get('sec181_no') or ''
+        notif_date = nsec.get('sec181_pub_date') or ''
+
+        notif_files_by_key = {'main': [], 'paper1': [], 'paper2': []}
+        for nf in notif.files.all():
+            fk = (nf.field_key or '').strip()
+            if fk in ('sec181_file', 'sec181_files'):
+                notif_files_by_key['main'].append({'id': nf.id, 'url': nf.file.url, 'name': nf.original_name or nf.file.name.split('/')[-1]})
+            elif fk in ('sec181_paper1_file', 'sec181_paper1_files', 'sec19b_paper1_file'):
+                notif_files_by_key['paper1'].append({'id': nf.id, 'url': nf.file.url, 'name': nf.original_name or nf.file.name.split('/')[-1]})
+            elif fk in ('sec181_paper2_file', 'sec181_paper2_files', 'sec19b_paper2_file'):
+                notif_files_by_key['paper2'].append({'id': nf.id, 'url': nf.file.url, 'name': nf.original_name or nf.file.name.split('/')[-1]})
+
+        if not sec8_rows:
+            sec8_rows.append({
+                'id': None,
+                'adhisuchana_kramank': notif_no,
+                'adhisuchana_date': notif_date,
+                'paper1_name': notif_p1_name,
+                'paper1_date': notif_p1_date,
+                'paper2_name': notif_p2_name,
+                'paper2_date': notif_p2_date,
+                'files': notif_files_by_key,
+            })
+        else:
+            for r in sec8_rows:
+                if not r['adhisuchana_kramank']:
+                    r['adhisuchana_kramank'] = notif_no
+                if not r['adhisuchana_date']:
+                    r['adhisuchana_date'] = notif_date
+                if not r['paper1_name']:
+                    r['paper1_name'] = notif_p1_name
+                if not r['paper1_date']:
+                    r['paper1_date'] = notif_p1_date
+                if not r['paper2_name']:
+                    r['paper2_name'] = notif_p2_name
+                if not r['paper2_date']:
+                    r['paper2_date'] = notif_p2_date
+                for key in ('main', 'paper1', 'paper2'):
+                    if not r['files'].get(key) and notif_files_by_key.get(key):
+                        r['files'][key] = notif_files_by_key[key]
 
     sec15 = []
     for r in village_data.sec15_rates.select_related('rr_rate').all():
@@ -9813,9 +10105,112 @@ def _bhusampadan_analytics_data(request):
     valuation_data = _bhusampadan_valuation_data(request, records)
     total_count = sum(row["y"] for row in valuation_data["rows"])
     total_amount = sum(Decimal(str(row["amount"])) for row in valuation_data["rows"])
+
+    # Aggregate Agreement, Compensation, and Consent Status Data
+    today = timezone.localdate()
+    total_agreements = 0
+    today_agreements = 0
+    pending_agreements = 0
+
+    distributed_compensation_total = Decimal("0.00")
+    distributed_compensation_today = Decimal("0.00")
+    pending_compensation_total = Decimal("0.00")
+
+    consent_count = 0
+    non_consent_count = 0
+
+    for record in records:
+        step_data_all = list(record.step_data.all())
+        step8 = next((row for row in step_data_all if row.step_no == 8), None)
+        step9 = next((row for row in step_data_all if row.step_no == 9), None)
+        step10 = next((row for row in step_data_all if row.step_no == 10), None)
+
+        s8_fields = step_fields(step8) if step8 else {}
+        s9_fields = step_fields(step9) if step9 else {}
+        s10_fields = step_fields(step10) if step10 else {}
+
+        # 1. Agreements
+        ag_num = clean_optional_char(s9_fields.get("agreement_number") or s9_fields.get("pcAgreementNumber"))
+        ag_date_str = clean_optional_char(s9_fields.get("agreement_date") or s9_fields.get("pcAgreementDate"))
+        ag_file = clean_optional_char(s9_fields.get("agreement_upload_file") or s9_fields.get("agreement_letter_file"))
+        has_owner_captures = bool(s9_fields.get("pcAgreementOwnerCaptureRows") or s9_fields.get("owner_captures"))
+
+        is_agreed = bool(ag_num or ag_date_str or ag_file or has_owner_captures)
+        if is_agreed:
+            total_agreements += 1
+            is_today = False
+            if ag_date_str:
+                try:
+                    dt = datetime_date.fromisoformat(ag_date_str)
+                    if dt == today:
+                        is_today = True
+                except ValueError:
+                    pass
+            if not is_today and step9 and step9.updated_at.date() == today:
+                is_today = True
+            if is_today:
+                today_agreements += 1
+        else:
+            pending_agreements += 1
+
+        # 2. Compensation
+        comp_str = clean_optional_char(
+            s8_fields.get("pcCompensation11") or
+            s8_fields.get("pcCompensation8") or
+            s8_fields.get("compensation_total") or
+            s8_fields.get("total_amount")
+        )
+        try:
+            case_comp_val = Decimal(comp_str.replace(",", "")) if comp_str else Decimal("0.00")
+        except Exception:
+            case_comp_val = Decimal("0.00")
+
+        if case_comp_val == Decimal("0.00"):
+            case_comp_val = sum((row.valuation for row in record.department_rows.all() if row.valuation), Decimal("0.00"))
+
+        is_distributed = bool(
+            (step10 and has_value(s10_fields)) or
+            s9_fields.get("pcStep9PaymentRows") or
+            s9_fields.get("payment_rows")
+        )
+
+        if is_distributed:
+            distributed_compensation_total += case_comp_val
+            is_dist_today = False
+            if step10 and step10.updated_at.date() == today:
+                is_dist_today = True
+            elif step9 and step9.updated_at.date() == today:
+                is_dist_today = True
+            if is_dist_today:
+                distributed_compensation_today += case_comp_val
+        else:
+            pending_compensation_total += case_comp_val
+
+        # 3. Consent Status
+        consent_val = clean_optional_char(s9_fields.get("consent_submitted")).lower()
+        consent_dec = clean_optional_char(s9_fields.get("consent_decision")).lower()
+        if consent_val in {"yes", "हो", "होय", "true", "1"} or consent_dec in {"स्वीकार", "accept", "approved", "yes"} or getattr(record, "is_with_consent", False):
+            consent_count += 1
+        else:
+            non_consent_count += 1
+
     return {
         "kalam": {"total": len(records), "items": item_payload},
         "valuation": {"values": valuation_data["rows"], "record_count": valuation_data["record_count"], "count": total_count, "amount": float(total_amount)},
+        "agreements": {
+            "total": total_agreements,
+            "today": today_agreements,
+            "pending": pending_agreements,
+        },
+        "compensation": {
+            "distributed_total": float(distributed_compensation_total),
+            "distributed_today": float(distributed_compensation_today),
+            "pending_total": float(pending_compensation_total),
+        },
+        "consent": {
+            "consent_count": consent_count,
+            "non_consent_count": non_consent_count,
+        },
         "filters": {"components": valuation_data["components"]},
     }
 
@@ -11036,10 +11431,16 @@ def _area_rows_from_matrix(rows):
         "district": {"district", "जिल्हा"},
         "taluka": {"taluka", "तालुका"},
         "village": {"village", "village name", "गाव"},
-        "gut_number": {"gut", "gut no", "gut no/survey no", "gut no. survey no", "gut no./survey no.", "survey no", "survey number", "गट क्रमांक"},
-        "hissa_number": {"hissa", "hissa no", "hissa no.", "hissa number", "हिस्सा नंबर"},
+        "gut_number": {"gut", "gut no", "gut no/survey no", "gut no. survey no", "gut no./survey no.", "survey no", "survey number", "गट क्रमांक", "गट नंबर", "गट क्र"},
+        "hissa_number": {"hissa", "hissa no", "hissa no.", "hissa number", "हिस्सा नंबर", "हिस्सा"},
         "area_712": {"7/12 area", "7 12 area", "७.१२ प्रमाणे क्षेत्र", "७/१२ प्रमाणे क्षेत्र"},
         "proposed_area": {"area", "area in", "area in hectare r", "area in (hectare r)", "proposed", "proposed area", "प्रस्तावित संपादन क्षेत्र"},
+        "land_class": {"class", "land class", "वर्ग", "भूमिचा वर्ग", "भूमीचा वर्ग"},
+        "acquired_total_area": {"acquired area", "total area", "acquired total", "एकूण क्षेत्र", "एकूण क्षेत्र हे आर चौ मि", "एकूण क्षेत्र हे.आर.चौ.मि.", "संपादित क्षेत्र"},
+        "kharaba": {"kharaba", "pot kharaba", "potkharaba", "खराबा", "पोटखराबा"},
+        "lagan": {"lagan", "cultivable", "लागण", "लागवडीयोग्य"},
+        "aakar_acquired": {"aakar", "aakar acquired", "tax", "आकार", "आकारणी"},
+        "holder_name": {"holder", "owner", "holder name", "owner name", "कब्जेदार", "कब्जेदाराचे नाव", "खातेदार", "खातेदाराचे नाव"},
         "remark": {"remark", "remarks", "note", "शेरा"},
     }
 
@@ -11059,7 +11460,7 @@ def _area_rows_from_matrix(rows):
                 normalized_aliases = {normalize_header(alias) for alias in field_aliases}
                 if header in normalized_aliases:
                     found[field] = col_idx
-        if {"district", "taluka", "village", "gut_number"}.issubset(found):
+        if "gut_number" in found:
             header_index = idx
             column_map = found
             break
@@ -11093,7 +11494,13 @@ def _area_rows_from_matrix(rows):
             "gut_number": raw_gut or last_values["gut_number"],
             "hissa_number": raw_hissa,
             "area_712": get("area_712"),
-            "proposed_area": get("proposed_area"),
+            "proposed_area": get("proposed_area") or get("acquired_total_area"),
+            "land_class": get("land_class"),
+            "acquired_total_area": get("acquired_total_area") or get("proposed_area"),
+            "kharaba": get("kharaba"),
+            "lagan": get("lagan"),
+            "aakar_acquired": get("aakar_acquired"),
+            "holder_name": get("holder_name"),
             "remark": get("remark"),
         }
         for field in last_values:

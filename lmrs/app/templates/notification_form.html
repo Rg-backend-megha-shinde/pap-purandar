@@ -435,6 +435,57 @@
     transition: background 120ms ease;
   }
   .nt-generate-btn:hover { background: #b91c1c; }
+  .nt-current-village-banner {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    margin-bottom: 1.25rem;
+    border: 1px solid #bfd4ee;
+    border-left: 5px solid #125fcb;
+    border-radius: 0.75rem;
+    background: #f8fbff;
+    box-shadow: 0 8px 20px rgba(18, 95, 203, 0.08);
+  }
+  .nt-current-village-banner__inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.9rem 1rem;
+  }
+  .nt-current-village-banner__label {
+    margin-bottom: 0.2rem;
+    font-size: 0.78rem;
+    font-weight: 800;
+    letter-spacing: 0;
+    color: #5c78a5;
+  }
+  .nt-current-village-banner__name {
+    color: #163f7d;
+    font-size: 1.35rem;
+    font-weight: 800;
+    line-height: 1.2;
+    overflow-wrap: anywhere;
+  }
+  .nt-current-village-banner__meta {
+    color: #60708a;
+    font-size: 0.88rem;
+    font-weight: 600;
+    text-align: right;
+    overflow-wrap: anywhere;
+  }
+  @media (max-width: 640px) {
+    .nt-current-village-banner__inner {
+      align-items: flex-start;
+      flex-direction: column;
+    }
+    .nt-current-village-banner__name {
+      font-size: 1.1rem;
+    }
+    .nt-current-village-banner__meta {
+      text-align: left;
+    }
+  }
   .nt-note {
     border: 1px solid #d7e5f6;
     border-radius: 0.75rem;
@@ -685,6 +736,16 @@
         </div>
       </div>
 
+      <div id="nt-current-village-banner" class="nt-current-village-banner" aria-live="polite">
+        <div class="nt-current-village-banner__inner">
+          <div class="min-w-0">
+            <div class="nt-current-village-banner__label">सध्या नोंद करत असलेले गाव</div>
+            <div id="nt-current-village-name" class="nt-current-village-banner__name">गाव निवडा</div>
+          </div>
+          <div id="nt-current-village-meta" class="nt-current-village-banner__meta">जिल्हा / तालुका निवडा</div>
+        </div>
+      </div>
+
       <form id="notificationForm" class="mt-5 space-y-5" enctype="multipart/form-data">
         {% csrf_token %}
         <input type="hidden" id="ntNotificationId" name="notification_id" value="{{ detail.id|default:'' }}">
@@ -804,13 +865,14 @@
                 </div>
                 <div class="mt-4 flex flex-wrap items-center gap-2">
                   <div data-nt-upload-slot="area_excel_file" data-nt-upload-label="एक्सेल अपलोड करा" data-nt-upload-accept=".csv,.xls,.xlsx,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv"></div>
-                  <button type="button" class="vi-excel-upload-btn" id="ntDownloadAreaSampleExcel">
+                  <button type="button" class="vi-excel-upload-btn" id="ntDownloadAreaSampleExcel" title="टीप: एक्सेलमधील जिल्हा, तालुका आणि गाव ही नावे मराठीमध्ये असणे आवश्यक आहे.">
                     <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1"/>
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v12m0 0l-4-4m4 4l4-4"/>
                     </svg>
                     नमुना एक्सेल (Excel) फाइल डाउनलोड करा
                   </button>
+                  <span class="inline-flex items-center gap-1 rounded-md border border-amber-300 bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-800 shadow-sm" title="टीप: एक्सेलमधील जिल्हा, तालुका आणि गाव ही नावे मराठीमध्ये असणे आवश्यक आहे.">ℹ️ जिल्हा, तालुका व गाव मराठीत असावे</span>
                 </div>
               </div>
               <div class="mb-4 flex flex-wrap items-center justify-between gap-3 px-1">
@@ -910,6 +972,24 @@
 
             <div class="pc-section" style="border-color:#fde68a;background:#fffbeb;">
               <div class="flex flex-wrap items-center gap-4">
+                <span class="font-bold text-[#92400e]">अतिरिक्त क्षेत्र आहे का?</span>
+                <label class="flex cursor-pointer items-center gap-1 font-semibold text-[#244271]">
+                  <input type="radio" name="has_extra_notification" value="yes" class="h-4 w-4"> हो
+                </label>
+                <label class="flex cursor-pointer items-center gap-1 font-semibold text-[#244271]">
+                  <input type="radio" name="has_extra_notification" value="no" class="h-4 w-4" checked> नाही
+                </label>
+              </div>
+            </div>
+
+            <div id="ntExtraSection" class="mt-4 space-y-5 hidden">
+              <div id="ntExtraBlocksWrap" class="space-y-5"></div>
+              <button type="button" id="ntAddExtraBlock" class="nt-add-row-btn">+ अतिरिक्त ब्लॉक जोडा</button>
+            </div>
+            <div id="ntExtraSec3Wrap" class="space-y-4"></div>
+
+            <div class="pc-section mt-4" style="border-color:#fde68a;background:#fffbeb;">
+              <div class="flex flex-wrap items-center gap-4">
                 <span class="font-bold text-[#92400e]">पुरवणी प्रस्तावित क्षेत्र आहे का?</span>
                 <label class="flex cursor-pointer items-center gap-1 font-semibold text-[#244271]">
                   <input type="radio" name="has_puravani" value="yes" class="h-4 w-4"> हो
@@ -920,7 +1000,7 @@
               </div>
             </div>
 
-            <div id="ntPuravaniSection" class="space-y-5 hidden">
+            <div id="ntPuravaniSection" class="mt-4 space-y-5 hidden">
               <div id="ntPuravaniBlocksWrap" class="space-y-5"></div>
               <button type="button" id="ntAddPuravaniBlock" class="nt-add-row-btn">+ पुरवणी ब्लॉक जोडा</button>
             </div>
@@ -1009,6 +1089,7 @@
 	                </div>
 	              </div>
 	            </div>
+	            <div id="ntExtraSec152Wrap" class="space-y-4"></div>
 	            <div id="ntPuravaniSec152Wrap" class="space-y-4"></div>
 	          </div>
 	        </section>
@@ -1092,6 +1173,7 @@
 	                <div class="mt-3"><label class="pc-label">दस्तऐवज अपलोड करा (PDF / Image)</label><div data-nt-upload-slot="sec154_notif_file"></div></div>
 	              </div>
 	            </div>
+	            <div id="ntExtraSec154Wrap" class="space-y-4"></div>
 	            <div id="ntPuravaniSec154Wrap" class="space-y-4"></div>
 
 	            <div class="pc-section">
@@ -1102,8 +1184,17 @@
                 <div><label class="pc-label">भूकरमापकाचे नाव</label><input name="js_surveyor_name" id="ntJsSurveyorName" class="pc-input" placeholder="भूकरमापकाचे नाव"></div>
               </div>
               <p class="mt-4 mb-3 text-sm font-bold text-[#244271]">मोजणी प्रमाणे खाली बाबी भरा.</p>
-              <div class="mb-3 flex flex-wrap items-center justify-between gap-3">
+              <div class="mb-4 flex flex-wrap items-center gap-2">
+                <div data-nt-upload-slot="joint_survey_excel_file" data-nt-upload-label="एक्सेल अपलोड करा" data-nt-upload-accept=".csv,.xls,.xlsx,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv"></div>
+                <button type="button" class="vi-excel-upload-btn" id="ntDownloadJsSampleExcel" title="टीप: एक्सेलमधील रकाने गट नंबर, हिस्सा नंबर, भूमिचा वर्ग, एकूण क्षेत्र, खराबा, लागण, आकार, कब्जेदाराचे नाव व शेरा असावेत.">
+                  <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v12m0 0l-4-4m4 4l4-4"/>
+                  </svg>
+                  नमुना एक्सेल (Excel) फाइल डाउनलोड करा
+                </button>
                 <button type="button" id="ntImportJsRows" class="nt-add-row-btn" style="background:#0f766e;">भूसंपादन प्रस्ताव तपशीलातून गट क्रमांक आणा</button>
+                <span class="inline-flex items-center gap-1 rounded-md border border-amber-300 bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-800 shadow-sm" title="टीप: एक्सेलमधील रकाने गट नंबर, हिस्सा नंबर, भूमिचा वर्ग, एकूण क्षेत्र, खराबा, लागण, आकार, कब्जेदाराचे नाव व शेरा असावेत.">ℹ️ गट क्र, हिस्सा, वर्ग, एकूण क्षेत्र, खराबा, लागण, आकार व कब्जेदाराचे नाव असावे</span>
               </div>
               <div class="overflow-x-auto rounded-xl border border-[#d7e5f6]">
                 <table class="pc-table">
@@ -1125,6 +1216,22 @@
                 <div><label class="pc-label">साक्षांकीत परिशिष्ट १६</label><div data-nt-upload-slot="joint_survey_sanyukta_naksha"></div></div>
                 <div><label class="pc-label">परिशिष्ट १६ Excel Copy</label><div data-nt-upload-slot="joint_survey_parishisht16"></div></div>
               </div>
+            </div>
+
+            <div class="mt-4 rounded-xl border border-[#fecaca] bg-[#fff5f5] p-4">
+                  <div class="flex items-center gap-2 mb-4">
+                    <span style="display:inline-block;width:4px;height:1rem;background:#dc2626;border-radius:2px;flex-shrink:0;"></span>
+                    <span class="text-sm font-bold text-[#7f1d1d]">परिशिष्ट १६</span>
+                  </div>
+                  <div class="grid gap-3 md:grid-cols-2">
+                    <div class="rounded-lg border border-[#fecaca] bg-white p-3 shadow-sm flex flex-col gap-2">
+                      <div class="flex items-center gap-2">
+                        <span class="flex items-center justify-center w-6 h-6 rounded-full bg-[#fee2e2] text-[#dc2626] text-xs font-bold flex-shrink-0">&#9654;</span>
+                        <span class="text-xs font-bold text-[#7f1d1d]">परिशिष्ट १६ निर्गमित करा</span>
+                      </div>
+                      <button type="button" class="nt-generate-btn" style="align-self:flex-start;">परिशिष्ट १६ निर्गमित करा</button>
+                    </div>
+                  </div>
             </div>
           </div>
         </section>
@@ -1174,33 +1281,30 @@
 	                  <div><label class="pc-label">दिनांक</label><input type="text" name="sec181_pub_date" id="ntSec181PubDate" class="pc-input nt-date-input" placeholder="DD/MM/YYYY" inputmode="numeric"></div>
                 </div>
 	                <div class="mt-3"><label class="pc-label">दस्तऐवज अपलोड करा (PDF / Image)</label><div data-nt-upload-slot="sec181_file"></div></div>
-	              </div>
-	            </div>
 
-	            <!-- <div class="pc-section">
-	              <h3 class="mb-4 text-base font-bold text-[#244271]">कलम १७ सुनावणी निर्णय</h3>
-	              <div><label class="pc-label">आक्षेप व निर्णय तपशील</label><input name="sec17_decision_details" id="ntSec17DecisionDetails" class="pc-input" placeholder="आक्षेप व निर्णय तपशील"></div>
-	            </div> -->
-
-	            <!-- <div class="pc-section">
-	              <h3 class="mb-4 text-base font-bold text-[#244271]">कलम १९-ब जाहीर नोटीस</h3>
-	              <div class="grid gap-4 md:grid-cols-2">
-	                <div class="rounded-xl border border-[#dfe8f5] p-3">
-	                  <p class="mb-2 text-sm font-semibold text-[#44597a]">१. वर्तमानपत्र</p>
-	                  <div class="grid gap-3 md:grid-cols-2">
-	                    <div><label class="pc-label">नाव</label><input name="sec19b_paper1_name" id="ntSec19bPaper1Name" class="pc-input" placeholder="वर्तमानपत्र १ चे नाव"></div>
-	                    <div><label class="pc-label">दिनांक</label><input type="text" name="sec19b_paper1_date" id="ntSec19bPaper1Date" class="pc-input nt-date-input" placeholder="DD/MM/YYYY" inputmode="numeric"></div>
-	                  </div>
-	                </div>
-	                <div class="rounded-xl border border-[#dfe8f5] p-3">
-	                  <p class="mb-2 text-sm font-semibold text-[#44597a]">२. वर्तमानपत्र</p>
-	                  <div class="grid gap-3 md:grid-cols-2">
-	                    <div><label class="pc-label">नाव</label><input name="sec19b_paper2_name" id="ntSec19bPaper2Name" class="pc-input" placeholder="वर्तमानपत्र २ चे नाव"></div>
-	                    <div><label class="pc-label">दिनांक</label><input type="text" name="sec19b_paper2_date" id="ntSec19bPaper2Date" class="pc-input nt-date-input" placeholder="DD/MM/YYYY" inputmode="numeric"></div>
-	                  </div>
-	                </div>
+                <div class="mt-5 border-t border-[#dfe8f5] pt-4">
+                  <h4 class="mb-3 text-base font-bold text-[#244271]">वर्तमानपत्र प्रसिद्धी तपशील</h4>
+                  <div class="grid gap-4 md:grid-cols-2">
+                    <div class="rounded-xl border border-[#dfe8f5] bg-[#fbfdff] p-3">
+                      <p class="mb-2 text-sm font-semibold text-[#44597a]">१. वर्तमानपत्र १</p>
+                      <div class="grid gap-3 md:grid-cols-2">
+                        <div><label class="pc-label">नाव</label><input name="sec19b_paper1_name" id="ntSec19bPaper1Name" class="pc-input" placeholder="वर्तमानपत्र १ चे नाव"></div>
+                        <div><label class="pc-label">दिनांक</label><input type="text" name="sec19b_paper1_date" id="ntSec19bPaper1Date" class="pc-input nt-date-input" placeholder="DD/MM/YYYY" inputmode="numeric"></div>
+                      </div>
+                      <div class="mt-3"><label class="pc-label">अपलोड</label><div data-nt-upload-slot="sec181_paper1_file"></div></div>
+                    </div>
+                    <div class="rounded-xl border border-[#dfe8f5] bg-[#fbfdff] p-3">
+                      <p class="mb-2 text-sm font-semibold text-[#44597a]">२. वर्तमानपत्र २</p>
+                      <div class="grid gap-3 md:grid-cols-2">
+                        <div><label class="pc-label">नाव</label><input name="sec19b_paper2_name" id="ntSec19bPaper2Name" class="pc-input" placeholder="वर्तमानपत्र २ चे नाव"></div>
+                        <div><label class="pc-label">दिनांक</label><input type="text" name="sec19b_paper2_date" id="ntSec19bPaper2Date" class="pc-input nt-date-input" placeholder="DD/MM/YYYY" inputmode="numeric"></div>
+                      </div>
+                      <div class="mt-3"><label class="pc-label">अपलोड</label><div data-nt-upload-slot="sec181_paper2_file"></div></div>
+                    </div>
+                  </div>
+                </div>
 	              </div>
-	            </div> -->
+	            <div id="ntExtraSec181Wrap" class="space-y-4"></div>
 	            <div id="ntPuravaniSec181Wrap" class="space-y-4"></div>
 
 	            <div class="pc-section" style="border-color:#c6dcf8;background:#f0f6ff;">
@@ -1346,6 +1450,17 @@
       </div>
       <button type="button" class="nt-chip-delete nt-puravani-block-remove">× ब्लॉक हटवा</button>
     </div>
+    <div class="mb-4 flex flex-wrap items-center gap-2">
+      <div class="nt-puravani-block-excel-upload-host" data-nt-upload-label="एक्सेल अपलोड करा" data-nt-upload-accept=".csv,.xls,.xlsx,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv"></div>
+      <button type="button" class="vi-excel-upload-btn nt-puravani-download-sample-excel" title="टीप: एक्सेलमधील जिल्हा, तालुका आणि गाव ही नावे मराठीमध्ये असणे आवश्यक आहे.">
+        <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1"/>
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v12m0 0l-4-4m4 4l4-4"/>
+        </svg>
+        नमुना एक्सेल (Excel) फाइल डाउनलोड करा
+      </button>
+      <span class="inline-flex items-center gap-1 rounded-md border border-amber-300 bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-800 shadow-sm" title="टीप: एक्सेलमधील जिल्हा, तालुका आणि गाव ही नावे मराठीमध्ये असणे आवश्यक आहे.">ℹ️ जिल्हा, तालुका व गाव मराठीत असावे</span>
+    </div>
     <div class="overflow-x-auto rounded-xl border border-[#d7e5f6]">
       <table class="pc-table">
         <thead>
@@ -1369,6 +1484,55 @@
         <div>
           <label class="pc-label">Land Plan / नकाशा अपलोड करा (AutoCAD)</label>
           <div class="nt-puravani-block-autocad-upload-host"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<template id="ntExtraBlockTemplate">
+  <div class="pc-section nt-extra-block">
+    <div class="mb-4 flex flex-wrap items-center justify-between gap-3 px-1">
+      <div>
+        <span class="font-semibold text-[#1a4fa0]">अतिरिक्त प्रस्तावित क्षेत्र तपशील</span>
+        <small class="ml-2 text-sm font-normal text-[#5c78a5]">(अतिरिक्त गावनकाशाप्रमाणे आवश्यक क्षेत्र)</small>
+      </div>
+      <button type="button" class="nt-chip-delete nt-extra-block-remove">× ब्लॉक हटवा</button>
+    </div>
+    <div class="mb-4 flex flex-wrap items-center gap-2">
+      <div class="nt-extra-block-excel-upload-host" data-nt-upload-label="एक्सेल अपलोड करा" data-nt-upload-accept=".csv,.xls,.xlsx,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv"></div>
+      <button type="button" class="vi-excel-upload-btn nt-extra-download-sample-excel" title="टीप: एक्सेलमधील जिल्हा, तालुका आणि गाव ही नावे मराठीमध्ये असणे आवश्यक आहे.">
+        <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1"/>
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v12m0 0l-4-4m4 4l4-4"/>
+        </svg>
+        नमुना एक्सेल (Excel) फाइल डाउनलोड करा
+      </button>
+      <span class="inline-flex items-center gap-1 rounded-md border border-amber-300 bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-800 shadow-sm" title="टीप: एक्सेलमधील जिल्हा, तालुका आणि गाव ही नावे मराठीमध्ये असणे आवश्यक आहे.">ℹ️ जिल्हा, तालुका व गाव मराठीत असावे</span>
+    </div>
+    <div class="overflow-x-auto rounded-xl border border-[#d7e5f6]">
+      <table class="pc-table">
+        <thead>
+          <tr><th><label class="inline-flex items-center gap-1"><input type="checkbox" class="nt-select-all h-4 w-4"> निवडा</label></th><th>अ. क्र.</th><th>जिल्हा</th><th>तालुका</th><th>गाव</th><th>गट क्रमांक</th><th>हिस्सा नंबर</th><th>७.१२ प्रमाणे क्षेत्र</th><th>प्रस्तावित संपादन क्षेत्र</th><th>शेरा</th></tr>
+        </thead>
+        <tbody class="nt-extra-block-area-rows"></tbody>
+      </table>
+    </div>
+    <div class="mt-3 flex flex-wrap items-center gap-2">
+      <button type="button" class="nt-add-row-btn nt-extra-block-add-row">+ ओळ जोडा</button>
+      <button type="button" class="nt-chip-delete nt-extra-block-delete-selected">× निवडलेले हटवा</button>
+      <button type="button" class="nt-add-row-btn nt-extra-block-save" style="background:#16a34a;">✓ जतन करा</button>
+    </div>
+    <div class="mt-5 rounded-xl border border-[#d7e5f6] bg-white p-4">
+      <h3 class="mb-3 text-base font-bold text-[#244271]">अतिरिक्त प्रस्तावित क्षेत्र प्रसिद्धी तपशील</h3>
+      <div class="grid gap-4 md:grid-cols-2">
+        <div>
+          <label class="pc-label">Land Plan / नकाशा अपलोड करा (PDF / Image)</label>
+          <div class="nt-extra-block-pdf-upload-host"></div>
+        </div>
+        <div>
+          <label class="pc-label">Land Plan / नकाशा अपलोड करा (AutoCAD)</label>
+          <div class="nt-extra-block-autocad-upload-host"></div>
         </div>
       </div>
     </div>
@@ -1448,17 +1612,36 @@
   </tr>
 </template>
 
-<!-- One कब्जेदार line; holds its own घटक rows -->
+<!-- Single landholder row template inside an owner block -->
+<template id="ntKabjedarFieldTemplate">
+  <div class="nt-kabjedar-field-item flex items-center gap-2">
+    <select class="pc-input nt-ghatak-kabjedar flex-1"></select>
+    <input class="pc-input nt-ghatak-kabjedar-text hidden flex-1" placeholder="कब्जेदाराचे नाव प्रविष्ट करा (उदा. रामदास पाटील)">
+    <button type="button" class="nt-toggle-kabjedar-mode flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-[#c9d9ef] bg-white text-[#125fcb] shadow-sm hover:bg-[#eff6ff]" title="मॅन्युअली नाव टाका">
+      <svg class="nt-icon-pencil h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+      <svg class="nt-icon-list hidden h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+    </button>
+    <button type="button" class="nt-remove-kabjedar-field flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-red-200 bg-red-50 text-base font-bold leading-none text-red-500 hover:bg-red-100" title="कब्जेदार काढून टाका">×</button>
+  </div>
+</template>
+
+<!-- One कब्जेदार block; holds multiple कब्जेदाराचे नाव fields and its own घटक rows -->
 <template id="ntGhatakOwnerTemplate">
   <div class="nt-ghatak-owner rounded-xl border border-[#e2ebf7] bg-[#f8fbff] p-3">
-    <div class="mb-2 flex items-center gap-2">
-      <label class="nt-label mb-0 whitespace-nowrap">कब्जेदाराचे नाव</label>
-      <select class="pc-input nt-ghatak-kabjedar flex-1"></select>
-      <input class="pc-input nt-ghatak-kabjedar-text hidden flex-1" placeholder="कब्जेदाराचे नाव">
-      <button type="button" class="nt-remove-ghatak-owner flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-red-200 bg-red-50 text-base font-bold leading-none text-red-500 hover:bg-red-100" title="ओळ काढून टाका">×</button>
+    <div class="mb-3 space-y-2">
+      <div class="flex items-center justify-between gap-2">
+        <label class="nt-label mb-0 text-xs font-bold text-[#244271]">कब्जेदाराचे नाव</label>
+        <button type="button" class="nt-add-kabjedar-field inline-flex items-center gap-1 rounded-lg border border-[#bfdbfe] bg-[#eff6ff] px-2.5 py-1 text-xs font-bold text-[#1d4ed8] hover:bg-[#dbeafe]" title="अजून कब्जेदाराचे नाव जोडा">
+          + कब्जेदाराचे नाव जोडा
+        </button>
+      </div>
+      <div class="nt-kabjedar-fields-wrap space-y-2"></div>
     </div>
     <div class="nt-ghatak-assets space-y-2"></div>
-    <button type="button" class="nt-add-ghatak-asset mt-2 inline-flex items-center gap-1 rounded-lg border border-[#bfdbfe] bg-[#eff6ff] px-3 py-1.5 text-xs font-bold text-[#1d4ed8] hover:bg-[#dbeafe]">+ घटक जोडा</button>
+    <div class="mt-3 flex items-center justify-between border-t border-[#e2ebf7] pt-2">
+      <button type="button" class="nt-add-ghatak-asset inline-flex items-center gap-1 rounded-lg border border-[#bfdbfe] bg-[#eff6ff] px-3 py-1.5 text-xs font-bold text-[#1d4ed8] hover:bg-[#dbeafe]">+ घटक जोडा</button>
+      <button type="button" class="nt-remove-ghatak-owner flex h-7 w-7 items-center justify-center rounded-md border border-red-200 bg-red-50 text-xs font-bold text-red-500 hover:bg-red-100" title="संपूर्ण ब्लॉक हटवा">×</button>
+    </div>
   </div>
 </template>
 
@@ -1672,6 +1855,9 @@
   // Step navigation
   // ---------------------------------------------------------------------
   function showStep(step) {
+    if (currentStep !== step) {
+      ntActiveScrollAnchor = null;
+    }
     currentStep = step;
     currentStepInput.value = String(step);
     document.querySelectorAll(".nt-step-panel").forEach((panel) => {
@@ -1686,8 +1872,11 @@
     document.getElementById("ntPrevBtn").classList.toggle("opacity-50", step === 1);
     document.getElementById("ntNextBtn").classList.toggle("hidden", step === 5);
     document.getElementById("ntSubmitBtn").classList.toggle("hidden", step !== 5);
-    if (step === 4 && !jsRowsBody.children.length) {
-      importJsRowsFromCascade({ confirmReplace: false });
+    if (step === 4) {
+      if (!jsRowsBody.children.length) {
+        importJsRowsFromCascade({ confirmReplace: false });
+      }
+      fetchMissingJs712Rows();
     }
   }
 
@@ -1959,6 +2148,106 @@
 	    return rows.slice(first, last + 1);
 	  }
 
+  let ntActiveScrollAnchor = null;
+
+  function captureScrollAnchor(rowOrElement = null, fallbackButton = null) {
+    const mainEl = document.querySelector("main");
+    const targetEl = rowOrElement || fallbackButton;
+    const anchor = {
+      mainScrollTop: mainEl ? mainEl.scrollTop : 0,
+      winScrollY: window.scrollY || document.documentElement.scrollTop,
+      targetBodyId: null,
+      targetGut: null,
+      targetHissa: null,
+      targetRowIndex: -1,
+      targetRectTop: null,
+      elementId: null,
+    };
+
+    if (targetEl) {
+      if (targetEl.id) {
+        anchor.elementId = targetEl.id;
+      }
+      const row = targetEl.closest ? targetEl.closest("tr") : null;
+      if (row) {
+        const body = row.closest("tbody");
+        if (body) {
+          anchor.targetBodyId = body.id;
+          anchor.targetRowIndex = Array.from(body.querySelectorAll("tr")).indexOf(row);
+        }
+        anchor.targetGut = row.querySelector(".nt-cascade-gut, .nt-area-gut")?.value || "";
+        anchor.targetHissa = row.querySelector(".nt-cascade-hissa, .nt-area-hissa")?.value || "";
+        anchor.targetRectTop = row.getBoundingClientRect().top;
+      } else if (targetEl.getBoundingClientRect) {
+        anchor.targetRectTop = targetEl.getBoundingClientRect().top;
+      }
+    }
+
+    ntActiveScrollAnchor = anchor;
+    return anchor;
+  }
+
+  function restoreScrollAnchor(anchor = ntActiveScrollAnchor) {
+    if (!anchor) return;
+    ntActiveScrollAnchor = null;
+
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        const mainEl = document.querySelector("main");
+        let restoredByTarget = false;
+
+        if (anchor.targetBodyId) {
+          const body = document.getElementById(anchor.targetBodyId);
+          if (body) {
+            const rows = Array.from(body.querySelectorAll("tr"));
+            let newRow = null;
+
+            if (anchor.targetGut) {
+              newRow = rows.find((r) => {
+                const g = r.querySelector(".nt-cascade-gut, .nt-area-gut")?.value || "";
+                const h = r.querySelector(".nt-cascade-hissa, .nt-area-hissa")?.value || "";
+                return g === anchor.targetGut && (anchor.targetHissa === "" || h === anchor.targetHissa);
+              });
+            }
+            if (!newRow && anchor.targetRowIndex >= 0 && anchor.targetRowIndex < rows.length) {
+              newRow = rows[anchor.targetRowIndex];
+            }
+
+            if (newRow && anchor.targetRectTop != null) {
+              const newRectTop = newRow.getBoundingClientRect().top;
+              const diff = newRectTop - anchor.targetRectTop;
+              if (Math.abs(diff) > 1) {
+                if (mainEl) mainEl.scrollTop += diff;
+                window.scrollBy(0, diff);
+              }
+              restoredByTarget = true;
+            }
+          }
+        } else if (anchor.elementId) {
+          const el = document.getElementById(anchor.elementId);
+          if (el && anchor.targetRectTop != null) {
+            const newRectTop = el.getBoundingClientRect().top;
+            const diff = newRectTop - anchor.targetRectTop;
+            if (Math.abs(diff) > 1) {
+              if (mainEl) mainEl.scrollTop += diff;
+              window.scrollBy(0, diff);
+            }
+            restoredByTarget = true;
+          }
+        }
+
+        if (!restoredByTarget) {
+          if (mainEl && anchor.mainScrollTop != null) {
+            mainEl.scrollTop = anchor.mainScrollTop;
+          }
+          if (anchor.winScrollY != null) {
+            window.scrollTo(window.scrollX, anchor.winScrollY);
+          }
+        }
+      });
+    });
+  }
+
 	  function ntToggleRowEdit(button) {
 	    const row = button.closest("tr");
 	    if (!row) return;
@@ -1966,6 +2255,9 @@
 	    if (isEditing && row.closest("#ntCascadeSec3") && row.dataset.manualCascadeId && !cascadeRowHasManualData(cascadeRowData(row))) {
 	      showNtStatus("कृपया गट क्रमांक/हिस्सा/क्षेत्र भरून मग जतन करा.", { error: true });
 	      return;
+	    }
+	    if (isEditing) {
+	      captureScrollAnchor(row, button);
 	    }
 	    const groupRows = contiguousGutGroupRows(row, ".nt-cascade-gut");
 	    groupRows.forEach((groupRow) => {
@@ -2004,10 +2296,13 @@
   let ntManualCascadeRowCounter = 0;
 
   function tab1Location() {
+    const districtEl = document.getElementById("ntDistrict");
+    const talukaEl = document.getElementById("ntTaluka");
+    const villageEl = document.getElementById("ntVillage");
     return {
-      district: document.getElementById("ntDistrict").value || "",
-      taluka: document.getElementById("ntTaluka").value || "",
-      village: document.getElementById("ntVillage").value || "",
+      district: districtEl?.value || districtEl?.dataset?.current || "",
+      taluka: talukaEl?.value || talukaEl?.dataset?.current || "",
+      village: villageEl?.value || villageEl?.dataset?.current || "",
     };
   }
 
@@ -2037,13 +2332,19 @@
 	      syncAreaCommonFields(container);
 	      renderTotals();
 	    };
+	    const triggerFetch = () => fetchAreaFor712(row);
 	    row.querySelector(".nt-area-gut").addEventListener("input", syncArea);
-	    row.querySelector(".nt-area-gut").addEventListener("change", () => fetchAreaFor712(row));
-	    row.querySelector(".nt-area-hissa").addEventListener("change", () => fetchAreaFor712(row));
+	    row.querySelector(".nt-area-gut").addEventListener("change", triggerFetch);
+	    row.querySelector(".nt-area-gut").addEventListener("blur", triggerFetch);
+	    row.querySelector(".nt-area-hissa").addEventListener("change", triggerFetch);
+	    row.querySelector(".nt-area-hissa").addEventListener("blur", triggerFetch);
 	    row.querySelector(".nt-area-712").addEventListener("input", syncArea);
 	    row.querySelector(".nt-area-proposed").addEventListener("input", syncArea);
     renumberRows(container);
     syncAreaCommonFields(container);
+    if ((data.gut_number || row.querySelector(".nt-area-gut").value.trim()) && !row.querySelector(".nt-area-712").value.trim()) {
+      fetchAreaFor712(row);
+    }
     return row;
   }
 
@@ -2220,8 +2521,14 @@
     const block = cloneTemplate("ntPuravaniBlockTemplate", puravaniBlocksWrap);
     block.ntPuravaniData = { ...data };
     const blockSeq = puravaniBlockSeq++;
+    const excelSlot = `puravani_block_seq_${blockSeq}_excel_file`;
     const pdfSlot = `puravani_block_seq_${blockSeq}_pdf_file`;
     const autocadSlot = `puravani_block_seq_${blockSeq}_autocad_file`;
+    const excelHost = block.querySelector(".nt-puravani-block-excel-upload-host");
+    if (excelHost) {
+      excelHost.dataset.ntUploadSlot = excelSlot;
+      excelHost.dataset.ntUploadLabel = "एक्सेल अपलोड करा";
+    }
     block.querySelector(".nt-puravani-block-pdf-upload-host").dataset.ntUploadSlot = pdfSlot;
     block.querySelector(".nt-puravani-block-pdf-upload-host").dataset.ntUploadLabel = "PDF / Image फाइल निवडा";
     block.querySelector(".nt-puravani-block-autocad-upload-host").dataset.ntUploadSlot = autocadSlot;
@@ -2243,7 +2550,11 @@
       renderPuravaniDerivedBlocks();
       renderTotals();
     });
+    block.querySelector(".nt-puravani-download-sample-excel")?.addEventListener("click", () => {
+      document.getElementById("ntDownloadAreaSampleExcel")?.click();
+    });
 
+    buildUploadZone(excelSlot, data.excel_files || []);
     buildUploadZone(pdfSlot, data.pdf_files || data.files || []);
     buildUploadZone(autocadSlot, data.autocad_files || []);
     return block;
@@ -2251,10 +2562,90 @@
 
   document.getElementById("ntAddPuravaniBlock").addEventListener("click", () => addPuravaniBlock());
 
+  // ---------------------------------------------------------------------
+  // Extra (अतिरिक्त) blocks — repeatable-block pattern for extra area
+  // ---------------------------------------------------------------------
+  let extraBlockSeq = 0;
+  const extraBlocksWrap = document.getElementById("ntExtraBlocksWrap");
+
+  function addExtraBlock(data = {}) {
+    if (!extraBlocksWrap) return;
+    const block = cloneTemplate("ntExtraBlockTemplate", extraBlocksWrap);
+    block.ntExtraData = { ...data };
+    const blockSeq = extraBlockSeq++;
+    const excelSlot = `extra_block_seq_${blockSeq}_excel_file`;
+    const pdfSlot = `extra_block_seq_${blockSeq}_pdf_file`;
+    const autocadSlot = `extra_block_seq_${blockSeq}_autocad_file`;
+    const excelHost = block.querySelector(".nt-extra-block-excel-upload-host");
+    if (excelHost) {
+      excelHost.dataset.ntUploadSlot = excelSlot;
+      excelHost.dataset.ntUploadLabel = "एक्सेल अपलोड करा";
+    }
+    block.querySelector(".nt-extra-block-pdf-upload-host").dataset.ntUploadSlot = pdfSlot;
+    block.querySelector(".nt-extra-block-pdf-upload-host").dataset.ntUploadLabel = "PDF / Image फाइल निवडा";
+    block.querySelector(".nt-extra-block-autocad-upload-host").dataset.ntUploadSlot = autocadSlot;
+    block.querySelector(".nt-extra-block-autocad-upload-host").dataset.ntUploadLabel = "AutoCAD फाइल निवडा";
+
+    const rowsBody = block.querySelector(".nt-extra-block-area-rows");
+    (data.area_rows || []).forEach((row) => addAreaRow(rowsBody, row));
+    if (!rowsBody.children.length) addAreaRow(rowsBody);
+
+    block.querySelector(".nt-extra-block-add-row").addEventListener("click", () => {
+      addAreaRow(rowsBody);
+    });
+    block.querySelector(".nt-extra-block-delete-selected").addEventListener("click", () => {
+      deleteCheckedRows(rowsBody, ".nt-area-row");
+    });
+    block.querySelector(".nt-extra-block-save").addEventListener("click", (event) => saveExtraBlock(event.currentTarget, block));
+    block.querySelector(".nt-extra-block-remove").addEventListener("click", () => {
+      block.remove();
+      renderTotals();
+    });
+    block.querySelector(".nt-extra-download-sample-excel")?.addEventListener("click", () => {
+      document.getElementById("ntDownloadAreaSampleExcel")?.click();
+    });
+
+    buildUploadZone(excelSlot, data.excel_files || []);
+    buildUploadZone(pdfSlot, data.pdf_files || data.files || []);
+    buildUploadZone(autocadSlot, data.autocad_files || []);
+    return block;
+  }
+
+  document.getElementById("ntAddExtraBlock")?.addEventListener("click", () => addExtraBlock());
+
+  function currentExtraBlocks() {
+    if (!extraBlocksWrap) return [];
+    const blocks = Array.from(extraBlocksWrap.querySelectorAll(".nt-extra-block"));
+    blocks.forEach((block, idx) => {
+      [
+        [".nt-extra-block-excel-upload-host", `extra_block_${idx}_excel_file`],
+        [".nt-extra-block-pdf-upload-host", `extra_block_${idx}_pdf_file`],
+        [".nt-extra-block-autocad-upload-host", `extra_block_${idx}_autocad_file`],
+      ].forEach(([selector, slot]) => {
+        const fileInput = block.querySelector(`${selector} .nt-upload-input`);
+        if (fileInput) {
+          fileInput.name = slot;
+          fileInput.closest(".nt-upload-zone").dataset.ntUploadZoneSlot = slot;
+        }
+      });
+    });
+    return blocks;
+  }
+
+  function collectExtraBlocks(formData) {
+    const blocks = currentExtraBlocks();
+    formData.append("extra_block_count", String(blocks.length));
+    blocks.forEach((block, idx) => {
+      const prefix = `extra_block_${idx}`;
+      collectAreaRows(block.querySelector(".nt-extra-block-area-rows"), `${prefix}_area`, formData);
+    });
+  }
+
 	  function currentPuravaniBlocks() {
 	    const blocks = Array.from(puravaniBlocksWrap.querySelectorAll(".nt-puravani-block"));
 	    blocks.forEach((block, idx) => {
 	      [
+	        [".nt-puravani-block-excel-upload-host", `puravani_block_${idx}_excel_file`],
 	        [".nt-puravani-block-pdf-upload-host", `puravani_block_${idx}_pdf_file`],
 	        [".nt-puravani-block-autocad-upload-host", `puravani_block_${idx}_autocad_file`],
 	      ].forEach(([selector, slot]) => {
@@ -2297,8 +2688,9 @@
   }
 
 	  function puravaniRowsFromBlock(block) {
-	    syncAreaCommonFields(block.querySelector(".nt-puravani-block-area-rows"));
-	    return Array.from(block.querySelectorAll(".nt-puravani-block-area-rows .nt-area-row"))
+	    const rowsBody = block.querySelector(".nt-puravani-block-area-rows, .nt-extra-block-area-rows");
+	    if (rowsBody) syncAreaCommonFields(rowsBody);
+	    return Array.from(block.querySelectorAll(".nt-puravani-block-area-rows .nt-area-row, .nt-extra-block-area-rows .nt-area-row"))
 	      .map((row) => ({
         district: row.querySelector(".nt-area-district")?.value.trim() || "",
         taluka: row.querySelector(".nt-area-taluka")?.value.trim() || "",
@@ -2595,10 +2987,132 @@
     });
   }
 
+  function wireExtraDerivedBlock(block) {
+    const blockId = block.id || "";
+    const match = blockId.match(/^extra_sec(?:3|152|154|181)_(\d+)_block$/);
+    const blockIndex = match ? parseInt(match[1], 10) - 1 : 0;
+    const sourceBlock = extraBlocksWrap.querySelectorAll(".nt-extra-block")[blockIndex];
+
+    block.querySelector(".nt-puravani-derived-delete")?.addEventListener("click", () => {
+      const tbody = block.querySelector("tbody");
+      const rows = Array.from(tbody.querySelectorAll("tr"));
+      const checkedIndices = [];
+      rows.forEach((row, i) => {
+        if (row.querySelector(".nt-row-check")?.checked) checkedIndices.push(i);
+      });
+      deleteCheckedRows(tbody);
+      if (sourceBlock && checkedIndices.length) {
+        const sourceBody = sourceBlock.querySelector(".nt-extra-block-area-rows");
+        const sourceRows = Array.from(sourceBody.querySelectorAll(".nt-area-row"));
+        checkedIndices.reverse().forEach((i) => {
+          if (sourceRows[i]) sourceRows[i].remove();
+        });
+        syncAreaRowsToTab1Location();
+      }
+    });
+
+    block.querySelectorAll(".nt-cascade-proposed").forEach((input) => {
+      const syncToSource = () => {
+        const tr = input.closest("tr");
+        const rowIdx = Array.from(tr.parentElement.children).indexOf(tr);
+        if (sourceBlock && rowIdx >= 0) {
+          const sourceRow = sourceBlock.querySelectorAll(".nt-extra-block-area-rows .nt-area-row")[rowIdx];
+          if (sourceRow) {
+            const sourceInput = sourceRow.querySelector(".nt-area-proposed");
+            if (sourceInput) sourceInput.value = input.value;
+          }
+        }
+      };
+      input.addEventListener("input", syncToSource);
+      input.addEventListener("change", syncToSource);
+    });
+
+    block.querySelector(".nt-puravani-derived-save")?.addEventListener("click", () => saveNotification({ silent: false }));
+    attachDatePickerControls(block);
+    syncCascadeCommonFields(block.querySelector("tbody"));
+  }
+
+  function renderExtraDerivedBlocks() {
+    const currentPubValues = currentPuravaniPubValues();
+    const targets = ["ntExtraSec3Wrap", "ntExtraSec152Wrap", "ntExtraSec154Wrap", "ntExtraSec181Wrap"];
+    targets.forEach((id) => {
+      const wrap = document.getElementById(id);
+      if (wrap) wrap.innerHTML = "";
+    });
+    const enabled = notificationForm.querySelector('input[name="has_extra_notification"]:checked')?.value === "yes";
+    if (!enabled || !extraBlocksWrap) return;
+
+    Array.from(extraBlocksWrap.querySelectorAll(".nt-extra-block")).forEach((block, index) => {
+      const idx = index + 1;
+      const rows = puravaniRowsFromBlock(block);
+      if (!rows.length) return;
+      const blocks = [
+        ["ntExtraSec3Wrap", "अतिरिक्त — म. ओ. वि. अ.- प्रकरण ६ (३१) तरतुदीनुसार उक्त अधिनियमाचे कलम २ खंड (ग) अन्वये", `अतिरिक्त ${idx}`, `extra_sec3_${idx}`, "प्रस्तावित संपादन क्षेत्र", true, false, "प्रकरण ६ अधिसूचना निर्गमित करा", "प्रकरण ६ प्रसिद्धी तपशील", "अधिसूचना क्रमांक", "अधिसूचना क्रमांक", "sec3_pub_no", "sec3_pub_date", "pub_no", "pub_date"],
+        ["ntExtraSec152Wrap", "अतिरिक्त — कलम ३२ (२) नुसार जमिनीच्या वापराबाबत हितसंबंधी व्यक्तींचे म्हणणे ऐकून घेण्यासाठी जाहिर नोटीस", `अतिरिक्त ${idx}`, `extra_sec152_${idx}`, "प्रस्तावित संपादन क्षेत्र", true, false, "कलम ३२(२) अधिसूचना निर्गमित करा अतिरिक्त", "अतिरिक्त कलम ३२(२) प्रसिद्धी तपशील", "अधिसूचना क्रमांक", "अधिसूचना क्रमांक", "sec152_pub_no", "sec152_pub_date"],
+        ["ntExtraSec154Wrap", "अतिरिक्त भूसंपादन प्रस्ताव तपशील", `अतिरिक्त ${idx}`, `extra_sec154_${idx}`, "प्रस्तावित संपादित क्षेत्र", true, false, "अतिरिक्त भूसंपादन प्रस्ताव निर्गमित करा अतिरिक्त", "प्रस्ताव सादर झाल्याचा तपशिल", "प्रस्ताव सादर झाल्याचे पत्र क्रमांक", "पत्र क्रमांक", "sec154_pub_no", "sec154_pub_date"],
+        ["ntExtraSec181Wrap", "अतिरिक्त — अधिनियमाचे कलम ३२ (१) नुसार संपादनाच्या घोषणेबाबत अधिसूचना", `अतिरिक्त ${idx}`, `extra_sec181_${idx}`, "संयुक्त मोजणीप्रमाणे संपादन क्षेत्र", true, true, "अधिसूचना निर्गमित करा अतिरिक्त", "अतिरिक्त कलम ३२(१) प्रसिद्धी तपशील", "अधिसूचना क्रमांक", "अधिसूचना क्रमांक", "sec181_pub_no", "sec181_pub_date"],
+      ];
+      blocks.forEach(([wrapId, title, subtitle, prefix, col8Label, includePub, acquiredMode, generateLabel, pubTitle, pubNoLabel, pubNoPlaceholder, pubNoKey, pubDateKey, legacyPubNoKey, legacyPubDateKey]) => {
+        const wrap = document.getElementById(wrapId);
+        if (!wrap) return;
+        const currentPub = currentPubValues[prefix] || {};
+        const savedHasPub = puravaniSavedPub(block, `${pubNoKey.replace(/_pub_no$/, "")}_has_pub`);
+        let hasPub = false;
+        if (currentPub.has_pub !== undefined) {
+          hasPub = currentPub.has_pub;
+        } else if (savedHasPub !== "") {
+          hasPub = savedHasPub === "1";
+        } else {
+          const pNo = currentPub.pub_no || puravaniSavedPub(block, pubNoKey, puravaniSavedPub(block, legacyPubNoKey));
+          const pDt = currentPub.pub_date || puravaniSavedPub(block, pubDateKey, puravaniSavedPub(block, legacyPubDateKey));
+          hasPub = !!(pNo || pDt);
+        }
+        const blockRows = wrapId === "ntExtraSec181Wrap" ? sec181RowsFromAreaRows(rows) : rows;
+        if (wrapId === "ntExtraSec181Wrap" && !blockRows.length) return;
+        wrap.insertAdjacentHTML("beforeend", puravaniTableBlockHtml({
+          id: `${prefix}_block`,
+          title,
+          subtitle: `(${subtitle})`,
+          rows: blockRows,
+          prefix,
+          col8Label,
+          includePub,
+          acquiredMode,
+          generateLabel,
+          pubTitle,
+          pubNoLabel,
+          pubNoPlaceholder,
+          pubNo: currentPub.pub_no || puravaniSavedPub(block, pubNoKey, puravaniSavedPub(block, legacyPubNoKey)),
+          pubDate: currentPub.pub_date || puravaniSavedPub(block, pubDateKey, puravaniSavedPub(block, legacyPubDateKey)),
+          hasPub,
+        }));
+        const derivedBlock = wrap.lastElementChild;
+        wireExtraDerivedBlock(derivedBlock);
+        derivedBlock.querySelectorAll("[data-nt-upload-slot]").forEach((host) => {
+          const slot = host.dataset.ntUploadSlot;
+          if (slot) buildUploadZone(slot, ntFilesMap[slot] || []);
+        });
+      });
+    });
+  }
+
   async function savePuravaniBlock(button, block) {
     const ok = await saveNotification({ silent: true });
     if (!ok) return;
     renderPuravaniDerivedBlocks();
+    renderTotals();
+    const original = button.innerHTML;
+    button.innerHTML = "✓ जतन झाले!";
+    button.style.background = "#15803d";
+    setTimeout(() => {
+      button.innerHTML = original || "✓ जतन करा";
+      button.style.background = "#16a34a";
+    }, 1800);
+  }
+
+  async function saveExtraBlock(button, block) {
+    const ok = await saveNotification({ silent: true });
+    if (!ok) return;
     renderTotals();
     const original = button.innerHTML;
     button.innerHTML = "✓ जतन झाले!";
@@ -2698,26 +3212,29 @@
     row.querySelector(".nt-add-js-after-row")?.addEventListener("click", () => addJsRow({}, row));
     row.querySelector(".nt-open-ghatak").addEventListener("click", () => openGhatakModal(row));
 	    row.querySelector(".nt-view-712").addEventListener("click", () => showJs712Details(row));
+		    const triggerJsFetch = () => {
+		      fetchJs712Details(row, true);
+		      syncShuddhipatrakGutDropdowns();
+		    };
 		    row.querySelector(".nt-js-gut").addEventListener("input", syncShuddhipatrakGutDropdowns);
 		    row.querySelector(".nt-js-hissa").addEventListener("input", syncShuddhipatrakGutDropdowns);
-		    row.querySelector(".nt-js-gut").addEventListener("change", () => {
-		      fetchJs712Details(row);
-		      syncShuddhipatrakGutDropdowns();
-		    });
-		    row.querySelector(".nt-js-hissa").addEventListener("change", () => {
-		      fetchJs712Details(row);
-		      syncShuddhipatrakGutDropdowns();
-		    });
-    if (data.owners || data.area_summary) {
+		    row.querySelector(".nt-js-gut").addEventListener("change", triggerJsFetch);
+		    row.querySelector(".nt-js-gut").addEventListener("blur", triggerJsFetch);
+		    row.querySelector(".nt-js-hissa").addEventListener("change", triggerJsFetch);
+		    row.querySelector(".nt-js-hissa").addEventListener("blur", triggerJsFetch);
+    const hasValid712Data = (Array.isArray(data.owners) && data.owners.length > 0) ||
+                            (data.area_summary && Object.keys(data.area_summary).length > 0);
+    if (hasValid712Data) {
       row.nt712Data = {
         owners: data.owners || [],
         area_summary: data.area_summary || {},
         matched_records: data.matched_records || 0,
       };
     }
-    if (data.gut_number && !row.querySelector(".nt-js-holder").value) {
+    const currentGut = row.querySelector(".nt-js-gut")?.value?.trim();
+    if (data.gut_number || currentGut) {
       fetchJs712Details(row);
-	    }
+    }
 	    renumberRows(jsRowsBody);
 	    syncShuddhipatrakGutDropdowns();
 	    return row;
@@ -2750,7 +3267,7 @@
 	        total_area_712: source.area_712,
         acquired_total_area: source.proposed_area,
       });
-	      fetchJs712Details(row);
+	      fetchJs712Details(row, true);
 	    });
 	    syncShuddhipatrakGutDropdowns();
 	  }
@@ -2760,19 +3277,37 @@
     return selected?.dataset.id || "";
   }
 
-  async function fetchJs712Details(row) {
-    const gut = row.querySelector(".nt-js-gut").value.trim();
-    const hissa = row.querySelector(".nt-js-hissa")?.value.trim() || "";
-    const { district, taluka, village } = tab1Location();
+  async function fetchMissingJs712Rows(force = false) {
+    const rows = Array.from(jsRowsBody?.querySelectorAll(".nt-js-row") || []);
+    await Promise.all(rows.map((row) => {
+      const gut = row.querySelector(".nt-js-gut")?.value?.trim();
+      if (!gut) return Promise.resolve();
+      const hasOwners = Array.isArray(row.nt712Data?.owners) && row.nt712Data.owners.length > 0;
+      if (force || !row.nt712Data || !hasOwners) {
+        return fetchJs712Details(row, force);
+      }
+      return Promise.resolve();
+    }));
+  }
+
+  async function fetchJs712Details(row, force = false) {
+    const gut = row.querySelector(".nt-js-gut")?.value?.trim() || "";
+    const hissa = row.querySelector(".nt-js-hissa")?.value?.trim() || "";
+    const tabLoc = tab1Location();
+    const firstAreaRow = document.querySelector(".nt-area-row");
+    const district = tabLoc.district || ntDetail?.district || row.dataset?.district || firstAreaRow?.querySelector(".nt-area-district")?.value || "";
+    const taluka = tabLoc.taluka || ntDetail?.taluka || row.dataset?.taluka || firstAreaRow?.querySelector(".nt-area-taluka")?.value || "";
+    const village = tabLoc.village || ntDetail?.village || row.dataset?.village || firstAreaRow?.querySelector(".nt-area-village")?.value || "";
     if (!gut || !district || !taluka || !village) return null;
     try {
+      const gutLabel = (gut.includes("/") || !hissa) ? gut : `${gut}/${hissa}`;
       const query = new URLSearchParams({
         district,
         taluka,
         village,
         village_id: selectedVillageId(),
         gut_number: gut,
-        gut_label: hissa ? `${gut}/${hissa}` : gut,
+        gut_label: gutLabel,
         hissa_number: hissa,
       });
       const response = await fetch(`/tools/api/process-chart/owners-from-712/?${query.toString()}`);
@@ -2786,17 +3321,30 @@
         const value = Number.parseFloat(owner.aakarni || "0");
         return Number.isFinite(value) ? sum + value : sum;
       }, 0);
-      const setIfBlank = (selector, value) => {
-        const input = row.querySelector(selector);
-        if (input && !input.value && value) input.value = value;
+      const isBlankOrZero = (val) => {
+        if (!val) return true;
+        const cleaned = String(val).trim();
+        return cleaned === "" || cleaned === "0" || cleaned === "0.0" || cleaned === "0.00" || cleaned === "0.00.00";
       };
-      setIfBlank(".nt-js-total-712", summary.total_area || "");
-      setIfBlank(".nt-js-cultivable", summary.cultivable_area || "");
-      setIfBlank(".nt-js-potkharaba", summary.potkharaba_area || "");
-      setIfBlank(".nt-js-kharaba", summary.potkharaba_area || "");
-      setIfBlank(".nt-js-lagan", summary.cultivable_area || "");
-      setIfBlank(".nt-js-aakar-acquired", aakarTotal ? aakarTotal.toFixed(2) : "");
-      setIfBlank(".nt-js-holder", ownerNames.join(", "));
+      const setFieldValue = (selector, value) => {
+        const input = row.querySelector(selector);
+        if (!input) return;
+        if (force || isBlankOrZero(input.value)) {
+          if (value !== undefined && value !== null && value !== "") {
+            input.value = value;
+          }
+        }
+      };
+      setFieldValue(".nt-js-total-712", summary.total_area || "");
+      setFieldValue(".nt-js-acquired-total", summary.total_area || "");
+      setFieldValue(".nt-js-cultivable", summary.cultivable_area || "");
+      setFieldValue(".nt-js-potkharaba", summary.potkharaba_area || "");
+      setFieldValue(".nt-js-kharaba", summary.potkharaba_area || "");
+      setFieldValue(".nt-js-lagan", summary.cultivable_area || "");
+      setFieldValue(".nt-js-aakar-acquired", aakarTotal ? aakarTotal.toFixed(2) : "");
+      if (ownerNames.length > 0) {
+        setFieldValue(".nt-js-holder", ownerNames.join(", "));
+      }
       return data;
     } catch (err) {
       console.error("Joint survey 7/12 fetch failed", err);
@@ -2959,22 +3507,107 @@
     return asset;
   }
 
-  function addGhatakOwner(data = {}) {
-    const card = cloneTemplate("ntGhatakOwnerTemplate", ghatakOwnersWrap);
-    const select = card.querySelector(".nt-ghatak-kabjedar");
-    const textInput = card.querySelector(".nt-ghatak-kabjedar-text");
-    const kabjedar = data.kabjedar || "";
+  function addKabjedarField(fieldsWrap, initialValue = "") {
+    const item = cloneTemplate("ntKabjedarFieldTemplate", fieldsWrap);
+    const select = item.querySelector(".nt-ghatak-kabjedar");
+    const textInput = item.querySelector(".nt-ghatak-kabjedar-text");
+    const toggleBtn = item.querySelector(".nt-toggle-kabjedar-mode");
+    const pencilIcon = toggleBtn ? toggleBtn.querySelector(".nt-icon-pencil") : null;
+    const listIcon = toggleBtn ? toggleBtn.querySelector(".nt-icon-list") : null;
+    const removeBtn = item.querySelector(".nt-remove-kabjedar-field");
+    const val = String(initialValue || "").trim();
     const options = ghatakOwnerNames.slice();
-    if (kabjedar && !options.includes(kabjedar)) options.unshift(kabjedar);
-    if (options.length) {
-      select.add(new Option("कब्जेदाराचे नाव निवडा", ""));
-      options.forEach((name) => select.add(new Option(name, name)));
-      select.value = kabjedar;
-    } else {
-      // no 7/12 owners on this row — fall back to typing the name
+
+    const setManualMode = () => {
       select.classList.add("hidden");
       textInput.classList.remove("hidden");
-      textInput.value = kabjedar;
+      if (toggleBtn) {
+        if (pencilIcon) pencilIcon.classList.add("hidden");
+        if (listIcon) listIcon.classList.remove("hidden");
+        toggleBtn.title = "यादीतून नाव निवडा";
+        toggleBtn.classList.remove("hidden");
+      }
+    };
+
+    const setSelectMode = () => {
+      textInput.classList.add("hidden");
+      select.classList.remove("hidden");
+      if (toggleBtn) {
+        if (pencilIcon) pencilIcon.classList.remove("hidden");
+        if (listIcon) listIcon.classList.add("hidden");
+        toggleBtn.title = "मॅन्युअली नाव टाका";
+        toggleBtn.classList.remove("hidden");
+      }
+    };
+
+    if (options.length) {
+      select.innerHTML = "";
+      select.add(new Option("कब्जेदाराचे नाव निवडा", ""));
+      options.forEach((name) => select.add(new Option(name, name)));
+      select.add(new Option("+ मॅन्युअली नाव प्रविष्ट करा", "__manual__"));
+
+      if (val && !options.includes(val)) {
+        setManualMode();
+        textInput.value = val;
+      } else {
+        setSelectMode();
+        select.value = val;
+      }
+
+      select.addEventListener("change", () => {
+        if (select.value === "__manual__") {
+          setManualMode();
+          textInput.value = "";
+          textInput.focus();
+        }
+      });
+
+      if (toggleBtn) {
+        toggleBtn.addEventListener("click", () => {
+          if (select.classList.contains("hidden")) {
+            setSelectMode();
+            if (select.value === "__manual__") select.value = "";
+          } else {
+            setManualMode();
+            textInput.value = select.value && select.value !== "__manual__" ? select.value : textInput.value;
+            textInput.focus();
+          }
+        });
+      }
+    } else {
+      setManualMode();
+      if (toggleBtn) toggleBtn.classList.add("hidden");
+      textInput.value = val;
+    }
+
+    removeBtn.addEventListener("click", () => {
+      if (fieldsWrap.querySelectorAll(".nt-kabjedar-field-item").length > 1) {
+        item.remove();
+      } else {
+        select.value = "";
+        textInput.value = "";
+      }
+    });
+
+    return item;
+  }
+
+  function addGhatakOwner(data = {}) {
+    const card = cloneTemplate("ntGhatakOwnerTemplate", ghatakOwnersWrap);
+    const fieldsWrap = card.querySelector(".nt-kabjedar-fields-wrap");
+    const addFieldBtn = card.querySelector(".nt-add-kabjedar-field");
+
+    const rawKabjedar = String(data.kabjedar || "").trim();
+    const namesList = rawKabjedar ? rawKabjedar.split(/[,;\n|।]/).map((s) => s.trim()).filter(Boolean) : [];
+
+    if (namesList.length) {
+      namesList.forEach((name) => addKabjedarField(fieldsWrap, name));
+    } else {
+      addKabjedarField(fieldsWrap);
+    }
+
+    if (addFieldBtn) {
+      addFieldBtn.addEventListener("click", () => addKabjedarField(fieldsWrap));
     }
 
     const assetsWrap = card.querySelector(".nt-ghatak-assets");
@@ -3027,10 +3660,18 @@
     if (activeGhatakRow) {
       const entries = [];
       ghatakOwnersWrap.querySelectorAll(".nt-ghatak-owner").forEach((card) => {
-        const select = card.querySelector(".nt-ghatak-kabjedar");
-        const textInput = card.querySelector(".nt-ghatak-kabjedar-text");
-        const field = select.classList.contains("hidden") ? textInput : select;
-        const kabjedar = field.value.trim();
+        const kabjedarNames = [];
+        card.querySelectorAll(".nt-kabjedar-field-item").forEach((item) => {
+          const select = item.querySelector(".nt-ghatak-kabjedar");
+          const textInput = item.querySelector(".nt-ghatak-kabjedar-text");
+          const isManual = select.classList.contains("hidden") || select.value === "__manual__";
+          const val = (isManual ? textInput.value : select.value).trim();
+          if (val && !kabjedarNames.includes(val)) {
+            kabjedarNames.push(val);
+          }
+        });
+        const kabjedar = kabjedarNames.join(", ");
+
         card.querySelectorAll(".nt-ghatak-asset").forEach((asset) => {
           const detailSelect = asset.querySelector(".nt-ghatak-detail");
           const detailText = asset.querySelector(".nt-ghatak-detail-text");
@@ -3070,13 +3711,42 @@
     if (host.dataset.ntUploadAccept) input.accept = host.dataset.ntUploadAccept;
     const browse = zone.querySelector(".nt-upload-browse");
     if (host.dataset.ntUploadLabel) browse.textContent = host.dataset.ntUploadLabel;
+    if (slot === "area_excel_file" || slot.endsWith("_excel_file") || host.classList.contains("nt-puravani-block-excel-upload-host") || host.classList.contains("nt-extra-block-excel-upload-host")) {
+      browse.title = "टीप: एक्सेलमधील जिल्हा, तालुका आणि गाव ही नावे मराठीमध्ये असणे आवश्यक आहे.";
+    }
     host.appendChild(zone);
     renderExistingFiles(zone, existingFiles);
     browse.addEventListener("click", () => input.click());
     input.addEventListener("change", () => {
       const names = Array.from(input.files || []).map((file) => file.name);
       zone.querySelector(".nt-upload-selected").textContent = names.length ? names.join(", ") : "";
-      if (slot === "area_excel_file") importAreaRowsFromExcelInput(input);
+      if (slot === "area_excel_file") {
+        importAreaRowsFromExcelInput(input, areaRowsBody);
+      } else if (slot === "joint_survey_excel_file") {
+        importJointSurveyRowsFromExcelInput(input, jsRowsBody);
+      } else {
+        const puravaniBlock = input.closest(".nt-puravani-block");
+        const extraBlock = input.closest(".nt-extra-block");
+        const isPuravaniExcel = puravaniBlock && (
+          slot.endsWith("_excel_file") ||
+          Boolean(input.closest(".nt-puravani-block-excel-upload-host"))
+        );
+        const isExtraExcel = extraBlock && (
+          slot.endsWith("_excel_file") ||
+          Boolean(input.closest(".nt-extra-block-excel-upload-host"))
+        );
+        if (isPuravaniExcel) {
+          const targetRowsBody = puravaniBlock.querySelector(".nt-puravani-block-area-rows");
+          if (targetRowsBody) {
+            importAreaRowsFromExcelInput(input, targetRowsBody);
+          }
+        } else if (isExtraExcel) {
+          const targetRowsBody = extraBlock.querySelector(".nt-extra-block-area-rows");
+          if (targetRowsBody) {
+            importAreaRowsFromExcelInput(input, targetRowsBody);
+          }
+        }
+      }
     });
   }
 
@@ -3205,7 +3875,7 @@
     "land_plan_file", "land_autocad_file", "area_excel_file",
     "sec3_file", "sec152_file", "sec154_file", "sec154_notif_file",
     "joint_survey_saksh_naksha", "joint_survey_autocad", "joint_survey_sanyukta_naksha",
-    "joint_survey_parishisht16", "sec181_file", "shuddhipatrak_file",
+    "joint_survey_parishisht16", "joint_survey_excel_file", "sec181_file", "sec181_paper1_file", "sec181_paper2_file", "shuddhipatrak_file",
   ].forEach((slot) => buildUploadZone(slot, (ntDetail.files_map || {})[slot] || []));
 
   function downloadAreaSampleExcel() {
@@ -3302,6 +3972,113 @@
   }
   document.getElementById("ntDownloadAreaSampleExcel")?.addEventListener("click", downloadAreaSampleExcel);
 
+  function downloadJsSampleExcel() {
+    const escapeXml = (value) => String(value ?? "")
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&apos;");
+    const headerCell = (value) => (
+      `<Cell ss:StyleID="header"><Data ss:Type="String">${escapeXml(value)}</Data></Cell>`
+    );
+    const dataCell = (value, isNum = false) => (
+      `<Cell ss:StyleID="body"><Data ss:Type="${isNum ? 'Number' : 'String'}">${escapeXml(value)}</Data></Cell>`
+    );
+
+    const sampleRowsData = [
+      ["1", "10", "1", "वर्ग १", "100.00.00", "0.00", "100.00.00", "15.50", "रामचंद्र विठ्ठल पाटील", "मोजणी प्रमाणे"],
+      ["2", "10", "2", "वर्ग १", "50.00.00", "0.00", "50.00.00", "7.75", "ज्ञानदेव तुकाराम शिंदे", "मोजणी प्रमाणे"],
+      ["3", "11", "", "वर्ग २", "120.00.00", "10.00.00", "110.00.00", "18.00", "सोपान मारुती जगताप", "—"],
+    ];
+
+    const sampleXmlRows = sampleRowsData.map((r) => `
+      <Row ss:Height="18">
+        ${dataCell(r[0], true)}
+        ${dataCell(r[1])}
+        ${dataCell(r[2])}
+        ${dataCell(r[3])}
+        ${dataCell(r[4])}
+        ${dataCell(r[5])}
+        ${dataCell(r[6])}
+        ${dataCell(r[7])}
+        ${dataCell(r[8])}
+        ${dataCell(r[9])}
+      </Row>
+    `).join("");
+
+    const workbook = `<?xml version="1.0" encoding="UTF-8"?>
+<?mso-application progid="Excel.Sheet"?>
+<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
+  xmlns:o="urn:schemas-microsoft-com:office:office"
+  xmlns:x="urn:schemas-microsoft-com:office:excel"
+  xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"
+  xmlns:html="http://www.w3.org/TR/REC-html40">
+  <DocumentProperties xmlns="urn:schemas-microsoft-com:office:office">
+    <Title>Joint Survey Sample</Title>
+  </DocumentProperties>
+  <Styles>
+    <Style ss:ID="header">
+      <Alignment ss:Horizontal="Center" ss:Vertical="Center" ss:WrapText="1"/>
+      <Borders>
+        <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1"/>
+        <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1"/>
+        <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1"/>
+        <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1"/>
+      </Borders>
+      <Font ss:Bold="1"/>
+      <Interior ss:Color="#EAF2FF" ss:Pattern="Solid"/>
+    </Style>
+    <Style ss:ID="body">
+      <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
+      <Borders>
+        <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1"/>
+        <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1"/>
+        <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1"/>
+        <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1"/>
+      </Borders>
+    </Style>
+  </Styles>
+  <Worksheet ss:Name="JOINT_SURVEY_SAMPLE">
+    <Table>
+      <Column ss:Width="60"/>
+      <Column ss:Width="110"/>
+      <Column ss:Width="110"/>
+      <Column ss:Width="120"/>
+      <Column ss:Width="180"/>
+      <Column ss:Width="110"/>
+      <Column ss:Width="110"/>
+      <Column ss:Width="110"/>
+      <Column ss:Width="200"/>
+      <Column ss:Width="120"/>
+      <Row ss:Height="24">
+        ${headerCell("अ.क्र. (Sr. No.)")}
+        ${headerCell("गट नंबर (Gut No.)")}
+        ${headerCell("हिस्सा नंबर (Hissa No.)")}
+        ${headerCell("भूमिचा वर्ग (Land Class)")}
+        ${headerCell("एकूण क्षेत्र हे.आर.चौ.मि. (Total Area)")}
+        ${headerCell("खराबा (Pot Kharaba)")}
+        ${headerCell("लागण (Cultivable)")}
+        ${headerCell("आकार (Aakar)")}
+        ${headerCell("कब्जेदाराचे नाव (Occupant Name)")}
+        ${headerCell("शेरा (Remark)")}
+      </Row>
+      ${sampleXmlRows}
+    </Table>
+  </Worksheet>
+</Workbook>`;
+    const blob = new Blob([workbook], { type: "application/vnd.ms-excel;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "joint_survey_sample.xls";
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  }
+  document.getElementById("ntDownloadJsSampleExcel")?.addEventListener("click", downloadJsSampleExcel);
+
   function parseCsvRows(text) {
     const rows = [];
     let row = [];
@@ -3334,6 +4111,38 @@
   }
 
   function parseHtmlTableRows(text) {
+    const isXmlSpreadsheet = text.includes("<Workbook") || text.includes("<Worksheet") || text.includes("<Table");
+    if (isXmlSpreadsheet) {
+      try {
+        const parser = new DOMParser();
+        const xmlDoc = parser.parseFromString(text, "text/xml");
+        const rows = Array.from(xmlDoc.querySelectorAll("Row, row"));
+        if (rows.length > 0) {
+          return rows.map((row) => {
+            const cells = Array.from(row.querySelectorAll("Cell, cell"));
+            const rowValues = [];
+            let curIndex = 0;
+            cells.forEach((cell) => {
+              const indexAttr = cell.getAttribute("ss:Index") || cell.getAttribute("Index");
+              if (indexAttr) {
+                const targetIdx = parseInt(indexAttr, 10) - 1;
+                while (rowValues.length < targetIdx) {
+                  rowValues.push("");
+                }
+                curIndex = targetIdx;
+              }
+              const dataNode = cell.querySelector("Data, data") || cell;
+              rowValues[curIndex] = (dataNode.textContent || "").trim();
+              curIndex += 1;
+            });
+            return rowValues;
+          }).filter((r) => r.some(Boolean));
+        }
+      } catch (e) {
+        console.warn("XML Spreadsheet parse failed, falling back to HTML parser", e);
+      }
+    }
+
     const doc = new DOMParser().parseFromString(text, "text/html");
     return Array.from(doc.querySelectorAll("tr")).map((tr) => (
       Array.from(tr.querySelectorAll("th,td")).map((cell) => cell.textContent.trim())
@@ -3407,29 +4216,85 @@
 	    }).filter((row) => row && row.gut_number);
 	  }
 
-	  function applyImportedAreaRows(importedRows) {
-	    const rowsToImport = importedRows.filter(areaRowHasUserData);
-	    if (!rowsToImport.length) return;
-	    const hasOnlyBlankRows = areaContainerHasOnlyBlankRows(areaRowsBody);
-	    if (areaRowsBody.children.length && !hasOnlyBlankRows && !confirm("विद्यमान आवश्यक क्षेत्राच्या ओळी बदलून एक्सेलमधील ओळी भरायच्या आहेत का?")) {
-	      return;
-	    }
-		    areaRowsBody.innerHTML = "";
-		    rowsToImport.forEach((row) => {
-		      const rowEl = addAreaRow(areaRowsBody, row);
-		      if (row.gut_number && !row.area_712) fetchAreaFor712(rowEl);
-		    });
-	    syncAreaCommonFields(areaRowsBody);
-	    const cascadeRows = collectVisibleAreaRows();
-	    renderCascade({
-	      sec3_rows: cascadeRows,
-      sec152_rows: cascadeRows,
-      sec154_bhusampadan_rows: cascadeRows,
-      sec181_rows: sec181RowsFromAreaRows(cascadeRows),
+  function validateImportedLocationNames(rows) {
+    const invalidRows = [];
+    const englishRegex = /[a-zA-Z]/;
+    rows.forEach((row, idx) => {
+      const d = (row.district || "").trim();
+      const t = (row.taluka || "").trim();
+      const v = (row.village || "").trim();
+      if (englishRegex.test(d) || englishRegex.test(t) || englishRegex.test(v)) {
+        const rowNum = idx + 1;
+        const details = [];
+        if (englishRegex.test(d)) details.push(`जिल्हा: "${d}"`);
+        if (englishRegex.test(t)) details.push(`तालुका: "${t}"`);
+        if (englishRegex.test(v)) details.push(`गाव: "${v}"`);
+        invalidRows.push(`ओळ ${rowNum} (${details.join(", ")})`);
+      }
     });
+    return invalidRows;
   }
 
-  async function importAreaRowsFromExcelInput(input) {
+  function applyImportedAreaRows(importedRows, targetRowsBody = areaRowsBody, input = null) {
+    const rowsToImport = importedRows.filter(areaRowHasUserData);
+    if (!rowsToImport.length) return false;
+
+    const locationErrors = validateImportedLocationNames(rowsToImport);
+    if (locationErrors.length > 0) {
+      const previewErrors = locationErrors.slice(0, 5).join("\n• ");
+      const extraCount = locationErrors.length > 5 ? `\n...आणखी ${locationErrors.length - 5} ओळींमध्ये त्रुटी` : "";
+      alert(
+        "वैधता त्रुटी (Validation Error):\n" +
+        "एक्सेलमधील जिल्हा, तालुका आणि गाव ही नावे मराठीमध्ये असणे आवश्यक आहे! (इंग्रजी नावे स्वीकारली जाणार नाहीत)\n\n" +
+        "खालील ओळींमध्ये इंग्रजी नावे आढळली:\n• " +
+        previewErrors + extraCount
+      );
+      if (input) {
+        input.value = "";
+        const zone = input.closest(".nt-upload-zone");
+        if (zone) {
+          const sel = zone.querySelector(".nt-upload-selected");
+          if (sel) sel.textContent = "";
+        }
+      }
+      return false;
+    }
+
+    const hasOnlyBlankRows = areaContainerHasOnlyBlankRows(targetRowsBody);
+    if (targetRowsBody.children.length && !hasOnlyBlankRows && !confirm("विद्यमान आवश्यक क्षेत्राच्या ओळी बदलून एक्सेलमधील ओळी भरायच्या आहेत का?")) {
+      if (input) {
+        input.value = "";
+        const zone = input.closest(".nt-upload-zone");
+        if (zone) {
+          const sel = zone.querySelector(".nt-upload-selected");
+          if (sel) sel.textContent = "";
+        }
+      }
+      return false;
+    }
+    targetRowsBody.innerHTML = "";
+    rowsToImport.forEach((row) => {
+      const rowEl = addAreaRow(targetRowsBody, row);
+      if (row.gut_number && !row.area_712) fetchAreaFor712(rowEl);
+    });
+    syncAreaCommonFields(targetRowsBody);
+    if (targetRowsBody === areaRowsBody) {
+      const cascadeRows = collectVisibleAreaRows();
+      renderCascade({
+        sec3_rows: cascadeRows,
+        sec152_rows: cascadeRows,
+        sec154_bhusampadan_rows: cascadeRows,
+        sec181_rows: sec181RowsFromAreaRows(cascadeRows),
+      });
+    } else {
+      renderPuravaniDerivedBlocks();
+      renderExtraDerivedBlocks();
+    }
+    renderTotals();
+    return true;
+  }
+
+  async function importAreaRowsFromExcelInput(input, targetRowsBody = areaRowsBody) {
     const file = input.files?.[0];
     if (!file) return;
     const lowerName = file.name.toLowerCase();
@@ -3445,12 +4310,14 @@
         const payload = await response.json();
         if (!response.ok || !payload.success) {
           alert(payload.message || "Excel वाचताना त्रुटी आली.");
+          input.value = "";
           return;
         }
-        applyImportedAreaRows(payload.rows || []);
+        applyImportedAreaRows(payload.rows || [], targetRowsBody, input);
       } catch (err) {
         console.error("Excel preview failed", err);
         alert("Excel वाचताना त्रुटी आली.");
+        input.value = "";
       }
       return;
     }
@@ -3461,7 +4328,154 @@
     reader.onload = () => {
       const text = String(reader.result || "");
       const rows = lowerName.endsWith(".csv") ? parseCsvRows(text) : parseHtmlTableRows(text);
-      applyImportedAreaRows(importedAreaRowsFromMatrix(rows));
+      applyImportedAreaRows(importedAreaRowsFromMatrix(rows), targetRowsBody, input);
+    };
+    reader.readAsText(file, "utf-8");
+  }
+
+  function importedJointSurveyRowsFromMatrix(rows) {
+    const aliases = {
+      district: ["district", "जिल्हा"],
+      taluka: ["taluka", "तालुका"],
+      village: ["village", "village name", "गाव"],
+      gut_number: ["gut", "gut no", "gut no survey no", "gut no/survey no", "gut no./survey no.", "survey no", "survey number", "गट क्रमांक", "गट नंबर", "गट क्र"],
+      hissa_number: ["hissa", "hissa no", "hissa no.", "hissa number", "हिस्सा नंबर", "हिस्सा नो", "हिस्सा"],
+      land_class: ["class", "land class", "वर्ग", "भूमिचा वर्ग", "भूमीचा वर्ग"],
+      acquired_total_area: ["acquired area", "total area", "acquired total", "एकूण क्षेत्र", "एकूण क्षेत्र हे आर चौ मि", "एकूण क्षेत्र हे.आर.चौ.मि.", "संपादित क्षेत्र", "प्रस्तावित संपादन क्षेत्र"],
+      kharaba: ["kharaba", "pot kharaba", "potkharaba", "खराबा", "पोटखराबा"],
+      lagan: ["lagan", "cultivable", "लागण", "लागवडीयोग्य"],
+      aakar_acquired: ["aakar", "aakar acquired", "tax", "आकार", "आकारणी"],
+      holder_name: ["holder", "owner", "holder name", "owner name", "कब्जेदार", "कब्जेदाराचे नाव", "खातेदार", "खातेदाराचे नाव"],
+      remark: ["remark", "remarks", "note", "शेरा"],
+    };
+    const normalizedAliases = Object.fromEntries(
+      Object.entries(aliases).map(([field, values]) => [field, values.map(normalizeExcelHeader)])
+    );
+    let headerIndex = 0;
+    let columnMap = {};
+    rows.slice(0, 5).forEach((row, rowIndex) => {
+      row.map(normalizeExcelHeader).forEach((header, colIndex) => {
+        if (!header) return;
+        Object.entries(normalizedAliases).forEach(([field, values]) => {
+          if (!(field in columnMap)) {
+            if (values.some((val) => val && (header === val || header.includes(val) || val.includes(header)))) {
+              columnMap[field] = colIndex;
+              headerIndex = Math.max(headerIndex, rowIndex);
+            }
+          }
+        });
+      });
+    });
+    if (!("gut_number" in columnMap)) {
+      columnMap = { gut_number: 1, hissa_number: 2, land_class: 3, acquired_total_area: 4, kharaba: 5, lagan: 6, aakar_acquired: 7, holder_name: 8, remark: 9 };
+    }
+    const last = { district: "", taluka: "", village: "", gut_number: "" };
+    return rows.slice(headerIndex + 1).map((row) => {
+      const get = (field) => {
+        const colIndex = columnMap[field];
+        return colIndex === undefined ? "" : String(row[colIndex] || "").trim();
+      };
+      const rawGut = get("gut_number");
+      const rawHissa = get("hissa_number");
+      const entry = {
+        district: get("district") || last.district,
+        taluka: get("taluka") || last.taluka,
+        village: get("village") || last.village,
+        gut_number: rawGut || last.gut_number,
+        hissa_number: rawHissa,
+        land_class: get("land_class"),
+        acquired_total_area: get("acquired_total_area"),
+        kharaba: get("kharaba"),
+        lagan: get("lagan"),
+        aakar_acquired: get("aakar_acquired"),
+        holder_name: get("holder_name"),
+        remark: get("remark"),
+      };
+      Object.keys(last).forEach((field) => {
+        if (entry[field]) last[field] = entry[field];
+      });
+      if (!rawGut && !rawHissa) return null;
+      return entry;
+    }).filter((row) => row && row.gut_number);
+  }
+
+  function applyImportedJointSurveyRows(importedRows, targetRowsBody = jsRowsBody, input = null) {
+    const validRows = importedRows.filter((r) => r && r.gut_number);
+    if (!validRows.length) {
+      alert("एक्सेलमधून कोणतीही संयुक्त मोजणी नोंद सापडली नाही.");
+      if (input) input.value = "";
+      return false;
+    }
+
+    if (targetRowsBody.children.length && !confirm("विद्यमान संयुक्त मोजणीच्या ओळी बदलून एक्सेलमधील ओळी भरायच्या आहेत का?")) {
+      if (input) {
+        input.value = "";
+        const zone = input.closest(".nt-upload-zone");
+        if (zone) {
+          const sel = zone.querySelector(".nt-upload-selected");
+          if (sel) sel.textContent = "";
+        }
+      }
+      return false;
+    }
+
+    targetRowsBody.innerHTML = "";
+    validRows.forEach((row) => {
+      const rowEl = addJsRow({
+        gut_number: row.gut_number,
+        hissa_number: row.hissa_number,
+        land_class: row.land_class,
+        acquired_total_area: row.acquired_total_area,
+        kharaba: row.kharaba,
+        lagan: row.lagan,
+        aakar_acquired: row.aakar_acquired,
+        holder_name: row.holder_name,
+        remark: row.remark,
+      });
+      if (row.district) rowEl.dataset.district = row.district;
+      if (row.taluka) rowEl.dataset.taluka = row.taluka;
+      if (row.village) rowEl.dataset.village = row.village;
+      fetchJs712Details(rowEl, true);
+    });
+    syncShuddhipatrakGutDropdowns();
+    return true;
+  }
+
+  async function importJointSurveyRowsFromExcelInput(input, targetRowsBody = jsRowsBody) {
+    const file = input.files?.[0];
+    if (!file) return;
+    const lowerName = file.name.toLowerCase();
+    if (lowerName.endsWith(".xlsx")) {
+      const formData = new FormData();
+      formData.append("file", file);
+      try {
+        const response = await fetch("{% url 'notification_parse_area_rows_api' %}", {
+          method: "POST",
+          headers: { "X-CSRFToken": csrfToken() },
+          body: formData,
+        });
+        const payload = await response.json();
+        if (!response.ok || !payload.success) {
+          alert(payload.message || "Excel वाचताना त्रुटी आली.");
+          input.value = "";
+          return;
+        }
+        applyImportedJointSurveyRows(payload.rows || [], targetRowsBody, input);
+      } catch (err) {
+        console.error("Excel preview failed", err);
+        alert("Excel वाचताना त्रुटी आली.");
+        input.value = "";
+      }
+      return;
+    }
+    if (!lowerName.endsWith(".csv") && !lowerName.endsWith(".xls") && !lowerName.endsWith(".html")) {
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      const text = String(reader.result || "");
+      const rows = lowerName.endsWith(".csv") ? parseCsvRows(text) : parseHtmlTableRows(text);
+      applyImportedJointSurveyRows(importedJointSurveyRowsFromMatrix(rows), targetRowsBody, input);
     };
     reader.readAsText(file, "utf-8");
   }
@@ -3512,6 +4526,15 @@
     renderTotals();
   }
   document.querySelectorAll('input[name="has_puravani"]').forEach((radio) => radio.addEventListener("change", togglePuravani));
+
+  function toggleExtraNotification() {
+    const enabled = notificationForm.querySelector('input[name="has_extra_notification"]:checked')?.value === "yes";
+    const sec = document.getElementById("ntExtraSection");
+    if (sec) sec.classList.toggle("hidden", !enabled);
+    if (enabled && extraBlocksWrap && !extraBlocksWrap.children.length) addExtraBlock();
+    renderTotals();
+  }
+  document.querySelectorAll('input[name="has_extra_notification"]').forEach((radio) => radio.addEventListener("change", toggleExtraNotification));
 
   function toggleShuddhipatrak() {
     const enabled = notificationForm.querySelector('input[name="shuddhipatrak_done"]:checked')?.value === "yes";
@@ -3697,6 +4720,9 @@
   }
 
   async function saveSec3Rows({ silent = false } = {}) {
+    if (!ntActiveScrollAnchor) {
+      captureScrollAnchor(null, document.getElementById("ntSaveSec3Rows"));
+    }
     const body = document.getElementById("ntCascadeSec3");
     const rows = Array.from(body?.querySelectorAll("tr") || []).filter((row) => row.querySelector(".nt-cascade-gut, .nt-cascade-hissa, .nt-cascade-712, .nt-cascade-proposed"));
     const blankManualRows = rows.filter((row) => row.dataset.manualCascadeId && !cascadeRowHasManualData(cascadeRowData(row)));
@@ -3883,12 +4909,26 @@
 	    return rows.length ? rows : collectVisibleAreaRows();
 	  }
 
+	  function extraAreaRows() {
+	    if (!extraBlocksWrap) return [];
+	    extraBlocksWrap.querySelectorAll(".nt-extra-block-area-rows").forEach(syncAreaCommonFields);
+	    return Array.from(extraBlocksWrap.querySelectorAll(".nt-extra-block-area-rows .nt-area-row")).map((row) => ({
+	      district: row.querySelector(".nt-area-district")?.value.trim() || "",
+	      taluka: row.querySelector(".nt-area-taluka")?.value.trim() || "",
+	      village: row.querySelector(".nt-area-village")?.value.trim() || "",
+	      gut_number: row.querySelector(".nt-area-gut")?.value.trim() || "",
+	      hissa_number: row.querySelector(".nt-area-hissa")?.value.trim() || "",
+	      area_712: row.querySelector(".nt-area-712")?.value.trim() || "",
+	      proposed_area: row.querySelector(".nt-area-proposed")?.value.trim() || "",
+	    })).filter((data) => data.gut_number || data.hissa_number || data.proposed_area || data.area_712);
+	  }
+
 	  function puravaniSec3SummaryRows() {
-	    const rows = Array.from(document.querySelectorAll("#ntPuravaniSec3Wrap .nt-puravani-derived-block tbody tr"))
+	    const rows = Array.from(document.querySelectorAll("#ntPuravaniSec3Wrap .nt-puravani-derived-block tbody tr, #ntExtraSec3Wrap .nt-puravani-derived-block tbody tr"))
 	      .filter((row) => row.querySelector(".nt-cascade-gut, .nt-cascade-hissa, .nt-cascade-712, .nt-cascade-proposed"))
 	      .map((row) => cascadeRowData(row))
 	      .filter(cascadeRowHasManualData);
-	    return rows.length ? rows : puravaniAreaRows();
+	    return rows.length ? rows : puravaniAreaRows().concat(extraAreaRows());
 	  }
 
 	  function summaryArea(row) {
@@ -3933,6 +4973,7 @@
     if ("sec154_bhusampadan_rows" in cascade) renderCascadeTable("ntCascadeSec154", cascade.sec154_bhusampadan_rows, { prefix: "sec154_notif" });
     if ("sec181_rows" in cascade) renderCascadeTable("ntCascadeSec181", cascade.sec181_rows, { acquiredMode: true, prefix: "sec181" });
     renderPuravaniDerivedBlocks();
+    renderExtraDerivedBlocks();
     renderTotals();
   }
 
@@ -4156,6 +5197,30 @@
     document.getElementById("ntCpiDistrictCode").value = match?.code || "";
     document.getElementById("ntCpiDistrictName").value = match?.name || districtLabel || "";
   }
+  function updateNotificationVillageSummaryBanner() {
+    const district = document.getElementById("ntDistrict");
+    const taluka = document.getElementById("ntTaluka");
+    const village = document.getElementById("ntVillage");
+    const villageNameEl = document.getElementById("nt-current-village-name");
+    const villageMetaEl = document.getElementById("nt-current-village-meta");
+    if (!villageNameEl || !villageMetaEl) return;
+
+    const getLabel = (select) => {
+      if (!select || !select.value) return "";
+      const opt = select.selectedOptions?.[0];
+      const text = (opt?.textContent || select.value || "").trim();
+      return (text && !text.includes("निवडा") && !text.includes("लोड होत आहे")) ? text : "";
+    };
+
+    const districtLabel = getLabel(district);
+    const talukaLabel = getLabel(taluka);
+    const villageLabel = getLabel(village);
+
+    villageNameEl.textContent = villageLabel || "गाव निवडा";
+    const metaParts = [talukaLabel, districtLabel].filter(Boolean);
+    villageMetaEl.textContent = metaParts.length ? metaParts.join(", ") : "जिल्हा / तालुका निवडा";
+  }
+
   async function initLocationDropdowns() {
     const division = document.getElementById("ntDivision");
     const district = document.getElementById("ntDistrict");
@@ -4172,6 +5237,9 @@
     if (district.value && taluka.value) populateSelect(village, "गाव निवडा", await fetchRorVillages(district, taluka), currentVillage);
     syncAreaRowsToTab1Location();
     refreshCpiForSelectedDistrict();
+    updateNotificationVillageSummaryBanner();
+    await fetchMissingArea712Rows();
+    await fetchMissingJs712Rows();
     division.addEventListener("change", () => {
       populateDistrictSelect(district, filteredRorDistricts(division.value));
       populateSelect(taluka, "तालुका निवडा", []);
@@ -4179,6 +5247,7 @@
       syncCpiLocationScope();
       syncAreaRowsToTab1Location();
       refreshCpiForSelectedDistrict();
+      updateNotificationVillageSummaryBanner();
     });
     district.addEventListener("change", async () => {
       syncCpiLocationScope();
@@ -4186,15 +5255,20 @@
       populateSelect(village, "गाव निवडा", []);
       syncAreaRowsToTab1Location();
       refreshCpiForSelectedDistrict();
+      updateNotificationVillageSummaryBanner();
     });
     taluka.addEventListener("change", async () => {
       populateSelect(village, "गाव निवडा", district.value && taluka.value ? await fetchRorVillages(district, taluka) : []);
       syncAreaRowsToTab1Location();
       refreshCpiForSelectedDistrict();
+      updateNotificationVillageSummaryBanner();
     });
-    village.addEventListener("change", () => {
+    village.addEventListener("change", async () => {
       syncAreaRowsToTab1Location();
       refreshCpiForSelectedDistrict();
+      updateNotificationVillageSummaryBanner();
+      await fetchMissingArea712Rows();
+      await fetchMissingJs712Rows();
     });
   }
 
@@ -4264,6 +5338,7 @@
 	  function collectFormData() {
 	    syncCpiLocationScope();
 	    currentPuravaniBlocks();
+	    currentExtraBlocks();
 	    normalizeDateInputs(notificationForm);
 	    const disabledCascadeInputs = [];
 	    notificationForm.querySelectorAll(".nt-cascade-district, .nt-cascade-taluka, .nt-cascade-village, .nt-cascade-gut, .nt-cascade-hissa, .nt-cascade-712, .nt-cascade-proposed").forEach((input) => {
@@ -4278,6 +5353,7 @@
 	    });
 	    collectAreaRows(areaRowsBody, "area", formData);
 	    collectPuravaniBlocks(formData);
+	    collectExtraBlocks(formData);
 	    collectCascadeRows(document.getElementById("ntCascadeSec3"), "cascade_sec3", formData);
 	    collectCascadeRows(document.getElementById("ntCascadeSec152"), "cascade_sec152", formData);
 	    collectCascadeRows(document.getElementById("ntCascadeSec154"), "cascade_sec154", formData);
@@ -4389,6 +5465,9 @@
   }
 
   async function saveNotification({ silent }) {
+    if (!ntActiveScrollAnchor) {
+      captureScrollAnchor();
+    }
     const wasUnsaved = !notificationIdInput.value;
     const formData = collectFormData();
 
@@ -4438,6 +5517,7 @@
       return false;
     } finally {
       setNtSavingState(false);
+      restoreScrollAnchor();
     }
   }
 
@@ -4471,11 +5551,26 @@
       addPuravaniBlock({
         ...block,
         files: (ntDetail.files_map || {})[`puravani_block_${idx}_file`] || [],
+        excel_files: (ntDetail.files_map || {})[`puravani_block_${idx}_excel_file`] || [],
         pdf_files: (ntDetail.files_map || {})[`puravani_block_${idx}_pdf_file`] || (ntDetail.files_map || {})[`puravani_block_${idx}_file`] || [],
         autocad_files: (ntDetail.files_map || {})[`puravani_block_${idx}_autocad_file`] || [],
       });
     });
     togglePuravani();
+
+    const hasExtraNotif = sections.has_extra_notification === "1" || sections.has_extra_notification === "yes" || sections.has_extra_area === "1" || sections.has_extra_area === "yes";
+    const hasExtraNotifRadio = notificationForm.querySelector(`input[name="has_extra_notification"][value="${hasExtraNotif ? "yes" : "no"}"]`);
+    if (hasExtraNotifRadio) hasExtraNotifRadio.checked = true;
+    (sections.extra_blocks || []).forEach((block, idx) => {
+      addExtraBlock({
+        ...block,
+        files: (ntDetail.files_map || {})[`extra_block_${idx}_file`] || [],
+        excel_files: (ntDetail.files_map || {})[`extra_block_${idx}_excel_file`] || [],
+        pdf_files: (ntDetail.files_map || {})[`extra_block_${idx}_pdf_file`] || (ntDetail.files_map || {})[`extra_block_${idx}_file`] || [],
+        autocad_files: (ntDetail.files_map || {})[`extra_block_${idx}_autocad_file`] || [],
+      });
+    });
+    toggleExtraNotification();
 
     const hasSec152Pub = sections.has_sec152_pub === "1" || (sections.has_sec152_pub === undefined && !!(sections.sec152_pub_no || sections.sec152_pub_date || sections.sec152_paper1_name || sections.sec152_paper2_name));
     const hasSec152PubRadio = notificationForm.querySelector(`input[name="has_sec152_pub"][value="${hasSec152Pub ? "yes" : "no"}"]`);
@@ -4532,6 +5627,8 @@
     toggleShuddhipatrak();
 
     renderCascade(ntDetail.cascade || {});
+    fetchMissingArea712Rows();
+    fetchMissingJs712Rows();
   }
 
   initLocationDropdowns();

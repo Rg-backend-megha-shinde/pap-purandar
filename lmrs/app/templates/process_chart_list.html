@@ -232,6 +232,7 @@
                                 <option value="status">Status</option>
                                 <option value="step">टप्पा</option>
                                 <option value="owner">भूधारकाचे नाव</option>
+                                <option value="remark">Verified/Unverified Remark</option>
                             </select>
                         </label>
                         <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -493,6 +494,8 @@ $(document).ready(function () {
             owner: 5,
             status: 8,
             step: 9,
+            remark: 12,
+            verification: 12,
         };
         const escapeRegex = (value) => $.fn.dataTable.util.escapeRegex(String(value || ''));
         const optionLabel = (value) => String(value || '').trim() || '-';
@@ -631,6 +634,11 @@ $(document).ready(function () {
                 uniqueOwnerValues().forEach((value) => filterValue.add(new Option(value, value)));
                 return;
             }
+            if (type === 'remark' || type === 'verification') {
+                filterValue.add(new Option('Verified', 'Verified'));
+                filterValue.add(new Option('Unverified', 'Unverified'));
+                return;
+            }
             uniqueColumnValues(filterColumns[type] ?? -1)
                 .forEach((value) => filterValue.add(new Option(value, value)));
         };
@@ -668,6 +676,16 @@ $(document).ready(function () {
             if (type === 'owner') {
                 processChartTable.column(filterColumns.owner).search(escapeRegex(value), true, false).draw();
                 return;
+            }
+            if (type === 'remark' || type === 'verification') {
+                if (value === 'Verified') {
+                    processChartTable.column(filterColumns.remark).search('\\bVerified\\b', true, false).draw();
+                    return;
+                }
+                if (value === 'Unverified') {
+                    processChartTable.column(filterColumns.remark).search('\\bUnverified\\b', true, false).draw();
+                    return;
+                }
             }
             processChartTable.column(filterColumns[type]).search(`^${escapeRegex(value)}$`, true, false).draw();
         };
@@ -870,6 +888,16 @@ $(document).ready(function () {
                 statusWrap.innerHTML = result.authenticated
                     ? '<label class="pc-auth-verify-check pc-authenticated-badge" title="Verified"><input type="checkbox" class="pc-authenticate-process-row" aria-label="Verified record" checked><span class="pc-authenticated-icon">✓</span><span>Verified</span></label>'
                     : '<label class="pc-auth-verify-check" title="Unverified"><input type="checkbox" class="pc-authenticate-process-row" aria-label="Unverified record"><span>Unverified</span></label>';
+                const tdCell = statusWrap.closest('td');
+                if (tdCell) {
+                    tdCell.setAttribute('data-search', result.authenticated ? 'Verified' : 'Unverified');
+                    if (typeof processChartTable !== 'undefined' && processChartTable) {
+                        processChartTable.cell(tdCell).invalidate();
+                        if (filterType?.value === 'remark' || filterType?.value === 'verification') {
+                            applyListFilter();
+                        }
+                    }
+                }
             }
         } catch (error) {
             alert(error.message || 'प्रमाणित स्थिती जतन करता आली नाही.');
