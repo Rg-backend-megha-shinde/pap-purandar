@@ -32,6 +32,7 @@ urlpatterns = [
     path('api/land-record-712/parse/', views.parse_land_record_712_html, name='parse_land_record_712_html'),
     path('api/land-record-712/preview/', views.land_record_712_preview_page, name='land_record_712_preview_page'),
     path('api/land-record-gut-numbers/', views.get_land_record_gut_numbers, name='land_record_gut_numbers'),
+    path('api/land-record-hissa-numbers/', views.get_land_record_hissa_numbers, name='land_record_hissa_numbers'),
     path('api/land-record-owner-names/', views.get_land_record_owner_names, name='land_record_owner_names'),
     path('api/assessment-types/<str:village>/', views.get_assessment_types_by_village),
     path('api/years/<str:village>/<str:assessment_type>/', views.get_years_by_village_assessment),

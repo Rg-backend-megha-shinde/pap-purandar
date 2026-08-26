@@ -100,6 +100,8 @@ NOTIFICATION_FILE_SLOTS = [
     "joint_survey_sanyukta_naksha",
     "joint_survey_parishisht16",
     "sec181_file",
+    "sec181_paper1_file",
+    "sec181_paper2_file",
     "shuddhipatrak_file",
 ]
 
@@ -116,8 +118,10 @@ def save_notification_files(notification, request_files, extra_slots=None):
     for slot in all_slots:
         if not slot or slot in seen_slots:
             continue
-        seen_slots.add(slot)
-        for uploaded_file in request_files.getlist(slot):
+        uploaded_files = request_files.getlist(slot) if hasattr(request_files, "getlist") else request_files.get(slot, [])
+        if not isinstance(uploaded_files, (list, tuple)):
+            uploaded_files = [uploaded_files] if uploaded_files else []
+        for uploaded_file in uploaded_files:
             signature = (slot, getattr(uploaded_file, "name", ""), getattr(uploaded_file, "size", 0))
             if signature in existing:
                 continue
@@ -380,6 +384,8 @@ def _puravani_blocks(post_data):
         sec152_has_pub = _truthy(post_data.get(f"{prefix}_sec152_has_pub") or post_data.get(f"puravani_sec152_{display_idx}_has_pub"))
         sec154_has_pub = _truthy(post_data.get(f"{prefix}_sec154_has_pub") or post_data.get(f"puravani_sec154_{display_idx}_has_pub"))
         sec181_has_pub = _truthy(post_data.get(f"{prefix}_sec181_has_pub") or post_data.get(f"puravani_sec181_{display_idx}_has_pub"))
+        has_extra_notif = _truthy(post_data.get(f"{prefix}_has_extra_notification"))
+        extra_notif_text = clean_text(post_data.get(f"{prefix}_extra_notification_text")) if has_extra_notif else ""
         block = {
             "sec3_has_pub": "1" if sec3_has_pub else "",
             "sec152_has_pub": "1" if sec152_has_pub else "",
@@ -395,6 +401,8 @@ def _puravani_blocks(post_data):
             "sec154_pub_date": clean_text(post_data.get(f"{prefix}_sec154_pub_date") or post_data.get(f"puravani_sec154_{display_idx}_pub_date")) if sec154_has_pub else "",
             "sec181_pub_no": clean_text(post_data.get(f"{prefix}_sec181_pub_no") or post_data.get(f"puravani_sec181_{display_idx}_pub_no")) if sec181_has_pub else "",
             "sec181_pub_date": clean_text(post_data.get(f"{prefix}_sec181_pub_date") or post_data.get(f"puravani_sec181_{display_idx}_pub_no")) if sec181_has_pub else "",
+            "has_extra_notification": "1" if has_extra_notif else "",
+            "extra_notification_text": extra_notif_text,
             "area_rows": _area_rows(post_data, f"{prefix}_area"),
         }
         if (
@@ -407,7 +415,23 @@ def _puravani_blocks(post_data):
             or block["sec181_pub_no"]
             or block["sec181_pub_date"]
             or block["area_rows"]
+            or block["has_extra_notification"]
         ):
+            blocks.append(block)
+    return blocks
+
+
+def _extra_blocks(post_data):
+    if not (_truthy(post_data.get("has_extra_notification")) or _truthy(post_data.get("has_extra_area"))):
+        return []
+    blocks = []
+    count = int(post_data.get("extra_block_count") or 0)
+    for idx in range(count):
+        prefix = f"extra_block_{idx}"
+        block = {
+            "area_rows": _area_rows(post_data, f"{prefix}_area"),
+        }
+        if block["area_rows"]:
             blocks.append(block)
     return blocks
 
@@ -550,6 +574,7 @@ def parse_notification_sections(post_data):
     has_sec154_notif_pub = _truthy(post_data.get("has_sec154_notif_pub"))
     has_sec181_pub = _truthy(post_data.get("has_sec181_pub"))
     has_puravani = _truthy(post_data.get("has_puravani"))
+    has_extra_notification = _truthy(post_data.get("has_extra_notification"))
     shuddhipatrak_done = _truthy(post_data.get("shuddhipatrak_done"))
     cascade_edits = {
         "sec3_rows": _cascade_edit_rows(post_data, "cascade_sec3"),
@@ -569,6 +594,9 @@ def parse_notification_sections(post_data):
         }),
         "has_puravani": "1" if has_puravani else "",
         "puravani_blocks": _puravani_blocks(post_data),
+        "has_extra_notification": "1" if has_extra_notification else "",
+        "extra_notification_text": clean_text(post_data.get("extra_notification_text")) if has_extra_notification else "",
+        "extra_blocks": _extra_blocks(post_data),
         "has_sec152_pub": "1" if has_sec152_pub else "",
         "sec152_pub_no": clean_text(post_data.get("sec152_pub_no")) if has_sec152_pub else "",
         "sec152_pub_date": clean_text(post_data.get("sec152_pub_date")) if has_sec152_pub else "",
@@ -786,6 +814,7 @@ def save_notification(*, user, district, taluka, village, sections, status, curr
     notification.save()
     puravani_count = len(sections.get("puravani_blocks") or [])
     extra_slots = [f"puravani_block_{i}_file" for i in range(puravani_count)]
+    extra_slots.extend(f"puravani_block_{i}_excel_file" for i in range(puravani_count))
     extra_slots.extend(f"puravani_block_{i}_pdf_file" for i in range(puravani_count))
     extra_slots.extend(f"puravani_block_{i}_autocad_file" for i in range(puravani_count))
     extra_slots.extend(f"puravani_sec3_{i}_file" for i in range(1, puravani_count + 1))
@@ -793,7 +822,17 @@ def save_notification(*, user, district, taluka, village, sections, status, curr
     extra_slots.extend(f"puravani_sec154_{i}_file" for i in range(1, puravani_count + 1))
     extra_slots.extend(f"puravani_sec181_{i}_file" for i in range(1, puravani_count + 1))
     save_notification_files(notification, request_files, extra_slots=extra_slots)
+    _sync_village_info(notification, user_id=user_id)
     return notification
+
+
+def _sync_village_info(notification, user_id=None):
+    try:
+        from app.village_notification_sync import sync_village_data_from_notification
+        sync_village_data_from_notification(notification, user_id=user_id)
+    except Exception as exc:
+        logger.error(f"[Notification Save Sync Error] Failed to sync notification to village info: {exc}", exc_info=True)
+
 
 
 def _legacy_puravani_blocks(sections):

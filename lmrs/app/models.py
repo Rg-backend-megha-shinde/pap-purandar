@@ -1256,6 +1256,7 @@ class ProcessChartCase(models.Model):
     taluka = models.CharField(max_length=100)
     village = models.CharField(max_length=150)
     gut_number = models.CharField(max_length=50)
+    hissa_number = models.CharField(max_length=50, null=True, blank=True)
 
     project_purpose = models.CharField(max_length=255, null=True, blank=True)
     acquisition_type = models.CharField(max_length=100, null=True, blank=True)

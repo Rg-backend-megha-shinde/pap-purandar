@@ -1783,6 +1783,7 @@
         let currentTab = 1;
         let locationInitPromise = null;
         let isEditingRecord = false;
+        let currentVillageDataId = null;
         const completedTabs = new Set();
         let villageRecords = [];
         let filteredVillageRecords = [];
@@ -1986,9 +1987,13 @@
                 const response = await fetch(url);
                 const data = await response.json();
                 const duplicate = !!data.exists;
-                setVillageInfoFieldsLocked(duplicate);
                 if (duplicate) {
-                    showViDuplicateToast(data.message || 'या गावासाठी गावाची माहिती नोंद आधीच अस्तित्वात आहे.');
+                    isEditingRecord = true;
+                    setLocationFieldsReadonly(true);
+                    await Promise.all([loadVillageData(), loadSec15ForSelectedVillage()]);
+                    setVillageInfoFieldsLocked(false);
+                } else {
+                    setVillageInfoFieldsLocked(false);
                 }
             } catch (err) {
                 setVillageInfoFieldsLocked(false);
@@ -2266,8 +2271,7 @@
 
         function formatUpdatedCell(row) {
             const updatedAt = formatDateTime(row?.updated_at);
-            const updatedBy = (row?.updated_by || '').trim();
-            if (!updatedBy) return updatedAt;
+            const updatedBy = (row?.updated_by || '').trim() || 'Notification Tool';
             return `${updatedAt}<div class="text-xs text-[#6d7f9b]">Updated by ${updatedBy}</div>`;
         }
 
@@ -2661,8 +2665,8 @@
                 sec6_nakasha_files: document.getElementById('vi-sec6-nakasha-files'),
 
                 sec7_aakshep_details: p3[0], sec7_files: p3[1],
-                sec9_paper1_name: p3[2], sec9_paper1_date: p3[3], sec9_paper1_files: p3[4],
-                sec9_paper2_name: p3[5], sec9_paper2_date: p3[6], sec9_paper2_files: p3[7],
+                sec9_paper1_name: null, sec9_paper1_date: null, sec9_paper1_files: null,
+                sec9_paper2_name: null, sec9_paper2_date: null, sec9_paper2_files: null,
 
                 sec10_prastaav_kramank: p4[0], sec10_date: p4[1], sec10_files: p4[2],
                 sec11_patra_kramank: p4[3], sec11_date: p4[4], sec11_files: p4[5],
@@ -2709,9 +2713,16 @@
         }
 
         function buildGutOptionsHtml(selectedValue = '', includeOtherSelected = false) {
+            const normSelected = String(selectedValue || '').trim();
+            let options = notifiedAreaGutOptions.slice();
+            if (normSelected && normSelected !== '__other__' && !includeOtherSelected) {
+                if (!options.some((gut) => gut === normSelected)) {
+                    options.unshift(normSelected);
+                }
+            }
             return [
                 '<option value="">गट क्रमांक निवडा</option>',
-                ...notifiedAreaGutOptions.map((gut) => `<option value="${escapeHtml(gut)}"${gut === selectedValue ? ' selected' : ''}>${escapeHtml(gut)}</option>`),
+                ...options.map((gut) => `<option value="${escapeHtml(gut)}"${gut === normSelected ? ' selected' : ''}>${escapeHtml(gut)}</option>`),
                 `<option value="__other__"${includeOtherSelected ? ' selected' : ''}>इतर</option>`
             ].join('');
         }
@@ -3381,6 +3392,27 @@
             currentVillageMetaEl.textContent = metaParts.length ? metaParts.join(', ') : 'जिल्हा / तालुका निवडा';
         }
 
+        function setSelectValueTolerant(selectEl, targetValue) {
+            if (!selectEl || !targetValue) return;
+            const target = String(targetValue).trim();
+            selectEl.value = target;
+            if (selectEl.value === target) return;
+
+            const normTarget = target.toLowerCase().replace(/[^a-z0-9\u0900-\u097F]/g, '');
+            if (!normTarget) return;
+
+            for (let opt of selectEl.options) {
+                if (!opt.value) continue;
+                const normVal = opt.value.trim().toLowerCase().replace(/[^a-z0-9\u0900-\u097F]/g, '');
+                const normText = opt.text.trim().toLowerCase().replace(/[^a-z0-9\u0900-\u097F]/g, '');
+
+                if (normVal === normTarget || normText === normTarget || normVal.includes(normTarget) || normTarget.includes(normVal)) {
+                    selectEl.value = opt.value;
+                    return;
+                }
+            }
+        }
+
         async function loadTalukasForDistrict(district, selectedTaluka = '') {
             fillSelect(talukaSel, [], 'आधी जिल्हा निवडा');
             fillSelect(villageSel, [], 'आधी तालुका निवडा');
@@ -3390,7 +3422,7 @@
             }
             const data = await fetchJSON(`/api/locations/?district=${encodeURIComponent(district)}&lang=mr`);
             fillSelect(talukaSel, data.data || [], 'तालुका निवडा');
-            talukaSel.value = selectedTaluka || '';
+            setSelectValueTolerant(talukaSel, selectedTaluka);
             updateVillageContextHeader();
         }
 
@@ -3402,9 +3434,10 @@
             }
             const data = await fetchJSON(`/api/locations/?district=${encodeURIComponent(district)}&taluka=${encodeURIComponent(taluka)}&lang=mr`);
             fillSelect(villageSel, data.data || [], 'गाव निवडा');
-            villageSel.value = selectedVillage || '';
+            setSelectValueTolerant(villageSel, selectedVillage);
             updateVillageContextHeader();
         }
+
 
         async function openFormForRecord(district, taluka, village) {
             if (!locationInitPromise) return;
@@ -4076,6 +4109,7 @@
                     `/api/village-info/data/?district=${encodeURIComponent(district)}&taluka=${encodeURIComponent(taluka)}&village=${encodeURIComponent(village)}`
                 );
                 if (!data.found) {
+                    currentVillageDataId = null;
                     Object.values(fieldMap).forEach((el) => {
                         if (!el) return;
                         if (el.type === 'file') {
@@ -4108,6 +4142,7 @@
                     return;
                 }
                 const values = data.data || {};
+                currentVillageDataId = values.id || null;
                 for (const [key, el] of Object.entries(fieldMap)) {
                     if (!el) continue;
                     if (el.type === 'file') {
@@ -5091,6 +5126,9 @@
             formData.append('district', district);
             formData.append('taluka', taluka);
             formData.append('village', village);
+            if (currentVillageDataId) {
+                formData.append('record_id', currentVillageDataId);
+            }
             formData.append('final_submit', goToList ? '1' : '0');
 
             // Persist the yes/no toggle answers for sections 7–10 so the backend
@@ -5838,7 +5876,7 @@
                     if (editRecord && editRecord.district && editRecord.taluka && editRecord.village) {
                         isEditingRecord = true;
                         completedTabs.clear();
-                        districtSel.value = editRecord.district;
+                        setSelectValueTolerant(districtSel, editRecord.district);
                         await loadTalukasForDistrict(districtSel.value, editRecord.taluka);
                         await loadVillagesForTaluka(districtSel.value, talukaSel.value, editRecord.village);
                         setLocationFieldsReadonly(true);
@@ -5867,7 +5905,7 @@
                                     if (n >= 1 && n <= 8) completedTabs.add(n);
                                 });
                             }
-                            districtSel.value = restoredState.district;
+                            setSelectValueTolerant(districtSel, restoredState.district);
                             await loadTalukasForDistrict(districtSel.value, restoredState.taluka);
                             await loadVillagesForTaluka(districtSel.value, talukaSel.value, restoredState.village);
                             if (isEditingRecord) {
